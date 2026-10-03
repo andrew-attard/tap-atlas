@@ -20,10 +20,6 @@
     return [file, sheet, cell].filter(function (x) { return x != null && x !== ''; }).join(' › ');
   }
 
-  function colour(id) {
-    try { return TAP.scope.colorOf(id); } catch (e) { return window.TAP_THEME.regionColor(TAP.data.regionIndex(id)); }
-  }
-
   function note(message, place) {
     return el('li', { class: 'tap-src__note' }, [
       el('span', null, message),
@@ -40,7 +36,7 @@
   function region(imp) {
     var notes = imp.notes || [];
     return el('section', { class: 'tap-src__region', 'data-region': imp.regionId }, [
-      el('h3', { class: 'tap-src__name' }, [el('span', { class: 'tap-swatch', style: 'background:' + colour(imp.regionId) }), imp.name]),
+      el('h3', { class: 'tap-src__name' }, [el('span', { class: 'tap-swatch', style: 'background:' + TAP.scope.colorOf(imp.regionId) }), imp.name]),
       facts([
         [t('sourcesPanel.file'), imp.fileName || t('states.notProvided')],
         [t('sourcesPanel.fileDate'), TAP.format.date(imp.fileModified)],
