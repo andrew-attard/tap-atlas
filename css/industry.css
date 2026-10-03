@@ -64,12 +64,6 @@
 .tap-ind__title { margin: 0; font-size: var(--tap-fs-h1); }
 .tap-ind__slot { min-width: 0; }
 
-/* Preview shown only while the report panel is not built yet */
-.tap-ind-preview__title { font-size: var(--tap-fs-h2); }
-.tap-ind-preview__takeaway { font-size: var(--tap-fs-lead); }
-.tap-ind-preview__controls { display: flex; flex-wrap: wrap; gap: var(--tap-sp-3) var(--tap-sp-6); margin-bottom: var(--tap-sp-4); }
-.tap-ind-preview__group { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1); }
-.tap-ind-preview__label { margin-right: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; }
-.tap-ind-preview__body { background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); padding: var(--tap-sp-4); }
-.tap-ind-preview__chart { width: 100%; }
-.tap-ind-preview__notes { margin: var(--tap-sp-3) 0 0; padding-left: var(--tap-sp-6); font-size: var(--tap-fs-label); color: var(--tap-muted); }
+/* Legend keys the tier grid adds: a note has no colour key; not provided is an outlined key */
+.tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--note .tap-panel__key { display: none; }
+.tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--notProvided .tap-panel__key { background: transparent; border: var(--tap-rule-w) dashed var(--tap-np-border); }
