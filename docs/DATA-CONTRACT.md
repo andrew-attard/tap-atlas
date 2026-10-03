@@ -238,7 +238,8 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a required field or section is missing, or has the wrong type;
 - a value outside its allowed set: ratings and tiers 1 to 3, New Business tier 1 or 2, segment ids, channel ids, `riskLevel`, recap `motion`, `type` and `year`;
 - a broken reference between sections: an `industryId` or `productLine` not in `lookups`, a New Business row whose industry has no Market Coverage row or whose tier differs from it;
-- `meta.years` not exactly three plan years, or a by-year list without three values;
+- `meta.years` not exactly three different plan years, or a by-year list without three values (or with a value that is not a number);
+- a New Business `channelSplit` missing one of the four channels;
 - duplicate region ids, duplicate industries in a region's Market Coverage, duplicate account ids.
 
 **Warnings load anyway** and are listed in the data sources panel:

@@ -15,12 +15,13 @@
 
   var MAX_ERRORS = 200;
   var RATINGS = ['growthPotential', 'criticality', 'competitiveIntensity', 'references', 'expertise', 'productFit'];
-  var CHANNELS = ['direct', 'partner', 'allianceA', 'allianceB'];
-  var SEGMENTS = ['strategic', 'growth', 'core', 'scaled'];
+  var CHANNELS = ['direct', 'partner', 'allianceA', 'allianceB'], SEGMENTS = ['strategic', 'growth', 'core', 'scaled'];
   var MAP_SECTIONS = ['marketCoverage', 'newBusiness', 'customerGrowth', 'partners', 'recap'];
 
   function say(key, vars) { return TAP.content.text('check.' + key, vars); }
   function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  // Maps keyed by ids from the file: no prototype, so ids like "constructor" or "__proto__" are plain keys
+  function map() { return Object.create(null); }
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function isStr(v) { return typeof v === 'string'; }
@@ -31,9 +32,7 @@
     return items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + say('or') + items[items.length - 1];
   }
 
-  function oneOf(list, quote) {
-    return { ok: function (v) { return list.indexOf(v) !== -1; }, expect: function () { return orList(list, quote); } };
-  }
+  function oneOf(list, quote) { return { ok: function (v) { return list.indexOf(v) !== -1; }, expect: function () { return orList(list, quote); } }; }
   function plain(ok, key) { return { ok: ok, plain: true, expect: function () { return say('expect.' + key); } }; }
   // An id that must exist in a lookup list
   function ref(envKey, key) { return { ok: function (v, env) { return isStr(v) && has(env[envKey], v); }, expect: plain(0, key).expect }; }
@@ -45,7 +44,7 @@
     bool: plain(function (v) { return typeof v === 'boolean'; }, 'bool'),
     list: plain(Array.isArray, 'list'),
     obj: plain(isObj, 'object'),
-    years3: plain(function (v) { return Array.isArray(v) && v.length === 3 && v.every(function (x) { return x === null || isNum(x); }); }, 'years3'),
+    years3: plain(function (v) { return Array.isArray(v) && v.length === 3; }, 'years3'),
     rating: oneOf([1, 2, 3]),
     tier: oneOf([1, 2, 3]),
     nbTier: oneOf([1, 2]),
@@ -58,7 +57,8 @@
     industry: ref('industries', 'industry'),
     productLine: ref('productLines', 'productLine'),
     channel: ref('channels', 'channelKey'),
-    year: { ok: function (v, env) { return env.years.indexOf(v) !== -1; }, expect: function (env) { return orList(env.years); } }
+    // Skipped (always ok) when meta.years is broken: that error is reported once, not once per recap row
+    year: { ok: function (v, env) { return !env.years.length || env.years.indexOf(v) !== -1; }, expect: function (env) { return orList(env.years); } }
   };
 
   var SPEC = {
@@ -93,10 +93,7 @@
     return nullable && TYPES[name].plain ? say('orBlank', { what: TYPES[name].expect(env) }) : TYPES[name].expect(env);
   }
 
-  function at(ctx, key) {
-    if (key == null) return ctx.path;
-    return ctx.path + (typeof key === 'number' ? '[' + key + ']' : (ctx.path ? '.' : '') + key);
-  }
+  function at(ctx, key) { return key == null ? ctx.path : ctx.path + (typeof key === 'number' ? '[' + key + ']' : (ctx.path ? '.' : '') + key); }
 
   function entry(ctx, key, expected, v, described) {
     var found, text;
@@ -111,8 +108,7 @@
   }
 
   function err(ctx, key, expected, v, described) {
-    if (ctx.out.errors.length < MAX_ERRORS) ctx.out.errors.push(entry(ctx, key, expected, v, described));
-    else ctx.out.dropped++;
+    if (ctx.out.errors.length < MAX_ERRORS) ctx.out.errors.push(entry(ctx, key, expected, v, described)); else ctx.out.dropped++;
   }
   function warn(ctx, key, expected, v, described) { ctx.out.warnings.push(entry(ctx, key, expected, v, described)); }
 
@@ -124,6 +120,7 @@
     Object.keys(spec).forEach(function (k) {
       var nullable = /\?$/.test(spec[k]), name = spec[k].replace('?', ''), v = obj[k];
       if (v === undefined || (v === null && !nullable) || (v !== null && !TYPES[name].ok(v, env))) err(ctx, k, expectFor(name, nullable, env), v);
+      else if (name === 'years3' && v !== null) v.forEach(function (x, i) { if (x !== null && !isNum(x)) err(sub(ctx, k), i, expectFor('num', true, env), x); });
     });
   }
 
@@ -139,18 +136,17 @@
     if (!isObj(meta)) { err(rootCtx(out), 'meta', say('expect.object'), meta); return; }
     fields(meta, SPEC.meta, ctx, env);
     var y = meta.years;
-    if (!Array.isArray(y) || y.length !== 3 || !y.every(isNum)) err(ctx, 'years', say('expect.planYears'), y);
+    if (!Array.isArray(y) || y.length !== 3 || !y.every(function (x, i) { return isNum(x) && y.indexOf(x) === i; })) err(ctx, 'years', say('expect.planYears'), y);
     else env.years = y;
     if (!isObj(meta.sourceMap)) { warn(ctx, 'sourceMap', say('expect.sourceMap'), meta.sourceMap); return; }
-    var mctx = sub(ctx, 'sourceMap');
     MAP_SECTIONS.forEach(function (s) {
       var m = meta.sourceMap[s];
-      if (!isObj(m) || !isStr(m.sheet)) warn(mctx, s, say('expect.sourceMap'), m);
+      if (!isObj(m) || !isStr(m.sheet)) warn(sub(ctx, 'sourceMap'), s, say('expect.sourceMap'), m);
     });
   }
 
   function lookupList(lookups, key, spec, ctx, env, keep) {
-    var list = lookups[key], lctx = sub(ctx, key), seen = {};
+    var list = lookups[key], lctx = sub(ctx, key), seen = map();
     if (!Array.isArray(list)) { err(ctx, key, say('expect.list'), list); return; }
     each(list, lctx, env, function (o, i) {
       var c = sub(lctx, i);
@@ -171,8 +167,7 @@
     lookupList(lookups, 'segments', SPEC.segmentLookup, ctx, env, null);
     if (!isObj(lookups.scales)) { err(ctx, 'scales', say('expect.object'), lookups.scales); return; }
     RATINGS.forEach(function (r) {
-      var s = lookups.scales[r];
-      var lctx = sub(ctx, 'scales.' + r + '.levels');
+      var s = lookups.scales[r], lctx = sub(ctx, 'scales.' + r + '.levels');
       if (!isObj(s) || !Array.isArray(s.levels)) err(sub(ctx, 'scales'), r, say('expect.object'), s);
       else each(s.levels, lctx, env, function (lv, i) { fields(lv, SPEC.level, sub(lctx, i), env); });
     });
@@ -193,7 +188,7 @@
   }
 
   function checkSection(r, key, rctx, env, extra) {
-    var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = {};
+    var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map();
     var list = key === 'accounts' ? r.customerGrowth.accounts : r[key];
     if (!Array.isArray(list)) return;
     if (!list.length) warn(rctx, name, say('expect.items'), say('found.emptyList'), true);
@@ -222,6 +217,7 @@
   function checkNewBusinessRow(o, c, env, tiers) {
     if (isObj(o.channelSplit)) {
       var sctx = sub(c, 'channelSplit'), sum = 0, any = false;
+      CHANNELS.forEach(function (k) { if (!has(o.channelSplit, k)) err(sctx, k, expectFor('num', true, env), undefined); });
       Object.keys(o.channelSplit).forEach(function (k) {
         var v = o.channelSplit[k];
         if (!has(env.channels, k)) err(sctx, k, say('expect.channelKey'), k, true);
@@ -231,17 +227,20 @@
       if (any && Math.abs(sum - 1) > 0.01) warn(c, 'channelSplit', say('expect.splitSum'), Math.round(sum * 1000) / 10 + '%', true);
     }
     if (isObj(o.growth)) fields(o.growth, SPEC.growth, sub(c, 'growth'), env);
+    if (!tiers) return arrFormula(o, c);
     if (has(tiers, o.industryId) || !has(env.industries, o.industryId)) {
       var mc = tiers[o.industryId];
       if ((o.tier === 1 || o.tier === 2) && TYPES.tier.ok(mc) && o.tier !== mc) err(c, 'tier', say('expect.mcTier', { tier: mc }), o.tier);
     } else {
       err(c, 'industryId', say('expect.mcRow'), o.industryId);
     }
-    var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null;
-    if ([o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum)) {
-      var want = o.targetAccounts * o.hitRate * o.avgDealSize;
-      if (Math.abs(a - want) > Math.max(0.5, Math.abs(want) * 0.005)) warn(c, 'arrPotential[0]', say('expect.arrFormula', { value: round2(want) }), a);
-    }
+    arrFormula(o, c);
+  }
+
+  function arrFormula(o, c) {
+    var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null, want = o.targetAccounts * o.hitRate * o.avgDealSize;
+    if (![o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum) || Math.abs(a - want) <= Math.max(0.5, Math.abs(want) * 0.005)) return;
+    warn(c, 'arrPotential[0]', say('expect.arrFormula', { value: round2(want) }), a);
   }
 
   // The template's segment rule (Planning Template Structure, section 3), or null if it can't be decided.
@@ -263,7 +262,7 @@
     var nctx = sub(rctx, 'source.notes');
     if (isObj(r.source)) fields(r.source, SPEC.source, sub(rctx, 'source'), env);
     if (isObj(r.source)) each(r.source.notes, nctx, env, function (n, k) { fields(n, SPEC.note, sub(nctx, k), env); });
-    var tiers = {};
+    var tiers = Array.isArray(r.marketCoverage) ? map() : null;
     checkSection(r, 'marketCoverage', rctx, env, function (o, c) { checkMarketRow(o, c, env, tiers); });
     checkSection(r, 'newBusiness', rctx, env, function (o, c) { checkNewBusinessRow(o, c, env, tiers); });
     checkSection(r, 'partners', rctx, env);
@@ -281,8 +280,8 @@
 
   function run(plan) {
     var out = { errors: [], warnings: [], dropped: 0 };
-    var env = { industries: {}, productLines: {}, channels: {}, years: [] };
-    var top = rootCtx(out), ids = {};
+    var env = { industries: map(), productLines: map(), channels: map(), years: [] };
+    var top = rootCtx(out), ids = map();
     if (!isObj(plan)) err(top, '(whole file)', say('expect.object'), plan);
     else {
       checkMeta(plan.meta, out, env);
