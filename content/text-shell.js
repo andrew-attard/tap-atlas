@@ -10,6 +10,8 @@
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
+  menu: { label: 'Views' },
+
   banner: {
     sample: 'Sample data: all figures are fictional',
     internal: 'Internal: contains regional plan data, do not forward'
