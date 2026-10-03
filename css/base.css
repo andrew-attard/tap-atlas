@@ -1,7 +1,7 @@
 /*
  * File: css/base.css
  * Purpose: Fonts, page reset, typography and the small shared building blocks (buttons, fields, tables, labels)
- *          in the Modernist style. Area styles live in shell.css, layers.css, panel.css and views.css.
+ *          in the Modernist style. Each stream styles its own area in its own stylesheet (see docs/ARCHITECTURE.md).
  * Provides: base element styles and shared classes: .tap-btn, .tap-iconbtn, .tap-field, .tap-table, .tap-kind,
  *           .tap-np, .tap-badge, .tap-muted, .tap-sr, .tap-stub
  * Depends on: the CSS variables (--tap-*) written by js/theme.js; vendor/fonts/archivo-*.woff2
