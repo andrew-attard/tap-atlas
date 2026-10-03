@@ -45,6 +45,12 @@ Object.assign(window.TAP_CONTENT.text, {
     industry: 'Industry',
     more: 'More',
 
+    // Expanded and full-screen chart (US-1.2.8)
+    expand: 'Expand',
+    fullscreen: 'Full screen',
+    closeExpanded: 'Close · Esc',
+    chartOf: 'Chart {i} of {n} · ← → to step',
+
     // Compare one chart differently (US-1.1.4). The mode names come from compare.modes in text-shell.js.
     compareDifferently: 'Compare differently…',
     compareTitle: 'Compare this chart differently',

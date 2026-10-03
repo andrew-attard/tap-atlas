@@ -183,3 +183,32 @@
 .tap-tip-title { font-size: var(--tap-fs-label); font-weight: 800; margin-bottom: var(--tap-sp-1); }
 .tap-tip-row { display: flex; justify-content: space-between; gap: var(--tap-sp-4); font-size: var(--tap-fs-label); }
 .tap-tip-row b { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Expanded chart (US-1.2.8): the panel fills the window under a slim strip; text grows with the chart */
+html.tap-noscroll, html.tap-noscroll body { overflow: hidden; }
+.tap-panel--expanded {
+  position: fixed; inset: 0; z-index: 60; overflow: auto; border: 0;
+  padding: 0 clamp(var(--tap-gutter), 3vw, 48px) var(--tap-sp-6);
+}
+.tap-panel__expand-strip {
+  position: sticky; top: 0; z-index: 35; margin: 0 calc(-1 * clamp(var(--tap-gutter), 3vw, 48px));
+  background: var(--tap-ground); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-panel__expand-label {
+  display: flex; align-items: center; min-height: 36px; padding: 0 clamp(var(--tap-gutter), 3vw, 48px);
+  font-size: var(--tap-fs-body); font-weight: 800; color: var(--tap-on-colour); background: var(--tap-banner-sample);
+}
+.tap-panel__expand-label--internal { background: var(--tap-banner-internal); }
+.tap-panel__expand-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-6);
+  min-height: 52px; padding: 6px clamp(var(--tap-gutter), 3vw, 48px); font-size: var(--tap-fs-body); font-weight: 600;
+}
+.tap-panel__expand-sentence { flex: 1 1 360px; font-size: var(--tap-fs-lead); font-weight: 800; }
+.tap-panel--expanded .tap-panel__head, .tap-panel--expanded .tap-panel__controls, .tap-panel--expanded .tap-panel__strip,
+.tap-panel--expanded .tap-panel__body, .tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes,
+.tap-panel--expanded .tap-panel__source { padding-left: 0; padding-right: 0; }
+.tap-panel--expanded .tap-panel__title { font-size: var(--tap-fs-h1); }
+.tap-panel--expanded .tap-panel__takeaway { font-size: var(--tap-fs-h3); }
+.tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes { font-size: var(--tap-fs-lead); }
+.tap-panel--expanded .tap-panel__chart { height: max(340px, calc(100vh - 340px)); }
+.tap-panel--expanded .tap-panel__tablewrap { max-height: max(340px, calc(100vh - 380px)); }
