@@ -18,7 +18,7 @@
     return out;
   }
 
-  // The wording people read: report titles, explanations and labels, view titles, all on-screen text,
+  // The wording people read: report titles, explanations and labels, view titles, all on-screen text, the guide,
   // and the insight rule templates (none until the insight rules land in Wave 2; they are scanned already).
   function shippedText() {
     var out = [], reports = window.TAP_REPORTS || {}, views = window.TAP_VIEWS || {};
@@ -30,6 +30,7 @@
     });
     (views.order || []).forEach(function (v) { if (views[v]) out.push({ path: 'view ' + v, text: views[v].title }); });
     strings((window.TAP_CONTENT || {}).text, 'text', out);
+    strings((window.TAP_CONTENT || {}).guide, 'guide', out);
     ((window.TAP_RULES || {}).rules || []).forEach(function (r) {
       out.push({ path: 'rule ' + r.id + '.template', text: r.template || '' });
       out.push({ path: 'rule ' + r.id + '.description', text: r.description || '' });
@@ -272,6 +273,60 @@
         a.ok(entry && entry.classList.contains('is-target'), 'target entry picked out');
         a.ok(entry.textContent.indexOf(TAP.content.text('glossary.orgBadge')) >= 0, 'organization badge');
       });
+    });
+  });
+  var HOW_TO = ['menu', 'compare', 'panels', 'chartTypes', 'table', 'sources', 'insights'];
+  var PLANNING = ['what', 'operational', 'template', 'marketCoverage', 'newBusiness', 'customerGrowth', 'partners',
+    'tiers', 'ratings', 'scores', 'segments', 'channels', 'dataKinds'];
+  var TEMPLATE_SECTIONS = ['marketCoverage', 'newBusiness', 'customerGrowth', 'partners'];
+
+  function ids(list) { return (list || []).map(function (x) { return x.id; }); }
+  function sentences(p) { return p.split(/[.!?]+(?=\s|$)/).filter(function (x) { return x.trim(); }).length; }
+
+  T.suite('guide', function () {
+    T.test('X-content-guide-contents', 'The Guide has a contents list of its three sections', function (a) {
+      var g = TAP.content.guide();
+      a.deepEqual(ids(g.contents), ['howTo', 'planning', 'glossary']);
+      (g.contents || []).forEach(function (c) { a.ok(c.title && c.title.length > 3, c.id + ' has a title'); });
+    });
+
+    T.test('X-content-guide-howto', 'How to use this app covers the menu, comparison bar, panels, chart types, table, sources and insights', function (a) {
+      var h = TAP.content.guide().howTo || {};
+      a.ok(h.title && h.intro, 'title and intro');
+      var have = ids(h.sections);
+      a.deepEqual(HOW_TO.filter(function (id) { return have.indexOf(id) < 0; }), [], 'topics missing');
+    });
+
+    T.test('X-content-guide-planning', 'Planning explained covers every topic the story lists', function (a) {
+      var p = TAP.content.guide().planning || {};
+      a.ok(p.title, 'title');
+      var have = ids(p.sections);
+      a.deepEqual(PLANNING.filter(function (id) { return have.indexOf(id) < 0; }), [], 'topics missing');
+    });
+
+    T.test('X-content-guide-links', 'Every template section links to a view that exists; links are null or {view}', function (a) {
+      var p = TAP.content.guide().planning || {}, order = (window.TAP_VIEWS || {}).order || [];
+      (p.sections || []).forEach(function (s) {
+        a.ok(s.link === null || (s.link && order.indexOf(s.link.view) >= 0), s.id + ': link is null or an existing view');
+        if (TEMPLATE_SECTIONS.indexOf(s.id) >= 0) a.ok(s.link && s.link.view, s.id + ' links to its view');
+      });
+      a.ok((p.sections || []).length > 0, 'sections found');
+    });
+
+    T.test('X-content-guide-style', 'Guide paragraphs are short: one to three sentences, no em dashes', function (a) {
+      var g = TAP.content.guide(), n = 0;
+      [g.howTo, g.planning].forEach(function (part) {
+        ((part || {}).sections || []).forEach(function (s) {
+          a.ok(s.title && Array.isArray(s.paragraphs) && s.paragraphs.length > 0, s.id + ' has a title and paragraphs');
+          (s.paragraphs || []).forEach(function (p, i) {
+            n++;
+            var k = sentences(p);
+            a.ok(k >= 1 && k <= 3, s.id + ' paragraph ' + (i + 1) + ' has ' + k + ' sentences');
+            a.ok(p.indexOf('—') < 0, s.id + ' paragraph ' + (i + 1) + ' has no em dash');
+          });
+        });
+      });
+      a.ok(n > 20, 'paragraphs found (' + n + ')');
     });
   });
 })(window.TAP);
