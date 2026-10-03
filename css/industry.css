@@ -8,11 +8,17 @@
  */
 
 /* ---------- tier grid (US-1.5.4). Height follows the rows; it is never fixed. ---------- */
-.tap-tg { display: flex; flex-direction: column; gap: var(--tap-sp-1); overflow-x: auto; padding: var(--tap-sp-1); }
+.tap-tg { display: flex; flex-direction: column; gap: var(--tap-sp-1); overflow-x: auto; padding: var(--tap-sp-1); container-type: inline-size;
+  --tap-tg-name: 11rem; --tap-tg-cell: 4.75rem; --tap-tg-agree: 8.5rem; }
 .tap-tg__row {
   display: grid; gap: var(--tap-sp-1); align-items: stretch; min-height: 2.75rem;
-  grid-template-columns: minmax(11rem, 1.4fr) repeat(var(--tap-tg-cols), minmax(4.75rem, 1fr)) minmax(8.5rem, 0.9fr);
-  min-width: calc(11rem + var(--tap-tg-cols) * 4.75rem + 8.5rem + var(--tap-tg-cols) * var(--tap-sp-1));
+  grid-template-columns: minmax(var(--tap-tg-name), 1.4fr) repeat(var(--tap-tg-cols), minmax(var(--tap-tg-cell), 1fr)) minmax(var(--tap-tg-agree), 0.9fr);
+  min-width: calc(var(--tap-tg-name) + var(--tap-tg-cols) * (var(--tap-tg-cell) + var(--tap-sp-1)) + var(--tap-tg-agree));
+}
+/* Narrow panels (small laptops at high zoom): cells show the tier number only; the legend names the tiers */
+@container (max-width: 52rem) {
+  .tap-tg__row { --tap-tg-name: 8.5rem; --tap-tg-cell: 2.75rem; --tap-tg-agree: 6rem; }
+  .tap-tg__word { display: none; }
 }
 .tap-tg__row--head { align-items: end; min-height: 0; padding-bottom: var(--tap-sp-2); border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
 .tap-tg__corner, .tap-tg__agree-head { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); line-height: 1.25; }
@@ -37,14 +43,14 @@
 .tap-tg__row.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; }
 
 .tap-tg__cell {
-  display: flex; align-items: center; gap: var(--tap-sp-1); padding: 0 var(--tap-sp-2);
+  display: flex; white-space: nowrap; align-items: center; gap: var(--tap-sp-1); padding: 0 var(--tap-sp-2);
   font: inherit; font-size: var(--tap-fs-body); font-weight: 700; text-align: left;
   border: var(--tap-rule-w) solid transparent; cursor: pointer; position: relative;
 }
 .tap-tg__cell--t1 { background: var(--tap-tier1); color: var(--tap-tier1-fg); border-color: var(--tap-tier1); }
 .tap-tg__cell--t2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); border-color: var(--tap-tier2); }
 .tap-tg__cell--t3 { background: var(--tap-tier3); color: var(--tap-tier3-fg); border-color: var(--tap-tier3); }
-.tap-tg__cell--np { background: transparent; color: var(--tap-np-fg); border: var(--tap-rule-w) dashed var(--tap-np-border); font-size: var(--tap-fs-chartMin); font-weight: 600; font-style: italic; }
+.tap-tg__cell--np { white-space: normal; line-height: 1.15; background: transparent; color: var(--tap-np-fg); border: var(--tap-rule-w) dashed var(--tap-np-border); font-size: var(--tap-fs-chartMin); font-weight: 600; font-style: italic; }
 .tap-tg__cell.is-muted { opacity: 0.6; }
 .tap-tg__cell.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; z-index: 2; opacity: 1; }
 .tap-tg__cell:hover { outline: var(--tap-focus-w) solid var(--tap-ink); outline-offset: 1px; }
