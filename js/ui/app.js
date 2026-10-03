@@ -84,6 +84,7 @@
     }
 
     try { TAP.showme.bind(); } catch (e) { /* "Show me" not available: insights still list, without jumping */ }
+    try { TAP.keys.bind(); } catch (e) { /* shortcuts are a convenience; never block start-up */ }
     mounted = null;   // the shell was just drawn, so the view goes into the new view area
     unsubscribe = TAP.store.on(onState);
     if (!hashBound) {
@@ -115,6 +116,7 @@
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     try { TAP.tour.stop(); } catch (e) { /* no tour running */ }
     try { TAP.showme.unbind(); } catch (e) { /* not bound */ }
+    try { TAP.keys.unbind(); } catch (e) { /* not bound */ }
     if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
     mounted = null;
   }
