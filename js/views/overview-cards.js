@@ -2,7 +2,7 @@
  * File: js/views/overview-cards.js
  * Purpose: One card per region (or combined figure) summarising its plan in four lines (US-1.5.1), and the
  *          clickable figure that shows where a value comes from, shared with the headline.
- * Provides: TAP.overviewCards (render, layout, columns, figure, openSource)
+ * Provides: TAP.overviewCards (render, layout, columns, figure, openSource, sourceRow)
  * Depends on: js/engine/measures.js, js/engine/scope.js, js/engine/aggregate.js (describe), js/core/format.js,
  *             js/core/sources.js, js/ui/layers.js, js/core/store.js, content/text-overview.js
  * Used by: js/views/overview.js
@@ -69,8 +69,8 @@
   // spec: {measure, cell, unit, label, text?, rows?}; rows are the lines the panel lists (default: this figure).
   function figure(spec, cls) {
     var c = spec.cell || {}, a = address(c);
-    var title = t(a && a.text ? 'cards.figureTitle' : 'cards.figureTitleCalc', { label: spec.label,
-      value: spec.text != null ? spec.text : fmt(c, spec.unit, true), kind: kindText(c), where: a ? a.text : '' });
+    var title = t('cards.figureTitle', { label: spec.label, value: fmt(c, spec.unit, true), kind: kindText(c),
+      where: a ? a.text : '' });
     return el('button', {
       type: 'button', class: 'tap-ov-fig' + (c.state === 'notProvided' ? ' is-np' : '') + (cls ? ' ' + cls : ''),
       'data-measure': spec.measure || null, 'data-state': c.state || null, 'data-v': c.state === 'value' ? String(c.v) : '',
@@ -185,5 +185,6 @@
     return host;
   }
 
-  TAP.overviewCards = { render: render, layout: layout, columns: columns, figure: figure, openSource: openSource };
+  TAP.overviewCards = { render: render, layout: layout, columns: columns, figure: figure, openSource: openSource,
+    sourceRow: sourceRow };
 })(window.TAP);

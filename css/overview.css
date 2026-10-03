@@ -79,9 +79,14 @@
 /* ---------- headline and top insights (US-1.5.3) ---------- */
 
 .tap-ov__headline { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 75rem; }
-.tap-ov__sentence { margin: 0; font-size: var(--tap-fs-h3); line-height: 1.4; font-weight: 600; }
-/* Figures carry a solid underline, so they read apart from the dotted glossary terms beside them. */
-.tap-ov__sentence .tap-ov-fig { font-size: inherit; text-align: left; text-decoration: underline solid currentColor; text-decoration-thickness: 2px; }
+.tap-ov__lead { font-size: var(--tap-fs-h3); line-height: 1.4; }
+/* Inline, so the Sources button sits at the end of the sentence. Figures are plain bold; only glossary terms are dotted. */
+.tap-ov__sentence { display: inline; margin: 0; font-weight: 600; }
+.tap-ov__num { font-weight: 800; font-variant-numeric: tabular-nums; }
+.tap-ov__sources {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-1); margin-left: var(--tap-sp-2); padding: 0 var(--tap-sp-2);
+  vertical-align: baseline; font-size: var(--tap-fs-label); font-weight: 700; color: var(--tap-muted);
+}
 .tap-ov__all-insights { font-size: var(--tap-fs-body); font-weight: 700; color: var(--tap-accent-deep); }
 
 .tap-ov-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--tap-sp-4) var(--tap-sp-6); }
