@@ -722,10 +722,14 @@
           a.ok(document.querySelector('.tap-tour__hole'), 'the menu is spotlit');
           a.equal(document.activeElement && document.activeElement.className.indexOf('tap-tour__next') >= 0, true, 'focus is on Next');
         });
-        TAP.tour.start();
-        press('ArrowRight');
-        a.ok(callout(), 'with no shell drawn the step still shows');
-        a.ok(!document.querySelector('.tap-tour__hole'), 'without a spotlight');
+        var menus = qsa('[data-tour="menu"]');
+        menus.forEach(function (m) { m.style.display = 'none'; });
+        try {
+          TAP.tour.start();
+          press('ArrowRight');
+          a.ok(callout(), 'with the menu not on screen the step still shows');
+          a.ok(!document.querySelector('.tap-tour__hole'), 'without a spotlight');
+        } finally { menus.forEach(function (m) { m.style.display = ''; }); }
       });
     });
 
