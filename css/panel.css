@@ -76,6 +76,23 @@
 .tap-panel__insight-actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
 .tap-panel__insight-actions .tap-btn { font-size: var(--tap-fs-body); }
 
+/* Custom comparison: the badge under the title, and the editor row under the header */
+.tap-panel__custom { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) 10px; font-size: var(--tap-fs-body); }
+.tap-panel__custom .tap-badge { font-weight: 800; border-width: var(--tap-rule-w); }
+.tap-panel__reset { min-height: 32px; font-size: var(--tap-fs-body); color: var(--tap-accent-deep); }
+.tap-panel__custom-editor {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-4);
+  padding: var(--tap-sp-3) var(--tap-sp-6); background: var(--tap-surface); border-top: var(--tap-rule-w) solid var(--tap-ink);
+  font-size: var(--tap-fs-body);
+}
+.tap-panel__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tap-panel__chip {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-2); padding: 6px var(--tap-sp-3);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
+  background: var(--tap-ground); border: var(--tap-control-w) solid var(--tap-ink); cursor: pointer;
+}
+.tap-panel__chip[aria-pressed="true"] { border-width: var(--tap-rule-w); font-weight: 800; }
+
 /* Controls row: industry picker and the options a builder offers */
 .tap-panel__controls {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) 28px;

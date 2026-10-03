@@ -1,9 +1,10 @@
 /*
  * File: js/panel/panel-menus.js
- * Purpose: Draws a panel's controls: the toolbar (insights, explanation, chart type) with its popovers, and the
- *          controls row (industry picker, measure, bubble size and the options a builder offers).
- * Provides: TAP.panelMenus (render, tools, types, spec, button, pop, seg, select)
- * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/engine/shapes.js,
+ * Purpose: Draws a panel's controls: the toolbar (insights, explanation, chart type, table, more) with its popovers,
+ *          the "compare differently" editor and badge, and the controls row (industry picker, measure, bubble size
+ *          and the options a builder offers).
+ * Provides: TAP.panelMenus (render, tools, types, spec, compareEditor, customBadge, button, pop, seg, select)
+ * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/engine/shapes.js, js/engine/scope.js,
  *             js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js, js/ui/explain.js,
  *             js/panel/panel-insights.js (all read at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (state p.st; p.set, p.toggle, p.setType)
@@ -93,7 +94,82 @@
     return box;
   }
 
+  /* ---------- compare this chart differently (US-1.1.4) ---------- */
+
+  var MODES = ['all', 'one', 'pair', 'set', 'org'];
+  function regionIds() { return TAP.data.regions().map(function (r) { return r.id; }); }
+
+  // Fills in what a mode needs, from the regions in file order (never a fixed name), as the comparison bar does.
+  function fill(c, patch) {
+    var ids = regionIds(), n = Object.assign({}, c, patch);
+    if (ids.indexOf(n.focus) < 0) n.focus = ids[0] || null;
+    if (n.mode === 'pair' && (ids.indexOf(n.second) < 0 || n.second === n.focus)) n.second = ids.filter(function (x) { return x !== n.focus; })[0] || null;
+    if (n.mode === 'set') {
+      var set = ids.filter(function (id) { return (n.set || []).indexOf(id) >= 0; });
+      n.set = set.length >= 2 ? set : ids.filter(function (id) { return id === n.focus; }).concat(ids.filter(function (id) { return id !== n.focus; })).slice(0, 2);
+    }
+    return n;
+  }
+
+  function regionOpts() { return TAP.data.regions().map(function (r) { return { value: r.id, label: TAP.content.regionName(r) }; }); }
+
+  // The editor row under the header: mode, then only the pickers that mode needs.
+  function compareEditor(p) {
+    var c = p.st.custom || fill(TAP.store.get().cmp, {});
+    var setCustom = function (patch) { p.set({ custom: fill(c, patch) }); };
+    var row = el('div', { class: 'tap-panel__custom-editor' }, [
+      el('span', { class: 'tap-panel__control-label' }, t('compareTitle')),
+      select('cmp-mode', t('compareMode'), c.mode, MODES.map(function (m) { return { value: m, label: TAP.content.text('compare.modes.' + m) }; }),
+        function (m) { setCustom({ mode: m }); })
+    ]);
+    if (c.mode === 'one' || c.mode === 'pair') row.appendChild(select('cmp-focus', t('compareFocus'), c.focus, regionOpts(), function (v) { setCustom({ focus: v }); }));
+    if (c.mode === 'pair') {
+      row.appendChild(el('span', null, TAP.content.text('compare.second')));
+      row.appendChild(select('cmp-second', t('compareSecond'), c.second, regionOpts().filter(function (o) { return o.value !== c.focus; }),
+        function (v) { setCustom({ second: v }); }));
+    }
+    if (c.mode === 'set') {
+      var chips = el('div', { class: 'tap-panel__chips', role: 'group', 'aria-label': TAP.content.text('compare.setLabel'), 'data-control': 'cmp-set' });
+      TAP.data.regions().forEach(function (r) {
+        var on = c.set.indexOf(r.id) >= 0;
+        chips.appendChild(el('button', { type: 'button', class: 'tap-panel__chip', 'data-value': r.id, 'aria-pressed': String(on), onclick: function () {
+          var set = c.set.filter(function (x) { return x !== r.id; });
+          if (!on) set.push(r.id);
+          if (set.length >= 2) setCustom({ set: set });   // a set needs at least two regions
+        } }, [el('span', { class: 'tap-swatch', style: 'background:' + TAP.scope.colorOf(r.id), 'aria-hidden': 'true' }),
+          TAP.content.regionName(r), el('span', { class: 'tap-panel__tick', 'aria-hidden': 'true' }, on ? '✓' : '')]));
+      });
+      row.appendChild(chips);
+    }
+    row.appendChild(el('button', { type: 'button', class: 'tap-btn tap-panel__tool', 'data-action': 'custom-done',
+      onclick: function () { p.set({ editing: false }); } }, t('done')));
+    return row;
+  }
+
+  // The badge says this chart differs from the page, in words, with a one-click way back.
+  function customBadge(p, c) {
+    return el('div', { class: 'tap-panel__custom' }, [
+      el('span', { class: 'tap-badge tap-badge--accent' }, t('custom')),
+      el('span', { class: 'tap-panel__custom-text' }, TAP.scope.sentence(c)),
+      el('button', { type: 'button', class: 'tap-btn tap-btn--ghost tap-panel__reset', 'data-action': 'custom-reset',
+        onclick: function () { p.set({ custom: null, editing: false }); } }, [TAP.icons.svg('reset', { size: 16 }), t('customReset')])
+    ]);
+  }
+
   /* ---------- the toolbar ---------- */
+
+  // The "More" menu: actions used less often.
+  function moreMenu(p) {
+    var box = pop(t('more'), 'menu');
+    function item(action, icon, label, fn) {
+      box.appendChild(el('button', { type: 'button', class: 'tap-panel__item', role: 'menuitem', 'data-action': action,
+        onclick: fn }, [TAP.icons.svg(icon, { size: 18 }), el('span', { class: 'tap-panel__item-label' }, label)]));
+    }
+    item('compare', 'compare', t('compareDifferently'), function () {
+      p.set({ pop: null, editing: true });
+    });
+    return box;
+  }
 
   function explain(def) {
     if (TAP.explain && !TAP.explain.__stub) { TAP.explain.open(def.id); return; }
@@ -121,6 +197,10 @@
       box.appendChild(button('table', 'table', t('table'), { pressed: !!p.st.table,
         onclick: function () { p.set({ table: !p.st.table, pop: null }); } }));
     }
+    if (b.types) {
+      box.appendChild(button('more', null, t('more'), { expanded: open === 'more', menu: true, onclick: function () { p.toggle('more'); } }));
+    }
+    if (open === 'more' && b.types) box.appendChild(moreMenu(p));
     if (open === 'ins' && info.count) {
       var list = pop(t('insightsTitle'));
       TAP.panelInsights.render(list, info, TAP.panelInsights.handlers(p));
@@ -172,5 +252,6 @@
     return items.length ? el('div', { class: 'tap-panel__controls' }, items) : null;
   }
 
-  TAP.panelMenus = { render: render, tools: tools, types: types, spec: spec, button: button, pop: pop, seg: seg, select: select };
+  TAP.panelMenus = { render: render, tools: tools, types: types, spec: spec, compareEditor: compareEditor, customBadge: customBadge,
+    button: button, pop: pop, seg: seg, select: select };
 })(window.TAP);

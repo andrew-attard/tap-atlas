@@ -43,6 +43,17 @@ Object.assign(window.TAP_CONTENT.text, {
     measure: 'Measure',
     size: 'Bubble size',
     industry: 'Industry',
+    more: 'More',
+
+    // Compare one chart differently (US-1.1.4). The mode names come from compare.modes in text-shell.js.
+    compareDifferently: 'Compare differently…',
+    compareTitle: 'Compare this chart differently',
+    compareMode: 'Comparison mode for this chart',
+    compareFocus: 'Focus region for this chart',
+    compareSecond: 'Second region for this chart',
+    done: 'Done',
+    custom: 'Custom comparison',
+    customReset: 'Reset to page comparison',
 
     // Table view (US-1.2.4)
     table: 'Table',
