@@ -448,4 +448,232 @@
       });
     });
   });
+
+  /* ---------- US-1.1.5: know where every figure comes from, the panel side (#6) ---------- */
+  function layer() { return qs('.tap-layer', document); }
+  function layerCount() { return qsa('.tap-layer', document).length; }
+  function keyEsc(target) {
+    var e = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    (target || document.body).dispatchEvent(e);
+    return e;
+  }
+  function openSourcesByClick(root) { qs('.tap-cmp__date', root).click(); return layer(); }
+  // Swaps one TAP module for a stand-in during fn, whatever the real one is.
+  function swap(name, fake, fn) {
+    var saved = TAP[name];
+    TAP[name] = fake;
+    try { return fn(); } finally { TAP[name] = saved; }
+  }
+
+  T.suite('layers', function () {
+    T.test('X-layers-open-close', 'Side panels open, report the top one, and close', function (a) {
+      run(function () {
+        startApp();
+        a.equal(TAP.layers.top(), null, 'nothing open at first');
+        TAP.layers.open('sources');
+        a.equal(TAP.layers.top(), 'sources');
+        a.equal(layerCount(), 1, 'one side panel');
+        a.equal(TAP.store.get().layer.name, 'sources', 'state.layer follows');
+        TAP.layers.close();
+        a.equal(TAP.layers.top(), null);
+        a.equal(layerCount(), 0, 'removed');
+        a.equal(TAP.store.get().layer, null, 'state.layer cleared');
+      });
+    });
+
+    T.test('X-layers-replace', 'Opening another side panel replaces the one that is open', function (a) {
+      run(function () {
+        startApp();
+        TAP.layers.open('sources');
+        TAP.layers.open('note', { title: 'A note', render: function (el) { el.appendChild(TAP.dom.el('p', null, 'Body text')); } });
+        a.equal(layerCount(), 1, 'still one side panel');
+        a.equal(TAP.layers.top(), 'note');
+        a.equal(txt(qs('.tap-layer__title', layer())), 'A note', 'title from the payload');
+        a.ok(txt(layer()).indexOf('Body text') >= 0, 'body drawn by payload.render');
+      });
+    });
+
+    T.test('X-layers-esc', 'Esc closes the open side panel, unless something nearer already used it', function (a) {
+      run(function () {
+        startApp();
+        TAP.layers.open('sources');
+        var pre = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+        pre.preventDefault();
+        document.body.dispatchEvent(pre);
+        a.equal(TAP.layers.top(), 'sources', 'an Esc already handled by a popover is left alone');
+        keyEsc();
+        a.equal(TAP.layers.top(), null, 'Esc closes it');
+        a.equal(layerCount(), 0);
+      });
+    });
+
+    T.test('X-layers-esc-order', 'Esc closes the comparison explanation first, then the side panel', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.store.set({ cmp: { mode: 'org' } });
+        TAP.layers.open('sources');
+        qs('.tap-cmp__explain', root).click();
+        keyEsc();
+        a.ok(qs('.tap-cmp__pop', root).hidden, 'first Esc: explanation closed');
+        a.equal(TAP.layers.top(), 'sources', 'first Esc: side panel still open');
+        keyEsc();
+        a.equal(TAP.layers.top(), null, 'second Esc: side panel closed');
+      });
+    });
+
+    T.test('X-layers-non-blocking', 'A side panel leaves the page usable: no backdrop, the menu still works', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.layers.open('sources');
+        a.equal(qsa('.tap-backdrop, .dialog-backdrop', document).length, 0, 'no backdrop');
+        a.equal(layer().getAttribute('aria-modal'), 'false', 'not modal');
+        qs('.tap-menu__item[data-view="industry"]', root).click();
+        a.equal(TAP.store.get().view, 'industry', 'the menu worked with the panel open');
+      });
+    });
+
+    T.test('X-layers-focus', 'Focus moves into the panel and back to what opened it', function (a) {
+      run(function () {
+        var root = startApp();
+        var btn = qs('.tap-cmp__date', root);
+        btn.focus();
+        btn.click();
+        a.ok(layer().contains(document.activeElement), 'focus is inside the panel');
+        qs('.tap-layer__close', layer()).click();
+        a.equal(TAP.layers.top(), null, 'the Close button closes it');
+        a.equal(document.activeElement, btn, 'focus back on the data date');
+      });
+    });
+
+    T.test('X-layers-reset', 'Resetting the state closes the side panel', function (a) {
+      run(function () {
+        startApp();
+        TAP.layers.open('sources');
+        TAP.store.reset();
+        a.equal(layerCount(), 0);
+        a.equal(TAP.layers.top(), null);
+      });
+    });
+
+    T.test('X-layers-details', 'Details draw the groups from TAP.details.build, each value with its source', function (a) {
+      run(function () {
+        startApp();
+        var cell = { v: 1250, state: 'value', kind: 'IN', src: { regionId: 'charlie', section: 'newBusiness', field: 'targetAccounts', row: 7, kind: 'IN' } };
+        var built = { title: 'Region C · Healthcare', groups: [{ title: 'New business', rows: [{ label: 'Target accounts', cell: cell, unit: 'count' }] }] };
+        swap('details', { build: function () { return built; } }, function () {
+          TAP.layers.openDetails({ reportId: 'ind-tiers', regionIds: ['charlie'] });
+          a.equal(TAP.layers.top(), 'details');
+          a.equal(txt(qs('.tap-layer__title', layer())), 'Region C · Healthcare', 'title');
+          a.equal(txt(qs('.tap-details__group h3', layer())), 'New business', 'group title');
+          var row = qs('.tap-details__row', layer());
+          a.ok(txt(row).indexOf('Target accounts') >= 0, 'label');
+          a.ok(txt(row).indexOf(TAP.format.cell(cell, { unit: 'count', exact: true })) >= 0, 'value, formatted');
+          a.ok(txt(row).indexOf(TAP.format.kind('IN').text) >= 0, 'kind of value, glyph and word');
+          a.ok(txt(row).indexOf(TAP.sources.address(cell.src).text) >= 0, 'file › sheet › cell');
+        });
+      });
+    });
+
+    T.test('X-layers-details-stub', 'While details are not built, the panel says so inside itself', function (a) {
+      run(function () {
+        startApp();
+        swap('details', { __stub: 21, build: function () { throw new Error(TAP.stub.message('TAP.details.build', 21)); } }, function () {
+          TAP.layers.openDetails({ reportId: 'ov-ambition' });
+          a.equal(TAP.layers.top(), 'details');
+          a.ok(/Not built yet \(#21\)/.test(txt(layer())), 'the not-built message is shown in the panel');
+        });
+      });
+    });
+
+    T.test('X-layers-details-bus', 'A details:open event opens the details panel', function (a) {
+      run(function () {
+        startApp();
+        swap('details', { build: function () { return { title: 'From the bus', groups: [] }; } }, function () {
+          TAP.bus.emit('details:open', { target: { reportId: 'ov-ambition' } });
+          a.equal(TAP.layers.top(), 'details');
+          a.equal(txt(qs('.tap-layer__title', layer())), 'From the bus');
+        });
+      });
+    });
+  });
+
+  T.suite('sources-panel', function () {
+    T.test('TPV-TC-019', 'Clicking the data date lists every region with file, file date, import date and notes', function (a) {
+      run(function () {
+        var root = startApp();
+        var panel = openSourcesByClick(root);
+        a.equal(TAP.layers.top(), 'sources', 'the data sources panel opened');
+        var blocks = qsa('.tap-src__region', panel);
+        var imports = TAP.sources.imports();
+        a.equal(blocks.length, imports.length, 'one block per region');
+        imports.forEach(function (imp, i) {
+          var b = txt(blocks[i]);
+          a.ok(b.indexOf(imp.name) >= 0, 'name: ' + imp.name);
+          a.ok(b.indexOf(imp.fileName) >= 0, 'full file name: ' + imp.fileName);
+          a.ok(b.indexOf(TAP.format.date(imp.fileModified)) >= 0, 'file saved date for ' + imp.name);
+          a.ok(b.indexOf(TAP.format.date(imp.importedAt)) >= 0, 'import date for ' + imp.name);
+        });
+        var c = txt(blocks[2]);
+        a.ok(c.indexOf('The Customer Growth section is empty.') >= 0, 'Region C’s import note');
+        a.ok(c.indexOf('Region C plan.xlsx › 3. Customer Growth › A10') >= 0, 'the note names file, sheet and cell');
+        a.ok(txt(blocks[0]).indexOf(TAP.content.text('sourcesPanel.noNotes')) >= 0, 'a region with no notes says so');
+        a.ok(txt(blocks[3]).indexOf('28 Sep 2026') >= 0 && txt(blocks[3]).indexOf('1 Oct 2026') >= 0, 'Region D: saved 28 Sep, imported 1 Oct');
+      });
+    });
+
+    T.test('TPV-TC-024', 'The panel says when regions were imported on different dates', function (a) {
+      run(function () {
+        var root = startApp();
+        var panel = openSourcesByClick(root);
+        a.equal(TAP.sources.datesDiffer(), true, 'Region D was imported on another day');
+        a.ok(txt(qs('.tap-src__differ', panel)) === TAP.content.text('sourcesPanel.datesDiffer'), 'stated in the panel');
+        TAP.layers.close();
+        var p = T_FIXTURE('mini');
+        p.regions.forEach(function (r) { r.source.importedAt = '2026-10-02T09:00:00Z'; });
+        root = startApp(p);
+        panel = openSourcesByClick(root);
+        a.equal(qsa('.tap-src__differ', panel).length, 0, 'not stated when the dates agree');
+      });
+    });
+
+    T.test('TPV-TC-025', 'Import notes appear only in the data sources panel', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.views.order().forEach(function (id) {
+          qs('.tap-menu__item[data-view="' + id + '"]', root).click();
+          a.ok(txt(root).indexOf('The Customer Growth section is empty.') < 0, 'not on the ' + id + ' screen');
+        });
+        a.ok(txt(openSourcesByClick(root)).indexOf('The Customer Growth section is empty.') >= 0, 'in the panel');
+      });
+    });
+
+    T.test('X-sources-notes', 'Other notes and skipped insight rules follow the regions', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.notes.add({ source: 'colours', message: 'Colours repeat after 8 regions.' });
+        TAP.notes.add({ source: 'data', message: 'Channel split adds up to 95%.', regionId: 'bravo', sheet: '2. New Business', cell: 'E12' });
+        var panel = openSourcesByClick(root);
+        var other = txt(qs('.tap-src__notes', panel));
+        a.ok(other.indexOf('Colours repeat after 8 regions.') >= 0, 'a general note');
+        a.ok(other.indexOf('Channel split adds up to 95%.') >= 0, 'a data note');
+        a.ok(other.indexOf('Region B plan.xlsx › 2. New Business › E12') >= 0, 'with its file, sheet and cell');
+        if (TAP.insights.__stub) a.equal(qsa('.tap-src__failures', panel).length, 0, 'skipped quietly while insights are not built');
+        TAP.layers.close();
+        swap('insights', { failures: function () { return [{ ruleId: 'consensus', message: 'Needs tier data.' }]; } }, function () {
+          var p = openSourcesByClick(root);
+          a.ok(txt(qs('.tap-src__failures', p)).indexOf('consensus') >= 0, 'rule named');
+          a.ok(txt(qs('.tap-src__failures', p)).indexOf('Needs tier data.') >= 0, 'reason given');
+        });
+      });
+    });
+
+    T.test('X-sources-summary', 'The panel opens with the data date and the number of import notes', function (a) {
+      run(function () {
+        var root = startApp();
+        var panel = openSourcesByClick(root);
+        a.equal(txt(qs('.tap-layer__title', panel)), TAP.content.text('sourcesPanel.title'));
+        a.equal(txt(qs('.tap-src__summary', panel)), TAP.content.text('sourcesPanel.summaryOne', { date: '2 Oct 2026' }));
+      });
+    });
+  });
 })(window.TAP);
