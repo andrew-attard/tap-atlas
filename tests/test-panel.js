@@ -934,5 +934,30 @@
       a.equal(qs('[data-control="measure"]', s.panel('ind-quad').el), null, 'the quadrant report: none');
       a.ok(qs('[data-control="measure"]', s.panel('ov-ambition').el), 'a parts report keeps it');
     }));
+    // QA-1: the takeaway follows the comparison, on the sample data with the real insight engine.
+    T.test('X-panel-takeaway-scope', 'The takeaway never names a region that is only inside the rest or the organization total', scene(function (a, s) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      TAP.insights.reset();
+      try {
+        var all = TAP.insights.ranked({ mode: 'all' }, { reportId: 'ov-ambition' });
+        a.ok(all.length > 0, 'the ambition chart has an insight in All regions');
+        var who = all[0].regionIds[0], name = TAP.content.regionName(TAP.data.region(who));
+        var other = TAP.data.regions().map(function (r) { return r.id; }).filter(function (id) { return all[0].regionIds.indexOf(id) < 0; })[0];
+        var p = s.panel('ov-ambition'), take = function () { return txt(qs('.tap-panel__takeaway', p.el)); };
+        a.ok(take().indexOf(name) >= 0, 'All regions: the insight leads');
+        TAP.store.set({ cmp: { mode: 'org' } });
+        a.equal(take().indexOf(name), -1, 'organization total: not named');
+        TAP.store.set({ cmp: { mode: 'one', focus: other, restAs: 'combined' } });
+        a.equal(take().indexOf(name), -1, 'one against the rest: not named when inside the rest');
+        TAP.store.set({ cmp: { mode: 'one', focus: who } });
+        a.ok(take().indexOf(name) >= 0, 'its own region in focus: it leads');
+        TAP.store.set({ cmp: { mode: 'one', focus: other, restAs: 'individual' } });
+        a.ok(take().indexOf(name) >= 0, 'the rest drawn one by one: it may lead');
+        a.match(txt(qs('[data-action="insights"]', p.el)), /\d/, 'the list still counts it');
+      } finally {
+        TAP.data.load(T_FIXTURE('mini'));
+        TAP.insights.reset();
+      }
+    }));
   });
 })(window.TAP);
