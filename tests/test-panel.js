@@ -53,7 +53,7 @@
   function insight(i, extra) {
     return Object.assign({ id: 'r' + i + ':k', ruleId: 'r' + i, family: 'priorities', sentence: 'Observation number ' + i + '.',
       figures: [{ label: 'Figure ' + i, cell: { v: 1200, state: 'value', kind: 'IN' } }], description: 'Rule text ' + i,
-      regionIds: ['alpha'], industryIds: [], accountIds: [], significance: 1 - i / 10, reportId: 'x-fake', highlight: 'bar',
+      regionIds: ['alpha'], industryIds: [], accountIds: [], significance: 1 - i / 10, reportId: 'x-fake', highlight: { reportId: 'x-fake', mark: 'bar' },
       label: 'Observation to discuss' }, extra || {});
   }
 
@@ -170,11 +170,11 @@
 
     T.test('TPV-TC-054', 'Selecting an insight highlights its data on the chart', scene(function (a, s) {
       s.report(fakeDef());
-      TAP.insights = fakeInsights([insight(1, { regionIds: ['bravo'], highlight: 'bar' })]);
+      TAP.insights = fakeInsights([insight(1, { regionIds: ['bravo'], highlight: { reportId: 'x-fake', regionIds: ['bravo'], mark: 'bar' } })]);
       var p = s.panel('x-fake');
       click(qs('[data-action="insights"]', p.el));
       click(qs('[data-action="select-insight"]', p.el));
-      a.deepEqual(last().highlight, { reportId: 'x-fake', regionIds: ['bravo'], industryIds: [], accountIds: [], mark: 'bar' });
+      a.deepEqual(last().highlight, { reportId: 'x-fake', regionIds: ['bravo'], industryIds: [], accountIds: [], mark: 'bar', quadrant: null });
       a.match(txt(qs('.tap-panel__strip', p.el)), /Observation number 1/, 'the strip names the insight');
       p.highlight(null);
       a.equal(last().highlight, null, 'cleared');
