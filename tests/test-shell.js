@@ -351,4 +351,101 @@
       });
     });
   });
+
+  /* ---------- US-1.1.8: data status label (#9) ---------- */
+  function realPlan() { var p = T_FIXTURE('mini'); p.meta.isSample = false; return p; }
+  // Runs fn with an organization layer in place, then puts the old one back.
+  function withOrg(org, fn) {
+    var saved = window.TAP_ORG;
+    window.TAP_ORG = org;
+    try { return fn(); } finally { window.TAP_ORG = saved; }
+  }
+  function banners() { return qsa('.tap-banner', document); }
+  function everyView(root, check) {
+    TAP.views.order().forEach(function (id) {
+      qs('.tap-menu__item[data-view="' + id + '"]', root).click();
+      check(id);
+    });
+  }
+
+  T.suite('banners', function () {
+    T.test('TPV-TC-037', 'Sample data shows the sample banner on every view, once, with no way to dismiss it', function (a) {
+      run(function () {
+        var root = startApp();
+        everyView(root, function (id) {
+          a.equal(banners().length, 1, 'one banner on the page on ' + id);
+          a.ok(root.contains(banners()[0]), 'inside the app');
+        });
+        var b = banners()[0];
+        a.ok(b.classList.contains('tap-banner--sample'), 'the sample style');
+        a.equal(txt(b), 'Sample data: all figures are fictional');
+        a.equal(qsa('button, a, [role="button"]', b).length, 0, 'nothing to click away');
+        a.ok(qs('.tap-stack', root).contains(b), 'at the top, with the menu');
+      });
+    });
+
+    T.test('TPV-TC-037', 'Drawing the shell again never repeats the banner', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.shell.mount(root, { warnings: [] });
+        TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+        a.equal(banners().length, 1);
+      });
+    });
+
+    T.test('TPV-TC-038', 'Real data shows the internal label with the organization’s wording', function (a) {
+      withOrg({ settings: { internalLabel: { show: true, text: 'Restricted: example wording' } } }, function () {
+        run(function () {
+          var root = startApp(realPlan());
+          everyView(root, function (id) { a.equal(banners().length, 1, 'one label on ' + id); });
+          var b = banners()[0];
+          a.ok(b.classList.contains('tap-banner--internal'), 'the internal style');
+          a.equal(txt(b), 'Restricted: example wording');
+          a.equal(qsa('button, a, [role="button"]', b).length, 0, 'nothing to click away');
+        });
+      });
+    });
+
+    T.test('TPV-TC-038', 'Without organization wording the internal label uses the general text', function (a) {
+      withOrg(undefined, function () {
+        run(function () {
+          startApp(realPlan());
+          a.equal(banners().length, 1);
+          a.equal(txt(banners()[0]), TAP.content.text('banner.internal'));
+        });
+      });
+    });
+
+    T.test('TPV-TC-039', 'Real data with the internal label switched off shows no label', function (a) {
+      withOrg({ settings: { internalLabel: { show: false } } }, function () {
+        run(function () {
+          var root = startApp(realPlan());
+          everyView(root, function (id) { a.equal(banners().length, 0, 'no label on ' + id); });
+        });
+      });
+    });
+
+    T.test('X-banner-portfolio', 'The portfolio edition never shows the internal label: sample data wins', function (a) {
+      withOrg({ settings: { internalLabel: { show: true, text: 'Restricted: example wording' } } }, function () {
+        run(function () {
+          startApp();
+          a.equal(banners().length, 1);
+          a.ok(banners()[0].classList.contains('tap-banner--sample'), 'sample banner, not the internal one');
+        });
+      });
+    });
+
+    T.test('TPV-TC-040', 'The label text is available for saved images and copied tables', function (a) {
+      run(function () {
+        startApp();
+        a.deepEqual(TAP.shell.label(), { kind: 'sample', text: TAP.content.text('banner.sample') }, 'sample');
+        withOrg({ settings: { internalLabel: { show: false } } }, function () {
+          TAP.data.load(realPlan());
+          a.equal(TAP.shell.label(), null, 'none when switched off');
+        });
+        TAP.data.load(realPlan());
+        a.deepEqual(TAP.shell.label(), { kind: 'internal', text: TAP.content.text('banner.internal') }, 'internal');
+      });
+    });
+  });
 })(window.TAP);
