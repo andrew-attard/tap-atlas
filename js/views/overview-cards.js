@@ -69,8 +69,8 @@
   // spec: {measure, cell, unit, label, text?, rows?}; rows are the lines the panel lists (default: this figure).
   function figure(spec, cls) {
     var c = spec.cell || {}, a = address(c);
-    var title = t('cards.figureTitle', { label: spec.label, value: fmt(c, spec.unit, true), kind: kindText(c),
-      where: a ? a.text : '' });
+    var title = t(a && a.text ? 'cards.figureTitle' : 'cards.figureTitleCalc', { label: spec.label,
+      value: spec.text != null ? spec.text : fmt(c, spec.unit, true), kind: kindText(c), where: a ? a.text : '' });
     return el('button', {
       type: 'button', class: 'tap-ov-fig' + (c.state === 'notProvided' ? ' is-np' : '') + (cls ? ' ' + cls : ''),
       'data-measure': spec.measure || null, 'data-state': c.state || null, 'data-v': c.state === 'value' ? String(c.v) : '',
