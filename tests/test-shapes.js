@@ -166,6 +166,21 @@
       });
     });
 
+    T.test('TPV-TC-062', 'On the sample data, every table value equals the chart value, with no errors', function (a) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var R = TAP.data.regions().map(function (r) { return r.id; });
+      var ind = TAP.data.industries({ rated: true })[0].id;
+      [{ mode: 'all' }, { mode: 'one', focus: R[2] }, { mode: 'one', focus: R[0], restAs: 'individual' }, { mode: 'org' },
+        { mode: 'pair', focus: R[1], second: R[3] }].forEach(function (c) {
+        [['ov-ambition', 'stackedBar'], ['ov-ambition', 'stacked100'], ['ov-ambition', 'treemap'], ['ov-ambition', 'bubble'],
+          ['ind-ratings', 'dot'], ['ind-ratings', 'bar'], ['ind-ratings', 'radar']].forEach(function (p) {
+          var res = build(p[0], p[1], c, { industryId: ind });
+          a.equal(res.error, null, c.mode + ' ' + p.join(' ') + ' draws');
+          if (!res.empty && items(res).length) sameAsTable(a, res, 'sample ' + c.mode + ' ' + p.join(' '));
+        });
+      });
+    });
+
     T.test('TPV-TC-075', 'The reference report draws exactly the expected regions and combined figures in each mode', function (a) {
       function cats(c) { return build('ov-ambition', 'stackedBar', c).option.yAxis.data; }
       a.deepEqual(cats({ mode: 'all' }), ['Region A', 'Region B', 'Region C', 'Region D']);
