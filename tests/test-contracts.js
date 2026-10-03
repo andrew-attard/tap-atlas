@@ -15,6 +15,7 @@
     storage: ['available', 'get', 'set', 'remove', 'clear'],
     store: ['get', 'set', 'on', 'reset', 'defaults'],
     bus: ['on', 'off', 'emit', 'clear'],
+    notes: ['add', 'list', 'clear'],
     format: ['money', 'moneyExact', 'pct', 'num', 'rating', 'tier', 'cell', 'kind', 'date', 'list'],
     content: ['text', 'term', 'terms', 'guide', 'setting', 'orgError', 'mark'],
     sources: ['address', 'imports', 'datesDiffer', 'dataDate'],
