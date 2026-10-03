@@ -66,7 +66,26 @@
     QA.done();
   }
 
+  // Optional state to open before the checks, so screenshots can show it: ?act=expand|sources|glossary|details|tour|explain|type
+  function act(name) {
+    var first = document.querySelector('.tap-panel[data-report]');
+    var click = function (sel, root) { var n = (root || document).querySelector(sel); if (n) n.click(); return n; };
+    if (name === 'expand' && first) TAP.store.set({ expanded: first.getAttribute('data-report') });
+    if (name === 'sources') click('.tap-cmp__date');
+    if (name === 'glossary') TAP.layers.open('glossary', {});
+    if (name === 'details') click('.tap-ov-card__open') || (first && TAP.layers.openDetails({ reportId: first.getAttribute('data-report'),
+      regionIds: [TAP.data.regions()[0].id] }));
+    if (name === 'tour') TAP.tour.start();
+    if (name === 'explain' && first) click('[data-action="about"]', first);
+    if (name === 'type' && first) click('[data-action="type"]', first);
+    if (name === 'term') click('.tap-term');
+  }
+
   function run() {
+    QA.mark('act');
+    if (q.get('act')) {
+      try { act(q.get('act')); } catch (e) { QA.log.push({ level: 'exception', text: 'act ' + q.get('act') + ': ' + e.message, step: 'act' }); }
+    }
     QA.mark('checks');
     QA.result.query = window.location.search;
     QA.result.render0 = render();
