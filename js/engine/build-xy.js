@@ -61,7 +61,7 @@
     var series = ds.entities.map(function (e) {
       var mine = pts.filter(function (p) { return p.r.entityId === e.id; });
       if (!mine.length) return null;
-      return { type: 'scatter', tapRole: 'value', name: e.label, z: e.kind === 'combined' ? 2 : 3,
+      return { type: 'scatter', tapRole: 'value', name: e.label, z: e.kind === 'combined' || e.role === 'muted' ? 2 : 3,
         data: mine.map(function (p) {
           var has = !cs || (p.s && p.s.state === 'value'), d = has ? size(cs ? p.s.v : 0) : np.size;
           var at = [p.x.v + p.dx, p.y.v, cs && has ? p.s.v : 0];

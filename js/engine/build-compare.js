@@ -73,7 +73,9 @@
           }
         });
       });
-      return { type: 'scatter', tapRole: 'value', name: draw.cats ? rs[0].entity.label : col.label, symbolSize: size, z: 3,
+      // Grey regions sit underneath, so the focus region stays visible where dots overlap (US-1.1.6)
+      var under = draw.cats && rs[0].entity.role === 'muted';
+      return { type: 'scatter', tapRole: 'value', name: draw.cats ? rs[0].entity.label : col.label, symbolSize: size, z: under ? 2 : 3,
         itemStyle: { color: draw.cats ? rs[0].entity.color : th.ink, opacity: 1 }, data: data, tooltip: tooltip(draw) };
     });
     var labels = draw.cats ? catLabels(draw) : draw.rows.map(function (r) { return r.label; });
