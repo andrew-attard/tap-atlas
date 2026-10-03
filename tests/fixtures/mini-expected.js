@@ -76,7 +76,7 @@ window.TEST_EXPECT.mini = {
     },
     restOfAlphaAverage: {
       'nb.arr': 2383.3333333,    // (4000 + 300 + 2850) / 3
-      'amb.arr': 2522.6666667,   // (4150 + 300 + 3118) / 3
+      'amb.arr': 2592.3333333,   // sum of the combined parts: nb.arr 2383.3333 + cg.arr 209 ((150 + 268) / 2, C has no customer growth)
       'nb.hitRate': 0.5354839    // (22 + 1 + 60) / (50 + 5 + 100) = 83 / 155
     },
     restOfDeltaAverage: {

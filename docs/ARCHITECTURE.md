@@ -219,7 +219,7 @@ One registry feeds reports, cards, headline and insights, so figures can't drift
    valueKind, kind, weightBy?, scale?, dims: ['industry', 'year', ...]}
   ```
 - `TAP.measures.define(id, meta, fn)` and `list()`.
-- `TAP.measures.combined(id, entity, ctx)` gives the cell for any scope entity: a region's own cell, or `TAP.agg.combine` over the entity's regions.
+- `TAP.measures.combined(id, entity, ctx)` gives the cell for any scope entity: a region's own cell, or `TAP.agg.combine` over the entity's regions. **Derived sums** (`amb.arr`, `amb.services`, `amb.oi`) are combined as the sum of their combined parts, so stacked parts always add up to the total and a missing part is never averaged in as zero.
 
 **Catalogue** (ids other streams may rely on; ENGINE may add more):
 
