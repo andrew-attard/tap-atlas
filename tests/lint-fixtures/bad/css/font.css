@@ -1,0 +1,9 @@
+/*
+ * File: css/font.css
+ * Purpose: lint fixture.
+ * Provides: nothing
+ * Depends on: nothing
+ * Used by: tools/lint.js --self-test
+ */
+.a { font-size: 13px; }
+.b { font: 600 14px/1.2 sans-serif; }

@@ -1,0 +1,22 @@
+{
+  "about": "Rules each file in bad/ must trigger when linted with --release. good/ must have no findings.",
+  "bad": {
+    "js/no-header.js": ["header"],
+    "js/module.js": ["no-module", "syntax"],
+    "js/network.js": ["no-fetch", "no-xhr", "no-url"],
+    "js/eval.js": ["no-eval"],
+    "js/console.js": ["no-console"],
+    "js/storage.js": ["storage"],
+    "js/inner.js": ["innerhtml"],
+    "js/colour.js": ["colour"],
+    "js/font.js": ["font-size"],
+    "js/stub.js": ["stub"],
+    "js/syntax.js": ["syntax"],
+    "js/orphan.js": ["orphan"],
+    "css/colour.css": ["colour"],
+    "css/font.css": ["font-size"],
+    "index.html": ["script-order", "no-module"],
+    "tests.html": ["no-url", "colour"],
+    "tests/no-header.js": ["header"]
+  }
+}
