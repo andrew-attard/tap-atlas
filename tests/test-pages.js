@@ -1,8 +1,8 @@
 /*
  * File: tests/test-pages.js
- * Purpose: Tests for the explanation panel (US-1.6.5) and the Guide page (US-1.6.1); the Insights page and tour follow.
- * Provides: test cases for PAGES stories (#41, #37; later #46, #54, #11)
- * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
+ * Purpose: Tests for the explanation panel (US-1.6.5), the Guide page (US-1.6.1) and the Insights page (US-1.7.3).
+ * Provides: test cases for PAGES stories (#41, #37, #46; later #54, #11)
+ * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js, tests/fixtures/insights-fixture.js
  * Used by: tests.html
  */
 (function (TAP) {
@@ -41,6 +41,56 @@
       return s === TAP.content.text('guidePage.openView', { view: TAP.views.title(id) });
     });
   }
+
+  // A stand-in for the insight engine, built from the INSIGHTS fixture, until the real engine is merged.
+  // It follows ARCHITECTURE section 12: scope by region, focus region first, then significance; hidden left out.
+  function fakeInsights() {
+    var list = T_FIXTURE('insights');
+    function hidden() { return (TAP.store.get().hiddenInsights || []).slice(); }
+    function ranked(cmp, f) {
+      f = f || {};
+      var scope = TAP.scope.regionIds(cmp), hid = hidden();
+      var focus = cmp.mode === 'one' || cmp.mode === 'pair' ? cmp.focus : null;
+      return list.filter(function (x) {
+        return hid.indexOf(x.id) < 0 && x.regionIds.some(function (r) { return scope.indexOf(r) >= 0; }) &&
+          (!f.family || x.family === f.family) && (!f.regionId || x.regionIds.indexOf(f.regionId) >= 0) &&
+          (!f.reportId || x.attach.indexOf(f.reportId) >= 0);
+      }).sort(function (a, b) {
+        var fa = !!focus && a.regionIds.indexOf(focus) >= 0, fb = !!focus && b.regionIds.indexOf(focus) >= 0;
+        if (fa !== fb) return fa ? -1 : 1;
+        return b.significance - a.significance;
+      });
+    }
+    return {
+      all: function () { return list; }, ranked: ranked,
+      top: function (cmp, reportId, n) { return ranked(cmp, { reportId: reportId }).slice(0, n); },
+      hide: function (id) { if (hidden().indexOf(id) < 0) TAP.store.set({ hiddenInsights: hidden().concat(id) }); },
+      unhide: function (id) { TAP.store.set({ hiddenInsights: hidden().filter(function (h) { return h !== id; }) }); },
+      hidden: hidden, failures: function () { return []; }, reset: function () {}, defineRule: function () {}
+    };
+  }
+  // Mounts the Insights view on the sample data with the stand-in engine, runs fn and always restores both.
+  function withInsights(fn, cmp) {
+    var old = TAP.insights, root = T.dom.mount(), handle = null;
+    TAP.insights = fakeInsights();
+    TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+    if (cmp) TAP.store.set({ cmp: cmp });
+    function done() { if (handle) handle.destroy(); TAP.insights = old; }
+    try {
+      handle = TAP.views.get('insights').mount(root);
+      var out = fn(root);
+      if (out && out.then) return out.then(function (v) { done(); return v; }, function (e) { done(); throw e; });
+      done();
+      return out;
+    } catch (e) { done(); throw e; }
+  }
+  function items(root) { return qsa('.tap-ins__item', root).map(function (n) { return n.getAttribute('data-insight'); }); }
+  function chipCount(root, attr, id) {
+    var chip = root.querySelector('.tap-ins__chip[' + attr + '="' + id + '"]');
+    return chip ? Number(txt(chip.querySelector('.tap-ins__n'))) : null;
+  }
+  function chip(root, attr, id) { return root.querySelector('.tap-ins__chip[' + attr + '="' + id + '"]'); }
+  function item(root, id) { return root.querySelector('.tap-ins__item[data-insight="' + id + '"]'); }
 
   /* ---------- US-1.6.5: an explanation for every report (#41) ---------- */
   T.suite('pages', function () {
@@ -273,6 +323,163 @@
       withGuide(function (root) {
         a.ok(qsa('[data-guide="planning"] .tap-term', root).length > 0, 'planning text has marked terms');
       });
+    });
+
+    /* ---------- US-1.7.3: the Insights page (#46) ---------- */
+
+    T.test('TPV-TC-138', 'Every insight is listed, ranked, grouped by family with a one-line explanation', function (a) {
+      withInsights(function (root) {
+        a.equal(items(root).length, 8, 'all 8 fixture insights listed');
+        var groups = qsa('.tap-ins__group', root).map(function (g) { return g.getAttribute('data-family'); });
+        a.deepEqual(groups, ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'], 'family order');
+        groups.forEach(function (f) {
+          var line = txt(root.querySelector('.tap-ins__group[data-family="' + f + '"] .tap-ins__gline'));
+          a.equal(line, TAP.content.text('insightsPage.families.' + f + '.line'), f + ' is explained in one line');
+        });
+        a.deepEqual(items(root.querySelector('[data-family="priorities"]')), ['consensus:education', 'groupPriority:datacenters:ability'],
+          'ranked by significance inside a family (0.62 before 0.48)');
+        a.deepEqual(items(root.querySelector('[data-family="judgement"]')), ['tierVsPipeline:seu:retail', 'strongRating:neu:pharma'],
+          'judgement: 0.41 before 0.37');
+        var labels = qsa('.tap-ins__label', root).map(txt);
+        a.ok(labels.length === 8 && labels.every(function (l) { return l === 'Observation to discuss'; }), 'every insight is labelled an observation to discuss');
+      });
+    });
+
+    T.test('TPV-TC-138', 'Each insight names its regions with the organization short names', function (a) {
+      withInsights(function (root) {
+        var names = qsa('.tap-ins__region', item(root, 'pipelineCover:latam')).map(txt);
+        a.deepEqual(names, [TAP.content.regionName(TAP.data.region('latam'))], 'the one region involved');
+      });
+    });
+
+    T.test('TPV-TC-139', 'The family and region filters leave only matching insights', function (a) {
+      withInsights(function (root) {
+        chip(root, 'data-family', 'judgement').click();
+        a.deepEqual(items(root).sort(), ['strongRating:neu:pharma', 'tierVsPipeline:seu:retail'], 'judgement only');
+        a.equal(chip(root, 'data-family', 'judgement').getAttribute('aria-pressed'), 'true', 'the chip shows it is on');
+        chip(root, 'data-family', 'judgement').click();
+        chip(root, 'data-region', 'latam').click();
+        a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability', 'pipelineCover:latam'], 'Latin America only');
+        chip(root, 'data-family', 'priorities').click();
+        a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability'], 'Latin America and priorities');
+        chip(root, 'data-region', 'apac').click();
+        a.equal(items(root).length, 2, 'two regions widen the region filter (either region): still both priorities insights');
+        root.querySelector('.tap-ins__clear').click();
+        a.equal(items(root).length, 8, 'Clear filters shows everything again');
+      });
+    });
+
+    T.test('TPV-TC-139', 'The list follows the comparison setting, including changes while it is open', function (a) {
+      withInsights(function (root) {
+        a.deepEqual(items(root).sort(), ['concentration:na', 'consensus:education', 'groupPriority:datacenters:ability',
+          'notYetWinnable:fsm', 'pipelineCover:latam'], 'one against one: insights about either region');
+        a.deepEqual(qsa('.tap-ins__chip[data-region]', root).map(function (c) { return c.getAttribute('data-region'); }), ['na', 'latam'],
+          'region filter offers the regions in scope');
+        TAP.store.set({ cmp: { mode: 'set', set: ['mea', 'apac'] } });
+        a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability', 'notYetWinnable:fsm'],
+          'redrawn for the new comparison');
+      }, { mode: 'pair', focus: 'na', second: 'latam' });
+    });
+
+    T.test('TPV-TC-140', 'An insight expands to show its figures, rule and sources', function (a) {
+      withInsights(function (root) {
+        var it = item(root, 'pipelineCover:latam'), toggle = it.querySelector('.tap-ins__toggle');
+        a.ok(!it.querySelector('.tap-ins__details'), 'closed at first');
+        toggle.click();
+        it = item(root, 'pipelineCover:latam');
+        a.equal(it.querySelector('.tap-ins__toggle').getAttribute('aria-expanded'), 'true', 'the toggle says it is open');
+        var d = txt(it.querySelector('.tap-ins__details'));
+        a.ok(d.indexOf('Pipeline created in the last 12 months') >= 0, 'figure label');
+        a.ok(d.indexOf(TAP.format.moneyExact(363.4)) >= 0, 'figure value as an exact amount');
+        a.ok(d.indexOf('Year-1 new business ARR potential at least 3 times') >= 0, 'the rule behind it');
+        var where = TAP.sources.address({ regionId: 'latam', section: 'marketCoverage', field: 'pipelineCreated12m', row: null, rows: [], year: null, cell: null, kind: 'PRE' }).text;
+        a.ok(d.indexOf(where) >= 0, 'its sources by file, sheet and cell');
+        var tiers = item(root, 'consensus:education');
+        tiers.querySelector('.tap-ins__toggle').click();
+        a.ok(txt(item(root, 'consensus:education').querySelector('.tap-ins__details')).indexOf('Tier 2') >= 0, 'a tier reads as Tier 2');
+      });
+    });
+
+    T.test('TPV-TC-141', '"Show me" asks for the chart highlight; Phase 2 data opens the region details instead', function (a) {
+      var got = [], opened = [], oldOpen = TAP.layers.openDetails;
+      TAP.layers.openDetails = function (t) { opened.push(t); };
+      try {
+        withInsights(function (root) {
+          TAP.bus.on('showme', function (p) { got.push(p); });
+          item(root, 'notYetWinnable:fsm').querySelector('.tap-ins__showme').click();
+          a.equal(got.length, 1, 'one showme event');
+          a.equal(got[0].insightId, 'notYetWinnable:fsm', 'names the insight');
+          a.equal(got[0].target.reportId, 'ind-quad', 'targets its chart');
+          a.equal(got[0].target.quadrant, 'attractiveNotYet', 'with what to highlight');
+          item(root, 'outlier:nb.hitRate:ceu').querySelector('.tap-ins__showme').click();
+          a.equal(got.length, 1, 'no showme for an insight without a Phase 1 chart');
+          a.equal(opened.length, 1, 'the details panel opens instead');
+          a.deepEqual(opened[0].regionIds, ['ceu'], 'for that region');
+        });
+      } finally { TAP.layers.openDetails = oldOpen; }
+    });
+
+    T.test('TPV-TC-142', '"Copy" text holds the sentence, the figures, the rule and the sources', function (a) {
+      withInsights(function () {
+        var x = T_FIXTURE('insights').filter(function (i) { return i.id === 'tierVsPipeline:seu:retail'; })[0];
+        var text = TAP.views.get('insights').copyText(x);
+        a.ok(text.indexOf(x.sentence) === 0, 'starts with the sentence');
+        a.ok(text.indexOf('Observation to discuss') >= 0, 'keeps the label');
+        a.ok(text.indexOf('Tier, Retail: Tier 3') >= 0, 'figure with its value');
+        a.ok(text.indexOf('Pipeline, Retail: ' + TAP.format.moneyExact(2935)) >= 0, 'amount figure, exact');
+        a.ok(text.indexOf(x.description) >= 0, 'the rule');
+        a.ok(text.indexOf(TAP.sources.address(x.sources[0]).text) >= 0, 'a source address');
+        a.ok(text.indexOf('<') < 0, 'plain text, no markup');
+      });
+    });
+
+    T.test('TPV-TC-142', 'The Copy button reports the result in words', function (a) {
+      return withInsights(function (root) {
+        item(root, 'concentration:na').querySelector('.tap-ins__copy').click();
+        return new Promise(function (r) { setTimeout(r, 1500); }).then(function () {
+          var s = txt(root.querySelector('.tap-ins__status'));
+          a.ok(s === TAP.content.text('insightsPage.copied') || s === TAP.content.text('insightsPage.copyFailed'), 'status: ' + s);
+        });
+      });
+    });
+
+    T.test('TPV-TC-143', 'Counts per family and per region match the hand count of the fixture', function (a) {
+      withInsights(function (root) {
+        var fam = { priorities: 2, judgement: 2, assumptions: 1, realism: 1, exposure: 1, capability: 1 };
+        Object.keys(fam).forEach(function (f) {
+          a.equal(chipCount(root, 'data-family', f), fam[f], f + ' chip count');
+          a.equal(qsa('.tap-ins__item', root.querySelector('.tap-ins__group[data-family="' + f + '"]')).length, fam[f], f + ' group size');
+        });
+        a.equal(txt(root.querySelector('[data-family="priorities"] .tap-ins__gcount')), TAP.content.text('insightsPage.count', { n: 2 }), 'group header count');
+        var reg = { na: 3, latam: 3, neu: 3, seu: 3, ceu: 3, mea: 2, apac: 2 };
+        Object.keys(reg).forEach(function (r) { a.equal(chipCount(root, 'data-region', r), reg[r], r + ' region count'); });
+        a.equal(txt(root.querySelector('.tap-ins__shown')), TAP.content.text('insightsPage.shown', { n: 8, total: 8 }), 'shown of total');
+        chip(root, 'data-family', 'judgement').click();
+        var after = { na: 0, latam: 0, neu: 1, seu: 1, ceu: 0, mea: 0, apac: 0 };
+        Object.keys(after).forEach(function (r) { a.equal(chipCount(root, 'data-region', r), after[r], r + ' count within judgement'); });
+        a.equal(chipCount(root, 'data-family', 'judgement'), 2, 'family counts are not narrowed by their own filter');
+      });
+    });
+
+    T.test('X-pages-insights-none', 'Filters that match nothing say so, with a way back', function (a) {
+      withInsights(function (root) {
+        chip(root, 'data-region', 'mea').click();
+        chip(root, 'data-family', 'realism').click();
+        a.equal(items(root).length, 0, 'nothing matches');
+        a.equal(txt(root.querySelector('.tap-ins__none p')), TAP.content.text('insightsPage.none'), 'a plain message');
+        root.querySelector('.tap-ins__none button').click();
+        a.equal(items(root).length, 8, 'clearing brings everything back');
+      });
+    });
+
+    T.test('X-pages-insights-engine', 'Without the insight engine the page shows a plain message', function (a) {
+      var old = TAP.insights, root = T.dom.mount();
+      TAP.insights = { __stub: 44, ranked: function () { throw new Error('Not built yet (#44): TAP.insights.ranked'); } };
+      try {
+        var h = TAP.views.get('insights').mount(root);
+        a.ok(txt(root).indexOf('Not built yet') >= 0, 'says it is not built yet');
+        h.destroy();
+      } finally { TAP.insights = old; }
     });
   });
 })(window.TAP);
