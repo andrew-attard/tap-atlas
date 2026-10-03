@@ -2,7 +2,7 @@
  * File: js/panel/panel-insights.js
  * Purpose: A panel's insights: the takeaway line (the top insight), the count, and the list of at most 3 with
  *          figures, rule, a highlight button and "Hide for this session" (US-1.2.2, US-1.7.11).
- * Provides: TAP.panelInsights (get, target, handlers, strip, takeaway, render)
+ * Provides: TAP.panelInsights (get, fits, target, handlers, strip, takeaway, render)
  * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/core/dom.js,
  *             js/core/icons.js, js/core/content.js, js/core/format.js, js/core/store.js
  * Used by: js/panel/panel.js, js/panel/panel-menus.js (the insights button)
@@ -14,6 +14,17 @@
   function t(key, vars) { return TAP.content.text('panel.' + key, vars); }
   var MAX = 3;
 
+  /*
+   * Whether an insight can be the takeaway for this comparison: every region it names is drawn on its own, or it
+   * includes the focus region. So a region inside "the rest" or the organization total never leads the chart.
+   */
+  function fits(x, cmp) {
+    var ents = TAP.scope.entities(cmp), own = ents.filter(function (e) { return e.kind === 'region'; }).map(function (e) { return e.regionIds[0]; });
+    var focus = ents.filter(function (e) { return e.role === 'focus'; }).map(function (e) { return e.regionIds[0]; });
+    var ids = x.regionIds || [];
+    return ids.every(function (r) { return own.indexOf(r) >= 0; }) || ids.some(function (r) { return focus.indexOf(r) >= 0; });
+  }
+
   // The insights for one chart in a comparison: {top, list (at most 3), count}. Nothing while insights is a stub.
   function get(cmp, reportId) {
     var I = TAP.insights, none = { top: null, list: [], count: 0 };
@@ -23,7 +34,8 @@
     try {
       var all = (I.ranked(cmp, { reportId: reportId }) || []).filter(shown);
       var list = (I.top(cmp, reportId, MAX) || []).filter(shown);
-      return { top: list[0] || null, list: list, count: Math.max(all.length, list.length) };
+      var lead = list.filter(function (x) { return fits(x, cmp); })[0] || null;
+      return { top: lead, list: list, count: Math.max(all.length, list.length) };
     } catch (e) {
       if (!/Not built yet/.test(e.message)) throw e;
       return none;
@@ -127,5 +139,5 @@
     }).reduce(function (a, b) { return a.concat(b); }, []));
   }
 
-  TAP.panelInsights = { get: get, target: target, handlers: handlers, strip: strip, takeaway: takeaway, render: render };
+  TAP.panelInsights = { get: get, fits: fits, target: target, handlers: handlers, strip: strip, takeaway: takeaway, render: render };
 })(window.TAP);
