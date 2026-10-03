@@ -1,6 +1,6 @@
 /*
  * File: tests/test-content.js
- * Purpose: Tests for the glossary, term marking, guide text and organization layer (TPV-TC-178 to 192).
+ * Purpose: Tests for the glossary, term marking, guide text and organization layer (TPV-TC-178 to 192, 215).
  * Provides: test cases for CONTENT stories (#38, #39, #40, #42, #60)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
@@ -449,6 +449,33 @@
       ['org.error', 'org.script', 'org.notObject', 'org.badPart', 'org.badList', 'org.badTerm', 'org.badRegion', 'org.unknownPart'].forEach(function (k) {
         a.ok(TAP.content.text(k).charAt(0) !== '[', k + ' is in content');
       });
+    });
+  });
+  // Loads a script file the way a page would, and resolves once it has run.
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var tag = document.createElement('script');
+      tag.src = src;
+      tag.onload = function () { tag.parentNode.removeChild(tag); resolve(); };
+      tag.onerror = function () { tag.parentNode.removeChild(tag); reject(new Error('Could not load ' + src)); };
+      document.body.appendChild(tag);
+    });
+  }
+
+  T.suite('organization starter', function () {
+    T.test('TPV-TC-215', 'The starter organization file, placed as-is, loads with no errors and changes nothing', function (a) {
+      var saved = window.TAP_ORG, before = Object.keys(TAP.content.terms()).length;
+      window.TAP_ORG = undefined;
+      return loadScript('content/organization.example.js').then(function () {
+        var o = window.TAP_ORG;
+        a.ok(o && typeof o === 'object', 'sets TAP_ORG to an object');
+        a.equal(TAP.content.orgError(), null, 'no organization error for the data sources panel');
+        ['text', 'glossary', 'guide', 'regions', 'settings'].forEach(function (k) {
+          a.ok(o[k] && typeof o[k] === 'object', 'has an empty "' + k + '" part ready to fill');
+        });
+        a.equal(Object.keys(TAP.content.terms()).length, before, 'adds no terms until an example is uncommented');
+        a.equal(TAP.content.text('banner.sample'), 'Sample data: all figures are fictional', 'general wording unchanged');
+      }).then(function () { window.TAP_ORG = saved; }, function (e) { window.TAP_ORG = saved; throw e; });
     });
   });
 })(window.TAP);
