@@ -401,6 +401,12 @@
           grey.forEach(function (g) { a.ok(f.z > g.z, p.join(' ') + ': focus above ' + g.name); });
         });
       });
+      // A radar draws its groups in data order, so the focus comes last and sits on top
+      [{ mode: 'one', focus: 'alpha' }, { mode: 'pair', focus: 'delta', second: 'bravo' }].forEach(function (c2) {
+        var data = seriesOf(build('ind-ratings', 'radar', c2, { industryId: 'ind1' }))[0].data;
+        a.equal(data[data.length - 1].entityId, c2.focus, c2.mode + ': focus drawn last');
+        a.equal(data.length, 2, c2.mode + ': both groups drawn');
+      });
     });
 
     T.test('X-colours-pair', 'In one vs one both regions keep their own colours', function (a) {
