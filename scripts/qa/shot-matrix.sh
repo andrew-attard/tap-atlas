@@ -11,6 +11,8 @@
 #   plus 853x533 at 1.5 (a 1280 screen at 150%).
 # Add QA_TALL=1 for one extra full-length shot per view and mode (1280 wide, 4000 tall)
 # to review what sits below the fold. QA_JOBS sets how many shots run at once (default 3).
+# Opened states (expanded chart, side panels, popovers, the tour) are shot through the QA
+# page's ?act= at 1280x800@1.25 and 853x533@1.5; QA_ACTS="" skips them, QA_ONLY_ACTS=1 shoots only them.
 
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -29,9 +31,11 @@ list="$(mktemp)"
 trap 'rm -f "$list"' EXIT
 
 # One line per shot: browser, page, query, width, height, zoom, file.
+[ "${QA_ONLY_ACTS:-0}" = "1" ] && QA_VIEWS="none"
 for b in $browsers; do
   mkdir -p "$outdir/$b"
   for view in $QA_VIEWS; do
+    [ "$view" = "none" ] && continue
     for mode in $QA_MODES; do
       q="screenshot=1&view=$view&$(qa_mode_query "$mode")"
       for s in $sizes; do
@@ -39,6 +43,18 @@ for b in $browsers; do
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$b" "$page" "$q" "${wh%x*}" "${wh#*x}" "$zoom" \
           "$outdir/$b/$view-$mode-${wh}@$zoom.png" >> "$list"
       done
+    done
+  done
+done
+
+# Opened states (expanded chart, side panels, popovers, tour) through the QA page's ?act=, in All regions
+acts="${QA_ACTS-expand:overview expand:industry type:industry explain:overview sources:overview glossary:overview details:overview term:overview tour:overview}"
+for b in $browsers; do
+  for a in $acts; do
+    for s in 1280x800@1.25 853x533@1.5; do
+      wh="${s%@*}"; zoom="${s#*@}"
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$b" tests/qa.html "screenshot=1&view=${a#*:}&mode=all&act=${a%%:*}" \
+        "${wh%x*}" "${wh#*x}" "$zoom" "$outdir/$b/act-${a%%:*}-${a#*:}-${wh}@$zoom.png" >> "$list"
     done
   done
 done
@@ -60,6 +76,7 @@ sheet="$outdir/index.html"
   echo "<h1>$page</h1><p>Generated $(date '+%Y-%m-%d %H:%M')</p>"
   for b in $browsers; do
     for view in $QA_VIEWS; do
+      [ "$view" = "none" ] && continue
       echo "<h2>$b: $view</h2>"
       for mode in $QA_MODES; do
         echo "<div><h3>$mode</h3>"
@@ -68,6 +85,13 @@ sheet="$outdir/index.html"
           echo "<figure><a href=\"$b/$n\"><img src=\"$b/$n\" loading=\"lazy\"></a><figcaption>${s%@*} at ${s#*@}</figcaption></figure>"
         done
         echo "</div>"
+      done
+    done
+    echo "<h2>$b: opened states</h2>"
+    for a in $acts; do
+      for s in 1280x800@1.25 853x533@1.5; do
+        n="act-${a%%:*}-${a#*:}-${s%@*}@${s#*@}.png"
+        echo "<figure><a href=\"$b/$n\"><img src=\"$b/$n\" loading=\"lazy\"></a><figcaption>${a%%:*} on ${a#*:}, ${s%@*} at ${s#*@}</figcaption></figure>"
       done
     done
   done
