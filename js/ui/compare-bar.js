@@ -186,9 +186,20 @@
     if (note) TAP.dom.append(ui.pop, [el('h3', { class: 'tap-cmp__pop-title' }, note.label), el('p', null, note.text)]);
   }
 
+  // A comparison can name regions the data doesn't have (an opening state from the address bar, or other data).
+  // Fill in what the mode needs from the data instead, so the pickers and the sentence agree.
+  function repair() {
+    var c = cmp(), p = modePatch(c.mode), fix = {};
+    ['focus', 'second', 'set'].forEach(function (k) {
+      if (k in p && JSON.stringify(p[k]) !== JSON.stringify(c[k])) fix[k] = p[k];
+    });
+    if (Object.keys(fix).length) write(fix);
+  }
+
   function mount(root) {
     if (active) active();
     TAP.dom.clear(root);
+    repair();
     var ui = build(root);
     render(ui);
 
