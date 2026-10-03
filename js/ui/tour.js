@@ -20,7 +20,7 @@
     { id: 'purpose', sel: '[data-tour="brand"]' },
     { id: 'menu', sel: '[data-tour="menu"]' },
     { id: 'compare', sel: '[data-tour="compare"]' },
-    { id: 'panel', sel: '[data-tour="panel"]' },
+    { id: 'panel', sel: '[data-tour="panel"] .tap-panel__head, [data-tour="panel"]' },
     { id: 'freshness', sel: '[data-tour="datadate"]' },
     { id: 'glossary', sel: '.tap-view .tap-term, .tap-menu__item[data-view="guide"]' },
     { id: 'guide', sel: '.tap-menu__item[data-view="guide"]' }
@@ -118,9 +118,22 @@
   /* ---------- the steps ---------- */
 
   // The spotlit part, or null when it isn't on screen (the step then shows in the middle, without a spotlight).
+  // Selectors separated by commas are tried in turn, so the first one is preferred.
   function target(step) {
-    var list = TAP.dom.qsa(step.sel).filter(function (n) { var r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
-    return list[0] || null;
+    var parts = step.sel.split(',');
+    for (var i = 0; i < parts.length; i++) {
+      var hit = TAP.dom.qsa(parts[i]).filter(function (n) { var r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; })[0];
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  // Brings a part that is off screen up to just below the sticky top bar, leaving room for the card.
+  function reveal(node) {
+    var r = node.getBoundingClientRect(), stack = document.querySelector('.tap-stack');
+    var top = stack ? Math.max(0, stack.getBoundingClientRect().bottom) : 0;
+    if (r.top >= top && r.bottom <= window.innerHeight) return;
+    window.scrollBy(0, r.top - top - GAP);
   }
 
   // Puts the spotlight round the part and the card below it, or above it when there is no room below.
@@ -175,10 +188,7 @@
       ])
     ]);
     var node = target(s);
-    if (node && node.scrollIntoView) {
-      var r = node.getBoundingClientRect();
-      if (r.top < 0 || r.bottom > window.innerHeight) node.scrollIntoView({ block: 'center' });
-    }
+    if (node) reveal(node);
     place(n);
     next.focus();
   }
