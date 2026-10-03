@@ -472,6 +472,16 @@
       });
     });
 
+    T.test('X-pages-insights-wording', 'Every word on the Insights page is found in its wording file', function (a) {
+      withInsights(function (root) {
+        item(root, 'concentration:na').querySelector('.tap-ins__toggle').click();
+        var s = txt(root);
+        a.ok(s.indexOf('[insightsPage.') < 0, 'no missing wording key');
+        a.ok(s.indexOf('[object') < 0, 'no object shown as text');
+        a.ok(s.indexOf(TAP.content.text('insightsPage.familiesLabel')) >= 0, 'the family row is labelled');
+      });
+    });
+
     T.test('X-pages-insights-engine', 'Without the insight engine the page shows a plain message', function (a) {
       var old = TAP.insights, root = T.dom.mount();
       TAP.insights = { __stub: 44, ranked: function () { throw new Error('Not built yet (#44): TAP.insights.ranked'); } };
