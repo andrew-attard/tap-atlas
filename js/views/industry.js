@@ -5,8 +5,8 @@
  *          industry anywhere on the view (grid row, quadrant point, ratings picker, details) updates the rest.
  * Provides: view 'industry' (registered with TAP.views), TAP.industryView (current)
  * Depends on: js/engine/registry.js, js/core/dom.js, js/core/store.js, js/core/content.js, js/core/format.js,
- *             js/core/sources.js, js/engine/scope.js, js/engine/measures.js, js/reports/tier-grid.js (TAP.tierStats),
- *             js/panel/panel.js
+ *             js/core/sources.js, js/core/data.js, js/theme.js, js/engine/scope.js, js/engine/measures.js,
+ *             js/reports/tier-grid.js (TAP.tierStats), js/panel/panel.js
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {

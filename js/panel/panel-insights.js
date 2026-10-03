@@ -5,7 +5,7 @@
  * Provides: TAP.panelInsights (get, target, handlers, strip, takeaway, render)
  * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/core/dom.js,
  *             js/core/icons.js, js/core/content.js, js/core/format.js, js/core/store.js
- * Used by: js/panel/panel.js
+ * Used by: js/panel/panel.js, js/panel/panel-menus.js (the insights button)
  */
 (function (TAP) {
   'use strict';

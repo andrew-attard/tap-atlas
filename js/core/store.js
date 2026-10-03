@@ -3,7 +3,8 @@
  * Purpose: Holds the shared app state (view, comparison, selections) and tells other parts when it changes.
  * Provides: TAP.store (get, set, on, reset, defaults), TAP.bus (on, off, emit, clear), TAP.notes (add, list, clear)
  * Depends on: js/core/namespace.js
- * Used by: js/ui/app.js, the comparison bar, every panel and view
+ * Used by: js/ui/app.js, the comparison bar, every panel, view and side panel, scope and prepare (the comparison),
+ *          combining and insights (TAP.notes, state)
  */
 (function (TAP) {
   'use strict';

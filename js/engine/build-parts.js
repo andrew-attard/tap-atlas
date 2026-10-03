@@ -3,8 +3,8 @@
  * Purpose: Generic chart builder for parts of a whole (stacked bars, 100% stacked bars, grouped bars, treemap)
  *          and the parts bubble view, drawn from the definition's x, y and size.
  * Provides: chart builder 'parts' (registered with TAP.builders)
- * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit),
- *             js/engine/build-xy.js (TAP.shapes.kit.points, read at call time)
+ * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit), js/engine/aggregate.js
+ *             (describe), js/core/format.js, js/engine/build-xy.js (TAP.shapes.kit.points, read at call time)
  * Used by: js/panel/panel-chart.js
  */
 (function (TAP) {

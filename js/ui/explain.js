@@ -3,9 +3,10 @@
  * Purpose: Opens a report's plain-English explanation: what it shows, how to read it, what to look for, plus how
  *          any score or combined figure on it is built (US-1.6.5).
  * Provides: TAP.explain (open, sections)
- * Depends on: js/ui/layers.js, js/core/content.js, js/engine/registry.js (reports), js/engine/scope.js,
- *             js/engine/measures.js, js/engine/aggregate.js (weightBy), config/settings.js (score weights)
- * Used by: js/panel/panel.js (the explanation icon)
+ * Depends on: js/ui/layers.js, js/core/dom.js, js/core/content.js, js/core/format.js, js/core/store.js,
+ *             js/core/data.js, js/engine/registry.js (reports), js/engine/scope.js, js/engine/measures.js,
+ *             js/engine/aggregate.js (weightBy), config/settings.js (score weights)
+ * Used by: js/panel/panel-menus.js (the explanation icon)
  *
  * open(reportId, opts) shows the side panel. opts.cmp is the panel's own comparison when it has one; otherwise the
  * shared comparison is used, and the panel follows it while open. sections(reportId, cmp) returns what the panel

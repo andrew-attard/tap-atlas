@@ -2,7 +2,8 @@
  * File: js/insights/engine.js
  * Purpose: Runs the insight rules, applies the guardrails (no blanks, enough regions, neutral words), scores and
  *          ranks what they find, and keeps the session's hidden list (US-1.7.1, 1.7.2, 1.7.10, 1.7.11).
- * Provides: TAP.insights (defineRule, all, ranked, top, hide, unhide, hidden, failures, reset)
+ * Provides: TAP.insights (defineRule, all, ranked, top, hide, unhide, hidden, failures, reset, significance, util:
+ *           the helpers rule files get as ctx.util)
  * Depends on: config/insight-rules.js, config/settings.js, js/core/store.js, js/core/data.js, js/core/content.js,
  *             js/core/format.js, js/engine/aggregate.js, scope.js, measures.js, scores.js, registry.js (at call time)
  * Used by: panels, the Overview, the Insights page, the data sources panel, the rule files in js/insights/

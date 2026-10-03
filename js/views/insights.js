@@ -4,8 +4,10 @@
  *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
  *          session" with an "N hidden · Show hidden" note (US-1.7.11).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js,
- *             js/engine/scope.js, js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails)
+ * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
+ *             js/core/sources.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
+ *             js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails),
+ *             config/settings.js (family weights)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {

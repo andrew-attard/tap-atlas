@@ -4,7 +4,8 @@
  *          growth, services ratio and customer growth, each against the others' average combined by the US-1.2.5
  *          rules (TAP.agg, the same weights as the charts).
  * Provides: insight rules for the 'assumptions' family (via TAP.insights.defineRule): outlier
- * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, the measure catalogue, js/engine/aggregate.js
+ * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/measures.js (the catalogue),
+ *             js/engine/aggregate.js (through ctx.agg)
  * Used by: js/insights/engine.js
  */
 (function (TAP) {

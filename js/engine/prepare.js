@@ -3,8 +3,9 @@
  * Purpose: Runs a report's measures over the comparison scope into one dataset for the chart and the table, so
  *          both always read the same cells (US-1.2.4), and works out which regions have no data (US-1.2.11).
  * Provides: TAP.prepare (run, primaryIds, selected)
- * Depends on: js/engine/measures.js, js/engine/scope.js, js/core/data.js, js/core/content.js, js/core/store.js
- * Used by: every builder, js/panel/panel.js
+ * Depends on: js/engine/registry.js (measureIds), js/engine/measures.js, js/engine/scope.js, js/core/data.js,
+ *             js/core/content.js, js/core/store.js
+ * Used by: the generic builders (build-compare, build-parts, build-xy), js/panel/panel-menus.js
  */
 (function (TAP) {
   'use strict';

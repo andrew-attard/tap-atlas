@@ -2,8 +2,9 @@
  * File: js/engine/measures.js
  * Purpose: One registry of every figure the app can show, read the same way by reports, cards and insights, so
  *          figures can't drift apart. Each measure returns a full cell with its source (ARCHITECTURE section 7).
- * Provides: TAP.measures (get, meta, define, list, combined)
- * Depends on: js/core/data.js, js/core/content.js, js/engine/aggregate.js, js/engine/scores.js (at call time)
+ * Provides: TAP.measures (get, meta, define, list, combined, DERIVED: the derived sums and their parts)
+ * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/engine/aggregate.js (at call time).
+ *             js/engine/scores.js adds the ind.* measures
  * Used by: prepare, builders, cards, headline, insights, details
  */
 (function (TAP) {

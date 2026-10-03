@@ -2,8 +2,8 @@
  * File: js/views/guide.js
  * Purpose: The Guide view: how to use the app, planning explained, glossary, reset charts (US-1.6.1).
  * Provides: view 'guide' (registered with TAP.views)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/content.js (guide, text, mark), js/core/storage.js,
- *             js/core/store.js (view, bus), js/ui/glossary.js (render), js/ui/tour.js (start)
+ * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/content.js (guide, text, mark),
+ *             js/core/storage.js, js/core/store.js (view, bus), js/ui/glossary.js (render), js/ui/tour.js (start)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  *
  * Every word comes from content/guide.js (sections) and content/text-pages.js (guidePage.*: headings and buttons).

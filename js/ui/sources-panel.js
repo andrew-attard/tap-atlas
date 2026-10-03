@@ -5,7 +5,7 @@
  *          Import notes appear here and nowhere else (US-1.1.5).
  * Provides: TAP.sourcesPanel (render)
  * Depends on: js/core/sources.js (imports, datesDiffer, dataDate), js/core/store.js (TAP.notes), js/core/data.js,
- *             js/core/format.js, js/core/content.js, js/core/icons.js, js/engine/scope.js (colorOf),
+ *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/icons.js, js/engine/scope.js (colorOf),
  *             js/insights/engine.js (failures)
  * Used by: js/ui/layers.js (the 'sources' side panel)
  */

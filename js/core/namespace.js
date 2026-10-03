@@ -2,7 +2,7 @@
  * File: js/core/namespace.js
  * Purpose: Creates the shared TAP namespace and the stub helper used for parts not built yet.
  * Provides: window.TAP, TAP.version, TAP.schemaVersion, TAP.stub (+ .builder, .view, .rules, .fn, .list), TAP.orgWatch
- * Depends on: nothing (loads first after the theme)
+ * Depends on: nothing (loads first after the theme); js/core/dom.js at call time, to draw a stub view
  * Used by: every module
  */
 (function () {

@@ -2,7 +2,8 @@
  * File: js/ui/glossary.js
  * Purpose: Shows a term's definition where it appears (a small popover), and the searchable A to Z glossary list.
  * Provides: TAP.glossary (popover, render, close)
- * Depends on: js/core/content.js (terms, text), js/core/dom.js, js/core/icons.js; js/ui/layers.js when built
+ * Depends on: js/core/content.js (terms, text), js/core/dom.js, js/core/icons.js, js/core/store.js (opens the Guide),
+ *             js/ui/layers.js
  * Used by: every panel that shows TAP.content.mark() output (clicks are picked up here, page-wide),
  *          the glossary side panel and js/views/guide.js
  */

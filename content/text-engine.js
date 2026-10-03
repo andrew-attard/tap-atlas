@@ -3,7 +3,8 @@
  * Purpose: Wording produced by the report engine: comparison sentences, combined-figure labels, missing states, chart type names.
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
- * Used by: js/engine/*.js through TAP.content.text
+ * Used by: js/engine/*.js and js/reports/*.js through TAP.content.text; shared states and combined-figure wording
+ *          also in the panel, views, comparison bar, explanations and data sources panel
  * Owner: the ENGINE stream. Placeholders in {braces} are filled in by the code; the organization layer can
  *        replace any phrase by using the same key. {regions} is "region" or
  *        "regions" to match {n}.

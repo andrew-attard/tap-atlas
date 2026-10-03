@@ -3,7 +3,7 @@
  * Purpose: Generic chart builder for two measures, with optional bubble size (scatter, bubble), and the shared
  *          point-chart drawing that the parts builder's bubble view also uses.
  * Provides: chart builder 'xy' (registered with TAP.builders; also serves the 'xyz' shape), TAP.shapes.kit.points
- * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit)
+ * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit), js/core/format.js
  * Used by: js/panel/panel-chart.js, js/engine/build-parts.js (bubble view)
  */
 (function (TAP) {

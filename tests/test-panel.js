@@ -1,7 +1,8 @@
 /*
  * File: tests/test-panel.js
  * Purpose: Tests for the report panel and its controls.
- * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, X-panel-*
+ * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
+ *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */

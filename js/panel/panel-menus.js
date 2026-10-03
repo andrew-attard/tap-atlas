@@ -4,9 +4,9 @@
  *          the "compare differently" editor and badge, and the controls row (industry picker, measure, break down by,
  *          bubble size and the options a builder offers).
  * Provides: TAP.panelMenus (render, tools, types, spec, compareEditor, customBadge, button, pop, seg, select)
- * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/engine/shapes.js, js/engine/scope.js,
- *             js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js, js/ui/explain.js,
- *             js/panel/panel-insights.js (all read at call time)
+ * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
+ *             js/engine/shapes.js, js/engine/scope.js, js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js,
+ *             js/ui/explain.js, js/panel/panel-insights.js (all read at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (state p.st; p.set, p.toggle, p.setType)
  */
 (function (TAP) {

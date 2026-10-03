@@ -3,8 +3,8 @@
  * Purpose: The optional guided welcome tour of the screen (US-1.1.11): a welcome card offered once, then at most
  *          seven short steps that spotlight each part of the screen in turn. A few lines of custom code, no library.
  * Provides: TAP.tour (offer, start, stop, steps, fullscreen)
- * Depends on: js/core/storage.js, js/core/content.js, js/core/dom.js, js/core/store.js, js/ui/shell.js (actionsEl),
- *             js/ui/layers.js (close)
+ * Depends on: js/core/storage.js, js/core/content.js, js/core/dom.js, js/core/icons.js, js/core/store.js,
+ *             js/ui/shell.js (actionsEl), js/ui/layers.js (close)
  * Used by: js/ui/app.js (offer, after start-up), js/views/guide.js (start)
  *
  * offer() adds the "Take the tour" button to the top bar and shows the welcome card unless the tour was taken or

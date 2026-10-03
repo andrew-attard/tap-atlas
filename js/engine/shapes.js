@@ -6,7 +6,8 @@
  * Provides: TAP.shapes (types, label, kit)
  * Depends on: js/engine/registry.js, js/theme.js, js/core/dom.js, js/core/format.js, js/core/content.js,
  *             js/engine/aggregate.js (combined-figure labels)
- * Used by: js/panel/panel-menus.js, js/engine/build-compare.js, build-parts.js, build-xy.js
+ * Used by: js/panel/panel-menus.js, js/engine/build-compare.js, build-parts.js, build-xy.js, js/reports/tier-grid.js,
+ *          quadrant.js
  */
 (function (TAP) {
   'use strict';

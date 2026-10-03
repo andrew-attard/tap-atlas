@@ -1,7 +1,8 @@
 /*
  * File: tests/test-content.js
- * Purpose: Tests for the glossary, term marking, guide text and organization layer (TPV-TC-178 to 192, 215).
- * Provides: test cases for CONTENT stories (#38, #39, #40, #42, #60)
+ * Purpose: Tests for the glossary, term marking, guide text and organization layer.
+ * Provides: test cases for CONTENT stories (#38, #39, #40, #42, #60): TPV-TC-178 to 184, 188 to 190, 192, 215,
+ *           X-content-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */

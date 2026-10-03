@@ -3,7 +3,8 @@
  * Purpose: Every tunable number in one place: weights, thresholds and limits. Change values here, not in code.
  * Provides: window.TAP_SETTINGS
  * Depends on: nothing
- * Used by: combining, scores, insights, panels and the comparison bar
+ * Used by: combining (js/engine/aggregate.js), scope, scores, the quadrant, details, explanations, the insight engine
+ *          and the Insights page
  */
 window.TAP_SETTINGS = {
   // Combining regions (US-1.2.5). Weights for rates: measure id -> the measure it is weighted by.
