@@ -21,7 +21,7 @@ module.exports = {
   // cgRate: three-year customer growth as a share of the accounts' current ARR. strategic: accounts above
   // the strategic threshold. strategicShare: share of customer growth from Strategic accounts (P15).
   regions: [
-    { id: 'na', name: 'North America', scale: 36000, nbRows: 18, accounts: 28, strategic: 4, partners: 5, ads: 45, hit: 0.15, ta: [20, 45], svc: 0.25, cgRate: 0.4, strategicShare: 0.32 },
+    { id: 'na', name: 'North America', scale: 36000, nbRows: 18, accounts: 28, strategic: 4, partners: 5, ads: 45, hit: 0.15, ta: [20, 45], svc: 0.25, cgRate: 0.28, strategicShare: 0.32 },
     { id: 'latam', name: 'Latin America', scale: 11000, nbRows: 12, accounts: 22, strategic: 3, partners: 4, ads: 55, hit: 0.13, ta: [5, 14], svc: 0.2, cgRate: 0.45, strategicShare: 0.38 },
     { id: 'neu', name: 'Northern Europe', scale: 24000, nbRows: 16, accounts: 26, strategic: 4, partners: 4, ads: 70, hit: 0.17, ta: [5, 20], svc: 0.3, cgRate: 0.35, strategicShare: 0.45 },
     { id: 'seu', name: 'Southern Europe', scale: 17000, nbRows: 15, accounts: 24, strategic: 4, partners: 3, ads: 55, hit: 0.14, ta: [8, 22], svc: 0.22, cgRate: 0.38, strategicShare: 0.34 },
