@@ -51,7 +51,8 @@
   var PANELS = {
     sources: { wide: true, draw: function (body) { TAP.sourcesPanel.render(body); return t('sourcesPanel.title'); } },
     details: { draw: drawDetails },
-    glossary: { draw: function (body, p) { TAP.glossary.render(body, p); return t('layers.glossary'); } }
+    // CONTENT draws the list (and its styles); it opens on payload.termId
+    glossary: { draw: function (body, p) { TAP.glossary.render(body, { termId: p.termId }); return t('layers.glossary'); } }
   };
 
   // Draws the body; a part that isn't built yet shows its own "Not built yet" message instead.
@@ -79,8 +80,6 @@
     var id = 'tap-layer-title-' + (++count);
     var title = el('h2', { class: 'tap-layer__title', id: id, tabindex: '-1' });
     var body = el('div', { class: 'tap-layer__body' });
-    var heading = drawBody(name, payload, body);
-    TAP.dom.text(title, (payload && payload.title) || heading || '');
     return el('aside', {
       class: 'tap-layer tap-layer--' + name + (PANELS[name] && PANELS[name].wide ? ' tap-layer--wide' : ''),
       role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': id, 'data-layer': name
@@ -109,7 +108,10 @@
     var node = build(name, payload);
     host().appendChild(node);
     current = { name: name, payload: payload, node: node };
+    // The body is drawn once the frame is on the page, so a panel can scroll to an entry (the glossary does)
     var title = TAP.dom.qs('.tap-layer__title', node);
+    var heading = drawBody(name, payload, TAP.dom.qs('.tap-layer__body', node));
+    TAP.dom.text(title, (payload && payload.title) || heading || '');
     if (title.focus) title.focus();
   }
 
