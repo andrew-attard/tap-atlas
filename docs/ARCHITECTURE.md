@@ -358,7 +358,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 | `TAP.shell.actionsEl()` | An actions slot at the right of the top bar (PAGES puts "Take the tour" there) |
 | `TAP.shell.label()` | The data status label: `{kind: 'sample'|'internal', text}`, or null. Image and table exports carry it (US-1.1.8, US-1.2.10) |
 | `TAP.app.stop()` | Unmounts the running app and drops its listeners (for tests) |
-| `TAP.showme.go({insightId, target})` | Handles "Show me": opens the report's view, switches the comparison to All regions if the insight's regions are out of scope, sets `state.highlight`, and highlights the data; falls back to details (INTEGRATOR) |
+| `TAP.showme.go({insightId, target})` (also `bind`, `unbind`, `widen(target, cmp, regionIds)`; a Target may carry `widened: true`) | Handles "Show me": opens the report's view, switches the comparison to All regions if the insight's regions are out of scope, sets `state.highlight`, and highlights the data; falls back to details (INTEGRATOR) |
 | `TAP.keys.bind()` / `unbind()` | Presenting shortcuts: 1 to 4 for the views; one Esc order (popover, side panel, expanded chart) (INTEGRATOR) |
 | `TAP.screens.show(root, loadResult)` | Full-page message for `loadResult.reason` (`missing`, `version`, `invalid`), with a copyable error list |
 | `TAP.compareBar.mount(el)` | The comparison bar; reads and writes `state.cmp` |
