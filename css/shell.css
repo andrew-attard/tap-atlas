@@ -1,0 +1,8 @@
+/*
+ * File: css/shell.css
+ * Purpose: Page frame: banner, menu and comparison bar.
+ * Provides: styles for this area only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: SHELL stream. Colours and font sizes come from theme variables only.
+ */

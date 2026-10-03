@@ -1,0 +1,11 @@
+/*
+ * File: css/base.css
+ * Purpose: Page reset and base typography. Placeholder until the theme (#10) folds in the full base styles.
+ * Provides: base element styles
+ * Depends on: the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--tap-font, system-ui, sans-serif); font-size: 16px; line-height: 1.5; }
+.tap-stub { padding: 16px; font-weight: 600; }
