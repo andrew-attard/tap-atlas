@@ -138,7 +138,8 @@
     T.test('TPV-TC-268', 'A hidden insight leaves every list at once and the next-ranked one takes its place', function (a) {
       sample();
       withRule({ id: 'x-rank-a' }, fixed(), function () {
-        var c = cmpOf({ mode: 'all' }), before = mine(TAP.insights.ranked(c), 'x-rank').map(function (x) { return x.id; });
+        var c = cmpOf({ mode: 'all' }), ids = function (list) { return list.map(function (x) { return x.id; }); };
+        var before = ids(TAP.insights.ranked(c, { reportId: 'ov-ambition' }));   // the panel's ranked list, any rule
         var changes = 0, off = TAP.store.on(function () { changes++; });
         try {
           TAP.insights.hide(before[0]);
@@ -146,15 +147,14 @@
         } finally { off(); }
         a.deepEqual(TAP.insights.hidden(), [before[0]]);
         a.deepEqual(TAP.store.get().hiddenInsights, [before[0]], 'held in session state');
-        a.deepEqual(mine(TAP.insights.top(c, 'ov-ambition'), 'x-rank').map(function (x) { return x.id; }), before.slice(1, 4),
-          'the panel list moves up by one');
-        a.equal(mine(TAP.insights.top(c, 'ov-ambition', 1), 'x-rank')[0].id, before[1], 'the next one becomes the takeaway');
-        a.ok(TAP.insights.ranked(c, { family: 'realism' }).every(function (x) { return x.id !== before[0]; }), 'gone from the page too');
+        a.deepEqual(ids(TAP.insights.top(c, 'ov-ambition')), before.slice(1, 4), 'the panel list moves up by one');
+        a.equal(TAP.insights.top(c, 'ov-ambition', 1)[0].id, before[1], 'the next one becomes the takeaway');
+        a.ok(TAP.insights.ranked(c).every(function (x) { return x.id !== before[0]; }), 'gone from the page too');
         a.equal(TAP.insights.all().length >= before.length, true, 'all() still holds it, for the "N hidden" count');
         TAP.insights.hide(before[0]);
         a.equal(TAP.insights.hidden().length, 1, 'hiding twice changes nothing');
         TAP.insights.unhide(before[0]);
-        a.deepEqual(mine(TAP.insights.ranked(c), 'x-rank').map(function (x) { return x.id; }), before, 'unhide brings it back');
+        a.deepEqual(ids(TAP.insights.ranked(c, { reportId: 'ov-ambition' })), before, 'unhide brings it back');
         TAP.insights.hide(before[0]);
         TAP.insights.hide(before[1]);
         TAP.insights.unhide();
