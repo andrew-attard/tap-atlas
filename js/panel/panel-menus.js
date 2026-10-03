@@ -168,6 +168,9 @@
     item('compare', 'compare', t('compareDifferently'), function () {
       p.set({ pop: null, editing: true });
     });
+    var big = TAP.store.get().expanded === p.id;
+    item(big ? 'collapse-menu' : 'expand', big ? 'shrink' : 'expand', t(big ? 'closeExpanded' : 'expand'), function () { p.st.pop = null; p.expand(!big); });
+    item('fullscreen', 'fullscreen', t('fullscreen'), function () { p.st.pop = null; p.fullscreen(); p.render(); });
     return box;
   }
 

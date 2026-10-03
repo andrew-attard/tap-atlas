@@ -120,12 +120,15 @@
     var s = TAP.store.get(), keep = focusKey(p), I = TAP.panelInsights;
     p.seen = {};   // glossary terms are marked once per panel
     var b = build(p, s), info = I.get(p.st.custom || s.cmp, p.id), ok = !b.errors.length && b.res && !b.res.empty;
+    var big = s.expanded === p.id;
     if (p.root.isConnected) p.wasConnected = true;
     TAP.dom.clear(p.root);
     p.root.setAttribute('aria-label', b.title);
+    p.root.className = 'tap-panel' + (big ? ' tap-panel--expanded' : '');
 
     var takeaway = el('p', { class: 'tap-panel__takeaway', 'aria-live': 'polite', 'data-tour': 'takeaway' });
     TAP.dom.append(p.root, [
+      big ? expandStrip(p, s) : null,
       el('header', { class: 'tap-panel__head' }, [
         el('div', { class: 'tap-panel__titles' }, [
           el('h2', { class: 'tap-panel__title', html: TAP.content.mark(b.title, p.seen) }),
@@ -142,8 +145,70 @@
       ok ? TAP.panelChart.notes(b.res) : null,
       source(b.def)
     ]);
+    // Focus follows the change: into the expanded chart's Close button, and back to More when it closes
+    if (big !== !!p.big) keep = big ? '[data-action="collapse"]' : '[data-action="more"]';
+    p.big = big;
     var back = keep && TAP.dom.qs(keep, p.root);
     if (back && back.focus) back.focus();
+    syncScroll();
+  }
+
+  /* ---------- expanded view (US-1.2.8) ---------- */
+
+  var live = [];   // panels on the page, in the order made: the charts the arrow keys step through
+
+  function steps() { return live.filter(function (q) { return q.live && q.root.isConnected; }).map(function (q) { return q.id; }); }
+
+  // Page scrolling is locked while any panel on the page is expanded.
+  function syncScroll() {
+    var id = TAP.store.get().expanded;
+    var on = !!id && live.some(function (q) { return q.live && q.id === id; });
+    document.documentElement.classList.toggle('tap-noscroll', on);
+  }
+
+  function collapse() {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () { /* already out */ });
+    TAP.store.set({ expanded: null });
+  }
+
+  function fullscreen(id) {
+    var r = document.documentElement;
+    try {
+      var asked = r.requestFullscreen ? r.requestFullscreen() : null;
+      if (asked && asked.catch) asked.catch(function () { /* refused: expanded in the page still works */ });
+    } catch (e) { /* refused */ }
+    TAP.store.set({ expanded: id });
+  }
+
+  // The slim strip over an expanded chart: data label, comparison sentence, data date, position, Close.
+  function expandStrip(p, s) {
+    var list = steps(), lab = TAP.shell.label();
+    return el('div', { class: 'tap-panel__expand-strip' }, [
+      lab ? el('div', { class: 'tap-panel__expand-label tap-panel__expand-label--' + lab.kind, role: 'note' }, lab.text) : null,
+      el('div', { class: 'tap-panel__expand-row' }, [
+        el('span', { class: 'tap-panel__expand-sentence' }, TAP.scope.sentence(p.st.custom || s.cmp)),
+        el('span', { class: 'tap-panel__date' }, t('dataDate', { date: TAP.format.date(TAP.sources.dataDate()) })),
+        list.length > 1 ? el('span', { class: 'tap-muted' }, t('chartOf', { i: list.indexOf(p.id) + 1, n: list.length })) : null,
+        el('button', { type: 'button', class: 'tap-btn tap-panel__tool', 'data-action': 'collapse', onclick: collapse },
+          [TAP.icons.svg('x', { size: 18 }), el('span', null, t('closeExpanded'))])
+      ])
+    ]);
+  }
+
+  // Esc (after any popover or side panel) closes the expanded chart; the arrows step to the next or previous one.
+  function expandKeys(p, e) {
+    if (TAP.store.get().expanded !== p.id || e.defaultPrevented) return;
+    if (e.key === 'Escape') {
+      if (TAP.layers.top()) return;
+      e.preventDefault();
+      collapse();
+      return;
+    }
+    var tag = ((e.target && e.target.tagName) || '').toLowerCase(), list = steps(), i = list.indexOf(p.id);
+    if ((e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') || /^(input|select|textarea)$/.test(tag) || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (list.length < 2) return;
+    e.preventDefault();
+    TAP.store.set({ expanded: list[(i + (e.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length] });
   }
 
   /* ---------- life cycle ---------- */
@@ -160,6 +225,8 @@
     if (!p.live) return;
     p.live = false;
     p.off.forEach(function (fn) { fn(); });
+    live = live.filter(function (q) { return q !== p; });
+    syncScroll();
     TAP.panelChart.dispose(p.cs);
     if (p.root.parentNode) p.root.parentNode.removeChild(p.root);
   }
@@ -175,9 +242,15 @@
       e.preventDefault();
       p.toggle(null);
     }
+    function wkey(e) { expandKeys(p, e); }
     document.addEventListener('mousedown', down);
     document.addEventListener('keydown', key);
-    p.off.push(function () { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key); });
+    window.addEventListener('keydown', wkey);
+    p.off.push(function () {
+      document.removeEventListener('mousedown', down);
+      document.removeEventListener('keydown', key);
+      window.removeEventListener('keydown', wkey);
+    });
     p.off.push(TAP.store.on(function (s, changed) { onStore(p, s, changed); }));
     // "Reset all charts" (the Guide): every chart back to its default type and settings, nothing remembered
     p.off.push(TAP.bus.on('charts:reset', function () {
@@ -198,15 +271,18 @@
       remember(reportId, def && type === def.defaultType ? null : type);   // the default needs no memory
       p.set({ type: type, pop: null });
     };
+    p.expand = function (on) { if (on) TAP.store.set({ expanded: reportId }); else collapse(); };
+    p.fullscreen = function () { fullscreen(reportId); };
     p.root = el('section', { class: 'tap-panel', 'data-report': reportId, 'data-tour': 'panel' });
     host.appendChild(p.root);
+    live.push(p);
     listen(p);
     render(p);
     return {
       id: reportId, el: p.root,
       refresh: p.render,
       highlight: function (target) { p.set({ highlight: target || null, selected: null, sentence: null }); },
-      expand: function (on) { TAP.store.set({ expanded: on ? reportId : null }); },
+      expand: p.expand,
       destroy: function () { destroy(p); }
     };
   }
