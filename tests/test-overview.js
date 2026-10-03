@@ -292,4 +292,223 @@
         });
     });
   });
+
+  /* ---------- US-1.5.3: headline and top insights (#31) ---------- */
+
+  var H = function (key, vars) { return TAP.content.text('overview.headline.' + key, vars); };
+  var words = function (n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); };
+  var nameOf = function (id) { return TAP.content.regionName(TAP.data.region(id)); };
+
+  function headlineText() {
+    var m = mountView();
+    try { return txt(qs('.tap-ov__sentence', m.host)); } finally { m.handle.destroy(); }
+  }
+
+  // The industry most often placed in Tier 2, counted straight from the raw rows (ties: first in the lookup).
+  function topTier2(plan, regionIds) {
+    var best = null, bestN = 0;
+    plan.lookups.industries.forEach(function (ind) {
+      if (ind.rated === false) return;
+      var n = plan.regions.filter(function (r) {
+        return regionIds.indexOf(r.id) >= 0 && r.marketCoverage.some(function (m) { return m.industryId === ind.id && m.tier === 2; });
+      }).length;
+      if (n > bestN) { best = ind; bestN = n; }
+    });
+    return { industry: best, n: bestN };
+  }
+
+  // A stand-in insight engine over the fixture, for the length of fn.
+  function withInsights(list, fn) {
+    var orig = TAP.insights, hidden = [], calls = [];
+    TAP.insights = {
+      top: function (cmp, reportId, n) {
+        calls.push([cmp, reportId, n]);
+        return list.filter(function (x) { return hidden.indexOf(x.id) < 0; }).slice(0, n);
+      },
+      hide: function (id) { hidden.push(id); TAP.store.set({ hiddenInsights: hidden.slice() }); },
+      hidden: function () { return hidden.slice(); }
+    };
+    try { return fn(calls, hidden); } finally { TAP.insights = orig; }
+  }
+  function fixture() {
+    var list = window.TEST_FIXTURES.insights;
+    return JSON.parse(JSON.stringify(list));
+  }
+
+  T.suite('overview-headline', function () {
+    T.test('TPV-TC-099', 'On the sample data, the headline equals the sentence built from the planted totals', function (a) {
+      sample();
+      var X = window.SAMPLE_EXPECT.headline, tier2 = topTier2(window.PLAN_DATA, window.SAMPLE_EXPECT.regions);
+      a.equal(tier2.industry.id, 'education', 'raw count: Education is the most common Tier 2 industry');
+      var expected = [
+        H('group', { n: X.regions, regions: words(X.regions), amb: TAP.format.money(X.ambArr),
+          nbShare: TAP.format.pct(X.nbShare), cgShare: TAP.format.pct(X.cgShare) }),
+        H('cgMissing', { names: TAP.format.list(X.cgExcluded.map(nameOf)) }),
+        H('tier2', { n: tier2.n, regions: words(tier2.n), industry: tier2.industry.name })
+      ].join(' ');
+      a.equal(headlineText(), expected);
+      a.match(expected, /^7 regions plan €76\.2M .* 67% .* 33% /, 'sanity: the planted figures');
+    });
+
+    T.test('TPV-TC-099', 'With no ambition figures at all, the headline says so instead of failing', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions.forEach(function (r) { r.newBusiness = []; r.customerGrowth.accounts = []; });
+      TAP.data.load(p);
+      a.equal(headlineText(), H('none'));
+    });
+
+    T.test('TPV-TC-099', 'With no Tier 2 industry, the headline leaves that sentence out', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions.forEach(function (r) { r.marketCoverage.forEach(function (m) { if (m.tier === 2) m.tier = 3; }); });
+      TAP.data.load(p);
+      // Mini by hand: 10123 in all; new business 9405 / 10123, customer growth 718 / 10123; Region C gave no customer growth
+      a.equal(headlineText(), [
+        H('group', { n: 4, regions: words(4), amb: TAP.format.money(10123), nbShare: TAP.format.pct(9405 / 10123),
+          cgShare: TAP.format.pct(718 / 10123) }),
+        H('cgMissing', { names: 'Region C' })
+      ].join(' '));
+    });
+
+    T.test('X-overview-headline-focus', 'With a focus region, the headline is about it against the rest (TPV-TC-100)', function (a) {
+      var R = window.TEST_EXPECT.mini.region.alpha, rest = window.TEST_EXPECT.mini.combined.restOfAlphaAverage;
+      TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' } });
+      // Utilities is Tier 2 in Region B, C and D (3 of the other 3), and in Region A too
+      a.equal(headlineText(), [
+        H('region', { name: 'Region A', amb: TAP.format.money(R['amb.arr']), nbShare: TAP.format.pct(R['nb.arr'] / R['amb.arr']),
+          cgShare: TAP.format.pct(R['cg.arr'] / R['amb.arr']) }),
+        H('restAverage', { n: 3, regions: words(3), rest: TAP.format.money(rest['amb.arr']) }),
+        H('cgMissing', { names: 'Region C' }),
+        H('tier2FocusAll', { focus: 'Region A', m: 3, regions: words(3), industry: 'Utilities' })
+      ].join(' '));
+      TAP.store.set({ cmp: { restAgg: 'total' } });
+      a.ok(headlineText().indexOf(H('restTotal', { n: 3, regions: words(3), rest: TAP.format.money(7150 + 418) })) >= 0,
+        'as a total: 7150 new business + 418 customer growth (150 + 268)');
+    });
+
+    T.test('X-overview-headline-modes', 'Every comparison mode gives a complete sentence with no gaps', function (a) {
+      sample();
+      [{ mode: 'all' }, { mode: 'one', focus: 'ceu' }, { mode: 'one', focus: 'na', restAs: 'individual' }, { mode: 'pair', focus: 'na', second: 'ceu' },
+        { mode: 'set', set: ['neu', 'apac'] }, { mode: 'org' }].forEach(function (c) {
+        TAP.store.reset();
+        TAP.store.set({ cmp: c });
+        var s = headlineText();
+        a.ok(s.length > 20, JSON.stringify(c) + ': ' + s);
+        a.equal(s.indexOf('['), -1, 'no missing wording key');
+        a.equal(s.indexOf('{'), -1, 'no unfilled placeholder');
+        a.equal(/NaN|undefined/.test(s), false, 'no broken figure');
+      });
+    });
+
+    T.test('X-overview-headline-follows', 'The headline follows the comparison bar at once', function (a) {
+      var m = mountView();
+      try {
+        var before = txt(qs('.tap-ov__sentence', m.host));
+        TAP.store.set({ cmp: { mode: 'pair', focus: 'bravo', second: 'delta' } });
+        var after = txt(qs('.tap-ov__sentence', m.host));
+        a.ok(after !== before && after.indexOf('Region B') === 0, 'now about Region B');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-overview-headline-source', 'Every figure in the headline names its source and shows it when clicked (TPV-TC-101)', function (a) {
+      var m = mountView();
+      try {
+        var figs = qsa('.tap-ov__sentence .tap-ov-fig', m.host);
+        a.ok(figs.length >= 3, 'ambition and both shares are figures');
+        figs.forEach(function (f) { a.ok(!!f.getAttribute('title'), 'title on ' + txt(f)); });
+        spy(TAP.layers, 'open', function (calls) {
+          figs[0].click();
+          a.equal(calls.length, 1, 'the source panel opens');
+          var body = document.createElement('div');
+          calls[0][1].render(body);
+          a.ok(txt(body).indexOf(TAP.format.moneyExact(10123)) >= 0, 'with the exact ambition');
+        });
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-overview-headline-wording', 'The headline wording comes from the content file (TPV-TC-104)', function (a) {
+      var text = window.TAP_CONTENT.text.overview.headline, saved = text.group;
+      text.group = 'Plan total {amb} across {n} {regions}.';
+      try { a.equal(headlineText().indexOf('Plan total ' + TAP.format.money(10123) + ' across 4 regions.'), 0); } finally { text.group = saved; }
+    });
+  });
+
+  T.suite('overview-insights', function () {
+    T.test('X-overview-insights-top', 'The top 3 insights show in ranking order, asked for with the comparison (TPV-TC-102)', function (a) {
+      sample();
+      var list = fixture();
+      a.ok(list.length >= 4, 'fixture has enough insights');
+      withInsights(list, function (calls) {
+        TAP.store.set({ cmp: { mode: 'one', focus: 'seu' } });
+        var m = mountView();
+        try {
+          var items = qsa('.tap-ov-insight', m.host);
+          a.equal(items.length, 3, 'three insights');
+          a.deepEqual(items.map(function (n) { return n.getAttribute('data-insight'); }), list.slice(0, 3).map(function (x) { return x.id; }), 'in order');
+          a.equal(calls[0][1], null, 'not limited to one report');
+          a.equal(calls[0][2], 3, 'three asked for');
+          a.equal(calls[0][0].focus, 'seu', 'with the comparison');
+          a.ok(txt(items[0]).indexOf(list[0].sentence.slice(0, 20)) >= 0, 'the sentence shows');
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-overview-insights-showme', '"Show me" asks for the chart, or opens details when there is no chart (TPV-TC-103)', function (a) {
+      sample();
+      var list = fixture(), withChart = list[0];
+      var noChart = list.filter(function (x) { return !x.reportId; })[0];
+      withInsights([withChart, noChart], function () {
+        var m = mountView(), got = [];
+        TAP.bus.on('showme', function (p) { got.push(p); });
+        try {
+          qs('[data-insight="' + withChart.id + '"] .tap-ov-insight__show', m.host).click();
+          a.equal(got.length, 1, 'showme emitted');
+          a.equal(got[0].insightId, withChart.id);
+          a.deepEqual(got[0].target, withChart.highlight, 'with the insight’s target');
+          spy(TAP.layers, 'openDetails', function (calls) {
+            qs('[data-insight="' + noChart.id + '"] .tap-ov-insight__show', m.host).click();
+            a.equal(calls.length, 1, 'details opened');
+            a.deepEqual(calls[0][0], noChart.highlight, 'for the insight’s target');
+          });
+          a.equal(got.length, 1, 'no showme for an insight with no chart');
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-overview-insights-hide', '"Hide for this session" hides the insight and the next one moves up', function (a) {
+      sample();
+      var list = fixture();
+      withInsights(list, function (calls, hidden) {
+        var m = mountView();
+        try {
+          qs('[data-insight="' + list[1].id + '"] .tap-ov-insight__hide', m.host).click();
+          a.deepEqual(hidden, [list[1].id], 'hidden through the engine');
+          a.deepEqual(qsa('.tap-ov-insight', m.host).map(function (n) { return n.getAttribute('data-insight'); }),
+            [list[0].id, list[2].id, list[3].id], 'the next one moves up');
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-overview-insights-link', 'A link opens the full Insights page', function (a) {
+      withInsights(fixture(), function () {
+        var m = mountView();
+        try {
+          var link = qs('.tap-ov__all-insights', m.host);
+          a.ok(!!link, 'link present');
+          link.click();
+          a.equal(TAP.store.get().view, 'insights');
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-overview-insights-stub', 'Before the insight engine is built, the section says so and the rest still draws', function (a) {
+      withInsights([], function () {
+        TAP.insights.top = function () { throw new Error('Not built yet (#44): TAP.insights.top'); };
+        var m = mountView();
+        try {
+          a.match(txt(qs('[data-part="insights"]', m.host)), /Not built yet/);
+          a.equal(qsa('.tap-ov-card', m.host).length, 4, 'cards still draw');
+        } finally { m.handle.destroy(); }
+      });
+    });
+  });
 })(window.TAP);
