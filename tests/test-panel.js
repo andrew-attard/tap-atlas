@@ -77,7 +77,7 @@
         panel: function (id, opts) { var p = TAP.panel.create(T.dom.mount(), id, opts); panels.push(p); return p; },
         report: function (def) { window.TAP_REPORTS[def.id] = def; ids.push(def.id); return def; }
       };
-      try { return fn(a, api); } finally {
+      function tidy() {
         panels.forEach(function (p) { try { p.destroy(); } catch (e) { /* already gone */ } });
         ids.forEach(function (id) { delete window.TAP_REPORTS[id]; });
         TAP.insights = saved.insights;
@@ -87,6 +87,12 @@
         TAP.storage.clear('chart:');
         FAKE = null;
       }
+      var out;
+      try { out = fn(a, api); } catch (e) { tidy(); throw e; }
+      // An async body tidies up once it has finished
+      if (out && typeof out.then === 'function') return out.then(function (v) { tidy(); return v; }, function (e) { tidy(); throw e; });
+      tidy();
+      return out;
     };
   }
 
@@ -462,6 +468,126 @@
       a.equal(last().sizeId, 'ind.currentArr');
       pickType(p, 'scatter');
       a.equal(qs('[data-control="size"]', p.el), null, 'no size switch for scatter');
+    }));
+  });
+
+  /* ---------- US-1.2.4: table view (#16) ---------- */
+
+  // A table of four regions: real cells with real sources, one left blank, plus a text column.
+  function tableResult(n) {
+    var ids = ['alpha', 'bravo', 'charlie', 'delta'], f = TAP.measures.get('nb.arr');
+    var rows = [];
+    for (var i = 0; i < (n || 4); i++) {
+      var id = ids[i % 4], c = f(id, { year: null });
+      if (i === 1) c = { v: null, state: 'notProvided', kind: c.kind, src: c.src };
+      rows.push({ entityId: id, cells: { entity: { v: 'Row ' + i, state: 'value', kind: null }, 'nb.arr': c }, src: c.src });
+    }
+    return { columns: [{ key: 'entity', label: 'Region', unit: 'text', align: 'left' },
+      { key: 'nb.arr', label: 'ARR', unit: 'money', align: 'right' }], rows: rows };
+  }
+  function showTable(p) { if (!qs('.tap-panel__table', p.el)) click(qs('[data-action="table"]', p.el)); return qs('.tap-panel__table', p.el); }
+  function column(tbl, i) { return qsa('tbody tr', tbl).map(function (tr) { return txt(tr.children[i]); }); }
+
+  T.suite('panel-table', function () {
+    T.test('X-table-toggle', 'The Table button shows the same data as a table and back, keeping the chart type', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { table: tableResult() }; };
+      var p = s.panel('x-fake');
+      pickType(p, 'dot');
+      a.ok(showTable(p), 'table shown');
+      a.equal(qs('[data-action="table"]', p.el).getAttribute('aria-pressed'), 'true');
+      a.equal(qs('.tap-panel__body .tap-panel__chart', p.el), null, 'no chart beside it');
+      a.equal(last().type, 'dot', 'built with the chosen chart type, so the data matches');
+      click(qs('[data-action="table"]', p.el));
+      a.ok(qs('.tap-panel__body .tap-panel__chart', p.el), 'chart back');
+      openTypes(p);
+      a.match(txt(qs('.tap-panel__pop', p.el)), /table of the same data/i, 'the type menu points to the table');
+    }));
+
+    T.test('X-table-same', 'The table shows the builder\'s table: every row and exact value, on the sample data', scene(function (a, s) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var p = s.panel('ov-ambition'), tbl = showTable(p), def = TAP.reports.get('ov-ambition'), c = TAP.store.get().cmp;
+      var res = TAP.builders.get('parts')({ def: def, type: def.defaultType, measureId: null, sizeId: null, breakdown: null, cmp: c,
+        entities: TAP.scope.entities(c), year: null, industryId: null, highlight: null, expanded: false, theme: TH, opts: {} });
+      a.equal(qsa('tbody tr', tbl).length, res.table.rows.length, 'same rows');
+      res.table.columns.forEach(function (col, i) {
+        a.equal(txt(qsa('thead th', tbl)[i]).replace(/[▲▼]/g, '').trim(), col.label, 'header ' + col.label);
+        a.deepEqual(column(tbl, i), res.table.rows.map(function (r) {
+          return TAP.format.cell(r.cells[col.key], { unit: col.unit, exact: true, field: col.field });
+        }), 'column ' + col.label);
+      });
+    }));
+
+    T.test('TPV-TC-063', 'Column headers sort ascending, then descending', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { table: tableResult() }; };
+      var p = s.panel('x-fake'), f = TAP.measures.get('nb.arr');
+      var v = { alpha: f('alpha', {}).v, charlie: f('charlie', {}).v, delta: f('delta', {}).v };
+      var asc = ['alpha', 'charlie', 'delta'].sort(function (x, y) { return v[x] - v[y]; });
+      showTable(p);
+      click(qs('[data-sort="nb.arr"]', p.el));
+      var tbl = qs('.tap-panel__table', p.el);
+      a.deepEqual(qsa('tbody tr', tbl).map(function (tr) { return tr.getAttribute('data-entity'); }), asc.concat(['bravo']), 'ascending, blank last');
+      a.equal(qs('[data-sort="nb.arr"]', p.el).parentNode.getAttribute('aria-sort'), 'ascending');
+      click(qs('[data-sort="nb.arr"]', p.el));
+      tbl = qs('.tap-panel__table', p.el);
+      a.deepEqual(qsa('tbody tr', tbl).map(function (tr) { return tr.getAttribute('data-entity'); }), asc.slice().reverse().concat(['bravo']), 'descending, blank still last');
+      a.equal(qs('[data-sort="nb.arr"]', p.el).parentNode.getAttribute('aria-sort'), 'descending');
+    }));
+
+    T.test('TPV-TC-064', 'Blanks read "not provided", numbers are exact, and the focus row is highlighted', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { table: tableResult() }; };
+      TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
+      var tbl = showTable(s.panel('x-fake')), vals = column(tbl, 1);
+      a.equal(vals[1], 'not provided');
+      a.equal(vals[0], TAP.format.moneyExact(TAP.measures.get('nb.arr')('alpha', {}).v), 'exact money');
+      var focus = qsa('tbody tr.is-focus', tbl);
+      a.equal(focus.length, 1, 'one focus row');
+      a.equal(focus[0].getAttribute('data-entity'), 'charlie');
+      a.ok(qs('.tap-panel__focus-mark', focus[0]), 'marked in words too, not by colour alone');
+    }));
+
+    T.test('TPV-TC-065', 'Each row shows its source as file › sheet › cell', scene(function (a, s) {
+      s.report(fakeDef());
+      var t0 = tableResult();
+      FAKE = function () { return { table: t0 }; };
+      var tbl = showTable(s.panel('x-fake')), last = qsa('thead th', tbl).length - 1;
+      a.equal(txt(qsa('thead th', tbl)[last]).replace(/[▲▼]/g, '').trim(), 'Source');
+      a.deepEqual(column(tbl, last), t0.rows.map(function (r) { return TAP.sources.address(r.src).text; }));
+      a.match(column(tbl, last)[0], /Region A plan\.xlsx › /, 'names the file');
+    }));
+
+    T.test('TPV-TC-066', 'Copy to clipboard gives tab-separated text with the source column and the data label', scene(function (a, s) {
+      s.report(fakeDef());
+      var t0 = tableResult();
+      FAKE = function () { return { table: t0 }; };
+      var p = s.panel('x-fake'), text = TAP.panelTable.toText(t0, { label: TAP.shell.label() });
+      var lines = text.split('\n');
+      a.equal(lines[0], TAP.shell.label().text, 'data label first');
+      a.equal(lines[1], 'Region\tARR\tSource', 'headers');
+      a.equal(lines.length, 2 + t0.rows.length, 'one line per row');
+      a.equal(lines[3].split('\t')[1], 'not provided');
+      a.equal(lines[2].split('\t')[2], TAP.sources.address(t0.rows[0].src).text, 'source column');
+      var saved = TAP.panelTable.clipboard, got = null;
+      TAP.panelTable.clipboard = function (x) { got = x; return Promise.resolve(true); };
+      showTable(p);
+      click(qs('[data-action="copy-table"]', p.el));
+      TAP.panelTable.clipboard = saved;
+      return new Promise(function (done) { setTimeout(done, 0); }).then(function () {
+        a.equal(got, text, 'the button copies the same text');
+        a.match(txt(qs('.tap-panel__table-status', p.el)), /copied/i, 'says so');
+      });
+    }));
+
+    T.test('TPV-TC-067', 'A long table scrolls inside the panel with the headers fixed', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { table: tableResult(175) }; };
+      var p = s.panel('x-fake'), tbl = showTable(p), wrap = qs('.tap-panel__tablewrap', p.el);
+      a.equal(qsa('tbody tr', tbl).length, 175, 'every row, no paging');
+      a.ok(wrap.scrollHeight > wrap.clientHeight, 'scrolls inside its box');
+      a.equal(getComputedStyle(wrap).overflowY, 'auto');
+      a.equal(getComputedStyle(qs('thead th', tbl)).position, 'sticky', 'headers stay put');
     }));
   });
 })(window.TAP);
