@@ -22,10 +22,9 @@
  *   - The five parts are text, glossary, guide, regions and settings. Any other part is reported as a problem.
  *
  * BRANDING (colours, font, logo)
- *   Branding lives in the theme file, not here. Copy js/theme.js to js/theme.organization.js (also ignored by
- *   git) and change the values there: every setting is explained in its comments. Then, in the folder you open
- *   index.html from, replace js/theme.js with your branded copy. Never commit a branded js/theme.js; the public
- *   repository keeps the neutral theme.
+ *   Branding lives in the theme file, not here. In the internal copy of the app folder (never a git clone),
+ *   change the values in js/theme.js: every setting is explained in its comments. The public repository keeps
+ *   the neutral theme, so never commit a branded js/theme.js.
  */
 window.TAP_ORG = {
 

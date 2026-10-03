@@ -2,8 +2,8 @@
  * File: content/ui-text.js
  * Purpose: General on-screen wording (app name, tour, guide and glossary screens), so wording changes need no code.
  *          Each stream keeps its own wording in content/text-<area>.js; all of it lands in TAP_CONTENT.text.
- * Provides: window.TAP_CONTENT.text, TAP.orgWatch (errors, onError)
- * Depends on: js/core/namespace.js (for TAP.orgWatch only)
+ * Provides: window.TAP_CONTENT.text
+ * Depends on: nothing
  * Used by: js/core/content.js (TAP.content.text) and through it every module that shows words
  *
  * Placeholders in {braces} are filled in by the code, e.g. {focus} or {n}.
@@ -40,18 +40,3 @@ window.TAP_CONTENT.text = Object.assign(window.TAP_CONTENT.text || {}, {
     unknownPart: '"{part}" is not a part the app knows. The parts are text, glossary, guide, regions and settings.'
   }
 });
-
-// Notes any script error inside content/organization.js, so a broken file is reported in the data sources panel
-// instead of being silently skipped (US-1.6.6). It has to be listening before that file loads, which is why it
-// sits in the first content file and not in js/core/content.js, which loads after it.
-(function (TAP) {
-  'use strict';
-  var errors = [];
-  function onError(e) {
-    var file = String((e && e.filename) || '').split(/[?#]/)[0];
-    if (!/(^|[\/\\])content[\/\\]organization\.js$/.test(file)) return;
-    errors.push(String(e.message || 'Script error').replace(/\.$/, '') + (e.lineno ? ' (line ' + e.lineno + ')' : ''));
-  }
-  window.addEventListener('error', onError);
-  TAP.orgWatch = { errors: errors, onError: onError };
-})(window.TAP);

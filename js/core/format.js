@@ -114,7 +114,9 @@
   // Kind of value as glyph plus word, from the theme: {glyph, label, text: '● Leader input'}.
   function kind(k) {
     var t = (window.TAP_THEME && window.TAP_THEME.kinds && window.TAP_THEME.kinds[k]) || { glyph: '', label: String(k) };
-    return { glyph: t.glyph, label: t.label, text: (t.glyph ? t.glyph + ' ' : '') + t.label };
+    var key = 'kinds.' + k, worded = TAP.content.text(key);   // the organization layer may reword the label
+    var label = worded === '[' + key + ']' ? t.label : worded;
+    return { glyph: t.glyph, label: label, text: (t.glyph ? t.glyph + ' ' : '') + label };
   }
 
   // "2 Oct 2026", read in UTC so the date doesn't shift with the viewer's time zone. {time: true} adds "09:05".
