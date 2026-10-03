@@ -26,14 +26,19 @@
     return res;
   }
 
+  // The row a mark belongs to: same region (or combined figure) and same industry, if the rows are per industry.
+  function rowFor(rows, d) {
+    return rows.filter(function (r) { return r.entityId === d.entityId && (r.industryId || null) === (d.industryId || null); })[0];
+  }
   function cellOf(draw, d) {
-    var row = draw.rows.filter(function (r) { return r.entityId === d.entityId; })[0];
+    var row = rowFor(draw.rows, d);
     return { row: row, col: draw.k.colOf(draw.ds, d.key), cell: row.cells[d.key] };
   }
   function tooltip(draw) {
     return { formatter: function (p) {
       var x = cellOf(draw, p.data || {});
-      return draw.k.tip(x.row.label, draw.k.cellRows(x.cell, x.col));
+      var title = x.row.industryId ? x.row.label + ' · ' + x.row.entity.label : x.row.label;
+      return draw.k.tip(title, draw.k.cellRows(x.cell, x.col));
     } };
   }
   function npText(draw, row) {
@@ -41,7 +46,8 @@
     return many ? draw.k.t('chart.npFor', { name: row.label }) : draw.k.t('states.notProvided');
   }
   function item(row, key, cell, extra) {
-    return Object.assign({ value: cell.v, raw: cell.v, key: key, entityId: row.entityId, name: row.label }, extra || {});
+    return Object.assign({ value: cell.v, raw: cell.v, key: key, entityId: row.entityId, industryId: row.industryId || null,
+      name: row.label }, extra || {});
   }
   function catLabels(draw) { return draw.keys.map(function (key) { return draw.k.colOf(draw.ds, key).label; }); }
   function isRating(col) { return col.unit === 'rating' || col.unit === 'score'; }
@@ -136,7 +142,7 @@
       radar: { radius: '66%', splitNumber: isRating(col) ? 3 : 4, axisName: { fontSize: th.type.chart },
         indicator: catLabels(draw).map(function (n) { return { name: n, min: 0, max: max || 1 }; }) },
       series: [{ type: 'radar', tapRole: 'value', symbolSize: th.space[3], data: data, tooltip: { formatter: function (p) {
-        var row = draw.rows.filter(function (r) { return r.entityId === p.data.entityId; })[0], lines = [];
+        var row = rowFor(draw.rows, p.data), lines = [];
         draw.keys.forEach(function (key) { lines.push([k.colOf(draw.ds, key).label, k.exact(row.cells[key], k.colOf(draw.ds, key))]); });
         return k.tip(row.label, lines);
       } } }] };

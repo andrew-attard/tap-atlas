@@ -105,7 +105,7 @@
     return {
       type: 'scatter', tapRole: 'highlight', silent: true, z: 10, tooltip: { show: false },
       symbolSize: function (v, p) { return (p.data.size || th().space[4]) + h.ringGap * 2; },
-      itemStyle: { color: 'transparent', borderColor: h.color, borderWidth: h.width, opacity: 1 },
+      itemStyle: { color: th().echarts.backgroundColor, borderColor: h.color, borderWidth: h.width, opacity: 1 },
       data: points
     };
   }
