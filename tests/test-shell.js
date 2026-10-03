@@ -235,6 +235,20 @@
       });
     });
 
+    T.test('X-compare-repair', 'A comparison naming regions not in the data is repaired from the data', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.store.set({ cmp: { mode: 'pair', focus: 'nowhere', second: 'elsewhere' } });
+        TAP.compareBar.mount(qs('.tap-cmp', root));
+        var c = TAP.store.get().cmp, ids = TAP.data.regions().map(function (r) { return r.id; });
+        a.ok(ids.indexOf(c.focus) >= 0 && ids.indexOf(c.second) >= 0 && c.focus !== c.second, 'two real regions');
+        a.equal(qs('[data-picker="focus"] select', root).value, c.focus, 'the picker shows the region in use');
+        TAP.store.set({ cmp: { mode: 'set', set: ['nowhere', ids[1]] } });
+        TAP.compareBar.mount(qs('.tap-cmp', root));
+        a.ok(TAP.store.get().cmp.set.length >= 2 && TAP.store.get().cmp.set.indexOf('nowhere') < 0, 'a set of real regions');
+      });
+    });
+
     T.test('X-compare-set-min', 'A set keeps at least two regions and says why', function (a) {
       run(function () {
         var root = startApp();
