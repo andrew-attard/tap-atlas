@@ -1,6 +1,6 @@
 /*
  * File: tests/test-data.js
- * Purpose: Tests for the sample data file: shape, consistency and planted gaps (TPV-TC-193 to 199).
+ * Purpose: Tests for the sample data file: shape, consistency and planted gaps (TPV-TC-193 to 196, 199).
  * Provides: test cases for DATA stories (#25, #26, #27): TPV-TC-193 to 196, TPV-TC-199, TPV-TC-020 (sample), X-data-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js (window.PLAN_DATA),
  *             tests/fixtures/sample-expected.js (window.SAMPLE_EXPECT)

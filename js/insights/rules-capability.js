@@ -3,7 +3,8 @@
  * Purpose: Insight rules on industries regions find attractive but don't yet feel able to win (US-1.7.9): the
  *          gaps several regions share, and each region's own list, with the success factors its leader named.
  * Provides: insight rules for the 'capability' family (via TAP.insights.defineRule): notYetWinnable, notYetList
- * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/scores.js
+ * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/scores.js, js/core/data.js
+ *             (success factors)
  * Used by: js/insights/engine.js
  */
 (function (TAP) {

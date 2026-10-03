@@ -3,7 +3,8 @@
  * Purpose: Checks the plan data file when the app opens, then gives every other part simple ways to read it.
  * Provides: TAP.data (load, plan, meta, lookups, regions, region, regionIndex, industries, industry, scale, row)
  * Depends on: js/core/namespace.js, js/core/check.js (the contract check), the data file (window.PLAN_DATA)
- * Used by: js/ui/app.js, measures, scope, sources, insights, views
+ * Used by: js/ui/app.js and every module that reads plan data: measures, scope, sources, format, insights, reports,
+ *          panels, views
  */
 (function (TAP) {
   'use strict';

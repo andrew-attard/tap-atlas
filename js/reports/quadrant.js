@@ -5,8 +5,8 @@
  *          rating rule; "Show every region" or an industry filter shows one point per region and industry,
  *          nudged apart for display only. Tooltips and the table always read the exact cells.
  * Provides: chart builder 'quadrant' (registered with TAP.builders)
- * Depends on: js/engine/registry.js, js/engine/scope.js, js/engine/measures.js, js/engine/scores.js,
- *             js/engine/aggregate.js, js/engine/shapes.js (drawing kit), js/core/format.js, js/core/content.js
+ * Depends on: js/engine/registry.js, scope.js, measures.js, scores.js, aggregate.js, shapes.js (drawing kit),
+ *             js/core/format.js, content.js, data.js, config/settings.js (midpoint)
  * Used by: config/reports-industry.js (ind-quad)
  */
 (function (TAP) {

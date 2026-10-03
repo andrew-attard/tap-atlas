@@ -1,8 +1,9 @@
 /*
  * File: tests/test-rules.js
- * Purpose: Tests for each insight rule against the planted cases in docs/PLANTED-CASES.md (TPV-TC-144 to 165, 198).
+ * Purpose: Tests for each insight rule against the planted cases in docs/PLANTED-CASES.md.
  *          Expected figures come from window.SAMPLE_EXPECT, never from the rules' own output.
- * Provides: test cases for INSIGHTS stories (#47 to #53)
+ * Provides: test cases for INSIGHTS stories (#47 to #53): TPV-TC-144 to 147, 149 to 151, 153 to 165 X-rules-*
+ *           (TPV-TC-198 is in tests/test-guardrails.js)
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (T_INSIGHT_SHAPE), the app scripts,
  *             data/sample-plan-data.js, tests/fixtures/sample-expected.js
  * Used by: tests.html

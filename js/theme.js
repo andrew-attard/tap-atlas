@@ -5,7 +5,9 @@
  * Provides: window.TAP_THEME (values, shade(), regionColor(), echarts), CSS variables --tap-* on :root,
  *           the ECharts theme 'tap'
  * Depends on: vendor/echarts.min.js (optional: the chart theme is registered only if ECharts loaded first)
- * Used by: css/*.css (through the variables), js/engine/scope.js (region colours), every chart builder
+ * Used by: css/*.css (through the variables), js/engine/scope.js (region colours), js/engine/shapes.js (chart colours
+ *          for every builder), js/core/format.js, the panel (chart theme, image export), js/ui/shell.js (logo),
+ *          region cards, js/views/industry.js
  */
 (function () {
   'use strict';

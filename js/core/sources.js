@@ -3,7 +3,8 @@
  * Purpose: Turns a figure's source reference into file › sheet › cell, and summarises each region's import.
  * Provides: TAP.sources (address, imports, datesDiffer, dataDate)
  * Depends on: js/core/namespace.js, js/core/data.js, js/core/content.js (regionName, content/text-data.js wording)
- * Used by: tooltips, tables, details, the data sources panel, insights
+ * Used by: tooltips and tables (js/panel/), side panels and details (js/ui/layers.js), the data sources panel, the
+ *          comparison bar (data date), region cards, the Industry and Insights views
  *
  * A source reference (src) is described in docs/ARCHITECTURE.md section 7 and docs/DATA-CONTRACT.md.
  * The cell comes from meta.sourceMap: a fixed cell (src.cell or the section's cells map), or the field's

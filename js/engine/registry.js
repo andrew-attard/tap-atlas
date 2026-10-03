@@ -2,8 +2,10 @@
  * File: js/engine/registry.js
  * Purpose: Keeps the lists of reports, chart builders and views, and checks report definitions before use.
  * Provides: TAP.reports (get, list, all, validate, measureIds, SHAPES, TYPES, SHAPE_TYPES), TAP.builders (register, get, names), TAP.views (register, get, order, list)
- * Depends on: js/core/namespace.js, config/reports-*.js (window.TAP_REPORTS), config/views.js (window.TAP_VIEWS)
- * Used by: js/panel/panel.js, js/ui/app.js, js/ui/shell.js, every builder and view file
+ * Depends on: js/core/namespace.js, config/reports-*.js (window.TAP_REPORTS), config/views.js (window.TAP_VIEWS),
+ *             js/engine/measures.js (validate, at call time)
+ * Used by: js/panel/panel.js, js/ui/app.js, js/ui/shell.js, js/ui/explain.js, js/engine/prepare.js,
+ *          js/engine/shapes.js, js/insights/engine.js, every builder and view file
  */
 (function (TAP) {
   'use strict';

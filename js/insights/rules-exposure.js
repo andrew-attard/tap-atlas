@@ -4,7 +4,8 @@
  *          or on one segment (US-1.7.8). Account names come from the data as they are, so anonymous labels show
  *          as labels (D14).
  * Provides: insight rules for the 'exposure' family (via TAP.insights.defineRule): concentration, atRisk, segmentMix
- * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, the measure catalogue
+ * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/measures.js (the catalogue),
+ *             js/core/data.js (account rows)
  * Used by: js/insights/engine.js
  *
  * The region total is the catalogue's cg.arr, so shares match the charts. The catalogue has no per-account or

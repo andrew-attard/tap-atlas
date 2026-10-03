@@ -3,8 +3,8 @@
  * Purpose: The Overview view: the headline sentence and top insights (US-1.5.3), the region cards (US-1.5.1) and
  *          the ambition chart (US-1.5.2), redrawn as soon as the comparison changes.
  * Provides: view 'overview' (registered with TAP.views)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/store.js, js/engine/measures.js,
- *             js/engine/scope.js, js/ui/layers.js,
+ * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/data.js,
+ *             js/core/format.js, js/engine/measures.js, js/engine/scope.js, js/ui/layers.js,
  *             js/views/overview-cards.js, js/insights/engine.js, js/panel/panel.js, content/text-overview.js
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */

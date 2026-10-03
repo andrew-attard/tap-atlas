@@ -6,7 +6,8 @@
  * Depends on: js/core/namespace.js, js/core/store.js (TAP.notes), config/settings.js, js/core/content.js,
  *             js/core/format.js, js/core/data.js,
  *             js/engine/measures.js (only to look up rate weights and their labels, at call time)
- * Used by: measures, scope entities, insights, panels (combined-figure labels)
+ * Used by: measures, insights, explanations, region cards, and the combined-figure labels in the drawing kit, the
+ *          parts builder and the quadrant
  */
 (function (TAP) {
   'use strict';

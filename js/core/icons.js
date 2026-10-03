@@ -2,7 +2,7 @@
  * File: js/core/icons.js
  * Purpose: Line icons drawn inline as SVG, so nothing loads from the web.
  * Provides: TAP.icons (svg, names)
- * Depends on: js/core/namespace.js
+ * Depends on: js/core/namespace.js, js/core/dom.js (esc, html)
  * Used by: the shell, panels, side panels and views
  * Note: icon shapes are from Lucide (ISC licence, see vendor/LICENSE-lucide.txt).
  */

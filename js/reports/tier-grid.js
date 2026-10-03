@@ -3,9 +3,10 @@
  * Purpose: Draws the tier grid (US-1.5.4): industries against the regions in scope, the tier each leader chose,
  *          group priorities marked as set centrally, and a column counting regions per tier. Offers the four row
  *          sorts and a bubble grid where colour is the tier and size a system figure.
- * Provides: chart builder 'tierGrid' (registered with TAP.builders), TAP.tierStats (forIndustry, all, mostSplit)
+ * Provides: chart builder 'tierGrid' (registered with TAP.builders), TAP.tierStats (forIndustry, all, mostSplit,
+ *           SORTS)
  * Depends on: js/engine/registry.js, js/engine/scope.js, js/engine/measures.js, js/engine/shapes.js (drawing kit),
- *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/data.js
+ *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/data.js, js/core/store.js
  * Used by: config/reports-industry.js (ind-tiers), js/views/industry.js (default industry)
  */
 (function (TAP) {

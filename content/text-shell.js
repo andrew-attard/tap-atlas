@@ -3,7 +3,7 @@
  * Purpose: Wording for the page frame: banners, start-up messages, menu, comparison bar and data sources panel.
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
- * Used by: js/ui/*.js through TAP.content.text
+ * Used by: js/ui/*.js through TAP.content.text; js/panel/panel-menus.js (comparison wording)
  * Owner: the SHELL stream. Placeholders in {braces} are filled in by the code; the organization layer can
  *        replace any phrase by using the same key.
  */

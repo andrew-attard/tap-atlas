@@ -4,7 +4,8 @@
  * Provides: TAP.shell (mount, viewEl, actionsEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
  *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/theme.js (logo)
- * Used by: js/ui/app.js; panel export reads label() for saved images and copied tables
+ * Used by: js/ui/app.js; js/panel/panel.js and panel export read label() for saved images and copied tables;
+ *          js/ui/tour.js (actionsEl)
  */
 (function (TAP) {
   'use strict';

@@ -5,9 +5,9 @@
  *          type and measure for the session (the type is also remembered in the browser), and a few choices
  *          (builder options, the selected insight) only until the shared comparison changes.
  * Provides: TAP.panel (create)
- * Depends on: js/panel/panel-*.js, js/engine/registry.js, js/engine/scope.js, js/core/store.js, js/core/storage.js,
- *             js/core/content.js, js/core/format.js, js/core/sources.js, js/ui/layers.js (all read at call time)
- * Used by: every view
+ * Depends on: js/panel/panel-*.js, js/engine/registry.js, scope.js, js/core/store.js, storage.js, content.js, format.js,
+ *             sources.js, dom.js, icons.js, data.js, js/ui/layers.js, shell.js (label), js/theme.js (all at call time)
+ * Used by: js/views/overview.js, js/views/industry.js
  */
 (function (TAP) {
   'use strict';

@@ -3,7 +3,8 @@
  * Purpose: Insight rules on where regions agree and disagree about industry priorities (US-1.7.4): consensus,
  *          split, and group priorities that a region's own ratings place in the less able or less attractive half.
  * Provides: insight rules for the 'priorities' family (via TAP.insights.defineRule): consensus, split, groupPriority
- * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, the measure catalogue
+ * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, the measure catalogue, js/engine/scores.js
+ *             (quadrant), js/core/data.js
  * Used by: js/insights/engine.js
  */
 (function (TAP) {

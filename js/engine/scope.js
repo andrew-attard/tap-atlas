@@ -4,7 +4,8 @@
  *          colour each one takes by its role (US-1.1.6) and the plain sentence describing it (US-1.1.3).
  * Provides: TAP.scope (entities, sentence, regionIds, colorOf)
  * Depends on: js/core/data.js, js/theme.js, js/core/content.js, js/core/format.js, js/core/store.js, config/settings.js
- * Used by: prepare, builders, cards, the comparison bar, insights
+ * Used by: prepare, the tier grid and quadrant, cards, the comparison bar, panels, details, explanations, the data
+ *          sources panel, insights and every view
  */
 (function (TAP) {
   'use strict';

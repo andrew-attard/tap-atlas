@@ -6,7 +6,8 @@
  *          or an account. Every value is a full cell, so the panel shows its kind and file › sheet › cell.
  * Provides: TAP.details (build)
  * Depends on: js/engine/measures.js, js/engine/scores.js (ind.* measures), js/engine/scope.js, js/core/data.js,
- *             js/core/content.js, js/core/store.js (the scope for an industry alone), config/settings.js
+ *             js/core/content.js, js/core/format.js, js/core/store.js (the scope for an industry alone),
+ *             config/settings.js
  * Used by: js/ui/layers.js
  */
 (function (TAP) {

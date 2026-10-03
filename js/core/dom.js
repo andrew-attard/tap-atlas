@@ -1,7 +1,7 @@
 /*
  * File: js/core/dom.js
  * Purpose: Small helpers for building and finding page elements safely.
- * Provides: TAP.dom (el, text, html, esc, qs, qsa, on, clear)
+ * Provides: TAP.dom (el, append, text, html, esc, qs, qsa, on, clear)
  * Depends on: js/core/namespace.js
  * Used by: every module that draws on screen
  */
