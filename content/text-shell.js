@@ -62,13 +62,26 @@ Object.assign(window.TAP_CONTENT.text, {
     failures: 'Insight rules that were skipped'
   },
 
+  // Start-up screens (US-1.1.1, US-1.8.2). They replace the views when the data can't be used.
   screens: {
+    banner: 'No plan data is shown',
     missingTitle: 'No plan data found',
-    missingBody: 'Run the import to create data/plan-data.js, then reopen this page.',
+    missingBody: 'The data file is missing or could not be read. Run the import to create data/plan-data.js, then reopen this page.',
+    missingLooked: 'Looked for: data/plan-data.js, next to index.html. To look around with fictional figures, open index-sample.html.',
     versionTitle: 'The data file doesn’t match this version of the app',
     versionBody: 'The data file says version {found}; this app reads version {expected}. Re-run the import, or use the matching app folder.',
     invalidTitle: 'The data file has problems that stop the app from opening',
     invalidBody: 'Fix the items below in the import, then reopen this page. The list can be copied for Copilot.',
-    copy: 'Copy the list'
+    count: 'Problems found: {n}',
+    colNumber: '#',
+    colRegion: 'Region',
+    colWhere: 'Where in the data file',
+    colExpected: 'Expected',
+    colFound: 'Found',
+    colProblem: 'Problem',
+    copyHeading: 'Data file check: {n} problems',
+    copy: 'Copy the list',
+    copied: 'List copied.',
+    copyManual: 'This browser blocked copying. The list is selected below: press Ctrl+C to copy it.'
   }
 });
