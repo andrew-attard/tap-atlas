@@ -8,7 +8,8 @@
  *           Writes data/sample-plan-data.js (window.PLAN_DATA) and tests/fixtures/sample-expected.js
  *           (window.SAMPLE_EXPECT, the figures the tests check). Add --check to compare instead of writing.
  * Depends on: Node 18+ only; tools/sample-settings.js, sample-names.js, sample-random.js, sample-build.js,
- *             sample-derive.js, sample-expect.js
+ *             sample-derive.js, sample-plant.js and sample-planted.js (the planted cases), sample-expect.js,
+ *             sample-expect-planted.js
  * Used by: maintainers. The same settings always give byte-identical files (seeded random numbers).
  */
 'use strict';
@@ -19,7 +20,9 @@ const S = require('./sample-settings');
 const NAMES = require('./sample-names');
 const random = require('./sample-random');
 const build = require('./sample-build');
+const plant = require('./sample-plant');
 const expect = require('./sample-expect');
+const planted = require('./sample-expect-planted');
 
 const ROOT = path.join(__dirname, '..');
 const DATA_FILE = 'data/sample-plan-data.js';
@@ -84,6 +87,7 @@ function makePlan() {
     lookups: lookups(),
     regions: S.regions.map(function (rs, i) { return build.region(rs, i, ctx); })
   };
+  plant.apply(plan, ctx);
   return { plan: plan, ctx: ctx };
 }
 
@@ -167,8 +171,12 @@ function main() {
   Object.keys(NAMES.accountKinds).forEach(function (k) { NAMES.accountKinds[k].forEach(function (w) { if (kinds.indexOf(w) === -1) kinds.push(w); }); });
   NAMES.partnerKinds.forEach(function (w) { if (kinds.indexOf(w) === -1) kinds.push(w); });
   x.vettedNames = { stems: NAMES.stems, kinds: kinds };
+  const px = planted.build(made.plan);
+  const bad = planted.check(px);
+  if (bad.length) throw new Error('planted cases that do not hold: ' + bad.join(', ') + '. See docs/PLANTED-CASES.md.');
+  Object.keys(px).forEach(function (k) { x[k] = px[k]; });
   const out = {};
-  out[DATA_FILE] = dataText(made.plan, expect.comment(x));
+  out[DATA_FILE] = dataText(made.plan, expect.comment(x).concat(planted.comment(px)));
   out[EXPECT_FILE] = expectText(x);
   const check = process.argv.indexOf('--check') !== -1;
   let differ = 0;
