@@ -1,0 +1,8 @@
+/*
+ * File: css/pages.css
+ * Purpose: Insights page, Guide page, explanation panel and tour.
+ * Provides: styles for this area only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: PAGES stream. Colours and font sizes come from theme variables only.
+ */
