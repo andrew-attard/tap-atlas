@@ -37,7 +37,7 @@
     regions: ['#274ab9', '#b16312', '#09653e', '#a45d9a', '#940078', '#118753', '#694100', '#3371e7'],
     focusGrey: '#bdb9b9',             // other regions when one is in focus
     combined: '#3d3a3a',              // "the rest" and "organization total", always
-    shadeSteps: [0, 0.45, 0.7],       // lighter shades for stacked parts (mixed toward white)
+    shadeSteps: [0, 0.45, 0.7, 0.85], // lighter shades for stacked parts (mixed toward white), up to 4 parts
 
     /* Tiers: neutral ink steps, so no tier reads as good or bad */
     tiers: {

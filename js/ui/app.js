@@ -50,6 +50,7 @@
   // Store -> address bar and view. The address bar follows the view so the back button works (US-1.1.2).
   function onState(state, changed) {
     if (changed.indexOf('view') < 0) return;
+    if (state.expanded) TAP.store.set({ expanded: null });   // an expanded chart belongs to the view it was on
     if (viewFromHash() !== state.view) window.location.hash = state.view;
     mountView(state.view);
   }
@@ -98,13 +99,20 @@
       // replaceState keeps the opening view out of the back-button history
       history.replaceState(null, '', window.location.pathname + window.location.search + '#' + first);
     }
+    // Insights are worked out afresh for this data (they are cached per plan)
+    if (TAP.insights && !TAP.insights.__stub) TAP.insights.reset();
     mountView(first);
+    // The welcome card, only on the real page: never in screenshots or test sandboxes
+    if (!shot && !opts.root) {
+      try { TAP.tour.offer(); } catch (e) { /* the tour is optional (Should); never block start-up */ }
+    }
     return res;
   }
 
   // Unmounts the running app and drops its listeners; tests use it between runs.
   function stop() {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    try { TAP.tour.stop(); } catch (e) { /* no tour running */ }
     if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
     mounted = null;
   }
