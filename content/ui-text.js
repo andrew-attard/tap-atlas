@@ -11,5 +11,19 @@
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = Object.assign(window.TAP_CONTENT.text || {}, {
-  app: { name: 'TAP Atlas', subtitle: 'Territory Account Plan Atlas' }
+  app: { name: 'TAP Atlas', subtitle: 'Territory Account Plan Atlas' },
+
+  // The term popover and the A to Z glossary list (US-1.6.3, US-1.6.4)
+  glossary: {
+    searchLabel: 'Search the glossary',
+    placeholder: 'Type a term, for example hit rate',
+    count: 'Showing {n} of {total} terms',
+    none: 'No terms match "{q}". Try a shorter word.',
+    why: 'Why it matters:',
+    aliases: 'Also called:',
+    related: 'Related:',
+    orgBadge: 'Organization term',
+    open: 'See the full glossary entry',
+    close: 'Close the definition'
+  }
 });

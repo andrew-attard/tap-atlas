@@ -6,3 +6,59 @@
  * Used by: index.html, index-sample.html, tests.html
  * Owner: CONTENT stream. Colours and font sizes come from theme variables only.
  */
+
+/* A marked term: reads as text with a dotted underline, works as a button (click, tap, keyboard) */
+.tap-term {
+  display: inline; margin: 0; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: inherit; cursor: help;
+  text-decoration: underline dotted var(--tap-muted);
+  text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+.tap-term:hover, .tap-term[aria-expanded="true"] { text-decoration-color: var(--tap-accent); }
+
+/* The definition popover: never blocks the page, closes with Esc, the close button or a click elsewhere */
+.tap-popover {
+  position: absolute; z-index: 60; width: min(380px, calc(100vw - 2 * var(--tap-sp-3)));
+  padding: var(--tap-sp-3) var(--tap-sp-4);
+  background: var(--tap-paper); color: var(--tap-ink);
+  border: var(--tap-control-w) solid var(--tap-ink); border-radius: var(--tap-radius);
+  box-shadow: var(--tap-shadow-md);
+  font-size: var(--tap-fs-body); line-height: 1.45;
+}
+.tap-popover__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--tap-sp-2); margin-bottom: var(--tap-sp-2); }
+.tap-popover__term { font-size: var(--tap-fs-lead); font-weight: 800; padding-top: var(--tap-sp-1); }
+.tap-popover__close { flex: none; margin: calc(-1 * var(--tap-sp-1)) calc(-1 * var(--tap-sp-2)) 0 0; }
+.tap-popover__short { margin-bottom: var(--tap-sp-2); }
+.tap-popover__why { margin-bottom: var(--tap-sp-3); color: var(--tap-muted); }
+.tap-popover__why strong { color: var(--tap-ink); }
+.tap-popover__link {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--tap-ink);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.tap-popover__link:hover { color: var(--tap-accent-deep); }
+
+/* The A to Z glossary list */
+.tap-gloss { max-width: var(--tap-max-w); }
+.tap-gloss__label { display: block; margin-bottom: var(--tap-sp-1); }
+.tap-gloss__search { width: min(480px, 100%); font-size: var(--tap-fs-body); }
+.tap-gloss__count { margin: var(--tap-sp-2) 0 var(--tap-sp-3); font-size: var(--tap-fs-label); }
+.tap-gloss__none { font-weight: 600; }
+.tap-gloss__group { margin-bottom: var(--tap-sp-4); }
+.tap-gloss__letter {
+  margin-bottom: var(--tap-sp-2); padding-bottom: var(--tap-sp-1);
+  font-size: var(--tap-fs-h3); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-gloss__entry { padding: var(--tap-sp-3) 0; border-bottom: 1px solid var(--tap-grid); }
+.tap-gloss__entry.is-target { padding-left: var(--tap-sp-3); border-left: var(--tap-highlight-w) solid var(--tap-accent); background: var(--tap-accent-tint); }
+.tap-gloss__entry p { margin-bottom: var(--tap-sp-1); }
+.tap-gloss__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
+.tap-gloss__term { font-size: var(--tap-fs-lead); font-weight: 800; }
+.tap-gloss__why { color: var(--tap-muted); }
+.tap-gloss__why strong, .tap-gloss__meta strong { color: var(--tap-ink); }
+.tap-gloss__meta { font-size: var(--tap-fs-body); }
+.tap-gloss__rel {
+  margin: 0 var(--tap-sp-2) 0 0; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--tap-ink); text-decoration: underline; text-underline-offset: 3px;
+}
+.tap-gloss__rel:hover { color: var(--tap-accent-deep); }
