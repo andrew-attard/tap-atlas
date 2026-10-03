@@ -147,27 +147,45 @@
             a.equal(ofRule('x-test-nodata').length, 0);
             var f = TAP.insights.failures(), ids = f.map(function (x) { return x.ruleId; });
             a.ok(ids.indexOf('x-test-nodata') >= 0, 'missing input is logged');
+            a.equal(ids.filter(function (id) { return id === 'x-test-throws'; }).length, 1, 'logged once');
             a.ok(ids.indexOf('x-test-throws') >= 0, 'a rule that throws is logged');
             a.match(f[ids.indexOf('x-test-throws')].message, /broken on purpose/);
-            var notes = TAP.notes.list('insights').map(function (n) { return n.message; }).join(' | ');
-            a.match(notes, /x-test-nodata/, 'noted for the data sources panel');
-            a.match(notes, /x-test-throws/);
+            a.equal(TAP.notes.list('insights').length, 0, 'reported once, through failures(), which the data sources panel lists');
           });
         });
       });
     });
 
-    if (FAMILIES.some(built)) {
-      T.test('TPV-TC-133', 'On the sample data every built rule produces at least one insight', function (a) {
+    if (FAMILIES.every(built)) {
+      T.test('TPV-TC-133', 'On the sample data every rule produces at least one insight', function (a) {
         sample();
-        window.TAP_RULES.rules.filter(function (r) { return r.enabled && built(r.family); }).forEach(function (r) {
+        window.TAP_RULES.rules.filter(function (r) { return r.enabled; }).forEach(function (r) {
           a.ok(ofRule(r.id).length > 0, r.id + ' fires on the sample data');
         });
         a.deepEqual(TAP.insights.failures(), [], 'no rule failed');
       });
     } else {
-      T.skip('TPV-TC-133', 'On the sample data every built rule produces at least one insight', 'waits for the rule families (#47 to #52)');
+      T.skip('TPV-TC-133', 'On the sample data every rule produces at least one insight', 'waits for every rule family (#47 to #52)');
     }
+
+    T.test('X-insights-malformed', 'A malformed finding is logged for its rule and never breaks the others', function (a) {
+      sample();
+      var bad = {
+        'x-bad-object': function () { return { key: 'x' }; },
+        'x-bad-null': function (ctx) { return perRegion('nb.arr')(ctx).concat([null]); },
+        'x-bad-figure': function (ctx) { return perRegion('nb.arr', { figures: [null] })(ctx); },
+        'x-bad-regions': function (ctx) { return perRegion('nb.arr', { regionIds: 'na' })(ctx); }
+      };
+      withRule({ id: 'x-test-ok' }, perRegion('nb.arr'), function () {
+        Object.keys(bad).forEach(function (id) {
+          withRule({ id: id }, bad[id], function () {
+            a.equal(ofRule('x-test-ok').length, 7, id + ': the healthy rule still produces insights');
+            a.equal(ofRule(id).length, 0, id + ' produces nothing');
+            a.ok(TAP.insights.failures().some(function (f) { return f.ruleId === id; }), id + ' is logged');
+          });
+        });
+      });
+    });
 
     T.test('X-insights-guardrails', 'Blank figures, too few regions and banned words never reach an insight', function (a) {
       sample();
@@ -181,6 +199,16 @@
       withRule({ id: 'x-test-word', template: '{region} has an unrealistic figure of {v}.' }, perRegion('nb.arr'), function () {
         a.equal(ofRule('x-test-word').length, 0, 'a sentence with a banned word is refused');
         a.ok(TAP.insights.failures().some(function (f) { return f.ruleId === 'x-test-word' && /unrealistic/.test(f.message); }));
+      });
+      ['failed', 'errors', 'wrongly', 'mistakes', 'NaN', 'undefined', 'null', 'Infinity'].forEach(function (w) {
+        withRule({ id: 'x-test-w', template: '{region} shows {w}.' }, perRegion('nb.arr', { vars: { region: 'A', w: w } }), function () {
+          a.equal(ofRule('x-test-w').length, 0, '"' + w + '" is refused');
+          a.ok(TAP.insights.failures().some(function (f) { return f.ruleId === 'x-test-w'; }), '"' + w + '" is logged');
+        });
+      });
+      withRule({ id: 'x-test-noprov', compare: true }, perRegion('nb.arr', { provided: undefined }), function () {
+        a.equal(ofRule('x-test-noprov').length, 0);
+        a.ok(TAP.insights.failures().some(function (f) { return f.ruleId === 'x-test-noprov'; }), 'a comparison without provided is logged');
       });
       withRule({ id: 'x-test-name' }, perRegion('nb.arr', { vars: { region: 'Bad Harbour', v: '1' } }), function () {
         a.equal(ofRule('x-test-name').length, 7, 'a banned word inside a workbook name is the data’s, not ours');
