@@ -24,3 +24,6 @@ desktop.ini
 .idea/
 *.log
 node_modules/
+
+# Assistant worktrees and local session files
+.claude/
