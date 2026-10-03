@@ -447,6 +447,31 @@
       a.equal(html.indexOf('<b>B</b>'), -1, 'region escaped');
     });
 
+    T.test('X-industry-quad-axes', 'Both axes always run over the full score range, 1 to 3, so the four areas are equal', function (a) {
+      [[{ mode: 'all' }, {}], [{ mode: 'all' }, { everyRegion: true }], [{ mode: 'one', focus: 'delta' }, {}],
+        [{ mode: 'all' }, { industryFilter: 'ind3' }]].forEach(function (p) {
+        var res = quad('bubble', p[0], { opts: p[1] }), label = JSON.stringify(p);
+        a.deepEqual([res.option.xAxis.min, res.option.xAxis.max], [1, 3], label + ': x from 1 to 3');
+        a.deepEqual([res.option.yAxis.min, res.option.yAxis.max], [1, 3], label + ': y from 1 to 3');
+        valueSeries(res).forEach(function (s) { a.equal(s.clip, false, label + ': bubbles on the edge are not cut'); });
+      });
+      var area = series(quad('bubble', { mode: 'all' })).filter(function (x) { return x.markArea; })[0].markArea.data;
+      var q = area.filter(function (d) { return d[0].tapQuadrant === 'attractiveAble'; })[0];
+      a.deepEqual([q[0].coord, q[1].coord], [[2, 2], [3, 3]], 'the top-right area is a square from 2 to 3');
+    });
+
+    T.test('X-industry-quad-labels', 'Labels move apart to avoid overlap, with leader lines; hiding is the last resort', function (a) {
+      [{}, { everyRegion: true }].forEach(function (o) {
+        valueSeries(quad('bubble', { mode: 'all' }, { opts: o })).forEach(function (s) {
+          a.equal(s.labelLayout.moveOverlap, 'shiftY', 'labels shift apart');
+          a.equal(s.labelLayout.hideOverlap, true, 'then hide if they must');
+          a.ok(s.labelLine && s.labelLine.show, 'short leader lines');
+        });
+      });
+      var res = quad('bubble', { mode: 'all' });
+      a.equal(res.table.rows.length, points(res).length, 'every point is also in the table, so a hidden label is never lost');
+    });
+
     T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {
       var all = quad('bubble', { mode: 'all' }).takeaway, one = quad('bubble', { mode: 'one', focus: 'delta' }).takeaway;
       a.ok(all && one && all !== one, 'differs by scope');
