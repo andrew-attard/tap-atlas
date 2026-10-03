@@ -14,6 +14,8 @@
   var cache = null;                   // {key, plan, list, failures}
   // Vars holding names from the workbooks. They are the data's words, not ours, so the banned-word check skips them.
   var NAME_VARS = ['region', 'industry', 'industries', 'accounts', 'segment'];
+  // Words that only reach a sentence when a figure went missing on the way.
+  var GAP_WORDS = ['NaN', 'undefined', 'null', 'Infinity'];
 
   function rules() { return (window.TAP_RULES && window.TAP_RULES.rules) || []; }
   function wording() { return (window.TAP_RULES && window.TAP_RULES.wording) || {}; }
@@ -51,10 +53,22 @@
     return Object.prototype.hasOwnProperty.call(obj, parts[0]) && present(obj[parts[0]], parts.slice(1));
   }
 
+  // A skipped rule is reported once, through failures(), which the data sources panel lists.
   function fail(out, rule, reason) {
-    var message = fill(wording().phrases.failed, { rule: rule.id, reason: reason });
-    out.failures.push({ ruleId: rule.id, family: rule.family, message: message });
-    TAP.notes.add({ source: 'insights', message: message });
+    out.failures.push({ ruleId: rule.id, family: rule.family, message: fill(wording().phrases.failed, { rule: rule.id, reason: reason }) });
+  }
+
+  // Why a rule's findings can't be used, or null. One malformed finding sets aside the whole rule, never the session.
+  function malformed(rule, found) {
+    var ph = wording().phrases;
+    if (!Array.isArray(found)) return ph.notList;
+    for (var i = 0; i < found.length; i++) {
+      var f = found[i];
+      if (!f || typeof f !== 'object' || f.key == null || !Array.isArray(f.regionIds) || !Array.isArray(f.figures) ||
+          f.figures.some(function (g) { return !g || typeof g !== 'object'; })) return ph.badFinding;
+      if (rule.compare && typeof f.provided !== 'number') return ph.noProvided;
+    }
+    return null;
   }
 
   function run() {
@@ -63,18 +77,18 @@
     rules().forEach(function (rule) {
       if (rule.enabled === false) return;
       if (!code[rule.id]) { if (!stubbed(rule.family)) fail(out, rule, ph.noCode); return; }
-      if (!hasInput(rule)) { fail(out, rule, fill(ph.noData, { fields: (rule.reads || []).join(', ') })); return; }
-      var found;
       try {
-        found = code[rule.id](context(rule)) || [];
+        if (!hasInput(rule)) { fail(out, rule, fill(ph.noData, { fields: (rule.reads || []).join(', ') })); return; }
+        var found = code[rule.id](context(rule)), bad = malformed(rule, found), mine = [];
+        if (bad) { fail(out, rule, bad); return; }
+        found.forEach(function (f) {
+          var x = build(rule, f, out);
+          if (x) mine.push(x);
+        });
+        out.list = out.list.concat(mine);
       } catch (e) {
         fail(out, rule, String((e && e.message) || e));
-        return;
       }
-      found.forEach(function (f) {
-        var x = build(rule, f, out);
-        if (x) out.list.push(x);
-      });
     });
     out.list.sort(bySignificance);
     return out;
@@ -88,41 +102,49 @@
   /* ---------- one finding -> one insight ---------- */
 
   function blankFigure(f) {
-    return (f.figures || []).some(function (g) { return !g.cell || g.cell.state === 'notProvided'; });
+    return f.figures.some(function (g) { return !g.cell || g.cell.state === 'notProvided'; });
   }
 
-  // The first banned word in the sentence, leaving out the names that came from the workbooks.
-  function bannedWord(template, vars) {
+  // The sentence in our own words: the template filled with every var except the names from the workbooks.
+  function ownWords(template, vars) {
     var own = {};
     Object.keys(vars || {}).forEach(function (k) { own[k] = NAME_VARS.indexOf(k) >= 0 ? '' : vars[k]; });
-    var text = ' ' + fill(template, own).toLowerCase() + ' ';
-    return (wording().banned || []).filter(function (w) {
-      var esc = String(w).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return new RegExp('(^|[^a-z])' + esc + '([^a-z]|$)').test(text);
-    })[0] || null;
+    return ' ' + fill(template, own) + ' ';
+  }
+  function wordIn(text, w, flags) {
+    var esc = String(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(^|[^A-Za-z])' + esc + '([^A-Za-z]|$)', flags).test(text);
+  }
+  // The first banned word (any case), or the first word that shows a figure went missing (exact case).
+  function bannedWord(text) {
+    return (wording().banned || []).filter(function (w) { return wordIn(text, w, 'i'); })[0] || null;
+  }
+  function gapWord(text) {
+    var missing = TAP.content.text('states.notProvided');
+    return GAP_WORDS.concat([missing]).filter(function (w) { return wordIn(text, w, ''); })[0] || null;
   }
 
   function build(rule, f, out) {
     var ph = wording().phrases, min = settings().minRegions || 3;
     if (blankFigure(f)) return null;                                     // never built from a blank
-    if (rule.compare && !(f.provided >= min)) return null;               // too few regions to compare
+    if (rule.compare && f.provided < min) return null;                   // too few regions to compare
     var template = (f.variant && rule.templates && rule.templates[f.variant]) || rule.template;
-    var sentence = fill(template, f.vars);
-    var gap = /\{(\w+)\}/.exec(sentence);
-    if (gap) { fail(out, rule, fill(ph.unfilled, { gap: gap[0] })); return null; }
-    var word = bannedWord(template, f.vars);
+    var sentence = fill(template, f.vars), own = ownWords(template, f.vars);
+    var gap = /\{(\w+)\}/.exec(sentence), lost = gapWord(own);
+    if (gap || lost) { fail(out, rule, fill(ph.unfilled, { gap: gap ? gap[0] : lost })); return null; }
+    var word = bannedWord(own);
     if (word) { fail(out, rule, fill(ph.banned, { word: word })); return null; }
 
-    var regionIds = f.regionIds || [], n = TAP.data.regions().length;
+    var regionIds = f.regionIds, n = TAP.data.regions().length;
     var attach = (rule.attach || []).slice();
     var reportId = attach.length && TAP.reports.get(attach[0]) ? attach[0] : null;
     var strength = clamp(f.strength), money = clamp(f.money), breadth = clamp(n ? regionIds.length / n : 0);
     return {
-      id: rule.id + ':' + f.key, ruleId: rule.id, family: rule.family, sentence: sentence, figures: f.figures || [],
+      id: rule.id + ':' + f.key, ruleId: rule.id, family: rule.family, sentence: sentence, figures: f.figures,
       description: rule.description, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
       significance: significance(rule.family, strength, money, breadth),
       strength: strength, money: money, breadth: breadth,
-      sources: f.sources && f.sources.length ? f.sources : (f.figures || []).map(function (g) { return g.cell.src; }),
+      sources: f.sources && f.sources.length ? f.sources : f.figures.map(function (g) { return g.cell.src; }),
       reportId: reportId, attach: reportId ? attach : [],
       highlight: { reportId: reportId, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
         quadrant: f.quadrant || null, mark: reportId ? rule.highlight || null : null },
@@ -155,10 +177,8 @@
   function state() {
     var plan = TAP.data.plan(), k = key();
     if (!cache || cache.plan !== plan || cache.key !== k) {
-      cache = { plan: plan, key: k };
-      var res = run();
-      cache.list = res.list;
-      cache.failures = res.failures;
+      var res = run();                                   // assigned only once the run has finished
+      cache = { plan: plan, key: k, list: res.list, failures: res.failures };
     }
     return cache;
   }

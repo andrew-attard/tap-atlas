@@ -157,9 +157,11 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       'Never draw an insight from a value that was not provided: a blank is not low and not zero.',
       'Avoid loaded words such as unrealistic, wrong, poor or inconsistent.'
     ],
-    banned: ['unrealistic', 'wrong', 'poor', 'poorly', 'inconsistent', 'inconsistency', 'incorrect', 'mistake', 'error',
-      'bad', 'unreasonable', 'implausible', 'overambitious', 'over-ambitious', 'naive', 'careless', 'fail', 'failure',
-      'questionable', 'doubtful', 'unrealistically', 'flawed'],
+    banned: ['unrealistic', 'unrealistically', 'wrong', 'wrongly', 'poor', 'poorly', 'poorer', 'poorest', 'inconsistent',
+      'inconsistently', 'inconsistency', 'inconsistencies', 'incorrect', 'incorrectly', 'mistake', 'mistakes', 'mistaken',
+      'error', 'errors', 'erroneous', 'bad', 'badly', 'unreasonable', 'unreasonably', 'implausible', 'implausibly',
+      'overambitious', 'over-ambitious', 'naive', 'careless', 'fail', 'fails', 'failed', 'failing', 'failure', 'failures',
+      'questionable', 'doubtful', 'flaw', 'flaws', 'flawed'],
     phrases: {
       label: 'Observation to discuss',
       times: { 2: 'twice', 3: 'three times', 4: 'four times', 5: 'five times' },
@@ -178,7 +180,9 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       mediumRisk: '{name} (medium risk)',
       failed: 'The insight rule "{rule}" was skipped: {reason}', noData: 'the data has none of the fields it reads ({fields}).',
       noCode: 'it has no rule code.', banned: 'its sentence used the word "{word}", which the wording guide avoids.',
-      unfilled: 'its sentence had a gap ({gap}).'
+      unfilled: 'its sentence had a gap ({gap}).', notList: 'it did not return a list of findings.',
+      badFinding: 'one of its findings was incomplete (it needs a key, a list of regions and a list of figures).',
+      noProvided: 'it compares regions but did not say how many provide the value.'
     }
   };
 })(window.TAP_RULES);
