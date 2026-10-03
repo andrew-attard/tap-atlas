@@ -42,7 +42,7 @@ const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/panel.css',
 
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [
-  'tests/test-setup.js', 'tests/test-contracts.js', 'tests/test-core.js',
+  'tests/test-setup.js', 'tests/test-contracts.js', 'tests/test-core.js', 'tests/test-theme.js',
   'tests/test-data.js', 'tests/test-check.js', 'tests/test-sources.js',
   'tests/test-combine.js', 'tests/test-measures.js', 'tests/test-shapes.js',
   'tests/test-shell.js', 'tests/test-content.js', 'tests/test-panel.js',
