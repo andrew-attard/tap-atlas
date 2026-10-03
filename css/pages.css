@@ -6,3 +6,9 @@
  * Used by: index.html, index-sample.html, tests.html
  * Owner: PAGES stream. Colours and font sizes come from theme variables only.
  */
+
+/* ---------- Explanation side panel (US-1.6.5) ---------- */
+.tap-explain__report { margin: var(--tap-sp-3) 0 0; font-size: var(--tap-fs-lead); font-weight: 800; line-height: 1.3; }
+.tap-explain__sec { padding-top: var(--tap-sp-3); margin-top: var(--tap-sp-3); border-top: var(--tap-rule-w) solid var(--tap-grid); }
+.tap-explain__head { margin: 0 0 var(--tap-sp-1); font-size: var(--tap-fs-body); font-weight: 800; }
+.tap-explain__para { margin: 0 0 var(--tap-sp-2); font-size: var(--tap-fs-body); line-height: 1.5; }
