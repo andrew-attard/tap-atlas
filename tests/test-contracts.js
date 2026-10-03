@@ -39,8 +39,8 @@
     sourcesPanel: ['render'],
     screens: ['show'],
     glossary: ['popover', 'render'],
-    explain: ['open'],
-    tour: ['offer', 'start'],
+    explain: ['open', 'sections'],
+    tour: ['offer', 'start', 'stop', 'steps'],
     overviewCards: ['render'],
     app: ['start', 'stop', 'mountView', 'current']
   };

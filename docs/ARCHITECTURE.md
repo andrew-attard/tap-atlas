@@ -363,8 +363,8 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 | `TAP.layers.top()` | The open side panel's name, or null |
 | `TAP.sourcesPanel.render(el)` | The data sources panel body: imports, `TAP.notes`, insight `failures()` |
 | `TAP.glossary.popover(termId, anchorEl)` / `render(el)` | Term popover / the searchable glossary list (CONTENT) |
-| `TAP.explain.open(reportId)` | The explanation side panel (PAGES) |
-| `TAP.tour.offer()` / `start()` | The welcome card / the tour itself (PAGES) |
+| `TAP.explain.open(reportId, {cmp})` / `sections(reportId, cmp)` | The explanation side panel; `cmp` is a panel's own comparison when it has one. `sections` returns the content as data (PAGES) |
+| `TAP.tour.offer()` / `start()` / `stop()` | The welcome card (offered by `app.start` on the real page only) / the tour itself / remove both. Also `steps()` and `fullscreen()` (PAGES) |
 | `TAP.overviewCards.render(el)` | The region cards for the current scope (OVERVIEW) |
 
 **Formatting: `TAP.format`** (`js/core/format.js`). `money(v, {scale, currency})` (chart style, €1.2M; `v` is in thousands unless `scale` says otherwise), `moneyExact`, `pct(v, {exact})`, `num(v, {decimals})`, `rating(v, field)`, `tier(v)`, `cell(cell, {unit, exact, field})`, `kind(k)` (returns `{glyph, label, text}`), `date(iso, {time})`, `list(names)`. The theme's keys are documented in `js/theme.js` itself.
