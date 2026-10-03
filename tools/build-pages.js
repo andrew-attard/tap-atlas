@@ -18,7 +18,7 @@ const APP = [
   'js/theme.js',
   'js/core/namespace.js', 'js/core/dom.js', 'js/core/icons.js', 'js/core/storage.js', 'js/core/store.js', 'js/core/format.js',
   'config/settings.js',
-  'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-panel.js',
+  'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-data.js', 'content/text-panel.js',
   'content/text-overview.js', 'content/text-industry.js', 'content/text-pages.js', 'content/glossary.js', 'content/guide.js',
   'ORG',
   'js/core/content.js',
