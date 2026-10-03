@@ -75,3 +75,21 @@
 .tap-ov__hint { font-size: var(--tap-fs-label); color: var(--tap-muted); }
 .tap-ov__insights:empty { display: none; }
 .tap-ov__title { margin: 0; font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+
+/* ---------- headline and top insights (US-1.5.3) ---------- */
+
+.tap-ov__headline { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 75rem; }
+.tap-ov__sentence { margin: 0; font-size: var(--tap-fs-h3); line-height: 1.4; font-weight: 600; }
+/* Figures carry a solid underline, so they read apart from the dotted glossary terms beside them. */
+.tap-ov__sentence .tap-ov-fig { font-size: inherit; text-align: left; text-decoration: underline solid currentColor; text-decoration-thickness: 2px; }
+.tap-ov__all-insights { font-size: var(--tap-fs-body); font-weight: 700; color: var(--tap-accent-deep); }
+
+.tap-ov-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--tap-sp-4) var(--tap-sp-6); }
+.tap-ov-insight {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--tap-sp-2);
+  padding-top: var(--tap-sp-2); border-top: var(--tap-highlight-w) solid var(--tap-ink);
+}
+.tap-ov-insight__label { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-ov-insight__sentence { margin: 0; font-size: var(--tap-fs-body); line-height: 1.45; font-weight: 600; }
+.tap-ov-insight__regions { display: flex; flex-wrap: wrap; gap: 2px var(--tap-sp-3); font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-ov-insight__actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); margin-top: auto; }
