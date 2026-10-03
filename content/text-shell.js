@@ -12,6 +12,26 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   menu: { label: 'Views' },
 
+  // The comparison bar (US-1.1.3). The sentence itself comes from scope.* in content/text-engine.js.
+  compare: {
+    label: 'Compare',
+    modesLabel: 'Comparison mode',
+    modes: { all: 'All regions', one: 'One vs the rest', pair: 'One vs one', set: 'Chosen set', org: 'Organization total' },
+    focus: 'Focus region',
+    region: 'Region',
+    second: 'against',
+    restAs: 'Show the others',
+    restAsIndividual: 'Individually',
+    restAsCombined: 'As one figure',
+    restAgg: 'Combined as',
+    restAggAverage: 'Average',
+    restAggTotal: 'Total',
+    setLabel: 'Regions in the set',
+    setMin: 'A set needs at least two regions.',
+    explain: 'What the combined figure means',
+    dataDate: 'Data: {date}'
+  },
+
   banner: {
     sample: 'Sample data: all figures are fictional',
     internal: 'Internal: contains regional plan data, do not forward'

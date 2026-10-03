@@ -36,6 +36,55 @@
 .tap-menu__item:hover { background: var(--tap-surface); }
 .tap-menu__item[aria-current="page"] { font-weight: 800; border-bottom-color: var(--tap-ink); }
 
+/* Comparison bar: row 1 is the mode and its pickers, row 2 the sentence and the data date */
+.tap-cmp {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2);
+  padding: var(--tap-sp-3) var(--tap-edge);
+  background: var(--tap-surface); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-cmp__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-6); }
+.tap-cmp__row--sentence { position: relative; gap: var(--tap-sp-2) var(--tap-sp-4); }
+.tap-cmp__title, .tap-cmp__label { font-size: var(--tap-fs-body); font-weight: 800; }
+.tap-cmp__label { font-weight: 600; }
+.tap-cmp__picker { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
+.tap-cmp .tap-cmp__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); background: var(--tap-ground); }
+
+/* Segmented control: the selected option is filled with ink, never red */
+.tap-seg { display: inline-flex; flex-wrap: wrap; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
+.tap-seg__opt {
+  min-height: 40px; padding: var(--tap-sp-2) var(--tap-sp-4);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
+  background: transparent; border: 0; border-left: var(--tap-rule-w) solid var(--tap-ink); cursor: pointer;
+}
+.tap-seg__opt:first-child { border-left: 0; }
+.tap-seg__opt:hover { background: var(--tap-surface); }
+.tap-seg__opt[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+
+/* Region chips for a chosen set: colour square, name and a tick, so the state never relies on colour */
+.tap-cmp__chips { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-cmp__chip {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-2); min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
+  background: transparent; border: var(--tap-rule-w) solid var(--tap-rule); cursor: pointer;
+}
+.tap-cmp__chip[aria-pressed="true"] { font-weight: 800; background: var(--tap-ground); border-color: var(--tap-ink); }
+.tap-cmp__tick { display: inline-block; min-width: 1ch; }
+
+/* The plain sentence, its explanation and the data date */
+.tap-cmp__say { flex: 1 1 480px; display: flex; align-items: center; gap: var(--tap-sp-2); margin: 0; }
+.tap-cmp__sentence { font-size: var(--tap-fs-h3); line-height: 1.3; font-weight: 800; }
+.tap-cmp__explain { flex: none; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
+.tap-cmp__date { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); background: var(--tap-ground); }
+.tap-cmp__pop {
+  position: absolute; top: calc(100% + var(--tap-sp-2)); left: 0; z-index: 40;
+  width: min(560px, 92vw); padding: var(--tap-sp-4) var(--tap-sp-6);
+  background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-lg);
+}
+.tap-cmp__pop-title { font-size: var(--tap-fs-lead); margin-bottom: var(--tap-sp-2); }
+.tap-cmp__pop p { margin: 0; }
+.tap-cmp__status { margin: 0; font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-cmp__status:empty { display: none; }
+
 /* The area views mount into */
 .tap-view { display: block; padding: var(--tap-sp-8) var(--tap-edge) var(--tap-sp-12); max-width: var(--tap-max-w); }
 .tap-view:focus { outline: none; }
