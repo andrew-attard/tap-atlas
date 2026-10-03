@@ -28,6 +28,10 @@ jobs:
       - name: Lint self-test
         run: node tools/lint.js --self-test
 
+      - name: Sample data matches the generator
+        run: |
+          if [ -f tools/generate-sample-data.js ]; then node tools/generate-sample-data.js --check; fi
+
       - name: Denylist scan (skipped in CI)
         run: scripts/check-text.sh README.md
 

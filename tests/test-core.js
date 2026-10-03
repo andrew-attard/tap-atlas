@@ -173,6 +173,8 @@
       var text = root.textContent;
       a.ok(text.indexOf('Overview') >= 0, 'the Overview view is shown');
       a.equal(text.split('the Overview view').length - 1, 1, 'shown once');
+      TAP.app.stop();
+      a.equal(TAP.app.current(), null, 'stopped');
     });
 
     T.test('X-core-app-missing', 'With no data, start-up reports "missing" instead of drawing views', function (a) {

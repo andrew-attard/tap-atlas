@@ -42,7 +42,7 @@
     explain: ['open'],
     tour: ['offer', 'start'],
     overviewCards: ['render'],
-    app: ['start', 'mountView', 'current']
+    app: ['start', 'stop', 'mountView', 'current']
   };
 
   var GLOBALS = ['TAP_THEME', 'TAP_SETTINGS', 'TAP_VIEWS', 'TAP_REPORTS', 'TAP_RULES', 'TAP_CONTENT'];

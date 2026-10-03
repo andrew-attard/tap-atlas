@@ -159,7 +159,14 @@ Zero is a value (`v: 0`). A blank is `notProvided` with `v: null`. Not applicabl
 - `imports()` returns, per region, `{regionId, name, fileName, fileModified, importedAt, notes}`.
 - `datesDiffer()` and `dataDate()` give the latest import date, for "Data: 2 Oct 2026".
 
-A **combined source** is `{combined: true, how: 'sum'|'mean'|'wmean'|'rating'|'count'|'list', regionIds, excluded: [regionIds with no value], weightBy}`.
+A **combined source** is `{combined: true, how: 'sum'|'mean'|'wmean'|'rating'|'count'|'list', regionIds, excluded, notApplicable, weightBy, weighted, weightFallback, partial, parts}`:
+- `excluded`: regions whose value is not provided. They are named in notes.
+- `notApplicable`: regions where the value doesn't apply. They are left out quietly, never as a gap.
+- The regions actually used are `regionIds` minus both.
+- `weightFallback: true` means the weight couldn't be resolved, so an unweighted mean was used, with a `TAP.notes` entry.
+- `parts`: on derived sums, the combined part cells.
+
+A **multi-row source** (a sum over several rows of one region) has `row: null` and `rows: [...]`. App-calculated cells may carry `parts`; score cells carry `fields` (the ratings used).
 
 **Combining: `TAP.agg`** (`js/engine/aggregate.js`, owned by ENGINE). This is the **only** place the US-1.2.5 table is implemented, and insights reuse it.
 - `combine(items, valueKind, how, opts)`:
@@ -170,7 +177,10 @@ A **combined source** is `{combined: true, how: 'sum'|'mean'|'wmean'|'rating'|'c
   - `range: {min, max}` for ratings;
   - `counts: {value: n}` for categories;
   - `items` for text.
-- Not-provided and not-applicable cells are excluded and named in `src.excluded`. If nothing is left, the result is `notProvided`.
+- Not-provided cells are excluded and named in `src.excluded`; not-applicable ones go in `src.notApplicable`. If nothing is left, the result is `notProvided`, or `notApplicable` when every item was not applicable.
+- Category results also carry `v: [{value, n}]`.
+- Helpers: `TAP.agg.weightBy(measureId, opts)` returns the weight measure id; `TAP.agg.describe(cell)` returns the plain label, e.g. "Average of 6 regions, weighted by target accounts".
+- An unknown `valueKind` throws.
 
 | valueKind | total | average |
 |---|---|---|
@@ -282,7 +292,8 @@ TAP_REPORTS['ov-ambition'] = {
 | `TAP.reports.validate(def)` | Returns error strings. An invalid definition shows its errors **in its own panel only** |
 | `TAP.shapes.types(def, entityCount)` | The allowed chart types: table always; radar only with 3 or fewer entities; bubble only with a size measure |
 | `TAP.shapes.label(type)` | The menu name, for example "Stacked bar" |
-| `TAP.prepare.run(def, ctx)` | Runs the measures over the scope entities into a dataset `{entities, rows, columns, missing, empty}`. Each row cell is a full cell, with source |
+| `TAP.prepare.run(def, ctx)` | Runs the measures over the scope entities into a dataset `{def, dimension, primary, entities, rows, columns, missing, missingIds, empty, ctx}`. Each row cell is a full cell, with source; year columns are keyed `<id>@y1..3`. Also `TAP.prepare.primaryIds(def, ctx)` and `selected(def, ctx)` |
+| `TAP.shapes.kit` | Shared drawing helpers for builders (sizes, shades, rings, tooltips). `TAP.shapes.types(def, n, {breakdown})` offers `groupedBar` only when a breakdown is chosen |
 | `TAP.builders.register(name, fn)` / `get(name)` | The builder registry |
 
 **ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme}`.
@@ -304,6 +315,13 @@ TAP_REPORTS['ov-ambition'] = {
 
 Display nudging (jitter, label placement) never changes the values shown in tooltips or tables.
 
+**Builder conventions for the panel:**
+- ECharts data items carry `entityId`, `key` (or `keys`) and `raw`; not-provided marks have `np: true`.
+- Series carry `tapRole`: `'value'`, `'total'`, `'notProvided'` or `'highlight'`.
+- Tooltip HTML uses the classes `tap-tip`, `tap-tip-title` and `tap-tip-row`, styled in `css/panel.css`.
+- A radar leaves out any group with a blank rating; a bubble leaves out rows with a blank x or y. Both name the left-out items in `notes`.
+- The `ind.*` measures are defined in `scores.js`.
+
 **Escaping.** Builder `html` and every ECharts tooltip or label `formatter` that returns HTML must pass every data value (region, industry and account names, commentary, success factors) through `TAP.dom.esc()`. These strings come from the workbooks.
 
 **The bubble view of a `parts` report** (for example `ov-ambition`) is drawn by the `parts` builder, using the definition's `x`, `y` and `size`. `TAP.reports.validate` checks every type against its shape (`TAP.reports.SHAPE_TYPES`) and every measure id it names (`TAP.reports.measureIds`).
@@ -314,7 +332,10 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 
 - `TAP.panel.create(el, reportId, opts)` returns `{id, el, refresh(), highlight(target), expand(on), destroy()}`. The panel owns the title, takeaway, chart or table, legend, source line and controls (US-1.2.2). It re-renders on store changes.
 - `TAP.views.register(id, { title, mount(el) })`. `mount` returns `{destroy()}`. `TAP.views.get(id)` and `TAP.views.order()` read `TAP_VIEWS` (`js/engine/registry.js`).
-- `TAP.layers.open(name, payload)`, `close()` and `openDetails(target)` handle the side panels: details, data sources, glossary, explanation. They don't block the page; Esc closes the top one.
+- `TAP.layers.open(name, payload)`, `close()` and `openDetails(target)` handle the side panels, one at a time. They don't block the page.
+  - Built-in names: `'sources'`, `'details'` and `'glossary'` (`payload.termId`, drawn with `TAP.glossary.render`).
+  - Any other name shows `payload.title` and calls `payload.render(bodyEl)`, so for example PAGES opens the explanation panel without touching layers.
+- **Esc order:** popovers handle Esc first and stop it (`preventDefault()`). Side panels listen on `window` and ignore an Esc that was already handled. Then an expanded panel closes.
 - `TAP.details.build(target)` returns `{title, groups: [{title, rows: [{label, cell}]}]}` (owned by INDUSTRY; the shell draws it).
 
 **Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant, mark}`. Every field except `reportId` is optional. `mark` says what to draw: `'industryRow'`, `'regionColumn'`, `'cell'`, `'points'`, `'quadrant'` or `'bar'`. It comes from the rule's `highlight` setting. `state.highlight` holds a Target.
@@ -325,6 +346,9 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 |---|---|
 | `TAP.shell.mount(root, {warnings})` | Draws the banner, menu, comparison bar area and an empty view area into `root` |
 | `TAP.shell.viewEl()` | The element views mount into |
+| `TAP.shell.actionsEl()` | An actions slot at the right of the top bar (PAGES puts "Take the tour" there) |
+| `TAP.shell.label()` | The data status label: `{kind: 'sample'|'internal', text}`, or null. Image and table exports carry it (US-1.1.8, US-1.2.10) |
+| `TAP.app.stop()` | Unmounts the running app and drops its listeners (for tests) |
 | `TAP.screens.show(root, loadResult)` | Full-page message for `loadResult.reason` (`missing`, `version`, `invalid`), with a copyable error list |
 | `TAP.compareBar.mount(el)` | The comparison bar; reads and writes `state.cmp` |
 | `TAP.layers.top()` | The open side panel's name, or null |

@@ -1,7 +1,7 @@
 /*
  * File: js/ui/app.js
  * Purpose: Starts the app: checks the data, draws the shell, and swaps views when the menu or back button is used.
- * Provides: TAP.app (start, mountView, current)
+ * Provides: TAP.app (start, stop, mountView, current)
  * Depends on: every other module (loads last); TAP.data, TAP.store, TAP.shell, TAP.screens, TAP.views
  * Used by: index.html, index-sample.html (starts on load); tests.html (calls TAP.app.start itself)
  */
@@ -102,7 +102,14 @@
     return res;
   }
 
-  TAP.app = { start: start, mountView: mountView, current: function () { return mounted && mounted.id; } };
+  // Unmounts the running app and drops its listeners; tests use it between runs.
+  function stop() {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
+    mounted = null;
+  }
+
+  TAP.app = { start: start, stop: stop, mountView: mountView, current: function () { return mounted && mounted.id; } };
 
   document.addEventListener('DOMContentLoaded', function () {
     if (document.body.getAttribute('data-autostart') === 'false') return;
