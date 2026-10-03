@@ -18,7 +18,7 @@
   var CATALOGUE = ['nb.arr', 'nb.services', 'cg.arr', 'cg.services', 'amb.arr', 'amb.services', 'amb.oi',
     'base.arr', 'base.pipeline', 'base.pipeline12m', 'focus.tier1', 'focus.tier2', 'focus.tier3',
     'nb.targetAccounts', 'nb.targetAccountsRated', 'nb.wins', 'nb.hitRate', 'nb.avgDealSize', 'nb.growthY2', 'nb.growthY3',
-    'nb.servicesRatio', 'cg.growthY1', 'cg.growthY2', 'cg.growthY3',
+    'nb.servicesRatio', 'cg.growthY1', 'cg.growthY2', 'cg.growthY3', 'cg.baseArr',
     'cg.segment.strategic', 'cg.segment.growth', 'cg.segment.core', 'cg.segment.scaled',
     'ind.tier', 'ind.growthPotential', 'ind.criticality', 'ind.competitiveIntensity', 'ind.references', 'ind.expertise',
     'ind.productFit', 'ind.attractiveness', 'ind.ability', 'ind.currentArr', 'ind.pipeline', 'ind.pipeline12m',
@@ -187,6 +187,127 @@
       var o = TAP.measures.combined('nb.hitRate', org(), { weights: { 'nb.hitRate': 'nb.arr' } });
       a.near(o.v, 0.4232855, TOL);
       a.equal(o.src.weightBy, 'nb.arr');
+    });
+  });
+
+  // D48: a figure for one industry when the region has no row for it.
+  T.suite('industry', function () {
+    var NB_IDS = ['nb.arr', 'nb.services', 'nb.targetAccounts', 'nb.targetAccountsRated', 'nb.wins', 'nb.hitRate',
+      'nb.avgDealSize', 'nb.growthY2', 'nb.growthY3', 'nb.servicesRatio'];
+    function state(id, r, ind, year) { return m(id, r, { industryId: ind, year: year || null }).state; }
+
+    T.test('X-measures-d48-nb', 'New business: Tier 3 or unrated is not applicable; Tier 1 or 2 with no rows is not provided', function (a) {
+      NB_IDS.forEach(function (id) {
+        a.equal(state(id, 'alpha', 'ind3'), 'notApplicable', id + ': A Retail is Tier 3');
+        a.equal(state(id, 'alpha', 'other'), 'notApplicable', id + ': A Other is unrated');
+        a.equal(state(id, 'alpha', 'ind2'), 'notProvided', id + ': A Education is Tier 2 with no rows');
+        a.equal(state(id, 'bravo', 'ind4'), 'notProvided', id + ': B Utilities is Tier 2 with no rows');
+        a.equal(state(id, 'charlie', 'ind2'), 'notProvided', id + ': C Education has a blank tier and no rows');
+      });
+      ['ind3', 'other', 'ind2'].forEach(function (ind) {
+        a.equal(state('ind.nb.arr', 'alpha', ind), state('nb.arr', 'alpha', ind), 'ind.nb.arr agrees for A ' + ind);
+      });
+    });
+
+    T.test('X-measures-d48-same', 'nb.arr and ind.nb.arr give the same answer for every region, industry and year', function (a) {
+      var inds = TAP.data.industries().map(function (d) { return d.id; });
+      ALL.forEach(function (r) {
+        inds.forEach(function (ind) {
+          [null, 1, 2, 3].forEach(function (y) {
+            var x = m('nb.arr', r, { industryId: ind, year: y }), z = m('ind.nb.arr', r, { industryId: ind, year: y });
+            a.deepEqual([z.state, z.v, z.src.rows], [x.state, x.v, x.src.rows], r + ' ' + ind + ' year ' + y);
+          });
+        });
+      });
+    });
+
+    T.test('X-measures-d48-rest', 'Retail new business, average of the rest of A: only D applies (B and C are Tier 3)', function (a) {
+      // B and C rate Retail Tier 3: not applicable, never a gap or a zero. D: 600 + 900 + 1350 = 2850
+      [['ind.nb.arr'], ['nb.arr']].forEach(function (p) {
+        var c = TAP.measures.combined(p[0], rest('alpha', 'average'), { industryId: 'ind3' });
+        a.equal(c.v, 2850, p[0]);
+        a.deepEqual(c.src.notApplicable, ['bravo', 'charlie']);
+        a.deepEqual(c.src.excluded, []);
+        a.equal(TAP.agg.describe(c), 'Average of 1 region');
+      });
+    });
+
+    T.test('X-measures-d48-blank', 'A whole new business section left blank is not provided', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[0].newBusiness = [];
+      TAP.data.load(plan);
+      a.equal(state('nb.arr', 'alpha'), 'notProvided');
+      a.equal(state('nb.arr', 'alpha', 'ind1'), 'notProvided', 'Tier 1');
+      a.equal(state('nb.arr', 'alpha', 'ind3'), 'notApplicable', 'Tier 3 stays not applicable');
+      a.equal(state('ind.nb.arr', 'alpha', 'ind1'), 'notProvided');
+    });
+
+    T.test('X-measures-d48-cg', 'Customer growth: a filled accounts list with no account in an industry gives 0', function (a) {
+      // D has accounts, none in Healthcare; C left its accounts list empty
+      ['cg.arr', 'cg.services', 'cg.baseArr', 'cg.segment.core'].forEach(function (id) {
+        var d = m(id, 'delta', { industryId: 'ind1' });
+        a.deepEqual([d.state, d.v], ['value', 0], id + ' D Healthcare');
+        a.equal(state(id, 'charlie', 'ind1'), 'notProvided', id + ' C has no accounts at all');
+      });
+      a.equal(m('cg.arr', 'delta', { industryId: 'ind1', year: 2 }).v, 0, 'by year too');
+    });
+  });
+
+  // Every rate measure against a hand calculation.
+  T.suite('rates', function () {
+    T.test('X-measures-rates-nb', 'New business rates follow their row weights', function (a) {
+      // Deal size weighted by implied wins. A: row 20 5 wins x 100, row 21 1 win x 200 -> 700 / 6 = 116.67
+      a.near(m('nb.avgDealSize', 'alpha').v, 700 / 6, TOL);
+      // B: 20 wins x 50 + 2 wins x 100 = 1200 / 22 = 54.55
+      a.near(m('nb.avgDealSize', 'bravo').v, 1200 / 22, TOL);
+      // C: only row 21 has a hit rate (1 win x 100) = 100
+      a.near(m('nb.avgDealSize', 'charlie').v, 100, TOL);
+      // Growth weighted by 3-year ARR potential. A year 2: (0.1 x 1655 + 0 x 600) / 2255 = 165.5 / 2255 = 0.0733925
+      a.near(m('nb.growthY2', 'alpha').v, 165.5 / 2255, TOL);
+      // B year 2: (0.2 x 3400 + 0 x 600) / 4000 = 0.17; D year 3: 0.5
+      a.near(m('nb.growthY2', 'bravo').v, 0.17, TOL);
+      a.near(m('nb.growthY3', 'delta').v, 0.5, TOL);
+      // Services ratio weighted by 3-year ARR potential. A: (0.2 x 1655 + 0.2 x 600) / 2255 = 0.2
+      a.near(m('nb.servicesRatio', 'alpha').v, 0.2, TOL);
+      // C: row 20's ARR potential is blank, so only row 21 counts: 0.2
+      a.near(m('nb.servicesRatio', 'charlie').v, 0.2, TOL);
+      // Organization, weighted by each region's 3-year ARR potential:
+      //   (0.2 x 2255 + 0.1 x 4000 + 0.2 x 300 + 0.25 x 2850) / 9405 = (451 + 400 + 60 + 712.5) / 9405 = 1623.5 / 9405 = 0.1726209
+      a.near(TAP.measures.combined('nb.servicesRatio', org(), {}).v, 1623.5 / 9405, TOL);
+      // Organization deal size, weighted by implied wins: (116.67 x 6 + 54.55 x 22 + 100 x 1 + 10 x 60) / 89 = 2600 / 89
+      a.near(TAP.measures.combined('nb.avgDealSize', org(), {}).v, 2600 / 89, TOL);
+    });
+
+    T.test('X-measures-rates-cg', 'Customer growth % is incremental ARR over the accounts’ current ARR, every account counted', function (a) {
+      // A: current ARR 500 + 200 + 30 + 150 = 880 (a4 uses the multiplier and still counts)
+      //   year 1: (50 + 100 + 0 + 50) / 880 = 0.2272727; years 2 and 3: (0 + 0 + 0 + 50) / 880 = 0.0568182
+      a.near(m('cg.growthY1', 'alpha').v, 200 / 880, TOL);
+      a.near(m('cg.growthY2', 'alpha').v, 50 / 880, TOL);
+      a.near(m('cg.growthY3', 'alpha').v, 50 / 880, TOL);
+      a.equal(m('cg.growthY1', 'alpha').partial, undefined, 'nothing is missing');
+      // B: 150 / 700; D: year 1 (80 + 100 + 0) / 1250 = 0.144, year 2 88 / 1250 = 0.0704, year 3 0
+      a.near(m('cg.growthY1', 'bravo').v, 150 / 700, TOL);
+      a.near(m('cg.growthY1', 'delta').v, 0.144, TOL);
+      a.near(m('cg.growthY2', 'delta').v, 0.0704, TOL);
+      a.deepEqual([m('cg.growthY3', 'delta').state, m('cg.growthY3', 'delta').v], ['value', 0]);
+      a.equal(m('cg.growthY1', 'charlie').state, 'notProvided');
+      a.equal(m('cg.baseArr', 'alpha').v, 880);
+      // Organization, weighted by the accounts' current ARR: (200 + 150 + 180) / (880 + 700 + 1250) = 530 / 2830 = 0.1872792
+      var o = TAP.measures.combined('cg.growthY1', org(), {});
+      a.near(o.v, 530 / 2830, TOL);
+      a.equal(o.src.weightBy, 'cg.baseArr');
+      a.deepEqual(o.src.excluded, ['charlie']);
+    });
+
+    T.test('X-measures-rates-partial', 'A customer growth % is partial only when an account’s figure is truly missing', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[0].customerGrowth.accounts[1].incrementalArr = [null, 0, 0];
+      TAP.data.load(plan);
+      var c = m('cg.growthY1', 'alpha');
+      // a2 left out of year 1: (50 + 0 + 50) / (500 + 30 + 150) = 100 / 680
+      a.near(c.v, 100 / 680, TOL);
+      a.equal(c.partial, true);
+      a.equal(m('cg.growthY2', 'alpha').partial, undefined, 'year 2 is complete');
     });
   });
 

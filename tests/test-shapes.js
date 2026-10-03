@@ -254,6 +254,60 @@
       a.ok(html.indexOf(TAP.format.kind('DER').label) >= 0, 'kind of value');
     });
 
+    T.test('X-builders-nudge', 'Two points on the same spot are nudged apart, but tooltips and tables keep the exact values', function (a) {
+      var plan = T_FIXTURE('mini');
+      ['marketCoverage', 'newBusiness', 'customerGrowth'].forEach(function (k) {
+        plan.regions[1][k] = JSON.parse(JSON.stringify(plan.regions[0][k]));   // B becomes a copy of A
+      });
+      TAP.data.load(plan);
+      var res = build('ov-ambition', 'bubble', { mode: 'all' });
+      var pts = {};
+      items(res).forEach(function (it) { pts[it.d.entityId] = it; });
+      var A = pts.alpha.d, B = pts.bravo.d;
+      a.ok(A.value[0] !== B.value[0], 'drawn apart');
+      a.equal(A.value[1], B.value[1], 'only across, never up');
+      [pts.alpha, pts.bravo].forEach(function (it) {
+        var d = it.d;
+        a.deepEqual(d.raw, [2255, 300, 1800], d.entityId + ' raw values unchanged');
+        a.deepEqual(d.keys.slice(0, 3).map(function (k) { return rowOf(res, d).cells[k].v; }), [2255, 300, 1800], d.entityId + ' table');
+        var html = it.s.tooltip.formatter({ data: d });
+        a.ok(html.indexOf('€2,255,000') >= 0 && html.indexOf('€300,000') >= 0 && html.indexOf('€1,800,000') >= 0, d.entityId + ' tooltip');
+      });
+    });
+
+    T.test('X-builders-treemap', 'Treemap: highlights are drawn and a region with no figure is named, never dropped silently', function (a) {
+      var res = build('ov-ambition', 'treemap', { mode: 'all' }, { highlight: { reportId: 'ov-ambition', regionIds: ['bravo'] } });
+      var nodes = seriesOf(res)[0].data;
+      nodes.forEach(function (n) {
+        a.equal(n.itemStyle.borderColor === TH.accent, n.entityId === 'bravo', n.entityId + ' highlight');
+      });
+      var plan = T_FIXTURE('mini');
+      plan.regions[2].newBusiness = [];   // C now has neither new business nor customer growth
+      TAP.data.load(plan);
+      var gap = build('ov-ambition', 'treemap', { mode: 'all' });
+      a.equal(seriesOf(gap)[0].data.filter(function (n) { return n.entityId === 'charlie'; }).length, 0, 'no tile for C');
+      a.ok(gap.notes.some(function (n) { return /Region C/.test(n) && /not provided/.test(n); }), 'C is named in the notes');
+      a.deepEqual(gap.missing, ['Region C']);
+    });
+
+    T.test('X-builders-compare-industry', 'A per-industry compare reads the cell for the right region and industry', function (a) {
+      var def = { id: 'x-ind', view: 'industry', title: 'x', shape: 'compare', dimension: 'industry', builder: null,
+        measures: [{ id: 'ind.currentArr' }], types: ['bar', 'dot', 'table'], defaultType: 'bar', options: {} };
+      var c = cmp({ mode: 'pair', focus: 'alpha', second: 'bravo' });
+      ['bar', 'dot'].forEach(function (type) {
+        var res = TAP.builders.get('compare')(ctxFor(def, type, c));
+        var seen = 0;
+        items(res).forEach(function (it) {
+          var d = it.d, row = rowOf(res, d);
+          a.ok(d.industryId, type + ': items carry their industry');
+          var exact = TAP.format.cell(row.cells['ind.currentArr'], { unit: 'money', exact: true });
+          a.ok(it.s.tooltip.formatter({ data: d }).indexOf(exact) >= 0, type + ' ' + d.entityId + ' ' + d.industryId + ' shows ' + exact);
+          seen++;
+        });
+        a.ok(seen >= 8, type + ': both regions, four industries');
+      });
+    });
+
     T.test('X-builders-colours', 'Past 8 regions every mark still has a theme colour', function (a) {
       var plan = T_FIXTURE('mini');
       for (var i = 0; i < 6; i++) {
