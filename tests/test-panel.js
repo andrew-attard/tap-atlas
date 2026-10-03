@@ -856,4 +856,82 @@
       a.match(txt(qs('.tap-panel__pop', p.el)), /chart views/, 'says why');
     }));
   });
+
+  /* ---------- US-1.2.7: break down by a second dimension (#19) ---------- */
+
+  function breakdownOpts(p) { return qsa('[data-control="breakdown"] [data-value]', p.el).map(function (b) { return b.getAttribute('data-value'); }); }
+  function breakDown(p, v) { click(qs('[data-control="breakdown"] [data-value="' + v + '"]', p.el)); }
+  function seriesNames(p) {
+    return chartOf(p).getOption().series.filter(function (x) { return x.tapRole === 'value'; }).map(function (x) { return x.name; });
+  }
+
+  T.suite('panel-breakdown', function () {
+    T.test('TPV-TC-241', '"Break down by" lists exactly the definition\'s breakdowns, plus none', scene(function (a, s) {
+      a.deepEqual(breakdownOpts(s.panel('ov-ambition')), ['none', 'year'], 'ambition: by plan year');
+      s.report(fakeDef({ breakdowns: ['year', 'channel'] }));
+      a.deepEqual(breakdownOpts(s.panel('x-fake')), ['none', 'year', 'channel']);
+      a.equal(qs('[data-control="breakdown"]', s.panel('ind-ratings').el), null, 'none offered when the definition has none');
+    }));
+
+    T.test('TPV-TC-242', 'A breakdown adapts the chart and updates the allowed types', scene(function (a, s) {
+      var p = s.panel('ov-ambition'), def = TAP.reports.get('ov-ambition'), years = TAP.data.meta().years.map(String);
+      a.ok(openTypes(p).every(function (b) { return b.getAttribute('data-type') !== 'groupedBar'; }), 'no grouped bars before');
+      breakDown(p, 'year');
+      a.deepEqual(seriesNames(p), years, 'one part per plan year');
+      var types = openTypes(p).map(function (b) { return b.getAttribute('data-type'); });
+      a.ok(types.indexOf('bubble') < 0, 'bubble, which can\'t show a breakdown, is left out');
+      a.deepEqual(types, TAP.shapes.types(def, TAP.scope.entities().length, { breakdown: 'year' })
+        .filter(function (x) { return x !== 'table' && x !== 'bubble'; }), 'the engine\'s list for a breakdown');
+      // Grouped bars appear with a breakdown wherever the definition lists them
+      s.report(Object.assign({}, def, { id: 'x-amb', types: def.types.concat(['groupedBar']) }));
+      var q = s.panel('x-amb');
+      a.ok(openTypes(q).every(function (b) { return b.getAttribute('data-type') !== 'groupedBar'; }), 'not without a breakdown');
+      breakDown(q, 'year');
+      a.ok(openTypes(q).some(function (b) { return b.getAttribute('data-type') === 'groupedBar'; }), 'offered with one');
+      click(qs('[data-type="groupedBar"]', q.el));
+      a.deepEqual(seriesNames(q), years, 'grouped by year');
+    }));
+
+    T.test('TPV-TC-243', 'Removing the breakdown returns the original chart, type and series', scene(function (a, s) {
+      var def = TAP.reports.get('ov-ambition');
+      s.report(Object.assign({}, def, { id: 'x-amb', types: def.types.concat(['groupedBar']) }));
+      var p = s.panel('x-amb'), before = seriesNames(p);
+      breakDown(p, 'year');
+      breakDown(p, 'none');
+      a.deepEqual(seriesNames(p), before, 'same series');
+      breakDown(p, 'year');
+      pickType(p, 'groupedBar');
+      breakDown(p, 'none');
+      a.deepEqual(seriesNames(p), before, 'same series after grouped bars');
+      a.match(txt(qs('[data-action="type"]', p.el)), /^Stacked bar/, 'grouped bars need a breakdown: back to the default type');
+      a.equal(qs('[data-control="breakdown"] [data-value="none"]', p.el).getAttribute('aria-pressed'), 'true');
+    }));
+
+    T.test('TPV-TC-244', 'Choosing another breakdown replaces the first; never two at once', scene(function (a, s) {
+      s.report(fakeDef({ breakdowns: ['year', 'channel'] }));
+      var p = s.panel('x-fake');
+      breakDown(p, 'year');
+      a.equal(last().breakdown, 'year');
+      breakDown(p, 'channel');
+      a.equal(last().breakdown, 'channel', 'replaced');
+      a.equal(qsa('[data-control="breakdown"] [aria-pressed="true"]', p.el).length, 1, 'one pressed');
+    }));
+
+    T.test('TPV-TC-057', 'Switching type keeps the breakdown', scene(function (a, s) {
+      var p = s.panel('ov-ambition');
+      breakDown(p, 'year');
+      pickType(p, 'stacked100');
+      a.equal(qs('[data-control="breakdown"] [data-value="year"]', p.el).getAttribute('aria-pressed'), 'true', 'still by year');
+      a.deepEqual(seriesNames(p), TAP.data.meta().years.map(String));
+    }));
+
+    T.test('X-panel-measure-xy', 'No measure switch where the axes come from x and y', scene(function (a, s) {
+      s.report(fakeDef({ shape: 'xyz', x: 'ind.ability', y: 'ind.attractiveness', dimension: 'industry', defaultType: 'bubble',
+        measures: [{ id: 'ind.attractiveness', label: 'Attractiveness' }, { id: 'ind.ability', label: 'Ability to win' }],
+        types: ['bubble', 'scatter', 'table'], size: { options: ['ind.pipeline'], default: 'ind.pipeline' } }));
+      a.equal(qs('[data-control="measure"]', s.panel('x-fake').el), null, 'xyz: none');
+      a.equal(qs('[data-control="measure"]', s.panel('ind-quad').el), null, 'the quadrant report: none');
+      a.ok(qs('[data-control="measure"]', s.panel('ov-ambition').el), 'a parts report keeps it');
+    }));
+  });
 })(window.TAP);
