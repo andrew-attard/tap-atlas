@@ -56,7 +56,8 @@
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
     var ctx = def ? { def: def, type: types ? types.current : def.defaultType, measureId: p.st.measureId,
       sizeId: p.st.sizeId, breakdown: p.st.breakdown, cmp: cmp, entities: entities, year: null, industryId: industryId,
-      highlight: highlightOf(p, s), expanded: s.expanded === p.id, theme: window.TAP_THEME, opts: Object.assign({}, p.st.opts) } : null;
+      highlight: highlightOf(p, s), expanded: s.expanded === p.id, theme: window.TAP_THEME, opts: Object.assign({}, p.st.opts),
+      size: p.size || null } : null;
     var res = null, fn = !errors.length && builderOf(def);
     if (!errors.length && !fn) errors = [t('noBuilder', { shape: def.shape })];
     if (fn) {
@@ -103,8 +104,17 @@
     } else if (res.option) {
       C.render(p.cs, box, res.option, { label: b.title, tall: /bubble|scatter/.test(b.ctx.type || ''),
         scale: s.expanded === p.id ? 1.3 : 1, onClick: function (prm) { follow(res.target ? res.target(prm) : null); } });
+      if (res.sized) remeasure(p, b.ctx.size);
     } else C.dispose(p.cs);
     return box;
+  }
+
+  // A builder that places labels for the chart's size (res.sized) is drawn again once that size is known or changes.
+  function remeasure(p, used) {
+    var el0 = p.cs.el, now = el0 && el0.clientWidth ? { w: el0.clientWidth, h: el0.clientHeight } : null;
+    if (!now || (used && Math.abs(used.w - now.w) < 2 && Math.abs(used.h - now.h) < 2)) return;
+    p.size = now;
+    if (!p.measuring) { p.measuring = true; try { render(p); } finally { p.measuring = false; } }
   }
 
   // Keeps keyboard focus on the same control across a redraw.
@@ -148,13 +158,13 @@
       source(b.def),
       p.statusEl
     ]);
+    syncScroll();   // before the chart is drawn: locking the page scroll changes the width the chart gets
     body(p, b, s, bodyBox);
     // Focus follows the change: into the expanded chart's Close button, and back to More when it closes
     if (big !== !!p.big) keep = big ? '[data-action="collapse"]' : '[data-action="more"]';
     p.big = big;
     var back = keep && TAP.dom.qs(keep, p.root);
     if (back && back.focus) back.focus();
-    syncScroll();
   }
 
   /* ---------- expanded view (US-1.2.8) ---------- */
@@ -249,6 +259,9 @@
       p.toggle(null);
     }
     function wkey(e) { expandKeys(p, e); }
+    // A chart whose labels were placed for its size is drawn again when the window changes its size
+    function resized() { if (p.live && p.size) remeasure(p, p.size); }
+    window.addEventListener('resize', resized);
     document.addEventListener('mousedown', down);
     document.addEventListener('keydown', key);
     window.addEventListener('keydown', wkey);
@@ -256,6 +269,7 @@
       document.removeEventListener('mousedown', down);
       document.removeEventListener('keydown', key);
       window.removeEventListener('keydown', wkey);
+      window.removeEventListener('resize', resized);
     });
     p.off.push(TAP.store.on(function (s, changed) { onStore(p, s, changed); }));
     // "Reset all charts" (the Guide): every chart back to its default type and settings, nothing remembered
