@@ -50,3 +50,21 @@ Plain words that most people can follow, kept short. Explain why a block exists 
 - **No spreadsheets or exports** (`.xlsx`, `.csv` and similar).
 - **No organization-specific names or terms.** A pre-commit hook checks every added line and every commit message against a private denylist kept outside the repository.
 - Enable the hooks once after cloning: `git config core.hooksPath .githooks`
+
+## Running the checks
+
+Open `tests.html` from the folder to run every automated test in the browser. **Copy results** puts a plain-text summary on the clipboard for the execution log. `tests/selftest.html` checks the test harness itself.
+
+From a terminal (WSL or Linux, with Node 18+ and Chrome or Edge):
+
+```
+scripts/verify.sh                    # lint, denylist scan, data-file guard, headless tests in Chrome and Edge
+scripts/verify.sh --browser chrome   # one browser only
+scripts/verify.sh --release          # stricter: warnings fail, tests with no test yet fail
+node tools/lint.js                   # lint only (add --self-test to check the linter)
+scripts/test-headless.sh tests.html chrome
+scripts/screenshot.sh tests.html "" 1280 800 1.25 /tmp/shot.png
+scripts/open-pr.sh "<title>" <body-file>
+```
+
+Test filters: `tests.html?only=TPV-TC-077` runs one case, `tests.html?suite=format` runs one suite, and `?release=1` makes missing tests fail. Run `scripts/verify.sh` before opening a pull request; CI runs lint and the Chrome tests on every pull request.
