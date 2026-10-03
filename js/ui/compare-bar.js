@@ -22,10 +22,7 @@
   function known(id) { return ids().indexOf(id) >= 0; }
   function inFileOrder(list) { var all = ids(); return all.filter(function (id) { return list.indexOf(id) >= 0; }); }
 
-  // A region's fixed colour; the theme's palette by file order if the scope module isn't ready.
-  function colour(id) {
-    try { return TAP.scope.colorOf(id); } catch (e) { return window.TAP_THEME.regionColor(TAP.data.regionIndex(id)); }
-  }
+  function colour(id) { return TAP.scope.colorOf(id); }
 
   // Switching mode fills in whatever the new mode needs, from the regions in file order (never a fixed name).
   function modePatch(mode) {
@@ -143,9 +140,7 @@
   }
 
   function dataDate() {
-    var iso = null;
-    try { iso = TAP.sources.dataDate(); } catch (e) { /* the sources module isn't ready: shows "not provided" */ }
-    return t('compare.dataDate', { date: TAP.format.date(iso) });
+    return t('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) });
   }
 
   // What a combined figure on screen means, in plain words, or null when none is shown.
@@ -153,21 +148,13 @@
     var isOrg = c.mode === 'org';
     if (!isOrg && (c.mode !== 'one' || c.restAs !== 'combined')) return null;
     var total = isOrg || c.restAgg === 'total';
-    return { label: combinedLabel(c, isOrg, total), text: t(total ? 'combined.explainTotal' : 'combined.explainAverage') };
+    return { label: combinedLabel(c), text: t(total ? 'combined.explainTotal' : 'combined.explainAverage') };
   }
 
-  // The same label the charts use: the combined scope entity's own, or the wording if the scope isn't ready.
-  function combinedLabel(c, isOrg, total) {
-    try {
-      var e = TAP.scope.entities(c).filter(function (x) { return x.kind === 'combined'; })[0];
-      if (e && e.label) return e.label;
-    } catch (err) { /* scope not built yet */ }
-    var n = TAP.data.regions().length - (isOrg ? 0 : 1);
-    return t(isOrg ? 'combined.org' : total ? 'combined.restTotal' : 'combined.restAverage', { n: n, regions: t('combined.regions') });
-  }
-
-  function sentenceFor(c) {
-    try { return TAP.scope.sentence(c); } catch (e) { return ''; }
+  // The same label the charts use: the combined scope entity's own.
+  function combinedLabel(c) {
+    var e = TAP.scope.entities(c).filter(function (x) { return x.kind === 'combined'; })[0];
+    return e ? e.label : '';
   }
 
   // Brings every part in line with state.cmp. Elements are kept, so keyboard focus stays where it was.
@@ -190,7 +177,7 @@
       b.setAttribute('aria-pressed', String(on));
       TAP.dom.text(TAP.dom.qs('.tap-cmp__tick', b), on ? '✓' : '');
     });
-    TAP.dom.text(ui.sentence, sentenceFor(c));
+    TAP.dom.text(ui.sentence, TAP.scope.sentence(c));
 
     var note = combinedNote(c);
     ui.explain.hidden = !note;
