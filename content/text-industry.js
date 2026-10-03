@@ -69,6 +69,8 @@ Object.assign(window.TAP_CONTENT.text, {
     average: 'Average of {n} {regions}',
     averageStatement: 'Each bubble averages the scores of the regions shown',
     everyStatement: 'Each point is one region’s view of one industry',
+    focusStatement: '{focus}’s scores beside the average of the other regions',
+    joinNote: 'A thin line joins each industry’s two bubbles; the industry is named beside {first}’s bubble.',
     averageNote: 'Each bubble averages the regions’ scores, following the rule for ratings: every region counts equally, and a region that left a rating blank is left out of that score.',
     sizeLegend: 'Bubble size: {measure}, not a leader rating',
     show: 'Show',
