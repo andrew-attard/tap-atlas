@@ -3,7 +3,8 @@
  * Purpose: Combines several regions' values into one figure (totals and averages), following the combining rules
  *          of US-1.2.5. This is the only place those rules are written down in code; insights reuse it.
  * Provides: TAP.agg (combine, weightBy, describe)
- * Depends on: js/core/namespace.js, config/settings.js, js/core/content.js, js/core/format.js, js/core/data.js,
+ * Depends on: js/core/namespace.js, js/core/store.js (TAP.notes), config/settings.js, js/core/content.js,
+ *             js/core/format.js, js/core/data.js,
  *             js/engine/measures.js (only to look up rate weights and their labels, at call time)
  * Used by: measures, scope entities, insights, panels (combined-figure labels)
  */
@@ -34,11 +35,17 @@
     return (m && m.weightBy) || null;
   }
 
-  // A region's weight: given on the item, else the weight measure's value for that region.
-  function weightOf(item, wb, ctx) {
+  // The weight measure, if it can be read: it must exist in a built measure registry.
+  function weightFn(wb) {
+    var fn = wb && measuresReady() ? TAP.measures.get(wb) : null;
+    return typeof fn === 'function' ? fn : null;
+  }
+
+  // A region's weight: given on the item, else the weight measure's value for that region. null means blank.
+  function weightOf(item, fn, ctx) {
     if (item.weight != null) return isNum(item.weight) && item.weight >= 0 ? item.weight : null;
-    if (!wb || !measuresReady() || !TAP.measures.get(wb)) return null;
-    var c = TAP.measures.get(wb)(item.regionId, ctx || {});
+    if (!fn) return null;
+    var c = fn(item.regionId, ctx || {});
     return c && c.state === 'value' && isNum(c.v) && c.v >= 0 ? c.v : null;
   }
 
@@ -50,30 +57,53 @@
    * items: [{regionId, cell, weight?}]. valueKind: amount|rate|rating|category|count|text. how: total|average.
    * opts: {measureId, weights (report override), ctx (passed to the weight measure)}.
    * Not provided cells are left out and named in src.excluded. Not applicable cells are left out quietly
-   * (src.notApplicable): they are never a gap (US-1.2.11).
+   * (src.notApplicable): they are never a gap (US-1.2.11). A rate whose weight is blank is left out and named in
+   * src.weightMissing. When no weight can be used at all, each region counts equally (src.weightFallback).
    */
   function combine(items, valueKind, how, opts) {
+    if (!Object.prototype.hasOwnProperty.call(METHOD, valueKind)) {
+      throw new Error('TAP.agg.combine: unknown valueKind "' + valueKind + '"; expected one of ' + Object.keys(METHOD).join(', '));
+    }
     opts = opts || {};
     items = items || [];
     how = how === 'average' ? 'average' : 'total';
-    var method = (METHOD[valueKind] || METHOD.amount)[how];
+    var method = METHOD[valueKind][how];
     var rate = method === 'wmean';
     var wb = rate ? weightBy(opts.measureId, opts.weights) : null;
-    var useWeights = rate && (!!wb || items.some(function (it) { return it.weight != null; }));
-    var used = [], excluded = [], na = [];
+    var explicit = rate && items.some(function (it) { return it.weight != null; });
+    var fn = rate && !explicit ? weightFn(wb) : null;
+    var useWeights = explicit || !!fn, fallback = false;
+    var used = [], excluded = [], na = [], noWeight = [];
+
+    // A weight measure that is named but can't be read (a typo, or measures not built yet) must never drop every
+    // region: each counts equally, and the data sources panel says so.
+    if (rate && !explicit && wb && !fn) {
+      fallback = true;
+      TAP.notes.add({ source: 'data', message: TAP.content.text('combined.weightUnresolved', { measure: opts.measureId || '', weight: wb }) });
+    }
 
     items.forEach(function (it) {
       var c = it.cell || {};
       if (c.state === 'notApplicable') { na.push(it.regionId); return; }
-      var ok = c.state === 'value' && c.v != null && (!NUMERIC[method] || isNum(c.v));
-      var w = ok && useWeights ? weightOf(it, wb, opts.ctx) : 1;
-      if (!ok || w == null) { excluded.push(it.regionId); return; }
-      used.push({ regionId: it.regionId, cell: c, w: w });
+      if (c.state !== 'value' || c.v == null || (NUMERIC[method] && !isNum(c.v))) { excluded.push(it.regionId); return; }
+      var w = useWeights ? weightOf(it, fn, opts.ctx) : 1;
+      if (w == null) noWeight.push({ regionId: it.regionId, cell: c });
+      else used.push({ regionId: it.regionId, cell: c, w: w });
     });
+    // Every provided rate lacks its weight: average them equally rather than show nothing.
+    if (!used.length && noWeight.length) {
+      used = noWeight.map(function (u) { return { regionId: u.regionId, cell: u.cell, w: 1 }; });
+      noWeight = [];
+      fallback = true;
+    }
 
     var src = { combined: true, how: method, regionIds: items.map(function (it) { return it.regionId; }),
       excluded: excluded, notApplicable: na, weightBy: wb };
-    if (rate) src.weighted = useWeights;
+    if (rate) {
+      src.weighted = useWeights;
+      src.weightMissing = noWeight.map(function (u) { return u.regionId; });
+      if (fallback) src.weightFallback = true;
+    }
     if (!used.length) {
       var allNa = items.length > 0 && na.length === items.length;
       return { v: null, state: allNa ? 'notApplicable' : 'notProvided', kind: 'APP', src: src };
@@ -126,25 +156,42 @@
 
   function regionsWord(n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); }
 
+  // A measure's label as it reads mid-sentence ("target accounts"), keeping acronyms such as ARR.
   function weightLabel(id) {
     var m = id && measuresReady() ? TAP.measures.meta(id) : null;
     var label = m && m.label ? m.label : id;
-    return label ? label.charAt(0).toLowerCase() + label.slice(1) : '';
+    if (!label) return '';
+    return /^[A-Z][A-Z0-9]/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1);
   }
 
   // How a combined figure was made, e.g. "Weighted average of 3 regions, by target accounts; Region C not
-  // included: not provided". Empty for a region's own figure.
+  // included: not provided". A derived sum names, per part, the regions it left out. Empty for a region's own figure.
   function describe(c) {
     var s = c && (c.src || c);
     if (!s || !s.combined) return '';
-    var n = s.regionIds.length - s.excluded.length - (s.notApplicable || []).length;
+    var wm = s.weightMissing || [];
+    var lost = s.parts ? s.regionIds.filter(function (r) {
+      return s.parts.every(function (p) { return p.src && (p.src.excluded || []).indexOf(r) >= 0; });
+    }) : s.excluded;
+    var n = s.regionIds.length - lost.length - wm.length - (s.notApplicable || []).length;
     var key = s.how;
     if (key === 'wmean') key = !s.weighted || s.weightFallback ? 'mean' : s.weightBy ? 'wmean' : 'wmeanPlain';
     var vars = { n: n, regions: regionsWord(n), weight: weightLabel(s.weightBy) };
     if (c.range) { vars.min = TAP.format.num(c.range.min); vars.max = TAP.format.num(c.range.max); }
-    var parts = [TAP.content.text('combined.how.' + key, vars)];
-    if (s.excluded.length) parts.push(TAP.content.text('combined.excluded', { names: TAP.format.list(names(s.excluded)) }));
-    return parts.join('; ');
+    var out = [TAP.content.text('combined.how.' + key, vars)];
+    if (s.parts) {
+      s.parts.forEach(function (p) {
+        var ps = p.src || {}, ex = ps.excluded || [];
+        if (!ps.combined || !ex.length) return;
+        var pn = ps.regionIds.length - ex.length - (ps.notApplicable || []).length;
+        out.push(TAP.content.text('combined.partExcluded', { part: weightLabel(p.measureId), n: pn, regions: regionsWord(pn),
+          names: TAP.format.list(names(ex)) }));
+      });
+    } else if (s.excluded.length) {
+      out.push(TAP.content.text('combined.excluded', { names: TAP.format.list(names(s.excluded)) }));
+    }
+    if (wm.length) out.push(TAP.content.text('combined.weightMissing', { names: TAP.format.list(names(wm)) }));
+    return out.join('; ');
   }
 
   TAP.agg = { combine: combine, weightBy: weightBy, describe: describe };

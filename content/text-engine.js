@@ -5,7 +5,7 @@
  * Depends on: content/ui-text.js
  * Used by: js/engine/*.js through TAP.content.text
  * Owner: the ENGINE stream. Placeholders in {braces} are filled in by the code; the organization layer can
- *        replace any phrase by using the same key. In combined-figure labels, {regions} is "region" or
+ *        replace any phrase by using the same key. {regions} is "region" or
  *        "regions" to match {n}.
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
@@ -13,14 +13,14 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   // Comparison sentences (US-1.1.3)
   scope: {
-    all: 'Showing all {n} regions side by side',
-    oneIndividual: 'Showing {focus} against the other {n} regions',
-    oneAverage: 'Showing {focus} against the average of the other {n} regions',
-    oneTotal: 'Showing {focus} against the total of the other {n} regions',
+    all: 'Showing all {n} {regions} side by side',
+    oneIndividual: 'Showing {focus} against the other {n} {regions}',
+    oneAverage: 'Showing {focus} against the average of the other {n} {regions}',
+    oneTotal: 'Showing {focus} against the total of the other {n} {regions}',
     focusOnly: 'Showing {focus} only',
     pair: 'Showing {focus} against {second}',
-    set: 'Showing {n} chosen regions: {names}',
-    org: 'Showing the organization total across all {n} regions',
+    set: 'Showing {n} chosen {regions}: {names}',
+    org: 'Showing the organization total across all {n} {regions}',
     // Data sources panel only (US-1.1.6)
     coloursRepeat: 'The data has {n} regions but there are {k} distinct region colours, so colours repeat after the {k}th region. Labels and legends still name every region.'
   },
@@ -44,6 +44,10 @@ Object.assign(window.TAP_CONTENT.text, {
       list: 'Listed by region ({n} {regions})'
     },
     excluded: '{names} not included: not provided',
+    partExcluded: '{part} from {n} {regions}: {names} not included (not provided)',
+    weightMissing: '{names} not included: weight missing',
+    // Data sources panel only
+    weightUnresolved: 'The weight "{weight}" for {measure} could not be found, so each region counts equally in that average.',
     partialNote: 'Partly provided by {names}'
   },
 
