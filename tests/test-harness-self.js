@@ -299,11 +299,22 @@
       });
     });
 
-    T.test('X-harness-list', 'T.list returns every registered test, for the coverage check', function (a) {
+    T.test('X-harness-list', 'T.ids and T.list return every registered test, for the coverage check', function (a) {
       var h = T.create({ query: '?only=TPV-TC-961' });
       h.test('TPV-TC-960', 'a', function (b) { b.ok(true); });
       h.test('TPV-TC-961', 'b', function (b) { b.ok(true); });
-      a.deepEqual(h.list().map(function (t) { return t.id; }), ['TPV-TC-960', 'TPV-TC-961']);
+      h.test('TPV-TC-960', 'a again', function (b) { b.ok(true); });
+      h.skip('TPV-TC-962', 'c', 'later');
+      a.deepEqual(h.ids(), ['TPV-TC-960', 'TPV-TC-961', 'TPV-TC-962'], 'deduplicated, in order, filter ignored');
+      a.equal(h.list().length, 4);
+      a.equal(h.list()[3].skip, true);
+    });
+
+    T.test('X-harness-release', 'T.release is true only with ?release=1', function (a) {
+      a.equal(T.create({ query: '?release=1' }).release, true);
+      a.equal(T.create({ query: '?release=0' }).release, false);
+      a.equal(T.create({}).release, false);
+      a.equal(typeof T.release, 'boolean', 'the page harness has it too');
     });
   });
 
