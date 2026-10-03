@@ -467,6 +467,13 @@
         if (isGlobal) btn.id = 't-copy';
         banner.appendChild(btn);
         banner.appendChild(note);
+        // With hundreds of rows, list the failures first so they are seen without scrolling.
+        var fails = res.results.filter(function (r) { return r.status === 'fail'; });
+        if (fails.length) {
+          var list = el('ul', 't-fail-list');
+          fails.forEach(function (r) { list.appendChild(el('li', '', r.id + '  ' + r.title + ': ' + r.message)); });
+          results.appendChild(list);
+        }
         results.appendChild(table(res));
         if (!jsonBox.firstChild) jsonBox.appendChild(el('summary', '', 'Results as text and JSON'));
         var plain = el('pre', 't-plain', h.resultsText());

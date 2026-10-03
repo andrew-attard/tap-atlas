@@ -41,6 +41,14 @@
 .t-row.t-fail { background: #fdecea; }
 .t-detail td { background: #fafafa; }
 .t-message { font-weight: 600; margin-bottom: 4px; }
+.t-fail-list {
+  margin: 0 0 12px;
+  padding: 8px 8px 8px 28px;
+  border: 1px solid #c62828;
+  background: #fdecea;
+  font: 14px/1.5 system-ui, "Segoe UI", sans-serif;
+  color: #1a1a1a;
+}
 .t-diff { display: grid; grid-template-columns: 6em 1fr; gap: 4px 8px; }
 .t-label { font-weight: 600; }
 .t-expected, .t-found, .t-plain, .t-json {
