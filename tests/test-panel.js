@@ -673,4 +673,112 @@
       a.equal(qs('.tap-panel__custom', p.el), null);
     }));
   });
+
+  /* ---------- US-1.2.8: full-screen chart (#20) ---------- */
+
+  function more(p, action) {
+    if (!qs('[data-action="' + action + '"]', p.el)) click(qs('[data-action="more"]', p.el));
+    click(qs('[data-action="' + action + '"]', p.el));
+  }
+  function key(name, target) {
+    var e = new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true });
+    (target || document.body).dispatchEvent(e);
+    return e;
+  }
+  function expanded(p) { return p.el.classList.contains('tap-panel--expanded'); }
+
+  T.suite('panel-expand', function () {
+    T.test('TPV-TC-245', 'Expand fills the window under a strip with the comparison sentence and the data label', scene(function (a, s) {
+      s.report(fakeDef());
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
+      var p = s.panel('x-fake');
+      more(p, 'expand');
+      a.equal(TAP.store.get().expanded, 'x-fake', 'state.expanded');
+      a.ok(expanded(p), 'panel expanded');
+      a.equal(getComputedStyle(p.el).position, 'fixed', 'fills the window');
+      var strip = txt(qs('.tap-panel__expand-strip', p.el));
+      a.ok(strip.indexOf(TAP.scope.sentence(TAP.store.get().cmp)) >= 0, 'comparison sentence');
+      a.ok(strip.indexOf(TAP.shell.label().text) >= 0, 'data label');
+      a.match(strip, /Data: 2 Oct 2026/, 'data date');
+      a.ok(document.documentElement.classList.contains('tap-noscroll'), 'page scrolling locked');
+    }));
+
+    T.test('TPV-TC-246', 'True full screen asks the browser for full screen and expands the chart', scene(function (a, s) {
+      s.report(fakeDef());
+      var root = document.documentElement, asked = 0, had = Object.prototype.hasOwnProperty.call(root, 'requestFullscreen');
+      root.requestFullscreen = function () { asked++; return Promise.resolve(); };
+      try {
+        var p = s.panel('x-fake');
+        more(p, 'fullscreen');
+        a.equal(asked, 1, 'Fullscreen API called');
+        a.equal(TAP.store.get().expanded, 'x-fake', 'and expanded');
+      } finally { if (!had) delete root.requestFullscreen; }
+    }));
+
+    T.test('TPV-TC-247', 'Esc or the close button returns the view as it was', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      more(p, 'expand');
+      click(qs('[data-action="more"]', p.el));
+      key('Escape');
+      a.ok(expanded(p), 'the first Esc closes the open menu only');
+      a.equal(qs('.tap-panel__pop', p.el), null);
+      key('Escape');
+      a.equal(TAP.store.get().expanded, null, 'Esc collapses');
+      a.ok(!expanded(p), 'panel back in place');
+      a.ok(!document.documentElement.classList.contains('tap-noscroll'), 'scrolling back');
+      more(p, 'expand');
+      click(qs('[data-action="collapse"]', p.el));
+      a.equal(TAP.store.get().expanded, null, 'close button collapses');
+      a.equal(qs('.tap-panel__expand-strip', p.el), null, 'strip gone');
+    }));
+
+    T.test('TPV-TC-248', 'Left and right arrows step through the view\'s charts, still expanded', scene(function (a, s) {
+      s.report(fakeDef());
+      s.report(fakeDef({ id: 'x-fake2', title: 'What does the second fake show?' }));
+      var p1 = s.panel('x-fake'), p2 = s.panel('x-fake2');
+      more(p1, 'expand');
+      a.match(txt(qs('.tap-panel__expand-strip', p1.el)), /Chart 1 of 2/);
+      key('ArrowRight');
+      a.equal(TAP.store.get().expanded, 'x-fake2', 'next chart');
+      a.ok(expanded(p2) && !expanded(p1), 'only the next one is expanded');
+      key('ArrowRight');
+      a.equal(TAP.store.get().expanded, 'x-fake', 'wraps round');
+      key('ArrowLeft');
+      a.equal(TAP.store.get().expanded, 'x-fake2', 'previous chart');
+      var sel = TAP.dom.el('select');
+      p2.el.appendChild(sel);
+      key('ArrowLeft', sel);
+      a.equal(TAP.store.get().expanded, 'x-fake2', 'arrows in a field are left alone');
+    }));
+
+    T.test('TPV-TC-249', 'Every panel control still works while expanded', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      more(p, 'expand');
+      pickType(p, 'dot');
+      a.equal(last().type, 'dot', 'chart type');
+      a.ok(expanded(p), 'still expanded');
+      a.ok(showTable(p), 'table');
+      click(qs('[data-action="about"]', p.el));
+      a.ok(TAP.layers.top(), 'explanation');
+      TAP.layers.close();
+      a.ok(expanded(p), 'still expanded after closing the side panel');
+    }));
+
+    T.test('TPV-TC-250', 'Chart text is larger in the expanded view', scene(function (a, s) {
+      s.report(fakeDef());
+      var size = TH.type.chart;
+      FAKE = function () {
+        return { option: { xAxis: { type: 'value', axisLabel: { fontSize: size } }, yAxis: { type: 'category', data: ['Region A'], axisLabel: { fontSize: size } },
+          series: [{ type: 'bar', data: [{ value: 5, raw: 5, key: 'nb.arr', entityId: 'alpha' }] }] } };
+      };
+      var p = s.panel('x-fake');
+      a.equal(chartOf(p).getOption().yAxis[0].axisLabel.fontSize, size, 'normal size');
+      more(p, 'expand');
+      a.equal(last().expanded, true, 'the builder knows');
+      a.ok(chartOf(p).getOption().yAxis[0].axisLabel.fontSize > size, 'larger chart labels');
+      a.ok(parseFloat(getComputedStyle(qs('.tap-panel__title', p.el)).fontSize) > TH.type.h2, 'larger title');
+    }));
+  });
 })(window.TAP);
