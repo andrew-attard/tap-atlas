@@ -2,7 +2,7 @@
  * File: js/panel/panel-insights.js
  * Purpose: A panel's insights: the takeaway line (the top insight), the count, and the list of at most 3 with
  *          figures, rule, a highlight button and "Hide for this session" (US-1.2.2, US-1.7.11).
- * Provides: TAP.panelInsights (get, target, takeaway, render)
+ * Provides: TAP.panelInsights (get, target, handlers, strip, takeaway, render)
  * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/core/dom.js,
  *             js/core/icons.js, js/core/content.js, js/core/format.js, js/core/store.js
  * Used by: js/panel/panel.js
@@ -30,10 +30,44 @@
     }
   }
 
-  // What selecting an insight highlights on the chart: a Target (ARCHITECTURE section 11).
+  // What selecting an insight highlights on this panel's chart: a Target (ARCHITECTURE section 11). An insight can
+  // belong to several reports (attach), so the target names the panel's own report.
   function target(ins, reportId) {
-    return { reportId: ins.reportId || reportId, regionIds: (ins.regionIds || []).slice(), industryIds: (ins.industryIds || []).slice(),
+    return { reportId: reportId, regionIds: (ins.regionIds || []).slice(), industryIds: (ins.industryIds || []).slice(),
       accountIds: (ins.accountIds || []).slice(), mark: ins.highlight || null };
+  }
+
+  // What the takeaway and the list do, for panel p (see js/panel/panel.js).
+  function handlers(p) {
+    return {
+      selected: p.st.selected, seen: p.seen,
+      onSelect: function (ins) {
+        var off = p.st.selected === ins.id;
+        p.set({ selected: off ? null : ins.id, sentence: off ? null : ins.sentence, highlight: off ? null : target(ins, p.id) });
+      },
+      onHide: function (ins) {
+        if (p.st.selected === ins.id) Object.assign(p.st, { selected: null, sentence: null, highlight: null });
+        TAP.insights.hide(ins.id);
+        p.render();
+      },
+      onShowAll: function () { p.st.pop = null; TAP.store.set({ view: 'insights' }); },
+      onClose: function () { p.toggle(null); }
+    };
+  }
+
+  // The strip above the chart repeats what is highlighted, so it reads even without colour.
+  function strip(p, hl) {
+    if (!hl) return null;
+    var mine = !!p.st.selected;
+    return el('div', { class: 'tap-panel__strip', role: 'status' }, [
+      el('span', { class: 'tap-panel__strip-label' }, [el('span', { class: 'tap-panel__ring', 'aria-hidden': 'true' }),
+        t(mine ? 'highlighted' : 'highlightedTarget')]),
+      mine ? el('span', { class: 'tap-panel__strip-text' }, p.st.sentence || '') : null,
+      el('button', { type: 'button', class: 'tap-btn', 'data-action': 'clear-highlight', onclick: function () {
+        if (p.st.highlight) p.set({ highlight: null, selected: null, sentence: null });
+        else TAP.store.set({ highlight: null });
+      } }, t('clear'))
+    ]);
   }
 
   function hideButton(ins, onHide) {
@@ -85,5 +119,5 @@
     }).reduce(function (a, b) { return a.concat(b); }, []));
   }
 
-  TAP.panelInsights = { get: get, target: target, takeaway: takeaway, render: render };
+  TAP.panelInsights = { get: get, target: target, handlers: handlers, strip: strip, takeaway: takeaway, render: render };
 })(window.TAP);

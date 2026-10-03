@@ -36,6 +36,12 @@ Object.assign(window.TAP_CONTENT.text, {
     read: 'How to read it',
     lookFor: 'What to look for',
 
+    // Chart type, measure and bubble size (US-1.2.3)
+    typesLabel: 'Chart types that suit this data',
+    typeAria: 'Chart type: {type}',
+    default: 'Default',
+    measure: 'Measure',
+    size: 'Bubble size',
     industry: 'Industry',
 
     // States inside the panel
