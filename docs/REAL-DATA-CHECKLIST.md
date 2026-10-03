@@ -4,7 +4,7 @@ Step by step, for the data owner taking the app onto real data the day before th
 
 Generic on purpose: this copy names no organization, region, file or person. The run log, real file names and anything organization-specific live in the internal project folder, outside this repository (D2).
 
-**Have ready:** the real regional workbooks, the internal copy of the app folder (a copy taken from the public repository's main branch, kept on approved storage outside any git clone), the import built with Copilot (`docs/IMPORT-BRIEF.md`, prompt 2 in `docs/COPILOT-PROMPTS.md`), and `content/organization.js` (prompt 3).
+**Have ready:** the real regional workbooks, the internal copy of the app folder (a copy taken from the public repository's main branch, kept on approved storage outside any git clone), the import built with Copilot (`docs/IMPORT-BRIEF.md`, prompt 2 in `docs/COPILOT-PROMPTS.md`), `content/organization.js` (prompt 3), and, if the organization's branding is wanted, a `js/theme.js` edited in the internal copy (prompt 4).
 
 ## 1. The run
 
@@ -29,9 +29,9 @@ Generic on purpose: this copy names no organization, region, file or person. The
   *Good:* every checked figure matches its cell. Calculated figures say "calculated in the workbook" and still point to a cell. Combined figures (totals, averages) list the regions they came from. Each check is listed in the run log.
 
 - [ ] **6. Walk every view in each comparison mode.**
-  Tick each cell of the grid below. Open each panel's table at least once and check blanks read "not provided" (never 0) and unrated rows are left out quietly.
+  Tick each cell of the grid below. The column names match the comparison bar's five modes. Open each panel's table at least once and check blanks read "not provided" (never 0) and unrated rows are left out quietly.
 
-  | View | All regions | One vs the rest | One against another | Chosen set | Organization |
+  | View | All regions | One vs the rest | One vs one | Chosen set | Organization total |
   |---|---|---|---|---|---|
   | Overview | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Industry priorities | [ ] | [ ] | [ ] | [ ] | [ ] |
@@ -69,7 +69,7 @@ Run this before each demo, not only on the first run, on the folder you will pre
 - [ ] **Known-good copy.** Save a dated copy of the folder that passed.
   *Good:* the copy's location is in the run log. If anything breaks later, present from this copy.
 
-**The smoke set** (from the Test Plan; the case ids let you record results against it):
+**The smoke set** (every case the Test Plan tags as smoke, 23 in all; the case ids let you record results against it):
 
 | Case | Check |
 |---|---|
@@ -81,13 +81,13 @@ Run this before each demo, not only on the first run, on the folder you will pre
 | TPV-TC-021 | A chart tooltip and its table row both show the figure's file › sheet › cell |
 | TPV-TC-036 | Readable on a Teams share on a second 1080p device (sign-off recorded) |
 | TPV-TC-037 | Sample edition only (`index-sample.html`): the sample banner shows on every view and can't be dismissed |
-| TPV-TC-053 | A panel's insights icon shows the count, lists 3 and links to the Insights page; hover alone doesn't open it |
+| TPV-TC-053 | A panel's insights icon shows the count (for example 5), lists 3 and links to the Insights page; hover alone doesn't open it |
 | TPV-TC-057 | Switching chart type keeps the comparison, breakdown and focus |
-| TPV-TC-066 | "Copy to clipboard" on a table pastes into Excel with columns intact, source column included |
+| TPV-TC-066 | "Copy to clipboard" on a table pastes into Excel with columns intact, including the source column and the data label |
 | TPV-TC-089 | Clicking a region card opens its details; the comparison stays the same |
 | TPV-TC-093 | The ambition report defaults to a stacked bar per region (new business and customer growth), matching the cards |
 | TPV-TC-102 | The Overview shows three insights in ranking order, the focus region's first when one is set |
-| TPV-TC-110 | The tier bubble grid: colour shows tier, size shows pipeline, switching to current ARR changes sizes |
+| TPV-TC-110 | The tier bubble grid: colour shows tier, size shows pipeline, switching to current ARR changes sizes; the legend separates system figure from leader choice |
 | TPV-TC-115 | The attractiveness vs ability chart, All regions: one labelled bubble per industry, averaging stated |
 | TPV-TC-123 | Selecting an industry in the grid, the scatter and the ratings chart updates the commentary panel |
 | TPV-TC-138 | The Insights page lists every insight, ranked, grouped by family with a one-line explanation each |
@@ -107,8 +107,7 @@ The real data is accepted for the demo when steps 3 to 7 are ticked: the contrac
 The data owner already has the real workbooks, so this should not be needed. Use it only if the data file isn't ready, or won't pass step 3, in time for the demo.
 
 - [ ] **Present the sample edition.** Open `index-sample.html` from the last known-good folder.
-  *Good:* every screen carries the banner "Sample data: all figures are fictional", so nobody mistakes it for the real plans. The presenter opens with one line on why: the real plans are being imported and will follow.
-- [ ] **Optional: say why on the banner.** In the internal copy only, change `banner.sample` in `content/text-shell.js` to add a short reason (for example "Sample data: all figures are fictional. The regional plans follow once imported."). Never commit that change.
+  *Good:* every screen carries the standard banner "Sample data: all figures are fictional", unchanged, so nobody mistakes it for the real plans. The presenter opens with one line on why: the real plans are being imported and will follow.
 - [ ] **Record it.** Write in the run log that the fallback was used, why, and the new date for the real-data run.
 
 ## 5. Run log
