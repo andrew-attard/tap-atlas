@@ -27,6 +27,7 @@ Object.assign(window.TAP_CONTENT.text, {
     hide: 'Hide for this session',
     highlighted: 'Highlighted insight',
     highlightedTarget: 'Highlighted on the chart',
+    widened: 'The comparison is now All regions, so every region in this insight is on the chart.',
     clear: 'Clear',
 
     // The explanation (US-1.6.5)

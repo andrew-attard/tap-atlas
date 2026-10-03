@@ -33,8 +33,9 @@
   // What selecting an insight highlights on this panel's chart: a Target (ARCHITECTURE section 11). An insight can
   // belong to several reports (attach), so the target names the panel's own report.
   function target(ins, reportId) {
+    var hl = ins.highlight || {};   // the insight's own target (ARCHITECTURE section 12)
     return { reportId: reportId, regionIds: (ins.regionIds || []).slice(), industryIds: (ins.industryIds || []).slice(),
-      accountIds: (ins.accountIds || []).slice(), mark: ins.highlight || null };
+      accountIds: (ins.accountIds || []).slice(), mark: hl.mark || null, quadrant: hl.quadrant || null };
   }
 
   // What the takeaway and the list do, for panel p (see js/panel/panel.js).
@@ -42,8 +43,14 @@
     return {
       selected: p.st.selected, seen: p.seen,
       onSelect: function (ins) {
-        var off = p.st.selected === ins.id;
-        p.set({ selected: off ? null : ins.id, sentence: off ? null : ins.sentence, highlight: off ? null : target(ins, p.id) });
+        var off = p.st.selected === ins.id, tg = target(ins, p.id), sm = TAP.showme;
+        // A region the chart can't show on its own: "Show me" widens the comparison first
+        if (!off && sm && !sm.__stub && sm.widen(tg, p.st.custom || TAP.store.get().cmp, ins.regionIds)) {
+          p.st.pop = null;
+          sm.go({ insightId: ins.id, target: tg });
+          return;
+        }
+        p.set({ selected: off ? null : ins.id, sentence: off ? null : ins.sentence, highlight: off ? null : tg });
       },
       onHide: function (ins) {
         if (p.st.selected === ins.id) Object.assign(p.st, { selected: null, sentence: null, highlight: null });
@@ -63,6 +70,7 @@
       el('span', { class: 'tap-panel__strip-label' }, [el('span', { class: 'tap-panel__ring', 'aria-hidden': 'true' }),
         t(mine ? 'highlighted' : 'highlightedTarget')]),
       mine ? el('span', { class: 'tap-panel__strip-text' }, p.st.sentence || '') : null,
+      !mine && hl.widened ? el('span', { class: 'tap-panel__strip-text' }, t('widened')) : null,
       el('button', { type: 'button', class: 'tap-btn', 'data-action': 'clear-highlight', onclick: function () {
         if (p.st.highlight) p.set({ highlight: null, selected: null, sentence: null });
         else TAP.store.set({ highlight: null });
