@@ -89,6 +89,7 @@
         type === types.def ? el('span', { class: 'tap-badge tap-panel__default' }, t('default')) : null
       ]));
     });
+    box.appendChild(el('p', { class: 'tap-panel__pop-note' }, t('tableNote')));
     return box;
   }
 
@@ -115,6 +116,10 @@
     if (b.types && b.types.list.length) {
       box.appendChild(button('type', 'chart', TAP.shapes.label(b.types.current), { expanded: open === 'type', menu: true,
         aria: t('typeAria', { type: TAP.shapes.label(b.types.current) }), onclick: function () { p.toggle('type'); } }));
+    }
+    if (b.types) {
+      box.appendChild(button('table', 'table', t('table'), { pressed: !!p.st.table,
+        onclick: function () { p.set({ table: !p.st.table, pop: null }); } }));
     }
     if (open === 'ins' && info.count) {
       var list = pop(t('insightsTitle'));

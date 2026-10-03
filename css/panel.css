@@ -118,6 +118,20 @@
 .tap-panel__error .tap-panel__state-title { color: var(--tap-accent-deep); }
 .tap-panel__error-list { margin: 0; padding-left: var(--tap-sp-6); }
 
+/* Table view: exact figures, sortable headers, a source column; scrolls inside the panel under fixed headers */
+.tap-panel__table-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--tap-sp-3); margin-bottom: 10px; font-size: var(--tap-fs-body); }
+.tap-panel__table-status { margin: 0 0 var(--tap-sp-2); font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-panel__table-status:empty { display: none; }
+.tap-panel__manual { display: block; width: 100%; margin-top: var(--tap-sp-2); font-family: inherit; }
+.tap-panel__tablewrap { max-height: var(--tap-chart-h); overflow: auto; border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-panel__table { font-size: var(--tap-fs-body); background: var(--tap-ground); }
+.tap-panel__table th { background: var(--tap-ground); padding: 10px var(--tap-sp-2); font-size: var(--tap-fs-label); }
+.tap-panel__table td { padding: 9px var(--tap-sp-2); font-variant-numeric: tabular-nums; }
+.tap-panel__table tr.is-focus td { font-weight: 800; }
+.tap-panel__table td.tap-panel__src { font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-panel__sort { padding: 0; font: inherit; font-weight: 800; color: inherit; background: none; border: 0; cursor: pointer; text-align: inherit; }
+.tap-panel__focus-mark { font-weight: 800; color: var(--tap-accent-deep); }
+
 /* Legend and size legend: HTML under the chart, so they stay readable and selectable */
 .tap-panel__legend {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--tap-sp-6);
