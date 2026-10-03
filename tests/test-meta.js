@@ -1,7 +1,7 @@
 /*
  * File: tests/test-meta.js
  * Purpose: Checks about the test page and the build itself: every automated test case has a test, no stubs at release.
- * Provides: test cases TPV-TC-219, TPV-TC-202, TPV-TC-203, X-meta-*
+ * Provides: test cases TPV-TC-219, TPV-TC-202, TPV-TC-203, TPV-TC-204, X-meta-*
  * Depends on: tests/harness.js, tests/auto-cases.js, every test file (loads last)
  * Used by: tests.html
  */
@@ -26,6 +26,7 @@
     // These are file checks, run by tools/lint.js in scripts/verify.sh, not in the browser.
     T.skip('TPV-TC-202', 'Every code file starts with a header', 'Checked by tools/lint.js (rule 1) in scripts/verify.sh');
     T.skip('TPV-TC-203', 'Files over about 300 lines are listed', 'Checked by tools/lint.js (rule 2) in scripts/verify.sh');
+    T.skip('TPV-TC-204', 'Every path the "which files for which change" table names exists', 'Checked by tools/check-docs.js in scripts/verify.sh');
     T.skip('TPV-TC-042', 'No colour values or organization names outside the theme file', 'Checked by tools/lint.js (rule 4) and the denylist scan in scripts/verify.sh');
   });
 })(window.TAP);
