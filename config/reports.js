@@ -18,7 +18,9 @@
  *                  { shows: 'What this shows', read: 'How to read it', lookFor: 'What to look for' }
  *   shape        The data shape (D18), which decides the chart types that make sense:
  *                  'compare' one value per region or category        bar, dot, radar (3 or fewer), table
- *                  'parts'   parts of a whole per region             stackedBar, stacked100, treemap, table
+ *                  'parts'   parts of a whole per region             stackedBar, stacked100, treemap, table,
+ *                                                                    bubble (needs x, y and size; drawn by the
+ *                                                                    parts builder)
  *                  'xy'      two measures per item                   scatter, table
  *                  'xyz'     two measures plus a size                bubble, scatter, table
  *                  'grid'    a value for every row and column        heatmap, bubbleGrid, table

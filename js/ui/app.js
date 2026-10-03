@@ -57,10 +57,14 @@
   function start(opts) {
     opts = opts || {};
     root = opts.root || document.getElementById('app') || document.body;
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }   // start() can run more than once (tests)
     if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
     mounted = null;
 
+    TAP.notes.clear();
     var res = TAP.data.load(opts.plan);
+    res.warnings.forEach(function (w) { TAP.notes.add(Object.assign({ source: 'data' }, w)); });
+    if (TAP.content.orgError()) TAP.notes.add({ source: 'organization', message: TAP.content.orgError() });
     if (!res.ok) {
       TAP.screens.show(root, res);
       return res;
@@ -78,11 +82,12 @@
       root.appendChild(TAP.dom.el('p', { class: 'tap-stub' }, e.message));
     }
 
-    if (unsubscribe) unsubscribe();   // start() can run more than once (tests)
+    mounted = null;   // the shell was just drawn, so the view goes into the new view area
     unsubscribe = TAP.store.on(onState);
     if (!hashBound) {
       hashBound = true;
       window.addEventListener('hashchange', function () {
+        if (!unsubscribe) return;   // the app isn't running (error screen or not started)
         var id = viewFromHash();
         if (id && id !== TAP.store.get().view) TAP.store.set({ view: id });
       });

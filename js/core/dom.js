@@ -25,7 +25,11 @@
       if (k === 'class') node.className = v;
       else if (k === 'text') node.textContent = v;
       else if (k === 'html') html(node, v);
-      else if (k.slice(0, 2) === 'on' && typeof v === 'function') node.addEventListener(k.slice(2), v);
+      else if (k.slice(0, 2) === 'on') {
+        // Only real functions: a string here would become inline script
+        if (typeof v !== 'function') throw new Error('dom.el: ' + k + ' must be a function');
+        node.addEventListener(k.slice(2), v);
+      }
       else node.setAttribute(k, v === true ? '' : v);
     });
     append(node, children);

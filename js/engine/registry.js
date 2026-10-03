@@ -1,7 +1,7 @@
 /*
  * File: js/engine/registry.js
  * Purpose: Keeps the lists of reports, chart builders and views, and checks report definitions before use.
- * Provides: TAP.reports (get, list, validate, SHAPES, TYPES), TAP.builders (register, get, names), TAP.views (register, get, order, list)
+ * Provides: TAP.reports (get, list, all, validate, measureIds, SHAPES, TYPES, SHAPE_TYPES), TAP.builders (register, get, names), TAP.views (register, get, order, list)
  * Depends on: js/core/namespace.js, config/reports-*.js (window.TAP_REPORTS), config/views.js (window.TAP_VIEWS)
  * Used by: js/panel/panel.js, js/ui/app.js, js/ui/shell.js, every builder and view file
  */
@@ -11,6 +11,17 @@
   var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',
     'heatmap', 'bubbleGrid', 'line', 'table'];
+
+  // The chart types each data shape allows (D18). 'groupedBar' appears once a breakdown is chosen.
+  var SHAPE_TYPES = {
+    compare: ['bar', 'groupedBar', 'dot', 'radar', 'table'],
+    parts: ['stackedBar', 'stacked100', 'groupedBar', 'treemap', 'bubble', 'table'],
+    xy: ['scatter', 'table'],
+    xyz: ['bubble', 'scatter', 'table'],
+    grid: ['heatmap', 'bubbleGrid', 'table'],
+    years: ['line', 'groupedBar', 'table'],
+    spread: ['dot', 'table']
+  };
 
   /* ---------- reports ---------- */
 
@@ -36,7 +47,12 @@
     }
     if (!Array.isArray(def.types) || !def.types.length) e.push('"types" must list at least one chart type.');
     else {
-      def.types.forEach(function (t) { if (TYPES.indexOf(t) < 0) e.push('Unknown chart type "' + t + '".'); });
+      def.types.forEach(function (t) {
+        if (TYPES.indexOf(t) < 0) e.push('Unknown chart type "' + t + '".');
+        else if (SHAPE_TYPES[def.shape] && SHAPE_TYPES[def.shape].indexOf(t) < 0) {
+          e.push('Chart type "' + t + '" doesn’t suit the "' + def.shape + '" shape.');
+        }
+      });
       if (def.types.indexOf('table') < 0) e.push('"types" must include "table" (a table view is always available).');
       if (def.defaultType && def.types.indexOf(def.defaultType) < 0) e.push('"defaultType" must be one of "types".');
     }
@@ -48,12 +64,25 @@
     if (def.types && def.types.indexOf('bubble') >= 0 && !(def.size && def.size.options && def.size.options.length)) {
       e.push('A bubble chart needs "size.options".');
     }
+    if (def.shape === 'parts' && def.types && def.types.indexOf('bubble') >= 0 && !(def.x && def.y)) {
+      e.push('A bubble view of a "parts" report needs "x" and "y".');
+    }
     if (TAP.measures && !TAP.measures.__stub) {
-      (def.measures || []).forEach(function (m) {
-        if (!TAP.measures.meta(m.id)) e.push('Unknown measure "' + m.id + '".');
+      measureIds(def).forEach(function (id) {
+        if (!TAP.measures.meta(id)) e.push('Unknown measure "' + id + '".');
       });
     }
     return e;
+  }
+
+  // Every measure id a definition names: measures, parts, axes and sizes.
+  function measureIds(def) {
+    var ids = (def.measures || []).map(function (m) { return m.id; });
+    Object.keys(def.parts || {}).forEach(function (k) { ids = ids.concat(def.parts[k]); });
+    if (def.x) ids.push(def.x);
+    if (def.y) ids.push(def.y);
+    if (def.size && def.size.options) ids = ids.concat(def.size.options);
+    return ids.filter(function (id, i) { return ids.indexOf(id) === i; });
   }
 
   /* ---------- builders ---------- */
@@ -84,7 +113,8 @@
     list: function () { return Object.keys(views); }
   };
 
-  TAP.reports = { get: get, list: list, all: all, validate: validate, SHAPES: SHAPES, TYPES: TYPES };
+  TAP.reports = { get: get, list: list, all: all, validate: validate, measureIds: measureIds,
+    SHAPES: SHAPES, TYPES: TYPES, SHAPE_TYPES: SHAPE_TYPES };
   TAP.builders = builderApi;
   TAP.views = viewApi;
 })(window.TAP);

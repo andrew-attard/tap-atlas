@@ -1,7 +1,7 @@
 /*
  * File: js/core/store.js
  * Purpose: Holds the shared app state (view, comparison, selections) and tells other parts when it changes.
- * Provides: TAP.store (get, set, on, reset, defaults), TAP.bus (on, off, emit)
+ * Provides: TAP.store (get, set, on, reset, defaults), TAP.bus (on, off, emit, clear), TAP.notes (add, list, clear)
  * Depends on: js/core/namespace.js
  * Used by: js/ui/app.js, the comparison bar, every panel and view
  */
@@ -84,6 +84,19 @@
       });
     },
     clear: function () { handlers = {}; }
+  };
+
+  // Things worth checking that belong in the data sources panel, never on the main screens (US-1.1.5):
+  // data warnings, colours repeating past 8 regions, a broken organization file, insight rules that were skipped.
+  // Each note: {source: 'data'|'colours'|'organization'|'insights', message, regionId?, sheet?, cell?}.
+  var notes = [];
+  TAP.notes = {
+    add: function (n) {
+      var key = JSON.stringify(n);
+      if (!notes.some(function (x) { return JSON.stringify(x) === key; })) notes.push(n);
+    },
+    list: function (source) { return notes.filter(function (n) { return !source || n.source === source; }); },
+    clear: function (source) { notes = source ? notes.filter(function (n) { return n.source !== source; }) : []; }
   };
 
   TAP.store = { get: get, set: set, on: on, reset: reset, defaults: defaults };
