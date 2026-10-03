@@ -15,6 +15,15 @@
   .tap-stack { position: sticky; top: 0; }
 }
 
+/* Data status banner: sample (ink) or internal (deep red), never dismissible */
+.tap-banner {
+  display: flex; align-items: center; gap: var(--tap-sp-2);
+  min-height: 36px; padding: var(--tap-sp-1) var(--tap-edge);
+  font-size: var(--tap-fs-body); font-weight: 800; color: var(--tap-on-colour);
+  background: var(--tap-banner-sample);
+}
+.tap-banner--internal { background: var(--tap-banner-internal); }
+
 /* Top bar: logo slot, app name, menu */
 .tap-topbar {
   display: flex; align-items: stretch; gap: var(--tap-sp-8);

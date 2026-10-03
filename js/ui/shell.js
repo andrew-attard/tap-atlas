@@ -1,10 +1,10 @@
 /*
  * File: js/ui/shell.js
- * Purpose: Draws the page frame: banner, top bar with the menu, comparison bar area and the view area.
- * Provides: TAP.shell (mount, viewEl)
- * Depends on: js/core/dom.js, js/core/store.js, js/core/content.js, js/engine/registry.js (TAP.views),
- *             js/ui/compare-bar.js, js/theme.js (logo)
- * Used by: js/ui/app.js
+ * Purpose: Draws the page frame: data status banner, top bar with the menu, comparison bar area and the view area.
+ * Provides: TAP.shell (mount, viewEl, label)
+ * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
+ *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/theme.js (logo)
+ * Used by: js/ui/app.js; panel export reads label() for saved images and copied tables
  */
 (function (TAP) {
   'use strict';
@@ -17,6 +17,27 @@
     cleanups.forEach(function (fn) { try { fn(); } catch (e) { /* already gone */ } });
     cleanups = [];
     frame = null;
+  }
+
+  // Sample data always says so. Real data shows the organization's confidentiality label unless the
+  // organization layer switches it off (US-1.1.8). Returns {kind, text} or null; also used by image and table export.
+  function label() {
+    var meta = {};
+    try { meta = TAP.data.meta() || {}; } catch (e) { return null; }
+    if (meta.isSample) return { kind: 'sample', text: TAP.content.text('banner.sample') };
+    var s = TAP.content.setting('internalLabel', { show: true }) || {};
+    if (s.show === false) return null;
+    return { kind: 'internal', text: s.text || TAP.content.text('banner.internal') };
+  }
+
+  // The banner itself: drawn once, at the top, and never dismissible.
+  function banner(slot) {
+    var l = label();
+    if (!l) return;
+    slot.appendChild(el('div', { class: 'tap-banner tap-banner--' + l.kind, role: 'note' }, [
+      TAP.icons.svg(l.kind === 'sample' ? 'info' : 'warning', { size: 18 }),
+      el('span', null, l.text)
+    ]));
   }
 
   // Logo (only when the theme names one, so there is no gap without it) and the app name.
@@ -61,10 +82,10 @@
     root.classList.add('tap-app');
 
     var nav = menu();
-    var banner = el('div', { class: 'tap-banner-slot' });
+    var slot = el('div', { class: 'tap-banner-slot' });
     var cmp = el('div', { class: 'tap-cmp', 'data-tour': 'compare' });
     var stack = el('div', { class: 'tap-stack' }, [
-      banner,
+      slot,
       el('header', { class: 'tap-topbar' }, [brand(), nav]),
       cmp
     ]);
@@ -72,7 +93,8 @@
     var layers = el('div', { class: 'tap-layers' });
     TAP.dom.append(root, [stack, view, layers]);
 
-    frame = { root: root, view: view, menu: nav, banner: banner, layers: layers };
+    frame = { root: root, view: view, menu: nav, layers: layers };
+    banner(slot);
     markCurrent(nav, TAP.store.get().view);
     cleanups.push(TAP.store.on(function (state, changed) {
       if (changed.indexOf('view') >= 0) markCurrent(nav, state.view);
@@ -87,5 +109,5 @@
     return frame.view;
   }
 
-  TAP.shell = { mount: mount, viewEl: viewEl };
+  TAP.shell = { mount: mount, viewEl: viewEl, label: label };
 })(window.TAP);
