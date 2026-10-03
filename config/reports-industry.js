@@ -14,7 +14,7 @@ window.TAP_REPORTS['ind-tiers'] = {
   title: 'Which industries does each region prioritize?',
   explain: {
     shows: 'The tier each leader gave each industry. Group-priority industries are set centrally as Tier 1 and marked as such.',
-    read: 'Darker cells are higher tiers. An outlined cell means the leader left the tier blank. The last column counts regions per tier.',
+    read: 'Darker cells are higher priority (Tier 1 darkest). An outlined cell means the leader left the tier blank. The last column counts regions per tier.',
     lookFor: 'Rows where every region agrees, and rows where tiers spread from 1 to 3.'
   },
   shape: 'grid',

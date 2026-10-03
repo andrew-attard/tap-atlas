@@ -1,8 +1,75 @@
 /*
  * File: css/industry.css
  * Purpose: Industry priorities layout: tier grid, quadrant, ratings, commentary, details.
- * Provides: styles for this area only
+ * Provides: styles for this area only (.tap-tg*, .tap-ind*)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: INDUSTRY stream. Colours and font sizes come from theme variables only.
  */
+
+/* ---------- tier grid (US-1.5.4). Height follows the rows; it is never fixed. ---------- */
+.tap-tg { display: flex; flex-direction: column; gap: var(--tap-sp-1); overflow-x: auto; padding: var(--tap-sp-1); }
+.tap-tg__row {
+  display: grid; gap: var(--tap-sp-1); align-items: stretch; min-height: 2.75rem;
+  grid-template-columns: minmax(11rem, 1.4fr) repeat(var(--tap-tg-cols), minmax(4.75rem, 1fr)) minmax(8.5rem, 0.9fr);
+  min-width: calc(11rem + var(--tap-tg-cols) * 4.75rem + 8.5rem + var(--tap-tg-cols) * var(--tap-sp-1));
+}
+.tap-tg__row--head { align-items: end; min-height: 0; padding-bottom: var(--tap-sp-2); border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-tg__corner, .tap-tg__agree-head { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); line-height: 1.25; }
+.tap-tg__agree-head { padding-left: var(--tap-sp-2); }
+.tap-tg__col { display: flex; flex-direction: column; gap: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.tap-tg__bar { display: block; height: 6px; }
+.tap-tg__col.is-focus { font-weight: 800; }
+.tap-tg__col.is-focus .tap-tg__bar { height: 10px; }
+.tap-tg__col.is-muted { color: var(--tap-muted); }
+
+.tap-tg__group { padding: var(--tap-sp-3) 0 var(--tap-sp-1); font-size: var(--tap-fs-label); font-weight: 800; border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
+
+.tap-tg__name {
+  display: grid; grid-template-columns: 0.75rem minmax(0, 1fr); align-content: center; column-gap: var(--tap-sp-2); padding: var(--tap-sp-1) var(--tap-sp-2) var(--tap-sp-1) 0;
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink); text-align: left;
+  background: transparent; border: 0; cursor: pointer;
+}
+.tap-tg__name:hover .tap-tg__label { text-decoration: underline; text-underline-offset: 3px; }
+.tap-tg__star { grid-column: 2; font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
+.tap-tg__row.is-selected { background: var(--tap-surface); }
+.tap-tg__row.is-selected .tap-tg__name { font-weight: 800; }
+.tap-tg__row.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; }
+
+.tap-tg__cell {
+  display: flex; align-items: center; gap: var(--tap-sp-1); padding: 0 var(--tap-sp-2);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 700; text-align: left;
+  border: var(--tap-rule-w) solid transparent; cursor: pointer; position: relative;
+}
+.tap-tg__cell--t1 { background: var(--tap-tier1); color: var(--tap-tier1-fg); border-color: var(--tap-tier1); }
+.tap-tg__cell--t2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); border-color: var(--tap-tier2); }
+.tap-tg__cell--t3 { background: var(--tap-tier3); color: var(--tap-tier3-fg); border-color: var(--tap-tier3); }
+.tap-tg__cell--np { background: transparent; color: var(--tap-np-fg); border: var(--tap-rule-w) dashed var(--tap-np-border); font-size: var(--tap-fs-chartMin); font-weight: 600; font-style: italic; }
+.tap-tg__cell.is-muted { opacity: 0.6; }
+.tap-tg__cell.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; z-index: 2; opacity: 1; }
+.tap-tg__cell:hover { outline: var(--tap-focus-w) solid var(--tap-ink); outline-offset: 1px; }
+
+.tap-tg__agree { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding-left: var(--tap-sp-2); font-size: var(--tap-fs-label); }
+.tap-tg__parts { display: flex; height: 10px; border: 1px solid var(--tap-ink); background: var(--tap-paper); }
+.tap-tg__part--t1 { background: var(--tap-tier1); }
+.tap-tg__part--t2 { background: var(--tap-tier2); }
+.tap-tg__part--t3 { background: var(--tap-tier3); }
+.tap-tg__counts { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tap-tg__npcount { color: var(--tap-np-fg); font-style: italic; }
+
+/* ---------- the view ---------- */
+.tap-ind { display: flex; flex-direction: column; gap: var(--tap-sp-8); padding: var(--tap-sp-8) var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
+.tap-ind__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 74rem; }
+.tap-ind__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-ind__title { margin: 0; font-size: var(--tap-fs-h1); }
+.tap-ind__slot { min-width: 0; }
+
+/* Preview shown only while the report panel is not built yet */
+.tap-ind-preview__title { font-size: var(--tap-fs-h2); }
+.tap-ind-preview__takeaway { font-size: var(--tap-fs-lead); }
+.tap-ind-preview__controls { display: flex; flex-wrap: wrap; gap: var(--tap-sp-3) var(--tap-sp-6); margin-bottom: var(--tap-sp-4); }
+.tap-ind-preview__group { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1); }
+.tap-ind-preview__label { margin-right: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-ind-preview__body { background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); padding: var(--tap-sp-4); }
+.tap-ind-preview__chart { width: 100%; }
+.tap-ind-preview__notes { margin: var(--tap-sp-3) 0 0; padding-left: var(--tap-sp-6); font-size: var(--tap-fs-label); color: var(--tap-muted); }
