@@ -695,4 +695,107 @@
       });
     });
   });
+
+  /* ---------- US-1.1.1: open the app from the folder (#2) ---------- */
+  var ERRORS = [
+    { path: 'regions[2].marketCoverage[4].tier', region: 'Region C', item: 'Retail', expected: '1, 2, 3 or blank', found: 'Tier 1-2',
+      message: 'regions[2].marketCoverage[4].tier: expected 1, 2, 3 or blank, found "Tier 1-2"' },
+    { path: 'regions[0].newBusiness[1].arrPotential[1]', region: 'Region A', item: null, expected: 'zero or more', found: -120,
+      message: 'regions[0].newBusiness[1].arrPotential[1]: expected zero or more, found -120' },
+    { path: '', region: null, item: null, expected: '', found: 12, message: '12 more problems not listed' }
+  ];
+  function screen(root) { return qs('.tap-screen', root); }
+
+  T.suite('screens', function () {
+    T.test('TPV-TC-004', 'With no data file, a plain message says what is wrong and what to do', function (a) {
+      var root = T.dom.mount();
+      var res = TAP.app.start({ root: root, plan: null });
+      a.equal(res.reason, 'missing');
+      a.ok(screen(root) && screen(root).classList.contains('tap-screen--missing'), 'the missing-data screen');
+      a.equal(txt(qs('h1', root)), TAP.content.text('screens.missingTitle'));
+      a.ok(txt(root).indexOf(TAP.content.text('screens.missingBody')) >= 0, 'what to do');
+      a.equal(qsa('.tap-menu, .tap-cmp', root).length, 0, 'no menu or comparison bar');
+    });
+
+    T.test('TPV-TC-006', 'A data file that fails to load (for example cut off mid-way) gets the same message, not a blank page', function (a) {
+      var saved = window.PLAN_DATA, root = T.dom.mount(), res;
+      try {
+        window.PLAN_DATA = undefined;   // what a file with a syntax error leaves behind
+        res = TAP.app.start({ root: root });
+      } finally { window.PLAN_DATA = saved; }
+      a.equal(res.reason, 'missing');
+      a.equal(txt(qs('h1', root)), TAP.content.text('screens.missingTitle'));
+      TAP.data.load(T_FIXTURE('mini'));
+    });
+
+    T.test('TPV-TC-005', 'A data file for another version names the expected and found versions', function (a) {
+      var root = T.dom.mount(), p = T_FIXTURE('mini');
+      p.meta.schemaVersion = '0.1';
+      var res = TAP.app.start({ root: root, plan: p });
+      a.equal(res.reason, 'version');
+      a.ok(screen(root).classList.contains('tap-screen--version'));
+      a.equal(txt(qs('h1', root)), TAP.content.text('screens.versionTitle'));
+      a.ok(txt(root).indexOf(TAP.content.text('screens.versionBody', { found: '0.1', expected: TAP.schemaVersion })) >= 0,
+        'both versions named');
+      TAP.data.load(T_FIXTURE('mini'));
+    });
+
+    T.test('X-screens-invalid', 'Data errors are listed one by one with path, expected and found', function (a) {
+      var root = T.dom.mount();
+      TAP.screens.show(root, { ok: false, reason: 'invalid', errors: ERRORS, warnings: [] });
+      a.ok(screen(root).classList.contains('tap-screen--invalid'));
+      a.equal(txt(qs('h1', root)), TAP.content.text('screens.invalidTitle'));
+      var rows = qsa('.tap-screen__errors tbody tr', root);
+      a.equal(rows.length, ERRORS.length, 'one row per error');
+      a.ok(txt(rows[0]).indexOf('regions[2].marketCoverage[4].tier') >= 0, 'path');
+      a.ok(txt(rows[0]).indexOf('1, 2, 3 or blank') >= 0, 'expected');
+      a.ok(txt(rows[0]).indexOf('Tier 1-2') >= 0, 'found');
+      a.ok(txt(rows[0]).indexOf('Region C') >= 0, 'region');
+      a.ok(txt(rows[1]).indexOf('-120') >= 0, 'a number found is shown');
+      a.ok(txt(rows[2]).indexOf('12 more problems not listed') >= 0, 'a message-only error still shows its message');
+    });
+
+    T.test('X-screens-copy-text', 'The copy text lists every error as tab-separated lines', function (a) {
+      var root = T.dom.mount();
+      TAP.screens.show(root, { ok: false, reason: 'invalid', errors: ERRORS, warnings: [] });
+      var text = qs('.tap-screen__copytext', root).value;
+      var lines = text.split('\n');
+      a.ok(lines.length >= ERRORS.length + 1, 'a heading line and one line per error');
+      a.ok(lines.some(function (l) {
+        return l.split('\t').join('|') === '1|Region C · Retail|regions[2].marketCoverage[4].tier|1, 2, 3 or blank|Tier 1-2|' + ERRORS[0].message;
+      }), 'first error, every field in order');
+      a.ok(text.indexOf('12 more problems not listed') >= 0, 'message-only error included');
+    });
+
+    T.test('X-screens-copy', 'One click copies the list, with a fallback that works from file://', function (a) {
+      var root = T.dom.mount();
+      TAP.screens.show(root, { ok: false, reason: 'invalid', errors: ERRORS, warnings: [] });
+      qs('.tap-screen__copy', root).click();
+      return new Promise(function (resolve) { setTimeout(resolve, 1500); }).then(function () {
+        var msg = txt(qs('.tap-screen__status', root));
+        a.ok(msg === TAP.content.text('screens.copied') || msg === TAP.content.text('screens.copyManual'), 'a result is reported: ' + msg);
+        if (msg === TAP.content.text('screens.copyManual')) a.ok(!qs('.tap-screen__copytext', root).hidden, 'the text is shown to copy by hand');
+      });
+    });
+
+    T.test('X-screens-replace', 'Showing a screen twice leaves one screen', function (a) {
+      var root = T.dom.mount();
+      TAP.screens.show(root, { reason: 'missing', errors: [], warnings: [] });
+      TAP.screens.show(root, { reason: 'version', errors: [{ path: 'meta.schemaVersion', expected: '0.2', found: '0.1' }], warnings: [] });
+      a.equal(qsa('.tap-screen', root).length, 1);
+      a.ok(screen(root).classList.contains('tap-screen--version'));
+    });
+
+    T.test('TPV-TC-001', 'The first view is on screen within 2 seconds of starting on the sample data', function (a) {
+      withFakes(function () {
+        withApp(function () {
+          var t0 = performance.now();
+          var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+          var ms = performance.now() - t0;
+          a.ok(TAP.app.current() === 'overview' && root.contains(TAP.shell.viewEl()), 'Overview mounted');
+          a.ok(ms < 2000, 'start took ' + Math.round(ms) + ' ms');
+        });
+      });
+    });
+  });
 })(window.TAP);
