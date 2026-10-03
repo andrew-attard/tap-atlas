@@ -16,6 +16,7 @@
   // The organization layer, or an empty one if it's missing or broken (US-1.6.6).
   function org() {
     var o = window.TAP_ORG;
+    orgError = null;
     if (o == null) return {};
     if (typeof o !== 'object') { orgError = 'The organization file did not set TAP_ORG to an object.'; return {}; }
     return o;
@@ -47,8 +48,12 @@
   // A glossary entry by id, term or alias (case-insensitive).
   function term(word) {
     var all = terms(), w = String(word || '').toLowerCase();
-    if (all[word]) return all[word];
-    return Object.keys(all).map(function (id) { return all[id]; }).filter(function (t) {
+    if (Object.prototype.hasOwnProperty.call(all, word)) return all[word];
+    // Organization entries first, so they win when an alias appears in both layers
+    var list = Object.keys(all).map(function (id) { return all[id]; }).sort(function (a, b) {
+      return (a.layer === 'organization' ? 0 : 1) - (b.layer === 'organization' ? 0 : 1);
+    });
+    return list.filter(function (t) {
       return String(t.term || '').toLowerCase() === w ||
         (t.aliases || []).some(function (a) { return String(a).toLowerCase() === w; });
     })[0] || null;
@@ -68,6 +73,6 @@
     text: text, term: term, terms: terms, guide: guide, setting: setting,
     orgError: function () { org(); return orgError; },
     // Marks the first use of each glossary term in a piece of text (US-1.6.4). Built by the CONTENT stream (#40).
-    mark: function () { throw new Error(TAP.stub.message('TAP.content.mark', 40)); }
+    mark: TAP.stub.fn('TAP.content.mark', 40)
   };
 })(window.TAP);

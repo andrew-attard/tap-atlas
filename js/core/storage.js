@@ -25,8 +25,9 @@
   function available() { return !!store(); }
 
   function get(key, fallback) {
-    var s = store(), raw;
-    try { raw = s ? s.getItem(PREFIX + key) : memory[key]; } catch (e) { raw = memory[key]; }
+    var s = store(), raw = memory[key];
+    // This session's copy wins: it holds the latest value even if saving to the browser failed (storage full)
+    if (raw == null && s) { try { raw = s.getItem(PREFIX + key); } catch (e) { raw = null; } }
     if (raw == null) return fallback;
     try { return JSON.parse(raw); } catch (e) { return fallback; }
   }

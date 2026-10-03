@@ -26,7 +26,15 @@
     }
 
     var checked = { errors: [], warnings: [] };
-    if (TAP.check && !TAP.check.__stub) checked = TAP.check.run(p);
+    if (TAP.check && !TAP.check.__stub) {
+      try {
+        checked = TAP.check.run(p);
+      } catch (e) {
+        // A data file malformed enough to break the check itself still gets the error screen, not a blank page
+        return result(false, 'invalid', [{ path: '(whole file)', expected: 'a file the check can read', found: e.message,
+          message: 'The contract check could not read the data file: ' + e.message }], []);
+      }
+    }
     if (checked.errors.length) return result(false, 'invalid', checked.errors, checked.warnings);
 
     plan = p;
@@ -44,8 +52,8 @@
   }
 
   function regions() { return need().regions || []; }
-  function region(id) { return regions()[index[id]] || null; }
-  function regionIndex(id) { return id in index ? index[id] : -1; }
+  function region(id) { var i = regionIndex(id); return i < 0 ? null : regions()[i]; }
+  function regionIndex(id) { return Object.prototype.hasOwnProperty.call(index, id) ? index[id] : -1; }
 
   // Industries from the lookups. {rated: true} leaves out rows the template never rates ("Other", "Unapplied industry").
   function industries(opts) {

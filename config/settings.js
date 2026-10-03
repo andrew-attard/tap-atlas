@@ -10,9 +10,9 @@ window.TAP_SETTINGS = {
   // Proposed defaults; to be confirmed with the CRO. A report definition can override them in options.weights.
   combine: {
     weights: {
-      'nb.hitRate': 'nb.targetAccounts',
+      'nb.hitRate': 'nb.targetAccountsRated',   // target accounts on rows that have a hit rate, so wins add up
       'nb.avgDealSize': 'nb.wins',
-      'nb.growthY2': 'nb.arr',
+      'nb.growthY2': 'nb.arr',               // 3-year new business ARR potential
       'nb.growthY3': 'nb.arr',
       'nb.servicesRatio': 'nb.arr',
       'cg.growthY1': 'base.arr',

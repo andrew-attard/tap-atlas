@@ -1,7 +1,7 @@
 /*
  * File: js/core/namespace.js
  * Purpose: Creates the shared TAP namespace and the stub helper used for parts not built yet.
- * Provides: window.TAP, TAP.version, TAP.schemaVersion, TAP.stub (+ .builder, .view, .rules, .list)
+ * Provides: window.TAP, TAP.version, TAP.schemaVersion, TAP.stub (+ .builder, .view, .rules, .fn, .list)
  * Depends on: nothing (loads first after the theme)
  * Used by: every module
  */
@@ -50,6 +50,14 @@
       }
     });
     stubs.push({ what: 'view ' + id, issue: issue });
+  };
+
+  // A single function inside an otherwise built module.
+  stub.fn = function (what, issue) {
+    stubs.push({ what: what, issue: issue });
+    var fn = function () { throw new Error(notBuilt(what, issue)); };
+    fn.__stub = issue;
+    return fn;
   };
 
   // An insight rule file with no rules yet.
