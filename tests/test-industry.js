@@ -1,7 +1,7 @@
 /*
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
- * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), X-industry-*
+ * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, X-industry-*, X-details-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -481,6 +481,136 @@
         a.near(d.raw[1], p03.scores[r].a, 1e-5, 'P03 ' + r + ' attractiveness');
         a.near(d.raw[0], p03.scores[r].b, 1e-5, 'P03 ' + r + ' ability');
       });
+    });
+  });
+
+  /* ---------- US-1.2.9 click for details ---------- */
+
+  function rowsOf(built) {
+    var out = [];
+    (built.groups || []).forEach(function (g) { (g.rows || []).forEach(function (r) { out.push(Object.assign({ group: g.title }, r)); }); });
+    return out;
+  }
+  function find(built, label) { return rowsOf(built).filter(function (r) { return r.label === label; })[0]; }
+  function shown(r) { return r.text != null ? r.text : TAP.format.cell(r.cell, { unit: r.unit, field: r.field, exact: true }); }
+  function everyValueSourced(a, built, label) {
+    var rows = rowsOf(built);
+    a.ok(rows.length > 0, label + ': has rows');
+    rows.forEach(function (r) {
+      var c = r.cell || {};
+      a.ok(c.state, label + ' ' + r.label + ': a full cell');
+      a.ok(c.kind && TAP.format.kind(c.kind).label, label + ' ' + r.label + ': kind of value');
+      var at = c.src && TAP.sources.address(c.src);
+      a.ok(at && at.text, label + ' ' + r.label + ': source');
+      if (at && !at.combined) a.ok(at.file && at.sheet, label + ' ' + r.label + ': file and sheet');
+    });
+  }
+
+  T.suite('industry-details', function () {
+    T.test('TPV-TC-252', 'One region and one industry: six ratings with wording, tier, system figures, commentary, grouped', function (a) {
+      var built = TAP.details.build({ reportId: 'ind-tiers', regionIds: ['alpha'], industryIds: ['ind1'] });
+      a.match(built.title, /Healthcare/, 'title names the industry');
+      a.match(built.title, /Region A/, 'and the region');
+      a.ok(built.groups.length >= 4, 'grouped');
+      built.groups.forEach(function (g) { a.ok(g.title && g.title.charAt(0) !== '[', 'group titled: ' + g.title); });
+      [['Growth potential', 'Strong dynamics, business to take (3)'], ['Criticality', 'Core, business critical (3)'],
+        ['Competitive intensity', 'Fragmented, no clear leader (2)'], ['References', 'Selling to top 5 local players (3)'],
+        ['Expertise', 'Generalized (3)'], ['Product fit', 'Strong (3)']].forEach(function (p) {
+        var r = find(built, p[0]);
+        a.ok(r, p[0] + ' listed');
+        a.equal(shown(r), p[1], p[0] + ' with its wording');
+        a.equal(r.cell.kind, 'IN', p[0] + ' is a leader input');
+      });
+      a.equal(shown(find(built, 'Tier')), 'Tier 1', 'tier');
+      a.equal(find(built, 'Current ARR').cell.v, 1000, 'current ARR');
+      a.equal(find(built, 'Pipeline').cell.v, 2000, 'pipeline');
+      a.equal(find(built, 'Pipeline created in the last 12 months').cell.v, 800, 'pipeline, 12 months');
+      a.equal(find(built, 'Current ARR').cell.kind, 'PRE', 'system figure');
+      a.equal(find(built, 'Leader commentary').cell.v, 'Strong base in clinics.', 'commentary');
+      a.near(find(built, 'Attractiveness').cell.v, X.scores.alpha.ind1.a, 1e-6, 'attractiveness score');
+      a.equal(find(built, 'Target accounts').cell.v, 20, 'new business row: target accounts');
+      a.equal(find(built, 'Success factors').cell.v, 'Local references', 'new business row: success factors');
+      a.ok(built.groups.some(function (g) { return /North/.test(g.title) && /Clinics/.test(g.title); }), 'new business row named by market and sub-vertical');
+    });
+
+    T.test('TPV-TC-252', 'A blank commentary or a missing new business row adds no empty group', function (a) {
+      var built = TAP.details.build({ regionIds: ['alpha'], industryIds: ['ind2'] });
+      a.equal(find(built, 'Leader commentary'), undefined, 'no commentary row when blank');
+      a.ok(built.groups.every(function (g) { return g.rows.length; }), 'no empty groups');
+      a.equal(shown(find(built, 'References')), 'Some references (2)');
+      built = TAP.details.build({ regionIds: ['charlie'], industryIds: ['ind1'] });
+      a.equal(shown(find(built, 'References')), 'not provided', 'a blank rating reads not provided');
+      a.equal(shown(find(built, 'Ability to win')), 'not provided', 'so does the score built on it');
+    });
+
+    T.test('TPV-TC-253', 'Every value carries its kind and its source, for every kind of target', function (a) {
+      everyValueSourced(a, TAP.details.build({ regionIds: ['alpha'], industryIds: ['ind1'] }), 'region and industry');
+      everyValueSourced(a, TAP.details.build({ regionIds: ['bravo'] }), 'region');
+      everyValueSourced(a, TAP.details.build({ accountIds: ['a2'] }), 'account');
+      everyValueSourced(a, TAP.details.build({ regionIds: ['alpha', 'bravo', 'delta'], industryIds: ['ind4'] }), 'several regions');
+      var r = find(TAP.details.build({ regionIds: ['alpha'], industryIds: ['ind1'] }), 'Growth potential');
+      a.equal(TAP.sources.address(r.cell.src).text, 'Region A plan.xlsx › 1. Market Coverage › D10', 'file › sheet › cell');
+      r = find(TAP.details.build({ regionIds: ['alpha'], industryIds: ['ind1'] }), 'Hit rate');
+      a.equal(TAP.sources.address(r.cell.src).text, 'Region A plan.xlsx › 2. New Business › J20', 'new business cell');
+    });
+
+    T.test('TPV-TC-254', 'Details close with Esc or the close button, and update when another item is clicked', function (a) {
+      try {
+        TAP.layers.openDetails({ reportId: 'ind-tiers', regionIds: ['alpha'], industryIds: ['ind1'] });
+        a.equal(TAP.layers.top(), 'details', 'open');
+        a.match(document.querySelector('.tap-layer__title').textContent, /Healthcare/, 'first item');
+        TAP.layers.openDetails({ reportId: 'ind-tiers', regionIds: ['delta'], industryIds: ['ind3'] });
+        a.equal(document.querySelectorAll('.tap-layer').length, 1, 'still one side panel');
+        a.match(document.querySelector('.tap-layer__title').textContent, /Retail/, 'updated to the new item');
+        a.match(document.querySelector('.tap-layer__title').textContent, /Region D/);
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        a.equal(TAP.layers.top(), null, 'Esc closes');
+        TAP.layers.openDetails({ reportId: 'ind-tiers', regionIds: ['bravo'], industryIds: ['ind2'] });
+        document.querySelector('.tap-layer__close').click();
+        a.equal(TAP.layers.top(), null, 'the close button closes');
+      } finally { TAP.layers.close(); }
+    });
+
+    T.test('X-details-region', 'A region alone: the plan summary by section, without import notes', function (a) {
+      var built = TAP.details.build({ regionIds: ['alpha'] }), E = X.region.alpha;
+      a.equal(built.title, 'Region A');
+      a.ok(built.groups.length >= 4, 'one group per section');
+      a.equal(find(built, 'Current ARR').cell.v, E['base.arr']);
+      a.equal(find(built, 'New business ARR potential').cell.v, E['nb.arr']);
+      a.near(find(built, 'Hit rate').cell.v, E['nb.hitRate'], 1e-9);
+      a.equal(find(built, 'Customer growth ARR').cell.v, E['cg.arr']);
+      a.equal(find(built, '3-year ARR ambition').cell.v, E['amb.arr']);
+      a.equal(find(built, 'Tier 2 industries').cell.v, E['focus.tier2']);
+      var c = TAP.details.build({ regionIds: ['charlie'] });
+      a.ok(rowsOf(c).every(function (r) { return String(r.cell.v).indexOf('section is empty') < 0 && r.label.indexOf('section is empty') < 0; }), 'no import notes');
+      a.equal(shown(find(c, 'Customer growth ARR')), 'not provided', 'an empty section reads not provided');
+    });
+
+    T.test('X-details-account', 'An account: its figures with their kinds and cells', function (a) {
+      var built = TAP.details.build({ accountIds: ['a2'] });
+      a.match(built.title, /Fictional Account A2/);
+      a.match(built.title, /Region A/);
+      a.equal(find(built, 'Current ARR').cell.v, 200);
+      a.equal(find(built, 'Current ARR').cell.kind, 'PRE');
+      a.equal(find(built, 'Risk level').cell.v, 'high');
+      a.equal(find(built, 'Segment').cell.v, 'core');
+      var g1 = rowsOf(built).filter(function (r) { return r.cell.src && r.cell.src.field === 'growthPct' && r.cell.src.year === 1; })[0];
+      a.equal(g1.cell.v, 0.5, 'growth % year 1');
+      a.equal(g1.cell.kind, 'IN');
+      a.equal(TAP.sources.address(g1.cell.src).text, 'Region A plan.xlsx › 3. Customer Growth › I11', 'cell of growth % year 1');
+      a.deepEqual(TAP.details.build({ accountIds: ['nobody'] }).groups, [], 'an unknown account gives no groups');
+    });
+
+    T.test('X-details-several', 'Several regions and one industry: combined ratings, then each region', function (a) {
+      var built = TAP.details.build({ reportId: 'ind-quad', regionIds: ['alpha', 'bravo', 'charlie', 'delta'], industryIds: ['ind1'] });
+      a.match(built.title, /Healthcare/);
+      a.near(find(built, 'Growth potential').cell.v, 2.75, 1e-9, 'combined by the rating rule');
+      a.equal(find(built, 'Growth potential').cell.kind, 'APP');
+      a.ok(built.groups.some(function (g) { return g.title === 'Region C'; }), 'a group per region');
+      var only = TAP.details.build({ industryIds: ['ind3'] });
+      a.match(only.title, /Retail/);
+      a.ok(only.groups.length >= 4, 'an industry alone lists the regions in scope');
+      a.deepEqual(TAP.details.build(null).groups, [], 'no target, no groups');
     });
   });
 })(window.TAP);
