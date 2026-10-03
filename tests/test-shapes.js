@@ -344,4 +344,67 @@
       TAP.notes.clear();
     });
   });
+
+  // US-1.1.6: one fixed colour per region everywhere; focus grey for the others; dark grey for combined figures.
+  T.suite('colours', function () {
+    var ALL = ['alpha', 'bravo', 'charlie', 'delta'];
+    var CHARTS = [['ov-ambition', 'stackedBar'], ['ov-ambition', 'stacked100'], ['ov-ambition', 'treemap'], ['ov-ambition', 'bubble'],
+      ['ind-ratings', 'dot'], ['ind-ratings', 'bar'], ['ind-ratings', 'radar']];
+
+    // The colour each mark of an entity is drawn in, from the first part (the unshaded one).
+    function drawn(res) {
+      var out = {};
+      items(res).forEach(function (it) {
+        var d = it.d, part = d.key && d.key.indexOf('cg.') === 0;   // later stack parts are lighter shades
+        var c = (d.itemStyle && d.itemStyle.color) || (it.s.itemStyle && it.s.itemStyle.color);
+        if (!part && c && !out[d.entityId]) out[d.entityId] = c;
+      });
+      return out;
+    }
+    function check(a, c, expect) {
+      CHARTS.forEach(function (p) {
+        var res = build(p[0], p[1], c, { industryId: 'ind1' });
+        var got = drawn(res), label = c.mode + ' ' + p.join(' ');
+        Object.keys(got).forEach(function (id) { a.equal(got[id], expect(id), label + ': ' + id); });
+        a.ok(Object.keys(got).length > 0, label + ': colours drawn');
+        res.legend.filter(function (l) { return l.role !== 'part'; }).forEach(function (l) {
+          a.ok(l.label && l.label.charAt(0) !== '[', label + ': legend names the colour');
+        });
+      });
+    }
+    function own(id) { return TH.regions[ALL.indexOf(id)]; }
+
+    T.test('X-colours-fixed', 'Each region keeps the same colour in every mode and chart type', function (a) {
+      check(a, { mode: 'all' }, own);
+      check(a, { mode: 'set', set: ['bravo', 'delta'] }, own);
+      check(a, { mode: 'pair', focus: 'delta', second: 'alpha' }, own);
+      // Stacked parts are lighter shades of the region's own colour, never another region's colour
+      items(build('ov-ambition', 'stackedBar', { mode: 'all' })).forEach(function (it) {
+        var k = it.d.key === 'cg.arr' ? 1 : 0;
+        a.equal(it.d.itemStyle.color, TH.shade(own(it.d.entityId), k), it.d.entityId + ' ' + it.d.key);
+      });
+    });
+
+    T.test('X-colours-focus', 'With a focus region it keeps its colour and the others turn focus grey', function (a) {
+      check(a, { mode: 'one', focus: 'charlie', restAs: 'individual' }, function (id) { return id === 'charlie' ? own(id) : TH.focusGrey; });
+      check(a, { mode: 'one', focus: 'bravo' }, function (id) { return id === 'bravo' ? own(id) : TH.combined; });
+    });
+
+    T.test('X-colours-pair', 'In one vs one both regions keep their own colours', function (a) {
+      var es = TAP.scope.entities(cmp({ mode: 'pair', focus: 'charlie', second: 'alpha' }));
+      a.deepEqual(es.map(function (e) { return e.color; }), [own('charlie'), own('alpha')]);
+      check(a, { mode: 'pair', focus: 'charlie', second: 'alpha' }, own);
+    });
+
+    T.test('X-colours-combined', 'Combined figures are always the combined dark grey', function (a) {
+      check(a, { mode: 'org' }, function () { return TH.combined; });
+      check(a, { mode: 'one', focus: 'alpha', restAgg: 'total' }, function (id) { return id === 'alpha' ? own(id) : TH.combined; });
+      [{ mode: 'org' }, { mode: 'one', focus: 'delta' }].forEach(function (c) {
+        TAP.scope.entities(cmp(c)).filter(function (e) { return e.kind === 'combined'; }).forEach(function (e) {
+          a.equal(e.color, TH.combined, c.mode + ' ' + e.id);
+          a.ok(TH.regions.indexOf(e.color) < 0, 'never a region colour');
+        });
+      });
+    });
+  });
 })(window.TAP);
