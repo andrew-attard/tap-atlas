@@ -94,7 +94,15 @@
       ]),
       tiers, el('div', { class: 'tap-ind__pair' }, [quad, ratings]), notes
     ]));
-    var panels = [mountPanel(tiers, 'ind-tiers'), mountPanel(quad, 'ind-quad'), mountPanel(ratings, 'ind-ratings', { industryId: current() })];
+    var shown = current(), panels = [mountPanel(tiers, 'ind-tiers'), mountPanel(quad, 'ind-quad'), mountPanel(ratings, 'ind-ratings', { industryId: shown })];
+    // While nothing is selected, the ratings follow the most split industry for the scope (US-1.5.6)
+    function followDefault() {
+      var next = current();
+      if (TAP.store.get().industry || next === shown) return;
+      shown = next;
+      if (panels[2] && panels[2].destroy) panels[2].destroy();
+      panels[2] = mountPanel(ratings, 'ind-ratings', { industryId: shown });
+    }
     drawComments(notes);
     var offs = [
       TAP.bus.on('industry:select', function (p) {
@@ -104,6 +112,8 @@
         // Details that name one industry select it too, so the commentary follows any click (ARCHITECTURE s10)
         var tg = changed.indexOf('layer') >= 0 && s.layer && s.layer.name === 'details' && s.layer.payload && s.layer.payload.target;
         if (tg && (tg.industryIds || []).length === 1 && tg.industryIds[0] !== s.industry) { TAP.store.set({ industry: tg.industryIds[0] }); return; }
+        if (changed.indexOf('industry') >= 0) shown = s.industry || shown;
+        if (changed.indexOf('cmp') >= 0) followDefault();
         if (['industry', 'cmp', 'scopeEpoch'].some(function (k) { return changed.indexOf(k) >= 0; })) drawComments(notes);
       })
     ];
