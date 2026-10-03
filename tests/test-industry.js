@@ -460,16 +460,31 @@
       a.deepEqual([q[0].coord, q[1].coord], [[2, 2], [3, 3]], 'the top-right area is a square from 2 to 3');
     });
 
-    T.test('X-industry-quad-labels', 'Labels move apart to avoid overlap, with leader lines; hiding is the last resort', function (a) {
+    T.test('X-industry-quad-labels', 'Labels move apart with leader lines; hiding is the last resort and nothing is lost', function (a) {
       [{}, { everyRegion: true }].forEach(function (o) {
         valueSeries(quad('bubble', { mode: 'all' }, { opts: o })).forEach(function (s) {
-          a.equal(s.labelLayout.moveOverlap, 'shiftY', 'labels shift apart');
-          a.equal(s.labelLayout.hideOverlap, true, 'then hide if they must');
+          a.equal(s.labelLayout.hideOverlap, true, 'a label that still overlaps hides');
           a.ok(s.labelLine && s.labelLine.show, 'short leader lines');
         });
       });
-      var res = quad('bubble', { mode: 'all' });
-      a.equal(res.table.rows.length, points(res).length, 'every point is also in the table, so a hidden label is never lost');
+      sample();
+      var res = quad('bubble', { mode: 'all' }), shown = points(res).filter(function (d) { return d.label.show; });
+      a.ok(shown.length >= 14, 'most of the 18 averaged bubbles keep a label (' + shown.length + ')');
+      a.ok(shown.some(function (d) { return d.label.dy !== 0; }), 'crowded labels step up or down');
+      // On the narrowest plot (480 x 440 px for 1 to 3), no two label boxes overlap.
+      var fs = TH.type.chart;
+      function box(d) {
+        var x = (d.value[0] - 1) * 240, y = (3 - d.value[1]) * 220 + d.label.dy, w = d.label.formatter.length * fs * 0.5, r = d.symbolSize / 2;
+        return { x: d.label.side === 'right' ? x + r + 6 : x - r - 6 - w, y: y - fs / 2, w: w, h: fs };
+      }
+      shown.forEach(function (d, i) {
+        shown.slice(i + 1).forEach(function (e) {
+          var p = box(d), q = box(e), hit = p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h;
+          a.ok(!hit, d.label.formatter + ' and ' + e.label.formatter + ' do not overlap');
+        });
+      });
+      a.equal(res.table.rows.length, points(res).length, 'every point, labelled or not, is in the table');
+      a.ok(points(res).every(function (d) { return res.target({ data: d }); }), 'and opens its details on click');
     });
 
     T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {
