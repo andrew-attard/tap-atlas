@@ -43,6 +43,43 @@ Object.assign(window.TAP_CONTENT.text, {
     orgBadge: 'Organization wording'
   },
 
+  // The guided tour (US-1.1.11): one or two sentences per step, about using the screen, never the planning method.
+  // {app} is the app name. The organization layer can reword any step by its key (content/organization.example.js).
+  tour: {
+    purpose: '{app} puts every region’s territory account plan side by side, so the plans can be compared and discussed.',
+    menu: 'The menu switches between the views. Each view answers a few questions, one chart per question.',
+    compare: 'This bar sets what every chart compares: all regions, one against the rest, two regions, a chosen set or the organization total. The sentence below it always says what is on screen.',
+    panel: 'Every chart sits in a panel like this. Switch the chart type or show a table of exact figures, use the explanation icon to learn how to read it, and check the source line for where the figures come from.',
+    freshness: 'This is the date of the data. Select it to see each region’s workbook and any notes from the import.',
+    glossary: 'Terms with a dotted underline open a short definition when you select them. The Guide lists every term in its glossary.',
+    guide: 'To learn what territory account planning is and how to read a plan, open the Guide. You can replay this tour from there or from the top bar.'
+  },
+  tourUi: {
+    button: 'Take the tour',
+    label: 'Tour',
+    welcome: 'Welcome',
+    welcomeText: 'This app plays back each region’s territory account plan, side by side. It reads the planning workbooks and changes nothing in them.',
+    welcomeHint: 'The tour takes about a minute and shows how to use the screen.',
+    take: 'Take the 1-minute tour',
+    skip: 'Skip',
+    step: 'Step {n} of {total}',
+    next: 'Next',
+    back: 'Back',
+    finish: 'Finish',
+    skipTour: 'Skip the tour',
+    keys: '← → to move · Esc to close',
+    openGuide: 'Open the Guide',
+    titles: {
+      purpose: 'What this app is for',
+      menu: 'Moving between views',
+      compare: 'Choosing what to compare',
+      panel: 'Reading a chart',
+      freshness: 'How fresh the data is',
+      glossary: 'Terms and definitions',
+      guide: 'Planning explained'
+    }
+  },
+
   // The Insights page (US-1.7.3). Every insight is an observation to discuss, never a verdict (D20).
   insightsPage: {
     kicker: 'Insights',
