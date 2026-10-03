@@ -1,8 +1,68 @@
 /*
  * File: css/layers.css
  * Purpose: Side panels: details, data sources, glossary, explanations.
- * Provides: styles for this area only
+ * Provides: styles for this area only (.tap-layer, .tap-details__*, .tap-src__*)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: SHELL stream (CONTENT adds the glossary section). Colours and font sizes come from theme variables only.
  */
+
+/* The frame: right edge, full height, no backdrop, so the page stays visible and usable for viewers */
+.tap-layer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 70;
+  width: min(500px, 92vw); display: flex; flex-direction: column;
+  background: var(--tap-ground); border-left: var(--tap-highlight-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-lg);
+}
+.tap-layer--wide { width: min(640px, 94vw); }
+.tap-layer__head {
+  display: flex; align-items: flex-start; gap: var(--tap-sp-4);
+  padding: var(--tap-sp-4) var(--tap-sp-6); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-layer__title { flex: 1; min-width: 0; margin: 0; font-size: var(--tap-fs-h2); line-height: 1.15; }
+.tap-layer__title:focus { outline: none; }
+.tap-layer__close { flex: none; font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); }
+.tap-layer__body { flex: 1; overflow: auto; padding: var(--tap-sp-2) var(--tap-sp-6) var(--tap-sp-6); }
+.tap-layer__foot {
+  padding: var(--tap-sp-3) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink);
+  font-size: var(--tap-fs-label); color: var(--tap-muted);
+}
+
+/* Details: sections of rows, each value with its kind and file › sheet › cell */
+.tap-details__group { padding-top: var(--tap-sp-4); }
+.tap-details__group h3 {
+  margin: 0; padding-bottom: var(--tap-sp-2); font-size: var(--tap-fs-lead);
+  border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-details__row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--tap-sp-4);
+  padding: var(--tap-sp-2) 0; border-bottom: 1px solid var(--tap-grid);
+}
+.tap-details__label { font-size: var(--tap-fs-body); }
+.tap-details__value { font-size: var(--tap-fs-body); font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.tap-details__src { grid-column: 1 / -1; font-size: var(--tap-fs-label); color: var(--tap-muted); }
+
+/* Data sources: a summary, then one block per region with its file, dates and import notes */
+.tap-src__kicker { margin: var(--tap-sp-3) 0 0; font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
+.tap-src__summary { margin: 0 0 var(--tap-sp-3); font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-src__differ {
+  display: flex; align-items: flex-start; gap: var(--tap-sp-2);
+  padding: var(--tap-sp-3); font-size: var(--tap-fs-body); font-weight: 600;
+  background: var(--tap-surface); border-left: var(--tap-highlight-w) solid var(--tap-ink);
+}
+.tap-src__region, .tap-src__notes, .tap-src__failures {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2);
+  padding: var(--tap-sp-4) 0; border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-src__region h3, .tap-src__notes h3, .tap-src__failures h3 { margin: 0; font-size: var(--tap-fs-lead); }
+.tap-src__name { display: flex; align-items: center; gap: var(--tap-sp-2); }
+.tap-src__facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--tap-sp-4); margin: 0; font-size: var(--tap-fs-body); }
+.tap-src__facts dt { color: var(--tap-muted); }
+.tap-src__facts dd { margin: 0; font-weight: 600; word-break: break-word; }
+.tap-src__box { padding: var(--tap-sp-3); background: var(--tap-surface); }
+.tap-src__box h4 { margin: 0 0 var(--tap-sp-1); font-size: var(--tap-fs-body); }
+.tap-src__region ul, .tap-src__notes ul, .tap-src__failures ul {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2); margin: 0; padding: 0; list-style: none;
+}
+.tap-src__note { display: flex; flex-direction: column; font-size: var(--tap-fs-body); }
+.tap-src__where { font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-src__none { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }

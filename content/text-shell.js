@@ -37,6 +37,31 @@ Object.assign(window.TAP_CONTENT.text, {
     internal: 'Internal: contains regional plan data, do not forward'
   },
 
+  // Side panels (US-1.1.5)
+  layers: {
+    close: 'Close',
+    escHint: 'Esc to close',
+    none: 'None.',
+    glossary: 'Glossary'
+  },
+
+  // The data sources panel (US-1.1.5). Import notes appear here and nowhere else.
+  sourcesPanel: {
+    title: 'Data sources',
+    kindSample: 'Sample data · data format {v}',
+    kindPlan: 'Plan data · data format {v}',
+    summary: 'Data: {date} · {n} import notes',
+    summaryOne: 'Data: {date} · 1 import note',
+    datesDiffer: 'Import dates differ between regions, so some figures may be older than others.',
+    file: 'File',
+    fileDate: 'File saved',
+    imported: 'Imported',
+    notes: 'Import notes',
+    noNotes: 'No import notes.',
+    other: 'Other things to check',
+    failures: 'Insight rules that were skipped'
+  },
+
   screens: {
     missingTitle: 'No plan data found',
     missingBody: 'Run the import to create data/plan-data.js, then reopen this page.',
