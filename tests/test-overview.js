@@ -421,18 +421,29 @@
       } finally { m.handle.destroy(); }
     });
 
-    T.test('X-overview-headline-source', 'Every figure in the headline names its source and shows it when clicked (TPV-TC-101)', function (a) {
+    T.test('X-overview-headline-source', 'Headline figures are plain bold; one Sources button lists where each comes from (TPV-TC-101)', function (a) {
+      sample();
       var m = mountView();
       try {
-        var figs = qsa('.tap-ov__sentence .tap-ov-fig', m.host);
-        a.ok(figs.length >= 3, 'ambition and both shares are figures');
-        figs.forEach(function (f) { a.ok(!!f.getAttribute('title'), 'title on ' + txt(f)); });
+        var nums = qsa('.tap-ov__sentence .tap-ov__num', m.host);
+        a.ok(nums.length >= 4, 'ambition, both shares and the Tier 2 count are bold figures');
+        a.equal(qsa('.tap-ov__sentence button', m.host).filter(function (b) { return !b.classList.contains('tap-term'); }).length, 0,
+          'no figure is a button or link');
+        var btn = qs('.tap-ov__sources', m.host);
+        a.ok(btn && btn.tagName === 'BUTTON', 'one Sources button');
         spy(TAP.layers, 'open', function (calls) {
-          figs[0].click();
-          a.equal(calls.length, 1, 'the source panel opens');
+          btn.click();
+          a.equal(calls.length, 1, 'a side panel opens');
+          a.equal(calls[0][0], 'headline-sources', 'the headline sources panel');
+          a.ok(!!calls[0][1].title, 'with a title');
           var body = document.createElement('div');
           calls[0][1].render(body);
-          a.ok(txt(body).indexOf(TAP.format.moneyExact(10123)) >= 0, 'with the exact ambition');
+          var s = txt(body);
+          a.ok(s.indexOf(TAP.format.moneyExact(76179.7)) >= 0, 'the exact ambition');
+          a.ok(s.indexOf(TAP.sources.address(TAP.measures.combined('amb.arr', { kind: 'combined', regionIds: window.SAMPLE_EXPECT.regions, how: 'total' }, {}).src).text) >= 0,
+            'how the ambition was combined');
+          var edu = TAP.measures.get('ind.tier')('na', { industryId: 'education' });
+          a.ok(s.indexOf(TAP.sources.address(edu.src).text) >= 0, 'the file › sheet › cell behind the Tier 2 count');
         });
       } finally { m.handle.destroy(); }
     });
@@ -514,15 +525,34 @@
       });
     });
 
-    T.test('X-overview-insights-stub', 'Before the insight engine is built, the section says so and the rest still draws', function (a) {
+    T.test('X-overview-insights-empty', 'With no insights, or an engine that fails, the section shows a short neutral line, never an error', function (a) {
       withInsights([], function () {
-        TAP.insights.top = function () { throw new Error('Not built yet (#44): TAP.insights.top'); };
         var m = mountView();
         try {
-          a.match(txt(qs('[data-part="insights"]', m.host)), /Not built yet/);
+          a.equal(qsa('.tap-ov-insight', m.host).length, 0, 'no insights');
+          a.ok(txt(qs('[data-part="insights"]', m.host)).indexOf(TAP.content.text('overview.insights.none')) >= 0, 'the neutral line');
+        } finally { m.handle.destroy(); }
+        TAP.insights.top = function () { throw new Error('Not built yet (#44): TAP.insights.top'); };
+        m = mountView();
+        try {
+          var s = txt(qs('[data-part="insights"]', m.host));
+          a.equal(/Not built|Error/.test(s), false, 'no error text');
+          a.ok(s.indexOf(TAP.content.text('overview.insights.none')) >= 0, 'the neutral line');
           a.equal(qsa('.tap-ov-card', m.host).length, 4, 'cards still draw');
         } finally { m.handle.destroy(); }
       });
+    });
+
+    T.test('X-overview-insights-real', 'With the real engine on the sample data, the top three show in its order', function (a) {
+      sample();
+      if (TAP.insights.__stub) { a.ok(true, 'engine not built here'); return; }
+      TAP.insights.reset();
+      var want = TAP.insights.top(TAP.store.get().cmp, null, 3).map(function (x) { return x.id; });
+      a.ok(want.length > 0 && want.length <= 3, 'the engine finds insights on the sample');
+      var m = mountView();
+      try {
+        a.deepEqual(qsa('.tap-ov-insight', m.host).map(function (n) { return n.getAttribute('data-insight'); }), want);
+      } finally { m.handle.destroy(); TAP.insights.reset(); }
     });
   });
 })(window.TAP);
