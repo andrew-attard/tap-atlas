@@ -133,6 +133,9 @@
       }
       return !gaps.length;
     });
+    // A radar draws groups in data order: grey and combined first, then the second region, the focus last on top.
+    var rank = { muted: 0, combined: 1, region: 2, second: 3, focus: 4 };
+    whole = whole.slice().sort(function (x, y) { return rank[x.entity.role] - rank[y.entity.role]; });
     var data = whole.map(function (row) {
       var vals = draw.keys.map(function (key) { return row.cells[key].v; });
       var on = k.highlighted(row.entity, draw.ctx.highlight);
