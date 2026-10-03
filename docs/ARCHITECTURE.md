@@ -402,7 +402,7 @@ Significance = family weight × (0.5 strength + 0.3 money + 0.2 breadth). Breadt
 
 The engine drops any finding built from a not-provided value. It skips comparison rules when fewer than 3 regions provide the value. It refuses sentences containing a banned word (from `TAP_RULES.wording.banned`).
 
-**Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, highlight, label: 'Observation to discuss'}`.
+**Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, attach, highlight, fallback, label: 'Observation to discuss'}`. `attach` lists every report the insight belongs to; panel lists filter on it, and `reportId` is `attach[0]`. When there is no Phase 1 report, `reportId` is null and `fallback` is `'details'`: "Show me" then calls `TAP.layers.openDetails(highlight)`.
 
 ## 13. Content (`content/*`, `js/core/content.js`, `js/ui/glossary.js`)
 
