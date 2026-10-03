@@ -11,6 +11,7 @@ window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   overview: {
+    title: 'Overview',
     // Region cards (US-1.5.1)
     cards: {
       title: 'Plans at a glance',
