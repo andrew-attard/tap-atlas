@@ -21,7 +21,7 @@
   // Choices that last only while the shared comparison stays the same (ARCHITECTURE section 5).
   function scoped() { return { opts: {}, highlight: null, selected: null, sentence: null, custom: null, editing: false }; }
   // Choices that last until "Reset all charts".
-  function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null, table: false, sort: null }; }
+  function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null, breakdown: null, table: false, sort: null }; }
 
   // The browser may block storage, or the storage module may fail: the panel then simply uses defaults.
   function remembered(id) { try { return TAP.storage.get('chart:' + id, null); } catch (e) { return null; } }
@@ -55,7 +55,7 @@
     var industryId = industryOf(p, def, s), entities = TAP.scope.entities(cmp);
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
     var ctx = def ? { def: def, type: types ? types.current : def.defaultType, measureId: p.st.measureId,
-      sizeId: p.st.sizeId, breakdown: null, cmp: cmp, entities: entities, year: null, industryId: industryId,
+      sizeId: p.st.sizeId, breakdown: p.st.breakdown, cmp: cmp, entities: entities, year: null, industryId: industryId,
       highlight: highlightOf(p, s), expanded: s.expanded === p.id, theme: window.TAP_THEME, opts: Object.assign({}, p.st.opts) } : null;
     var res = null, fn = !errors.length && builderOf(def);
     if (!errors.length && !fn) errors = [t('noBuilder', { shape: def.shape })];

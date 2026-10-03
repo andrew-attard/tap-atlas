@@ -42,6 +42,11 @@ Object.assign(window.TAP_CONTENT.text, {
     default: 'Default',
     measure: 'Measure',
     size: 'Bubble size',
+
+    // Break down by a second dimension (US-1.2.7)
+    breakdown: 'Break down by',
+    breakdownNone: 'None',
+    breakdowns: { year: 'Plan year', industry: 'Industry', productLine: 'Product line', channel: 'Channel', segment: 'Segment' },
     industry: 'Industry',
     more: 'More',
 
