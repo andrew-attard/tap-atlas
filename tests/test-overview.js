@@ -325,7 +325,15 @@
         calls.push([cmp, reportId, n]);
         return list.filter(function (x) { return hidden.indexOf(x.id) < 0; }).slice(0, n);
       },
+      // The ambition panel reads its own insights through ranked
+      ranked: function (cmp, opts) {
+        var rid = opts && opts.reportId;
+        return list.filter(function (x) { return hidden.indexOf(x.id) < 0 && (!rid || (x.attach || []).indexOf(rid) >= 0); });
+      },
+      all: function () { return list.slice(); },
+      failures: function () { return []; },
       hide: function (id) { hidden.push(id); TAP.store.set({ hiddenInsights: hidden.slice() }); },
+      unhide: function (id) { hidden.splice(hidden.indexOf(id), 1); },
       hidden: function () { return hidden.slice(); }
     };
     try { return fn(calls, hidden); } finally { TAP.insights = orig; }
@@ -359,8 +367,11 @@
 
     T.test('TPV-TC-099', 'With no Tier 2 industry, the headline leaves that sentence out', function (a) {
       var p = T_FIXTURE('mini');
-      p.regions.forEach(function (r) { r.marketCoverage.forEach(function (m) { if (m.tier === 2) m.tier = 3; }); });
-      TAP.data.load(p);
+      // Tier 1 rather than 3, so the new business rows on these industries stay valid for the data check
+      p.regions.forEach(function (r) {
+        r.marketCoverage.concat(r.newBusiness).forEach(function (m) { if (m.tier === 2) m.tier = 1; });
+      });
+      a.ok(TAP.data.load(p).ok, 'the changed data still loads');
       // Mini by hand: 10123 in all; new business 9405 / 10123, customer growth 718 / 10123; Region C gave no customer growth
       a.equal(headlineText(), [
         H('group', { n: 4, regions: words(4), amb: TAP.format.money(10123), nbShare: TAP.format.pct(9405 / 10123),
