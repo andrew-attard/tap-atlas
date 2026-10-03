@@ -1,8 +1,41 @@
 /*
  * File: css/shell.css
- * Purpose: Page frame: banner, menu and comparison bar.
- * Provides: styles for this area only
+ * Purpose: Page frame: banner, top bar and menu, comparison bar, view area and the start-up screens.
+ * Provides: styles for this area only (.tap-app, .tap-stack, .tap-topbar, .tap-menu, .tap-view)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: SHELL stream. Colours and font sizes come from theme variables only.
  */
+
+.tap-app { --tap-edge: clamp(var(--tap-gutter), 3vw, 48px); min-height: 100vh; background: var(--tap-ground); }
+
+/* Banner, top bar and comparison bar stay in view on tall windows; on short ones they scroll away */
+.tap-stack { background: var(--tap-ground); z-index: 20; }
+@media (min-height: 760px) {
+  .tap-stack { position: sticky; top: 0; }
+}
+
+/* Top bar: logo slot, app name, menu */
+.tap-topbar {
+  display: flex; align-items: stretch; gap: var(--tap-sp-8);
+  min-height: 64px; padding: 0 var(--tap-edge);
+  border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-topbar__brand { display: flex; align-items: center; gap: var(--tap-sp-3); flex: none; }
+.tap-topbar__logo { display: block; height: 28px; width: auto; }
+.tap-topbar__name { font-size: var(--tap-fs-h3); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+
+/* Menu: one line at 1280 px. The current view is bold with an ink bar; red is kept for actions and highlights */
+.tap-menu { display: flex; align-items: stretch; gap: var(--tap-sp-1); flex: 1; min-width: 0; }
+.tap-menu__item {
+  display: flex; align-items: center; padding: 0 var(--tap-sp-4);
+  font: inherit; font-size: var(--tap-fs-lead); font-weight: 600; color: var(--tap-ink); white-space: nowrap;
+  background: transparent; border: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+  cursor: pointer;
+}
+.tap-menu__item:hover { background: var(--tap-surface); }
+.tap-menu__item[aria-current="page"] { font-weight: 800; border-bottom-color: var(--tap-ink); }
+
+/* The area views mount into */
+.tap-view { display: block; padding: var(--tap-sp-8) var(--tap-edge) var(--tap-sp-12); max-width: var(--tap-max-w); }
+.tap-view:focus { outline: none; }
