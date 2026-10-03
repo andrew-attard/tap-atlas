@@ -196,4 +196,100 @@
       a.ok(cols(7, 360) >= 1 && cols(7, 360) <= 2, 'narrow: one or two columns');
     });
   });
+
+  /* ---------- US-1.5.2: ambition by region, and the Overview view (#30) ---------- */
+
+  // Mounts the Overview view into the sandbox; the caller destroys it.
+  function mountView() {
+    var host = T.dom.mount();
+    return { host: host, handle: TAP.views.get('overview').mount(host) };
+  }
+  // Runs fn with a stand-in panel module, so the view can be checked with the real panel or without it.
+  function withPanel(fake, fn) {
+    var orig = TAP.panel;
+    TAP.panel = fake;
+    try { fn(); } finally { TAP.panel = orig; }
+  }
+
+  T.suite('overview-view', function () {
+    T.test('X-overview-view', 'The Overview view is registered, built and titled', function (a) {
+      var v = TAP.views.get('overview');
+      a.ok(!!v, 'registered');
+      a.ok(!v.__stub, 'not the stub');
+      a.equal(TAP.views.title('overview'), 'Overview');
+    });
+
+    T.test('X-overview-layout', 'Headline, then top insights, then the cards, then the ambition panel', function (a) {
+      var m = mountView();
+      try {
+        var order = qsa('.tap-ov > *', m.host).map(function (n) { return n.getAttribute('data-part'); });
+        a.deepEqual(order, ['headline', 'insights', 'cards', 'panel'], 'section order');
+        a.equal(qs('[data-part="panel"]', m.host).getAttribute('data-report'), 'ov-ambition');
+        a.equal(qsa('.tap-ov-card', m.host).length, 4, 'one card per region');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-overview-panel-guard', 'The ambition panel mounts through TAP.panel.create, and the view still works without it', function (a) {
+      var made = [], destroyed = 0;
+      withPanel({ create: function (el, id, opts) { made.push([el, id, opts]); return { destroy: function () { destroyed++; } }; } }, function () {
+        var m = mountView();
+        a.equal(made.length, 1, 'one panel');
+        a.equal(made[0][1], 'ov-ambition', 'the ambition report');
+        a.deepEqual(made[0][2], {}, 'no options');
+        a.equal(made[0][0], qs('[data-part="panel"]', m.host), 'inside the panel slot');
+        m.handle.destroy();
+        a.equal(destroyed, 1, 'destroyed with the view');
+      });
+      withPanel({ create: function () { throw new Error('Not built yet (#14): TAP.panel.create'); } }, function () {
+        var m = mountView();
+        try {
+          a.match(txt(qs('[data-part="panel"]', m.host)), /Not built yet/, 'the stub message shows in the slot');
+          a.equal(qsa('.tap-ov-card', m.host).length, 4, 'the cards still draw');
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-overview-follows-cmp', 'Cards follow the comparison bar at once, and stop listening once the view is gone', function (a) {
+      var m = mountView();
+      TAP.store.set({ cmp: { mode: 'org' } });
+      a.equal(qsa('.tap-ov-card', m.host).length, 1, 'organization total: one card');
+      TAP.store.set({ cmp: { mode: 'pair', focus: 'bravo', second: 'alpha' } });
+      a.deepEqual(qsa('.tap-ov-card', m.host).map(function (n) { return n.getAttribute('data-entity'); }), ['bravo', 'alpha'], 'pair');
+      m.handle.destroy();
+      TAP.store.set({ cmp: { mode: 'all' } });
+      a.ok(qsa('.tap-ov-card', m.host).length <= 2, 'no redraw after destroy');
+    });
+
+    T.test('X-overview-ambition-def', 'The ambition report matches US-1.5.2 (TPV-TC-094)', function (a) {
+      var d = TAP.reports.get('ov-ambition');
+      a.deepEqual(TAP.reports.validate(d), [], 'valid');
+      a.equal(d.view, 'overview');
+      a.equal(d.title, 'How big is each region’s plan, and where does it come from?');
+      a.equal(d.shape, 'parts', 'parts of a whole');
+      a.equal(d.defaultType, 'stackedBar', 'stacked bar by default');
+      ['stackedBar', 'stacked100', 'treemap', 'bubble', 'table'].forEach(function (k) { a.ok(d.types.indexOf(k) >= 0, k + ' offered'); });
+      a.equal(d.types.indexOf('donut'), -1, 'no donut');
+      a.deepEqual(d.measures.map(function (m) { return m.id; }), ['amb.arr', 'amb.services', 'amb.oi'], 'ARR, services, order intake; ARR first');
+      a.deepEqual(d.parts['amb.arr'], ['nb.arr', 'cg.arr'], 'ARR split into new business and customer growth');
+      a.equal(d.x, 'nb.arr', 'bubble across: new business');
+      a.equal(d.y, 'cg.arr', 'bubble up: customer growth');
+      a.equal(d.size.default, 'base.arr', 'bubble size: current ARR');
+      a.deepEqual(d.breakdowns, ['year'], 'break down by year');
+      a.ok(TAP.views.get('overview') && window.TAP_VIEWS.overview.reports.indexOf('ov-ambition') >= 0, 'listed on the Overview');
+    });
+
+    T.test('X-overview-chart-matches-cards', 'The chart’s ambition per region equals the card figure, in every mode (TPV-TC-093, 098)', function (a) {
+      sample();
+      var d = TAP.reports.get('ov-ambition');
+      [{ mode: 'all' }, { mode: 'one', focus: 'apac', restAgg: 'average' }, { mode: 'one', focus: 'apac', restAgg: 'total' }, { mode: 'org' }]
+        .forEach(function (c) {
+          TAP.store.reset();
+          var el = cards(c), ds = TAP.prepare.run(d, { def: d, cmp: TAP.store.get().cmp });
+          ds.rows.forEach(function (r) {
+            var f = fig(el, r.entityId, 'amb.arr');
+            a.near(Number(f.getAttribute('data-v')), r.cells['amb.arr'].v, TOL, JSON.stringify(c) + ' ' + r.entityId);
+          });
+        });
+    });
+  });
 })(window.TAP);
