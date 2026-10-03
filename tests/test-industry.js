@@ -1,7 +1,7 @@
 /*
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
- * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, X-industry-*, X-details-* (US-1.5.7 commentary checks are X-industry-comments-*)
+ * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-* (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -736,6 +736,88 @@
       withView(function (root) {
         a.equal(TAP.store.get().industry, null);
         a.match(heading(root), /Education/, 'ind2 is the most split on the mini data');
+      });
+    });
+  });
+
+  /* ---------- US-1.5.6 how regions rate one industry ---------- */
+
+  var RATINGS = ['growthPotential', 'criticality', 'competitiveIntensity', 'references', 'expertise', 'productFit'];
+  function ratingsRes(type, c, industryId) { return TAP.builders.get('compare')(ctxFor('ind-ratings', type, c, { industryId: industryId })); }
+  function rawRow(regionId, industryId) {
+    return TAP.data.region(regionId).marketCoverage.filter(function (d) { return d.industryId === industryId; })[0];
+  }
+  function ratingsTitle(root) { return root.querySelector('.tap-panel[data-report="ind-ratings"] .tap-panel__title').textContent; }
+  // Hand rule for the default: the smallest share of regions on one tier, then more distinct tiers, then file order.
+  function splitByHand(regionIds) {
+    var best = null;
+    TAP.data.industries({ rated: true }).forEach(function (ind, i) {
+      var n = { 1: 0, 2: 0, 3: 0 };
+      regionIds.forEach(function (r) { var row = rawRow(r, ind.id); if (row && row.tier) n[row.tier]++; });
+      var tot = n[1] + n[2] + n[3], share = tot ? Math.max(n[1], n[2], n[3]) / tot : 1;
+      var distinct = [1, 2, 3].filter(function (x) { return n[x]; }).length;
+      if (!best || share < best.share - 1e-12 || (Math.abs(share - best.share) < 1e-12 && distinct > best.distinct)) best = { id: ind.id, share: share, distinct: distinct, i: i };
+    });
+    return best && best.id;
+  }
+
+  T.suite('industry-ratings', function () {
+    T.test('TPV-TC-262', 'The chosen industry’s six ratings, by region, match the data file', function (a) {
+      var res = ratingsRes('dot', { mode: 'all' }, 'ind4');
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) {
+        var row = res.table.rows.filter(function (x) { return x.entityId === r; })[0], raw = rawRow(r, 'ind4');
+        RATINGS.forEach(function (f) { a.equal(row.cells['ind.' + f].v, raw[f], r + ' ' + f); });
+      });
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind3' });
+        a.match(ratingsTitle(root), /How do regions rate Retail\?/, 'the panel follows the chosen industry');
+      });
+    });
+
+    T.test('TPV-TC-263', 'First opened, the panel shows the industry with the most disagreement on tier', function (a) {
+      a.equal(TAP.industryView.current({ mode: 'all' }), 'ind2', 'mini: ind2 (Tier 2, 2, 3 and one blank)');
+      a.equal(TAP.industryView.current({ mode: 'set', set: ['bravo', 'delta'] }), 'ind2', 'a tie goes to the first in the list');
+      a.equal(TAP.industryView.current({ mode: 'set', set: ['alpha', 'bravo', 'charlie'] }), 'ind1', 'no split at all: the first industry');
+      withView(function (root) {
+        a.match(ratingsTitle(root), /Education/, 'the panel opens on it');
+        TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo', 'charlie'] } });
+        a.match(ratingsTitle(root), /Healthcare/, 'and follows the scope while nothing is selected');
+        TAP.store.set({ industry: 'ind4' });
+        TAP.store.set({ cmp: { mode: 'all' } });
+        a.match(ratingsTitle(root), /Utilities/, 'a selected industry stays');
+      });
+      sample();
+      var R = sampleIds();
+      a.equal(TAP.industryView.current(cmp({ mode: 'all' })), splitByHand(R), 'sample, all regions');
+      a.equal(TAP.industryView.current(cmp({ mode: 'pair', focus: R[0], second: R[4] })), splitByHand([R[0], R[4]]), 'sample, a pair');
+    });
+
+    T.test('X-industry-ratings-wording', 'Ratings carry their wording into the table and tooltips', function (a) {
+      var res = ratingsRes('dot', { mode: 'all' }, 'ind1');
+      var col = res.table.columns.filter(function (c) { return c.key === 'ind.growthPotential'; })[0];
+      var row = res.table.rows.filter(function (x) { return x.entityId === 'alpha'; })[0];
+      a.equal(TAP.format.cell(row.cells['ind.growthPotential'], { unit: col.unit, field: col.field, exact: true }), 'Strong dynamics, business to take (3)');
+    });
+
+    T.test('TPV-TC-265', 'Dot plot by default, bar and table offered, radar only with 3 or fewer regions', function (a) {
+      var def = TAP.reports.get('ind-ratings');
+      a.equal(def.defaultType, 'dot');
+      [1, 2, 3].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['dot', 'bar', 'radar', 'table'], n + ' regions'); });
+      [4, 7].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['dot', 'bar', 'table'], n + ' regions: no radar'); });
+      a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha' })).length, 2, 'one vs the rest as one figure: two entities, radar allowed');
+    });
+
+    T.test('TPV-TC-266', 'In each comparison mode the entities drawn match the comparison scope', function (a) {
+      [{ mode: 'all' }, { mode: 'one', focus: 'alpha' }, { mode: 'one', focus: 'bravo', restAs: 'individual' },
+        { mode: 'pair', focus: 'charlie', second: 'delta' }, { mode: 'set', set: ['alpha', 'delta'] }, { mode: 'org' }].forEach(function (c) {
+        var want = TAP.scope.entities(cmp(c)).map(function (e) { return e.id; });
+        ['dot', 'bar'].forEach(function (type) {
+          var res = ratingsRes(type, c, 'ind1');
+          a.deepEqual(res.table.rows.map(function (r) { return r.entityId; }), want, c.mode + ' ' + type + ': table');
+          var drawn = [];
+          points(res).forEach(function (d) { if (drawn.indexOf(d.entityId) < 0) drawn.push(d.entityId); });
+          a.deepEqual(drawn.slice().sort(), want.slice().sort(), c.mode + ' ' + type + ': chart');
+        });
       });
     });
   });
