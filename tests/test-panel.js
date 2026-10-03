@@ -69,7 +69,8 @@
   // Runs a test body with helpers, and always tidies up: panels destroyed, swapped modules and reports restored.
   function scene(fn) {
     return function (a) {
-      var saved = { insights: TAP.insights, explain: TAP.explain }, ids = [], panels = [];
+      var saved = { insights: TAP.insights, explain: TAP.explain, storage: TAP.storage }, ids = [], panels = [];
+      TAP.storage.clear('chart:');
       calls = [];
       FAKE = null;
       var api = {
@@ -82,6 +83,8 @@
         TAP.insights = saved.insights;
         TAP.explain = saved.explain;
         if (TAP.layers.top()) TAP.layers.close();
+        TAP.storage = saved.storage;
+        TAP.storage.clear('chart:');
         FAKE = null;
       }
     };
@@ -331,6 +334,120 @@
       var n = calls.length;
       TAP.store.set({ cmp: { mode: 'org' } });
       a.equal(calls.length, n, 'no rebuild after destroy');
+    }));
+  });
+
+  /* ---------- US-1.2.3: switch chart type (#15) ---------- */
+
+  function openTypes(p) {
+    if (!qs('[data-type]', p.el)) click(qs('[data-action="type"]', p.el));
+    return qsa('[data-type]', p.el);
+  }
+  function pickType(p, type) { openTypes(p); click(qs('[data-type="' + type + '"]', p.el)); }
+
+  T.suite('panel-types', function () {
+    T.test('X-panel-types', 'The chart-type menu offers only the types allowed for the shape and comparison', scene(function (a, s) {
+      var p = s.panel('ind-ratings'), def = TAP.reports.get('ind-ratings');
+      var want = TAP.shapes.types(def, TAP.scope.entities().length, {}).filter(function (x) { return x !== 'table'; });
+      a.deepEqual(openTypes(p).map(function (b) { return b.getAttribute('data-type'); }), want, 'all regions: no radar');
+      a.ok(want.indexOf('radar') < 0, 'radar left out with 4 regions');
+      TAP.store.set({ cmp: { mode: 'pair', focus: 'alpha', second: 'bravo' } });
+      a.ok(openTypes(p).some(function (b) { return b.getAttribute('data-type') === 'radar'; }), 'radar offered for one vs one');
+    }));
+
+    T.test('TPV-TC-059', 'The default type is marked, and one click returns to it', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake'), items = openTypes(p);
+      var def = items.filter(function (b) { return qs('.tap-panel__default', b); });
+      a.equal(def.length, 1, 'one default');
+      a.equal(def[0].getAttribute('data-type'), 'bar');
+      a.equal(def[0].getAttribute('aria-checked'), 'true', 'default is current');
+      click(qs('[data-type="dot"]', p.el));
+      a.equal(last().type, 'dot', 'switched');
+      a.equal(qs('.tap-panel__pop', p.el), null, 'menu closes after a choice');
+      pickType(p, 'bar');
+      a.equal(last().type, 'bar', 'back to the default in one click');
+      a.match(txt(qs('[data-action="type"]', p.el)), /Bar/, 'button names the current type');
+    }));
+
+    T.test('TPV-TC-057', 'Switching type keeps the comparison, focus and measure', scene(function (a, s) {
+      s.report(fakeDef({ measures: [{ id: 'nb.arr', label: 'ARR' }, { id: 'cg.arr', label: 'Growth' }] }));
+      TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
+      var p = s.panel('x-fake');
+      click(qs('[data-control="measure"] [data-value="cg.arr"]', p.el));
+      pickType(p, 'dot');
+      var c = last();
+      a.equal(c.type, 'dot');
+      a.equal(c.cmp.mode, 'one');
+      a.equal(c.cmp.focus, 'charlie');
+      a.equal(c.measureId, 'cg.arr', 'measure kept');
+    }));
+
+    T.test('TPV-TC-058', 'A switch on the sample data redraws within half a second', scene(function (a, s) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var p = s.panel('ov-ambition');
+      ['stacked100', 'treemap', 'bubble', 'stackedBar'].forEach(function (type) {
+        openTypes(p);
+        var t0 = performance.now();
+        click(qs('[data-type="' + type + '"]', p.el));
+        var ms = performance.now() - t0;
+        a.ok(ms < 500, type + ' drew in ' + Math.round(ms) + ' ms');
+        a.ok(chartOf(p), type + ' chart present');
+      });
+    }));
+
+    T.test('TPV-TC-060', 'The choice is remembered per report, and "Reset all charts" returns every chart to its default', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      pickType(p, 'dot');
+      a.equal(TAP.storage.get('chart:x-fake'), 'dot', 'stored under chart:<reportId>');
+      p.destroy();
+      s.panel('x-fake');
+      a.equal(last().type, 'dot', 'a new panel opens on the stored type');
+      TAP.bus.emit('charts:reset');
+      a.equal(last().type, 'bar', 'back to the default');
+      a.equal(TAP.storage.get('chart:x-fake', null), null, 'stored choice cleared');
+    }));
+
+    T.test('TPV-TC-061', 'With browser storage failing, switching still works with defaults', scene(function (a, s) {
+      s.report(fakeDef());
+      var boom = function () { throw new Error('blocked'); };
+      TAP.storage = { available: function () { return false; }, get: boom, set: boom, remove: boom, clear: boom };
+      var p = s.panel('x-fake');
+      a.equal(last().type, 'bar', 'opens on the default');
+      pickType(p, 'dot');
+      a.equal(last().type, 'dot', 'switches anyway');
+      TAP.bus.emit('charts:reset');
+      a.equal(last().type, 'bar', 'reset still works');
+    }));
+
+    T.test('X-panel-stale-type', 'A stored type the comparison can\'t use falls back to the default, and comes back when it can', scene(function (a, s) {
+      TAP.storage.set('chart:ind-ratings', 'radar');
+      var p = s.panel('ind-ratings');
+      a.match(txt(qs('[data-action="type"]', p.el)), /Dot plot/, 'four regions: dot plot');
+      TAP.store.set({ cmp: { mode: 'pair', focus: 'alpha', second: 'bravo' } });
+      a.match(txt(qs('[data-action="type"]', p.el)), /Radar/, 'two regions: radar again');
+    }));
+
+    T.test('X-panel-measure', 'A measure switch appears when a report has several measures, not for categories', scene(function (a, s) {
+      var p = s.panel('ov-ambition'), seg = qs('[data-control="measure"]', p.el);
+      a.ok(seg, 'shown on the ambition report');
+      a.deepEqual(qsa('[data-value]', seg).map(function (b) { return txt(b); }), ['ARR', 'Services', 'Total order intake']);
+      a.equal(qs('[data-value="amb.arr"]', seg).getAttribute('aria-pressed'), 'true', 'first is the default');
+      a.equal(qs('[data-control="measure"]', s.panel('ind-ratings').el), null, 'none when measures are the categories');
+    }));
+
+    T.test('X-panel-size', 'A bubble-size switch appears for bubble types with more than one size option', scene(function (a, s) {
+      s.report(fakeDef({ id: 'x-fake', shape: 'xyz', x: 'ind.ability', y: 'ind.attractiveness', dimension: 'industry',
+        measures: [{ id: 'ind.ability', label: 'Ability' }], defaultType: 'bubble', types: ['bubble', 'scatter', 'table'],
+        size: { options: ['ind.pipeline', 'ind.currentArr'], default: 'ind.pipeline' } }));
+      var p = s.panel('x-fake');
+      var seg = qs('[data-control="size"]', p.el);
+      a.ok(seg, 'size switch shown');
+      click(qs('[data-value="ind.currentArr"]', seg));
+      a.equal(last().sizeId, 'ind.currentArr');
+      pickType(p, 'scatter');
+      a.equal(qs('[data-control="size"]', p.el), null, 'no size switch for scatter');
     }));
   });
 })(window.TAP);
