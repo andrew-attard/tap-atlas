@@ -389,6 +389,7 @@ TAP_RULES.rules.push({ id: 'consensus', family: 'priorities', enabled: true,
   figures: [{ label, cell, unit, field, measureId }],      // shown on demand; unit as in measure meta, field for ratings
   strength: 0.8,                                             // 0..1, how far from normal
   money: 0.12,                                               // 0..1, share of org ARR or pipeline involved
+  breadth: 0.43,                                             // optional 0..1; default regionIds ÷ regions in the data
   sources: [src, ...] }
 ```
 
