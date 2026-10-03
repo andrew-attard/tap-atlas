@@ -224,7 +224,10 @@ src: { regionId, section, field, row, year, cell, kind }
 - `cell`: a fixed cell when there is one, e.g. a recap item's `sourceCell`.
 - `kind`: `IN`, `PRE`, `DER` or `APP`.
 
-`TAP.sources.address(src)` turns it into **file › sheet › cell**: the file from `source.fileName`, the sheet from `meta.sourceMap[section].sheet`, and the cell from the field's column (or its per-year column for `year`) plus `row`, or from `cells` / `cell` for fixed cells. A combined figure has `src = { combined: true, how, regionIds, excluded, weightBy }` and is described as combined by the app, naming its regions.
+`TAP.sources.address(src)` turns it into **file › sheet › cell**: the file from `source.fileName`, the sheet from `meta.sourceMap[section].sheet`, and the cell from the field's column (or its per-year column for `year`) plus `row`, or from `cells` / `cell` for fixed cells.
+
+- **A sum over several rows** has `row: null` and `rows: [...]`; its address is the cell range, e.g. `G10:G14` (with "(n rows)" when the rows are not next to each other). A three-year total of a by-year field (`year: null`) spans the three year columns, e.g. `O20:Q20`.
+- **A combined figure** has `src = { combined: true, how, regionIds, excluded, notApplicable, weightBy }`. `excluded` lists regions with no value (not provided), `notApplicable` the regions it doesn't apply to; the regions used are `regionIds` minus both. It is described as combined by the app, naming the regions used.
 
 ## Validation on load
 
