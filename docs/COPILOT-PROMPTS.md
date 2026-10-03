@@ -14,21 +14,24 @@ Generic on purpose: these prompts use generic terms. Organization-specific detai
 
 ## Where things live
 
-From `docs/ARCHITECTURE.md`. A file marked "planned" is named by the build plan and may not exist yet in your copy.
+The main files by area. `README.md` has a short table for every file, and a "which files to share for which change" table.
 
 | Area | Files |
 |---|---|
 | Pages | `index.html` (internal edition: real data and organization layer), `index-sample.html` (sample data), `tests.html` (test page) |
-| Data | `data/plan-data.js` (real, from the import), `data/sample-plan-data.js` (fictional) |
-| Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` (the contract check), `js/core/sources.js` (file › sheet › cell) |
-| Look | `js/theme.js` (every colour, font, size and the logo) |
+| Data | `data/plan-data.js` (real, from the import; internal copy only), `data/sample-plan-data.js` (fictional, made by `tools/generate-sample-data.js`) |
+| Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` (the contract check), `content/text-data.js` (its messages), `js/core/sources.js` (file › sheet › cell) |
+| Look | `js/theme.js` (every colour, font, size and the logo), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/glossary.css`) |
 | Settings | `config/settings.js` (weights, thresholds, limits) |
 | Reports | `config/reports.js` (the schema), `config/reports-overview.js`, `config/reports-industry.js`, `config/views.js` |
-| Measures | `js/engine/measures.js`, `js/engine/scores.js` |
-| Insights | `config/insight-rules.js` (rules, thresholds, wording), `js/insights/engine.js`, `js/insights/rules-*.js` |
-| Wording | `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, `content/text-*.js` |
-| Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, never committed) |
-| Handover | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/REAL-DATA-CHECKLIST.md` |
+| Measures | `js/engine/measures.js`, `js/engine/scores.js` (per-industry measures and the two scores) |
+| Charts | `js/engine/build-compare.js`, `js/engine/build-parts.js`, `js/engine/build-xy.js`, `js/reports/tier-grid.js`, `js/reports/quadrant.js` |
+| Insights | `config/insight-rules.js` (rules, thresholds, wording), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
+| Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/views/*.js` (the four views), `js/panel/*.js` (the report panel) |
+| Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area: `content/text-shell.js`, `content/text-engine.js`, `content/text-data.js`, `content/text-panel.js`, `content/text-overview.js`, `content/text-industry.js`, `content/text-pages.js` |
+| Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, internal copy only, never committed) |
+| Tests | `tests.html`, `tests/test-*.js`, `tests/fixtures/mini-data.js` (a small valid data file) |
+| Handover | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md` |
 
 ## 1. Orientation
 
@@ -54,10 +57,10 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 Use to design and build the import that turns the regional workbooks into the data file.
 
-**Attach:** `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-data.js` (a small, valid example of the file's shape). In Copilot only: one real workbook, or screenshots of each sheet's header rows.
+**Attach:** `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-data.js` (a small, valid example of the file's shape), `js/core/check.js` and `content/text-data.js` (what the app's check rejects, and its messages). This is the early pack in `docs/IMPORT-BRIEF.md`. In Copilot only: one real workbook, or screenshots of each sheet's header rows.
 
 ```
-I need an import that turns our regional planning workbooks into the one data file this app reads. The attached brief sets the requirements; the data contract sets the exact output shape; mini-data.js is a small valid example of that shape. I have also attached one real workbook.
+I need an import that turns our regional planning workbooks into the one data file this app reads. The attached brief sets the requirements; the data contract sets the exact output shape; mini-data.js is a small valid example of that shape (it sets window.TEST_FIXTURES.mini; our file must set window.PLAN_DATA, with meta.isSample false); check.js is the check the app runs on our file when it opens. I have also attached one real workbook.
 Step 1: Compare the real workbook with section 3 of the brief. List every difference: extra or missing sheets, sections, columns or rows, and header wording.
 Step 2: For each open choice in section 6 of the brief, give your recommendation with its pros and cons for our workbooks. Do not decide for me: wait for my answers.
 Step 3, after I answer: build the import in small files, each with a header comment. It must meet requirements R1 to R9, apply the validation rules in section 5, write import notes with sheet and cell, fill meta.sourceMap and sourceRow, keep blanks as null, and leave out personal names. Tell me exactly how to run it and where to save data/plan-data.js.
@@ -71,7 +74,7 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 Use to add organization terms, short region names, tour wording and the internal confidentiality label.
 
-**Attach:** `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`. In the chat, type the terms, region short names and label wording you want.
+**Attach:** `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and `content/text-pages.js` if you replace tour wording. In the chat, type the terms, region short names and label wording you want.
 
 ```
 Create content/organization.js for this app from the attached starter file, content/organization.example.js. Follow its format exactly, using its commented examples. Fill in:
@@ -120,7 +123,7 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 Use when `index.html` stops with "The data file has problems that stop the app from opening", or when the data sources panel lists warnings.
 
-**Attach:** `docs/DATA-CONTRACT.md` and the import's files. Paste the list copied with **Copy the list** (or the data sources panel notes).
+**Attach:** `docs/DATA-CONTRACT.md`, `js/core/check.js` and `content/text-data.js` (the check and its messages), and the import's files. Paste the list copied with **Copy the list** (or the data sources panel notes).
 
 ```
 The app checked our data file against the attached data contract and reported the problems below. Each line names the field, the region, the item and what was expected.
@@ -136,11 +139,11 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 Use to add a chart for a question the current views don't answer.
 
-**Attach:** `config/reports.js` (the schema), the view's definitions file (`config/reports-overview.js` or `config/reports-industry.js`), `config/views.js`, `js/engine/measures.js` (the measures that exist).
+**Attach:** `config/reports.js` (the schema), the view's definitions file (`config/reports-overview.js` or `config/reports-industry.js`), `config/views.js`, `js/engine/measures.js` and `js/engine/scores.js` (the measures that exist).
 
 ```
 Add a report to this app. The question it should answer: "<question>". It belongs on the <overview | industry> view. Reports are definitions that follow the schema documented in config/reports.js; no chart code is needed for an existing data shape.
-Write one new definition in the view's file: an id, the title phrased as the question, the three explanation texts, the shape, the measures, the default and allowed chart types, the breakdowns and the source kinds. Add its id to the view's list in config/views.js. Use only measures that exist in js/engine/measures.js. If one is missing, say so and propose it separately; don't invent an id.
+Write one new definition in the view's file: an id, the title phrased as the question, the three explanation texts, the shape, the measures, the default and allowed chart types, the breakdowns and the source kinds. Add its id to the view's list in config/views.js. Use only measures that exist in js/engine/measures.js or js/engine/scores.js. If one is missing, say so and propose it separately; don't invent an id.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
