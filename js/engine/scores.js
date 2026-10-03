@@ -94,15 +94,11 @@
     });
   });
 
-  // New business in one industry. Tier 3 and unrated industries have no new business rows by design.
+  // New business in one industry: exactly nb.arr for that industry, so the two can never disagree (D48).
   TAP.measures.define('ind.nb.arr', { unit: 'money', valueKind: 'amount', kind: 'DER', dims: ['industry', 'year'] }, function (r, ctx) {
     ctx = ctx || {};
-    var ind = ctx.industryId ? TAP.data.industry(ctx.industryId) : null;
-    var rows = ((TAP.data.region(r) || {}).newBusiness || []).filter(function (d) { return ind && d.industryId === ind.id; });
-    if (ind && rows.length) return TAP.measures.get('nb.arr')(r, ctx);
-    var row = ind ? mcRow(r, ind.id) : null;
-    var s = { regionId: r, section: 'newBusiness', field: 'arrPotential', row: null, rows: [], year: ctx.year || null, cell: null, kind: 'DER' };
-    var na = !ind || ind.rated === false || (row && row.tier === 3);
-    return state(na ? 'notApplicable' : 'notProvided', 'DER', s);
+    if (!ctx.industryId) return state('notApplicable', 'DER', { regionId: r, section: 'newBusiness', field: 'arrPotential', row: null,
+      rows: [], year: ctx.year || null, cell: null, kind: 'DER' });
+    return TAP.measures.get('nb.arr')(r, ctx);
   });
 })(window.TAP);

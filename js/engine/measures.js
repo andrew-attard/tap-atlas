@@ -84,6 +84,27 @@
     return cell(sw > 0 ? sv / sw : sp / used.length, kind, s);
   }
 
+  /*
+   * D48: a figure for one industry when the region has no row for it.
+   * New business: Tier 3 or unrated is not applicable (never counted, never a gap); Tier 1 or 2, a blank tier or
+   * an empty section is not provided. Customer growth: a filled accounts list with no account in the industry is
+   * zero; an empty list is not provided (the normal path). Returns null when the rows decide.
+   */
+  function nbGap(r, ctx, kind, field) {
+    if (!ctx.industryId || nbRows(r, ctx).length) return null;
+    var ind = TAP.data.industry(ctx.industryId);
+    var mc = TAP.data.row(r, 'marketCoverage', function (d) { return d.industryId === ctx.industryId; });
+    var s = src(r, 'newBusiness', field, [], ctx.year, kind);
+    return !ind || ind.rated === false || (mc && mc.tier === 3) ? notApplicable(kind, s) : blank(kind, s);
+  }
+  function cgGap(r, ctx, kind, field) {
+    if (!ctx.industryId || accounts(r, ctx).length || !accounts(r, {}).length) return null;
+    return cell(0, kind, src(r, 'customerGrowth', field, [], ctx.year, kind));
+  }
+  function gap(section, r, ctx, kind, field) {
+    return section === 'newBusiness' ? nbGap(r, ctx, kind, field) : section === 'customerGrowth' ? cgGap(r, ctx, kind, field) : null;
+  }
+
   function wins(row) { return isNum(row.targetAccounts) && isNum(row.hitRate) ? row.targetAccounts * row.hitRate : null; }
   function arr3(row) { return byYear(row.arrPotential, null).v; }
 
@@ -95,7 +116,10 @@
   var NB = ['year', 'industry'], ROWS = ['industry'];
 
   function sums(id, m, getRows, section, field, pick) {
-    define(id, m, function (r, ctx) { ctx = ctx || {}; return sumRows(r, section, field, m.kind, getRows(r, ctx), ctx, pick(ctx)); });
+    define(id, m, function (r, ctx) {
+      ctx = ctx || {};
+      return gap(section, r, ctx, m.kind, field) || sumRows(r, section, field, m.kind, getRows(r, ctx), ctx, pick(ctx));
+    });
   }
   sums('nb.arr', amount('DER', NB), nbRows, 'newBusiness', 'arrPotential', yearSum('arrPotential'));
   sums('nb.services', amount('DER', NB), nbRows, 'newBusiness', 'servicesPotential', yearSum('servicesPotential'));
@@ -109,29 +133,42 @@
     return function (row) { return isNum(row.hitRate) ? row.targetAccounts : null; };
   });
   sums('nb.wins', count('APP', ROWS), nbRows, 'newBusiness', 'hitRate', function () { return wins; });
+  sums('cg.baseArr', amount('PRE', ROWS), accounts, 'customerGrowth', 'currentArr', plain('currentArr'));
 
-  function rates(id, m, getRows, section, field, val, wt) {
-    define(id, m, function (r, ctx) { ctx = ctx || {}; return weightedRows(r, section, field, m.kind, getRows(r, ctx), ctx, val, wt); });
+  function rates(id, m, section, field, val, wt) {
+    define(id, m, function (r, ctx) {
+      ctx = ctx || {};
+      return gap(section, r, ctx, m.kind, field) || weightedRows(r, section, field, m.kind, nbRows(r, ctx), ctx, val, wt);
+    });
   }
-  rates('nb.hitRate', rate('IN', 'nb.targetAccountsRated', ROWS), nbRows, 'newBusiness', 'hitRate',
+  rates('nb.hitRate', rate('IN', 'nb.targetAccountsRated', ROWS), 'newBusiness', 'hitRate',
     function (row) { return row.hitRate; }, function (row) { return row.targetAccounts; });
-  define('nb.avgDealSize', { unit: 'money', valueKind: 'rate', kind: 'IN', weightBy: 'nb.wins', dims: ROWS }, function (r, ctx) {
-    ctx = ctx || {};
-    return weightedRows(r, 'newBusiness', 'avgDealSize', 'IN', nbRows(r, ctx), ctx, function (row) { return row.avgDealSize; }, wins);
-  });
+  rates('nb.avgDealSize', { unit: 'money', valueKind: 'rate', kind: 'IN', weightBy: 'nb.wins', dims: ROWS }, 'newBusiness',
+    'avgDealSize', function (row) { return row.avgDealSize; }, wins);
   [2, 3].forEach(function (y) {
-    rates('nb.growthY' + y, rate('IN', 'nb.arr', ROWS), nbRows, 'newBusiness', 'growth.year' + y,
+    rates('nb.growthY' + y, rate('IN', 'nb.arr', ROWS), 'newBusiness', 'growth.year' + y,
       function (row) { return row.growth ? row.growth['year' + y] : null; }, arr3);
   });
-  rates('nb.servicesRatio', rate('PRE', 'nb.arr', ROWS), nbRows, 'newBusiness', 'servicesRatio',
-    function (row) { return row.servicesRatio; }, arr3);
+  rates('nb.servicesRatio', rate('PRE', 'nb.arr', ROWS), 'newBusiness', 'servicesRatio', function (row) { return row.servicesRatio; }, arr3);
+
+  // Customer growth % for a plan year: incremental ARR over the accounts' current ARR, so accounts planned with
+  // the 3-year multiplier count too. Partial only when an account's figure is truly blank.
   [1, 2, 3].forEach(function (y) {
-    define('cg.growthY' + y, rate('IN', 'base.arr', ROWS), function (r, ctx) {
+    define('cg.growthY' + y, rate('APP', 'cg.baseArr', ROWS), function (r, ctx) {
       ctx = ctx || {};
-      var c = weightedRows(r, 'customerGrowth', 'growthPct', 'IN', accounts(r, ctx), ctx,
-        function (a) { return Array.isArray(a.growthPct) ? a.growthPct[y - 1] : null; }, function (a) { return a.currentArr; });
-      c.src.year = y;
-      return c;
+      var none = cgGap(r, ctx, 'APP', 'incrementalArr');
+      if (none) { none.src.year = y; return none; }
+      var rows = accounts(r, ctx), used = [], inc = 0, base = 0;
+      rows.forEach(function (a) {
+        var v = Array.isArray(a.incrementalArr) ? a.incrementalArr[y - 1] : null;
+        if (!isNum(v) || !isNum(a.currentArr)) return;
+        used.push(a.sourceRow);
+        inc += v;
+        base += a.currentArr;
+      });
+      var s = src(r, 'customerGrowth', 'incrementalArr', used.length ? used : rowNums(rows), y, 'APP');
+      if (!used.length || !(base > 0)) return blank('APP', s);
+      return cell(inc / base, 'APP', s, used.length < rows.length ? { partial: true, note: TAP.content.text('measures.partialAccounts') } : null);
     });
   });
 
@@ -141,6 +178,8 @@
       ctx = ctx || {};
       var rows = getRows(r, ctx).filter(function (row) { return row[field] != null; });
       var s = src(r, section, field, rowNums(rows), null, m.kind);
+      var none = gap(section, r, ctx, m.kind, field);
+      if (none) return none;
       return rows.length ? cell(rows.filter(match).length, m.kind, s) : blank(m.kind, s);
     });
   }
