@@ -259,5 +259,129 @@
         a.ok(qsa('.tap-tg__cell.is-hl', panelEl(root, 'ind-tiers')).length > 0, 'its cell is outlined');
       });
     });
+    /* ---------- keys ---------- */
+
+    function press(key, target, opts) {
+      var e = new KeyboardEvent('keydown', Object.assign({ key: key, bubbles: true, cancelable: true }, opts || {}));
+      (target || document.body).dispatchEvent(e);
+      return e;
+    }
+    // The app with the keys bound; always unbound again.
+    function withKeys(fn) {
+      return withApp(function (root) {
+        TAP.keys.bind();
+        try { return fn(root); } finally { TAP.keys.unbind(); TAP.tour.stop(); TAP.glossary.close(); TAP.storage.remove('tour:done'); }
+      });
+    }
+
+    T.test('X-int-keys-views', '1 to 4 switch views in menu order; other digits and modifier keys do nothing', function (a) {
+      withKeys(function () {
+        var order = TAP.views.order();
+        a.equal(order.length, 4, 'four views');
+        order.slice().reverse().forEach(function (id, i) {
+          press(String(order.length - i));
+          a.equal(TAP.store.get().view, id, String(order.length - i) + ' opens ' + id);
+        });
+        press('5');
+        a.equal(TAP.store.get().view, order[0], '5 does nothing');
+        press('2', null, { ctrlKey: true });
+        a.equal(TAP.store.get().view, order[0], 'Ctrl+2 is left to the browser');
+      });
+    });
+
+    T.test('X-int-keys-typing', 'Digits typed in a field never switch views', function (a) {
+      withKeys(function (root) {
+        var input = TAP.dom.el('input', { type: 'text' }), sel = TAP.dom.el('select', null, [TAP.dom.el('option', null, 'x')]);
+        root.appendChild(input);
+        root.appendChild(sel);
+        var e = press('2', input);
+        a.equal(TAP.store.get().view, 'overview', 'input: still on Overview');
+        a.equal(e.defaultPrevented, false, 'the digit reaches the field');
+        press('3', sel);
+        a.equal(TAP.store.get().view, 'overview', 'select: still on Overview');
+      });
+    });
+
+    T.test('X-int-keys-tour', 'While the tour is on, digits do nothing and Esc only ends the tour', function (a) {
+      withKeys(function () {
+        TAP.store.set({ view: 'industry' });
+        TAP.tour.start();
+        a.equal(TAP.store.get().view, 'overview', 'the tour starts on the Overview');
+        press('2');
+        a.equal(TAP.store.get().view, 'overview', 'digit ignored during the tour');
+        TAP.layers.open('details', { target: { reportId: null, regionIds: [TAP.data.regions()[0].id] } });
+        press('Escape');
+        a.equal(document.querySelector('.tap-tour'), null, 'Esc ends the tour');
+        a.equal(TAP.layers.top(), 'details', 'and leaves the side panel');
+      });
+    });
+
+    T.test('X-int-keys-esc', 'One Esc order: glossary popover, side panel, expanded chart', function (a) {
+      withKeys(function (root) {
+        TAP.store.set({ view: 'industry' });
+        TAP.store.set({ expanded: 'ind-quad' });
+        TAP.layers.openDetails({ reportId: 'ind-quad', regionIds: [TAP.data.regions()[0].id], industryIds: [] });
+        var anchor = root.querySelector('.tap-term') || root.querySelector('h1');
+        TAP.glossary.popover(Object.keys(TAP.content.terms())[0], anchor);
+        a.ok(document.querySelector('.tap-popover'), 'popover open');
+        press('Escape');
+        a.equal(document.querySelector('.tap-popover'), null, '1st Esc: popover closed');
+        a.equal(TAP.layers.top(), 'details', '1st Esc: side panel still open');
+        a.equal(TAP.store.get().expanded, 'ind-quad', '1st Esc: chart still expanded');
+        press('Escape');
+        a.equal(TAP.layers.top(), null, '2nd Esc: side panel closed');
+        a.equal(TAP.store.get().expanded, 'ind-quad', '2nd Esc: chart still expanded');
+        press('Escape');
+        a.equal(TAP.store.get().expanded, null, '3rd Esc: expanded chart closed');
+        a.equal(TAP.store.get().view, 'industry', 'the view stays');
+      });
+    });
+
+    T.test('X-int-keys-esc-menu', 'A panel menu takes Esc before the expanded chart', function (a) {
+      withKeys(function (root) {
+        TAP.store.set({ view: 'industry' });
+        TAP.store.set({ expanded: 'ind-tiers' });
+        panelEl(root, 'ind-tiers').querySelector('[data-action="type"]').click();
+        a.ok(panelEl(root, 'ind-tiers').querySelector('.tap-panel__pop'), 'chart type menu open');
+        press('Escape');
+        a.equal(panelEl(root, 'ind-tiers').querySelector('.tap-panel__pop'), null, 'menu closed');
+        a.equal(TAP.store.get().expanded, 'ind-tiers', 'chart still expanded');
+        press('Escape');
+        a.equal(TAP.store.get().expanded, null, 'then the chart closes');
+      });
+    });
+
+    T.test('X-int-keys-arrows', 'Left and right step through the expanded charts of the view, and wrap', function (a) {
+      withKeys(function (root) {
+        TAP.store.set({ view: 'industry' });
+        TAP.store.set({ expanded: 'ind-tiers' });
+        var seen = [];
+        for (var i = 0; i < 3; i++) { press('ArrowRight'); seen.push(TAP.store.get().expanded); }
+        a.deepEqual(seen, ['ind-quad', 'ind-ratings', 'ind-tiers'], 'right steps in page order and wraps');
+        press('ArrowLeft');
+        a.equal(TAP.store.get().expanded, 'ind-ratings', 'left steps back and wraps');
+        a.ok(panelEl(root, 'ind-ratings').classList.contains('tap-panel--expanded'), 'that panel is drawn expanded');
+        var sel = panelEl(root, 'ind-ratings').querySelector('select');
+        if (sel) { press('ArrowRight', sel); a.equal(TAP.store.get().expanded, 'ind-ratings', 'arrows in a select stay in the select'); }
+        TAP.store.set({ view: 'overview' });
+        a.equal(TAP.store.get().expanded, null, 'a view change closes the expanded chart');
+        TAP.store.set({ expanded: 'ov-ambition' });
+        press('ArrowRight');
+        a.equal(TAP.store.get().expanded, 'ov-ambition', 'a view with one chart stays on it');
+      });
+    });
+
+    T.test('X-int-keys-unbind', 'After unbind, the digits do nothing; bind twice listens once', function (a) {
+      withKeys(function () {
+        TAP.keys.bind();
+        press('2');
+        a.equal(TAP.store.get().view, TAP.views.order()[1], 'bound twice: one switch');
+        TAP.keys.unbind();
+        press('3');
+        a.equal(TAP.store.get().view, TAP.views.order()[1], 'unbound: nothing');
+        a.equal(TAP.keys.viewFor('1'), TAP.views.order()[0], 'viewFor maps the digit');
+        a.equal(TAP.keys.viewFor('x'), null, 'viewFor ignores other keys');
+      });
+    });
   });
 })(window.TAP);
