@@ -1,0 +1,24 @@
+<!doctype html>
+<!--
+  File: tests/selftest.html
+  Purpose: The harness's own proof page; runs the harness and colour-helper self-checks.
+  Provides: a test page (open from the folder, or run with scripts/test-headless.sh)
+  Depends on: tests/harness.css, tests/harness.js, tests/cvd.js, tests/test-harness-self.js, tests/test-cvd-self.js
+  Used by: scripts/verify.sh, .github/workflows/ci.yml
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Harness self-test</title>
+  <link rel="stylesheet" href="harness.css">
+</head>
+<body>
+  <h1 class="t-title">Harness self-test</h1>
+  <div id="t-summary" class="t-summary">Loading...</div>
+  <div id="t-results"></div>
+  <script src="harness.js"></script>
+  <script src="cvd.js"></script>
+  <script src="test-harness-self.js"></script>
+  <script src="test-cvd-self.js"></script>
+</body>
+</html>
