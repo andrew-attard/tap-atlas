@@ -297,7 +297,7 @@ TAP_REPORTS['ov-ambition'] = {
 | `TAP.shapes.kit` | Shared drawing helpers for builders (sizes, shades, rings, tooltips). `TAP.shapes.types(def, n, {breakdown})` offers `groupedBar` only when a breakdown is chosen |
 | `TAP.builders.register(name, fn)` / `get(name)` | The builder registry |
 
-**ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme}`.
+**ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme, opts}`. `ctx.opts` holds the report option values chosen in the panel, e.g. `sort` (tier grid), `everyRegion` and `industryFilter` (quadrant). The panel keeps them per panel and resets them when `scopeEpoch` changes, like the comparison override.
 
 **Builder result** (pure functions; no DOM access except to build the returned `html`):
 
@@ -311,10 +311,18 @@ TAP_REPORTS['ov-ambition'] = {
   missing: ['Region F'],       // regions with no data for this report (US-1.2.11)
   empty: false,                // true means no region has data: the panel says so instead of drawing
   error: null,
-  target(params) }             // maps an ECharts click to a details target, or null
+  controls: [{key, label, kind: 'segmented'|'select', value, options: [{value, label}]}],   // optional: options the builder offers
+  target(params) }             // maps an ECharts click (or an HTML click's data) to a target, or null
 ```
 
 Display nudging (jitter, label placement) never changes the values shown in tooltips or tables.
+
+**Builder controls and HTML clicks.**
+- **Controls:** the panel draws `result.controls` next to its own controls, writes the choice into `ctx.opts[key]` and rebuilds. The panel never needs report-specific code.
+- **HTML clicks:** in HTML results, clickable elements carry `data-tap-region` and/or `data-tap-industry`. The panel delegates clicks and calls `result.target({data: {regionId, industryId}})`.
+  - A click naming exactly one industry emits `industry:select {industryId}`.
+  - A click that also names a region opens details (`TAP.layers.openDetails`).
+  - ECharts clicks follow the same rule, using the target the builder returns.
 
 **Builder conventions for the panel:**
 - ECharts data items carry `entityId`, `key` (or `keys`) and `raw`; not-provided marks have `np: true`.
