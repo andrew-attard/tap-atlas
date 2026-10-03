@@ -30,7 +30,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'consensus', family: 'priorities',
     description: 'An industry placed in Tier 1 or 2 by at least 5 of every 7 regions that gave it a tier (scaled to the number of regions). Group priorities are left out: group strategy already fixes them at Tier 1.',
     reads: ['marketCoverage.tier'], params: { share: 5 / 7, skipGroupPriority: true }, compare: true,
-    scoring: 'Strength: the share of regions placing it in Tier 1 or 2. Money: its current ARR in those regions.',
+    scoring: 'Strength: the share of regions placing it in Tier 1 or 2, against twice the threshold share. Money: its current ARR in those regions.',
     template: '{industry} is Tier 1 or 2 in {n} of {total} regions.',
     templates: { all: '{industry} is Tier 1 or 2 in all {total} regions.',
       gaps: '{industry} is Tier 1 or 2 in {n} of the {total} regions that gave it a tier.' },
@@ -38,7 +38,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'split', family: 'priorities',
     description: 'An industry whose tiers spread across all three tiers, or split almost evenly between two (the two groups differ by at most one region).',
     reads: ['marketCoverage.tier'], params: { evenGap: 1 }, compare: true,
-    scoring: 'Strength: how even the split is. Money: its current ARR across the regions.',
+    scoring: 'Strength: 1 across all three tiers; half of how even the split is across two. Money: its current ARR across the regions.',
     template: 'Regions are split on {industry}: {parts}.',
     attach: TIERS, highlight: 'industryRow' });
   rule({ id: 'groupPriority', family: 'priorities',
@@ -61,8 +61,8 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     attach: QUAD, highlight: 'points' });
   rule({ id: 'weakRating', family: 'judgement',
     description: 'References, expertise or product fit rated 1 (the unfavourable end) where the industry holds one of the region’s three largest current ARR or pipeline figures.',
-    reads: ['marketCoverage.expertise', 'marketCoverage.currentArr'], params: { rank: 3 },
-    scoring: 'Strength: 1 for the largest figure, less for the second and third. Money: the figure involved.',
+    reads: ['marketCoverage.expertise', 'marketCoverage.currentArr'], params: { rank: 1 },
+    scoring: 'Strength: grows with the number of ratings at 1, and falls for the second or third largest figure. Money: the figure involved.',
     template: '{region} rates its {ratings} in {industry} at 1 of 3, yet {industry} holds {rank} {what} ({amount}). What sits behind the rating?',
     attach: QUAD, highlight: 'points' });
   rule({ id: 'tierVsPipeline', family: 'judgement',
@@ -80,10 +80,10 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
 
   /* ---------- assumptions (US-1.7.6) ---------- */
   rule({ id: 'outlier', family: 'assumptions',
-    description: 'A planning assumption at least twice, or at most half, the average of the other regions (weighted as on the charts), or clearly outside every other region’s range.',
+    description: 'A planning assumption at least twice, or at most half, the average of the other regions (weighted as on the charts), or outside every other region’s range by at least 15% of that average. For growth by year, only the year that stands out most is raised.',
     reads: ['newBusiness.hitRate', 'customerGrowth.accounts.incrementalArr'], compare: true,
     params: { measures: ['nb.hitRate', 'nb.avgDealSize', 'nb.growthY2', 'nb.growthY3', 'nb.servicesRatio', 'cg.growthY1', 'cg.growthY2', 'cg.growthY3'],
-      high: 2, low: 0.5, rangeGap: 0.1 },
+      high: 2, low: 0.5, rangeGap: 0.15 },
     scoring: 'Strength: how far the ratio to the others’ average is past 1, against twice the 2× threshold. Money: the region’s planned ARR in that motion.',
     template: '{region} plans {what}, more than {times} the average of the other regions ({avg}).',
     templates: { low: '{region} plans {what}, less than half the average of the other regions ({avg}).',
@@ -136,7 +136,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'notYetWinnable', family: 'capability',
     description: 'An industry in the attractive, not-yet-able-to-win quadrant (attractiveness at or above the midpoint, ability to win below it) for at least 3 regions.',
     reads: ['marketCoverage.growthPotential', 'marketCoverage.references'], params: { minRegions: 3 },
-    scoring: 'Strength: the share of regions involved. Money: its current ARR in those regions.',
+    scoring: 'Strength: the share of regions involved, against twice the threshold share. Money: its current ARR in those regions.',
     template: '{n} regions see {industry} as attractive but rate their ability to win as low.',
     attach: ['ind-quad'], highlight: 'quadrant' });
   rule({ id: 'notYetList', family: 'capability',
@@ -164,7 +164,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       'questionable', 'doubtful', 'flaw', 'flaws', 'flawed'],
     phrases: {
       label: 'Observation to discuss',
-      times: { 2: 'twice', 3: 'three times', 4: 'four times', 5: 'five times' },
+      times: { 2: 'twice', 3: 'three times', 4: 'four times', 5: 'five times', n: '{n} times' },
       rank: { 1: 'its largest', 2: 'its second-largest', 3: 'its third-largest' },
       what: { arr: 'current ARR', pipeline: 'pipeline' },
       ratings: { references: 'references', expertise: 'expertise', productFit: 'product fit' },
@@ -175,7 +175,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
         'nb.growthY2': 'new business growth of {value} in year 2', 'nb.growthY3': 'new business growth of {value} in year 3',
         'nb.servicesRatio': 'a services ratio of {value}', 'cg.growthY1': 'customer growth of {value} in year 1',
         'cg.growthY2': 'customer growth of {value} in year 2', 'cg.growthY3': 'customer growth of {value} in year 3' },
-      figure: '{what}, {where}', othersAvg: 'average of the other {n} regions', successFactors: 'What {region} says is needed',
+      year1: 'year 1', figure: '{what}, {where}', othersAvg: 'average of the other {n} regions', successFactors: 'What {region} says is needed',
       allAccounts: 'Planned customer growth, all accounts', allIndustries: 'all industries', highRisk: '{name} (high risk)',
       mediumRisk: '{name} (medium risk)',
       failed: 'The insight rule "{rule}" was skipped: {reason}', noData: 'the data has none of the fields it reads ({fields}).',
