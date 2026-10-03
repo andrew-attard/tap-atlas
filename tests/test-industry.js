@@ -1,7 +1,7 @@
 /*
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
- * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid), X-industry-*
+ * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), X-industry-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -278,6 +278,209 @@
     T.test('X-industry-grid-explain', 'The explanation says which tier is darkest', function (a) {
       a.match(TAP.reports.get('ind-tiers').explain.read, /Tier 1 darkest/);
       a.deepEqual(TAP.reports.validate(TAP.reports.get('ind-tiers')), []);
+    });
+  });
+
+  /* ---------- US-1.5.5 attractiveness vs ability to win ---------- */
+
+  var X = window.TEST_EXPECT.mini, TOL = 1e-6;
+  function quad(type, c, extra) { return TAP.builders.get('quadrant')(ctxFor('ind-quad', type, c, extra)); }
+  function valueSeries(res) { return series(res).filter(function (s) { return s.tapRole === 'value'; }); }
+  function pointOf(res, entityId, industryId) {
+    return points(res).filter(function (d) { return d.entityId === entityId && d.industryId === industryId; })[0];
+  }
+  function areaLabels(res) {
+    var s = series(res).filter(function (x) { return x.markArea; })[0];
+    return s.markArea.data.map(function (d) { return d[0].name; }).sort();
+  }
+  function tipOf(res, d) {
+    var s = series(res).filter(function (x) { return (x.data || []).indexOf(d) >= 0; })[0];
+    return s.tooltip.formatter({ data: d, seriesName: s.name });
+  }
+
+  T.suite('industry-quad', function () {
+    T.test('X-industry-quad-default', 'Default: one bubble per industry, scores averaged over the regions in scope', function (a) {
+      var res = quad('bubble', { mode: 'all' });
+      a.equal(res.error, null, 'draws');
+      a.equal(valueSeries(res).length, 1, 'one averaged group');
+      a.equal(points(res).length, 4, 'one point per rated industry');
+      var d = pointOf(res, points(res)[0].entityId, 'ind1');
+      a.near(d.raw[1], 2.75, TOL, 'ind1 attractiveness: average of 2.67, 3, 2.33 and 3');
+      a.near(d.raw[0], 7 / 3, TOL, 'ind1 ability: average of 3, 3 and 1 (Region C not provided)');
+      d = pointOf(res, d.entityId, 'ind2');
+      a.near(d.raw[1], (2 + 8 / 3 + 2 + 1) / 4, TOL, 'ind2 attractiveness');
+      a.near(d.raw[0], (2 + 4 / 3 + 2 + 2) / 4, TOL, 'ind2 ability');
+      a.equal(d.itemStyle.color, TH.combined, 'dark grey for an average');
+      a.equal(d.label.formatter, 'Education', 'labelled with the industry');
+      a.ok(res.notes.some(function (n) { return /average/i.test(n) && /rating/i.test(n); }), 'the averaging is stated');
+      a.ok(res.notes.some(function (n) { return /Region C/.test(n); }), 'Region C named as not included');
+      a.match(JSON.stringify(res.option.title || {}), /verage/, 'stated on the chart itself');
+    });
+
+    T.test('X-industry-quad-every', 'Show every region: one point per region and industry, nudged apart, values exact', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      a.equal(points(res).length, 15, '4 regions x 4 industries, less Region C ind1 (ability not provided)');
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) {
+        Object.keys(X.scores[r] || {}).forEach(function (ind) {
+          var e = X.scores[r][ind], d = pointOf(res, r, ind);
+          if (e.b == null) { a.equal(d, undefined, r + ' ' + ind + ' left off'); return; }
+          a.near(d.raw[1], e.a, TOL, r + ' ' + ind + ' attractiveness');
+          a.near(d.raw[0], e.b, TOL, r + ' ' + ind + ' ability');
+        });
+      });
+      var spots = {};
+      points(res).forEach(function (d) {
+        var key = d.value[0].toFixed(4) + '|' + d.value[1].toFixed(4);
+        a.ok(!spots[key], 'no two markers on the same spot: ' + d.entityId + ' ' + d.industryId);
+        spots[key] = true;
+      });
+      var same = [pointOf(res, 'alpha', 'ind4'), pointOf(res, 'delta', 'ind4'), pointOf(res, 'delta', 'ind1')];
+      a.ok(same[0].value[0] !== same[1].value[0] || same[0].value[1] !== same[1].value[1], 'overlapping points moved');
+      same.forEach(function (d) { a.deepEqual([d.raw[0], d.raw[1]], [1, 3], 'raw stays exact'); });
+      a.equal(pointOf(res, 'alpha', 'ind1').itemStyle.color, TAP.scope.colorOf('alpha'), 'region colour');
+    });
+
+    T.test('X-industry-quad-focus', 'With a focus region: its points in its colour, the rest averaged in dark grey', function (a) {
+      var res = quad('bubble', { mode: 'one', focus: 'alpha' });
+      a.equal(valueSeries(res).length, 2, 'focus and the rest');
+      a.equal(pointOf(res, 'alpha', 'ind4').itemStyle.color, TAP.scope.colorOf('alpha'), 'focus colour');
+      var rest = points(res).filter(function (d) { return d.entityId !== 'alpha'; });
+      a.equal(rest.length, 4, 'one averaged point per industry for the rest');
+      rest.forEach(function (d) { a.equal(d.itemStyle.color, TH.combined, 'rest in dark grey'); });
+      var r1 = rest.filter(function (d) { return d.industryId === 'ind1'; })[0];
+      a.near(r1.raw[1], (3 + 7 / 3 + 3) / 3, TOL, 'rest ind1 attractiveness: B, C and D');
+      res = quad('bubble', { mode: 'one', focus: 'alpha', restAs: 'individual' });
+      a.equal(points(res).filter(function (d) { return d.entityId !== 'alpha'; }).length, 4, 'still averaged by default');
+      res = quad('bubble', { mode: 'one', focus: 'alpha' }, { opts: { everyRegion: true } });
+      a.equal(pointOf(res, 'bravo', 'ind1').itemStyle.color, TH.focusGrey, 'every region: the others grey');
+      a.equal(pointOf(res, 'alpha', 'ind1').itemStyle.color, TAP.scope.colorOf('alpha'), 'every region: focus coloured');
+      res = quad('bubble', { mode: 'pair', focus: 'bravo', second: 'delta' });
+      a.equal(pointOf(res, 'delta', 'ind3').itemStyle.color, TAP.scope.colorOf('delta'), 'a pair keeps both colours');
+    });
+
+    T.test('X-industry-quad-areas', 'Four neutral labelled areas split at the midpoint; 2.0 counts as attractive and able', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      a.deepEqual(areaLabels(res), ['Attractive, able to win', 'Attractive, not yet able to win', 'Less attractive, able to win', 'Less attractive, less able']);
+      var lines = series(res).filter(function (x) { return x.markLine; })[0].markLine.data;
+      a.deepEqual(lines.map(function (l) { return l.xAxis != null ? ['x', l.xAxis] : ['y', l.yAxis]; }), [['x', 2], ['y', 2]], 'lines at 2.0');
+      var d = pointOf(res, 'delta', 'ind3');
+      a.match(tipOf(res, d), /Attractive, able to win/, 'Region D Retail (attractiveness exactly 2.0) is attractive');
+      var row = res.table.rows.filter(function (r) { return r.entityId === 'delta' && r.industryId === 'ind3'; })[0];
+      a.equal(row.cells.quadrant.v, 'Attractive, able to win', 'the table says the same');
+      window.TAP_SETTINGS.scores.midpoint = 2.5;
+      try {
+        res = quad('bubble', { mode: 'all' });
+        lines = series(res).filter(function (x) { return x.markLine; })[0].markLine.data;
+        a.equal(lines[0].xAxis, 2.5, 'the midpoint is a setting');
+      } finally { window.TAP_SETTINGS.scores.midpoint = 2.0; }
+    });
+
+    T.test('X-industry-quad-tooltip', 'Tooltips name region and industry, both scores and their three ratings with wording', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      var html = tipOf(res, pointOf(res, 'alpha', 'ind1'));
+      ['Region A', 'Healthcare', 'Attractiveness', 'Ability to win', 'Strong dynamics, business to take (3)', 'Fragmented, no clear leader (2)',
+        'Generalized (3)', 'Strong (3)', '2.67'].forEach(function (s) { a.ok(html.indexOf(s) >= 0, 'shows ' + s); });
+      res = quad('bubble', { mode: 'all' });
+      html = tipOf(res, pointOf(res, points(res)[0].entityId, 'ind1'));
+      a.ok(html.indexOf('2.8 average') >= 0, 'averaged rating shows "average": growth potential 2.75');
+      a.ok(/Average of 4 regions/.test(html), 'says how it was combined');
+    });
+
+    T.test('X-industry-quad-size', 'Size is pipeline by default, current ARR when switched, none on the scatter', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      var d = pointOf(res, 'alpha', 'ind1');
+      a.deepEqual(d.keys, ['ind.ability', 'ind.attractiveness', 'ind.pipeline']);
+      a.equal(d.raw[2], 2000, 'pipeline');
+      a.match(res.sizeLegend.kind, /System figure/, 'legend calls it a system figure');
+      a.equal(pointOf(quad('bubble', { mode: 'all' }, { sizeId: 'ind.currentArr', opts: { everyRegion: true } }), 'alpha', 'ind1').raw[2], 1000, 'current ARR');
+      res = quad('scatter', { mode: 'all' }, { opts: { everyRegion: true } });
+      a.equal(res.sizeLegend, null, 'no size legend on the scatter');
+      a.equal(pointOf(res, 'alpha', 'ind1').keys[2], null, 'no size key');
+      a.deepEqual(TAP.shapes.types(TAP.reports.get('ind-quad'), 7), ['bubble', 'scatter', 'table'], 'bubble, scatter, table');
+      a.equal(TAP.reports.get('ind-quad').defaultType, 'bubble');
+    });
+
+    T.test('X-industry-quad-filter', 'The industry filter shows one industry across every region in scope', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { industryFilter: 'ind4' } });
+      a.deepEqual(points(res).map(function (d) { return d.industryId; }), ['ind4', 'ind4', 'ind4', 'ind4'], 'only ind4, per region');
+      a.equal(pointOf(res, 'bravo', 'ind4').label.formatter, 'Region B', 'labelled by region');
+      var c = res.controls.filter(function (x) { return x.key === 'industryFilter'; })[0];
+      a.equal(c.kind, 'select');
+      a.equal(c.options.length, 5, 'all industries plus each rated industry');
+      a.equal(c.value, 'ind4');
+      var e = res.controls.filter(function (x) { return x.key === 'everyRegion'; })[0];
+      a.deepEqual(e.options.map(function (o) { return o.value; }), [false, true], 'average or every region');
+      res = quad('bubble', { mode: 'set', set: ['alpha', 'delta'] }, { opts: { industryFilter: 'ind1' } });
+      a.equal(points(res).length, 2, 'follows the comparison scope');
+    });
+
+    T.test('X-industry-quad-highlight', 'Highlights ring every matching point, in every group', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true }, highlight: { reportId: 'ind-quad', industryIds: ['ind4'], mark: 'points' } });
+      var ring = series(res).filter(function (s) { return s.tapRole === 'highlight'; })[0];
+      a.equal(ring.data.length, 4, 'all four regions');
+      res = quad('bubble', { mode: 'one', focus: 'alpha' }, { highlight: { reportId: 'ind-quad', industryIds: ['ind4'] } });
+      ring = series(res).filter(function (s) { return s.tapRole === 'highlight'; })[0];
+      a.equal(ring.data.length, 2, 'focus and rest both ringed');
+      res = quad('bubble', { mode: 'all' }, { highlight: { reportId: 'ind-quad', quadrant: 'attractiveNotYet', mark: 'quadrant' } });
+      var area = series(res).filter(function (x) { return x.markArea; })[0].markArea.data.filter(function (d) { return d[0].tapQuadrant === 'attractiveNotYet'; })[0];
+      a.equal(area[0].itemStyle.borderColor, TH.accent, 'the named area is outlined');
+    });
+
+    T.test('X-industry-quad-target', 'A click names the region(s) and the industry', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      var t = res.target({ data: pointOf(res, 'charlie', 'ind4') });
+      a.deepEqual([t.reportId, t.regionIds, t.industryIds], ['ind-quad', ['charlie'], ['ind4']]);
+      res = quad('bubble', { mode: 'all' });
+      t = res.target({ data: points(res)[0] });
+      a.deepEqual(t.regionIds, ['alpha', 'bravo', 'charlie', 'delta'], 'an average names its regions');
+      a.equal(res.target({}), null);
+    });
+
+    T.test('X-industry-quad-escape', 'Names in labels and tooltips are escaped', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.lookups.industries[0].name = '<img src=x onerror=alert(1)>';
+      plan.regions[0].name = 'A & <b>B</b>';
+      TAP.data.load(plan);
+      var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      var html = tipOf(res, pointOf(res, 'alpha', 'ind1'));
+      a.equal(html.indexOf('<img'), -1, 'industry escaped');
+      a.equal(html.indexOf('<b>B</b>'), -1, 'region escaped');
+    });
+
+    T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {
+      var all = quad('bubble', { mode: 'all' }).takeaway, one = quad('bubble', { mode: 'one', focus: 'delta' }).takeaway;
+      a.ok(all && one && all !== one, 'differs by scope');
+      a.match(one, /Region D/, 'names the focus region');
+    });
+
+    T.test('TPV-TC-062', 'Quadrant: every chart value equals the table value, on the mini data, in every mode', function (a) {
+      [{ mode: 'all' }, { mode: 'one', focus: 'alpha' }, { mode: 'one', focus: 'bravo', restAs: 'individual' }, { mode: 'org' },
+        { mode: 'pair', focus: 'charlie', second: 'delta' }, { mode: 'set', set: ['alpha', 'charlie'] }].forEach(function (c) {
+        [false, true].forEach(function (every) {
+          ['bubble', 'scatter'].forEach(function (type) {
+            bubbleSameAsTable(a, quad(type, c, { opts: { everyRegion: every } }), c.mode + ' ' + type + (every ? ' every' : ''));
+          });
+        });
+        bubbleSameAsTable(a, quad('bubble', c, { opts: { industryFilter: 'ind4' } }), c.mode + ' filtered');
+      });
+    });
+
+    T.test('TPV-TC-062', 'Quadrant: every chart value equals the table value, on the sample data', function (a) {
+      sample();
+      var R = sampleIds();
+      [{ mode: 'all' }, { mode: 'one', focus: R[2] }, { mode: 'org' }, { mode: 'pair', focus: R[0], second: R[6] }].forEach(function (c) {
+        [false, true].forEach(function (every) {
+          var res = quad('bubble', c, { opts: { everyRegion: every } });
+          a.equal(res.error, null, c.mode + ' draws');
+          bubbleSameAsTable(a, res, 'sample ' + c.mode + (every ? ' every' : ''));
+        });
+      });
+      var p03 = window.SAMPLE_EXPECT.p03, res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true } });
+      Object.keys(p03.scores).forEach(function (r) {
+        var d = pointOf(res, r, p03.industry);
+        a.near(d.raw[1], p03.scores[r].a, 1e-5, 'P03 ' + r + ' attractiveness');
+        a.near(d.raw[0], p03.scores[r].b, 1e-5, 'P03 ' + r + ' ability');
+      });
     });
   });
 })(window.TAP);
