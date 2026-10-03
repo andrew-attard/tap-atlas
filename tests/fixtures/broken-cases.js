@@ -1,7 +1,7 @@
 /*
  * File: tests/fixtures/broken-cases.js
  * Purpose: Deliberately broken data files for the contract check tests (TPV-TC-206): each case breaks one thing.
- * Provides: window.TEST_FIXTURES.broken (cases: [{id, level, change(plan), expect}])
+ * Provides: window.TEST_FIXTURES.broken (cases: [{id, level, change(plan), expect}], extras(plan))
  * Depends on: tests/fixtures/mini-data.js (every case starts from a fresh copy of the mini fixture)
  * Used by: tests/test-check.js
  * Owner: the DATA stream.
@@ -84,5 +84,16 @@ window.TEST_FIXTURES.broken = {
       change: function (p) { p.regions[0].partners = []; },
       expect: { path: 'regions[0].partners', region: 'Region A', item: null,
         expected: 'at least one item', found: 'an empty list' } }
-  ]
+  ],
+
+  // Not broken: fields and sections the contract doesn't name are ignored (D47), so an import can add
+  // the real template's extra sheets before the contract covers them. Must add no errors and no warnings.
+  extras: function (p) {
+    p.meta.importTool = 'Copilot import, draft 3';
+    p.lookups.markets = [{ id: 'm1', name: 'Market 1' }];
+    p.regions[0].marketCoverage[0].localNote = 'An extra column';
+    p.regions[0].customerGrowth.accounts[0].accountType = 'Key account';
+    p.regions[1].pricing = [{ sourceRow: 5, item: 'Price adjustment', value: 0.03 }];
+    p.regions[1].customerGrowth.summary = { accounts: 2 };
+  }
 };
