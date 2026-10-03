@@ -11,6 +11,7 @@
   var FAMILIES = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
   var MARKS = ['industryRow', 'regionColumn', 'cell', 'points', 'quadrant', 'bar', null];
   var STATES = ['value', 'notProvided', 'notApplicable'];
+  var UNITS = ['money', 'pct', 'rating', 'score', 'count', 'tier', 'text'];
 
   // Checks one insight against the insight object contract (ARCHITECTURE section 12).
   function checkShape(a, x) {
@@ -25,6 +26,9 @@
     x.figures.forEach(function (f) {
       a.ok(typeof f.label === 'string' && f.label.length > 0, tag + 'figure label');
       a.ok(f.cell && STATES.indexOf(f.cell.state) >= 0 && f.cell.src, tag + 'figure is a cell with a source');
+      a.ok(UNITS.indexOf(f.unit) >= 0, tag + f.label + ' has a unit');
+      if (f.unit === 'rating') a.ok(f.field, tag + f.label + ' names its rating field');
+      if (f.measureId) a.equal(TAP.measures.meta(f.measureId).unit, f.unit, tag + f.label + ' unit matches its measure');
     });
     a.ok(typeof x.significance === 'number' && x.significance >= 0 && x.significance <= 1, tag + 'significance 0..1');
     a.ok(Array.isArray(x.sources) && x.sources.length > 0, tag + 'sources');
@@ -64,7 +68,7 @@
       return ctx.util.regions().map(function (r) {
         var c = ctx.util.m(measureId, r);
         return Object.assign({ key: r, regionIds: [r], vars: { region: ctx.util.name(r), v: TAP.format.cell(c, { unit: 'money' }) },
-          figures: [{ label: 'Test figure', cell: c }], strength: 0.5, money: 0.1, provided: 7 }, extra || {});
+          figures: [ctx.util.fig(measureId, ctx.util.name(r), c)], strength: 0.5, money: 0.1, provided: 7 }, extra || {});
       });
     };
   }

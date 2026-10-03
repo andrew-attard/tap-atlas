@@ -12,7 +12,10 @@
  * - attach lists every report the insight belongs to (the panel list filters on it); reportId is the first one.
  * - When reportId is null the data has no Phase 1 report: fallback is 'details', and "Show me" opens
  *   TAP.layers.openDetails(highlight) for the region instead.
- * - figures are cells with sources, shown on demand; label is always 'Observation to discuss'.
+ * - figures are {label, cell, unit, field, measureId}: cells with sources, shown on demand. unit is the measure unit
+ *   ('money', 'pct', 'rating', 'score', 'count', 'tier', 'text'), field the rating field for ratings, and measureId
+ *   the catalogue measure when there is one. Format with TAP.format.cell(cell, {unit, field, exact: true}).
+ * - label is always 'Observation to discuss'.
  */
 window.TEST_FIXTURES = window.TEST_FIXTURES || {};
 window.TEST_FIXTURES.insights = (function () {
@@ -48,7 +51,7 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'An industry placed in Tier 1 or 2 by at least 5 of every 7 regions (scaled to the number of regions).',
       regionIds: ['na', 'latam', 'neu', 'seu', 'ceu', 'mea'], industryIds: ['education'],
       figures: ALL.map(function (r) {
-        return { label: 'Tier, ' + NAMES[r], cell: cell(r === 'apac' ? 3 : 2, 'IN', src(r, 'marketCoverage', 'tier', 25, 'IN')) };
+        return { label: 'Tier, ' + NAMES[r], cell: cell(r === 'apac' ? 3 : 2, 'IN', src(r, 'marketCoverage', 'tier', 25, 'IN')), unit: 'tier', field: null, measureId: 'ind.tier' };
       }),
       significance: 0.62, sources: ALL.map(function (r) { return src(r, 'marketCoverage', 'tier', 25, 'IN'); }),
       reportId: 'ind-tiers', highlight: target('ind-tiers', 'industryRow', ['na', 'latam', 'neu', 'seu', 'ceu', 'mea'], ['education'])
@@ -59,7 +62,7 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'A group-priority industry (Tier 1 everywhere) that a region’s own ratings place in the less able, or less attractive, half.',
       regionIds: ['latam', 'neu', 'ceu', 'apac'], industryIds: ['datacenters'],
       figures: ['latam', 'neu', 'ceu', 'apac'].map(function (r) {
-        return { label: 'Ability to win, ' + NAMES[r], cell: cell(1.333333, 'APP', src(r, 'marketCoverage', 'ability', 24, 'APP')) };
+        return { label: 'Ability to win, ' + NAMES[r], cell: cell(1.333333, 'APP', src(r, 'marketCoverage', 'ability', 24, 'APP')), unit: 'score', field: null, measureId: 'ind.ability' };
       }),
       significance: 0.48, sources: ['latam', 'neu', 'ceu', 'apac'].map(function (r) { return src(r, 'marketCoverage', 'expertise', 24, 'IN'); }),
       reportId: 'ind-tiers', highlight: target('ind-tiers', 'industryRow', ['latam', 'neu', 'ceu', 'apac'], ['datacenters']),
@@ -71,9 +74,9 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'A Tier 3 industry holding at least 15% of the region’s pipeline.',
       regionIds: ['seu'], industryIds: ['retail'],
       figures: [
-        { label: 'Tier, Retail', cell: cell(3, 'IN', src('seu', 'marketCoverage', 'tier', 22, 'IN')) },
-        { label: 'Pipeline, Retail', cell: cell(2935, 'PRE', src('seu', 'marketCoverage', 'pipelineTotal', 22, 'PRE')) },
-        { label: 'Pipeline, all industries', cell: cell(16306, 'PRE', src('seu', 'marketCoverage', 'pipelineTotal', null, 'PRE')) }
+        { label: 'Tier, Retail', cell: cell(3, 'IN', src('seu', 'marketCoverage', 'tier', 22, 'IN')), unit: 'tier', field: null, measureId: 'ind.tier' },
+        { label: 'Pipeline, Retail', cell: cell(2935, 'PRE', src('seu', 'marketCoverage', 'pipelineTotal', 22, 'PRE')), unit: 'money', field: null, measureId: 'ind.pipeline' },
+        { label: 'Pipeline, all industries', cell: cell(16306, 'PRE', src('seu', 'marketCoverage', 'pipelineTotal', null, 'PRE')), unit: 'money', field: null, measureId: 'base.pipeline' }
       ],
       significance: 0.41, sources: [src('seu', 'marketCoverage', 'tier', 22, 'IN'), src('seu', 'marketCoverage', 'pipelineTotal', 22, 'PRE')],
       reportId: 'ind-tiers', highlight: target('ind-tiers', 'cell', ['seu'], ['retail']), attach: ['ind-tiers', 'ind-quad']
@@ -84,9 +87,9 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'References, expertise or product fit rated 3 where current ARR and pipeline for that industry are both zero.',
       regionIds: ['neu'], industryIds: ['pharma'],
       figures: [
-        { label: 'References, Pharma and Biotech', cell: cell(3, 'IN', src('neu', 'marketCoverage', 'references', 21, 'IN')) },
-        { label: 'Current ARR, Pharma and Biotech', cell: cell(0, 'PRE', src('neu', 'marketCoverage', 'currentArr', 21, 'PRE')) },
-        { label: 'Pipeline, Pharma and Biotech', cell: cell(0, 'PRE', src('neu', 'marketCoverage', 'pipelineTotal', 21, 'PRE')) }
+        { label: 'References, Pharma and Biotech', cell: cell(3, 'IN', src('neu', 'marketCoverage', 'references', 21, 'IN')), unit: 'rating', field: 'references', measureId: 'ind.references' },
+        { label: 'Current ARR, Pharma and Biotech', cell: cell(0, 'PRE', src('neu', 'marketCoverage', 'currentArr', 21, 'PRE')), unit: 'money', field: null, measureId: 'ind.currentArr' },
+        { label: 'Pipeline, Pharma and Biotech', cell: cell(0, 'PRE', src('neu', 'marketCoverage', 'pipelineTotal', 21, 'PRE')), unit: 'money', field: null, measureId: 'ind.pipeline' }
       ],
       significance: 0.37, sources: [src('neu', 'marketCoverage', 'references', 21, 'IN'), src('neu', 'marketCoverage', 'currentArr', 21, 'PRE')],
       reportId: 'ind-quad', highlight: target('ind-quad', 'points', ['neu'], ['pharma']), attach: ['ind-quad', 'ind-tiers']
@@ -97,8 +100,8 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'A planning assumption at least twice, or at most half, the weighted average of the other regions, or outside every other region’s range.',
       regionIds: ['ceu'],
       figures: [
-        { label: 'Hit rate, Central Europe', cell: cell(0.35, 'IN', src('ceu', 'newBusiness', 'hitRate', null, 'IN')) },
-        { label: 'Hit rate, average of the other 6 regions', cell: combined(0.150158, 'wmean', others('ceu'), 'nb.targetAccountsRated') }
+        { label: 'Hit rate, Central Europe', cell: cell(0.35, 'IN', src('ceu', 'newBusiness', 'hitRate', null, 'IN')), unit: 'pct', field: null, measureId: 'nb.hitRate' },
+        { label: 'Hit rate, average of the other 6 regions', cell: combined(0.150158, 'wmean', others('ceu'), 'nb.targetAccountsRated'), unit: 'pct', field: null, measureId: 'nb.hitRate' }
       ],
       significance: 0.66, sources: [src('ceu', 'newBusiness', 'hitRate', null, 'IN')],
       reportId: null, highlight: target(null, null, ['ceu'])
@@ -109,8 +112,8 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'Year-1 new business ARR potential at least 3 times the pipeline created in the last 12 months.',
       regionIds: ['latam'],
       figures: [
-        { label: 'New business ARR potential, year 1', cell: cell(1453.6, 'DER', src('latam', 'newBusiness', 'arrPotential', null, 'DER', 1)) },
-        { label: 'Pipeline created in the last 12 months', cell: cell(363.4, 'PRE', src('latam', 'marketCoverage', 'pipelineCreated12m', null, 'PRE')) }
+        { label: 'New business ARR potential, year 1', cell: cell(1453.6, 'DER', src('latam', 'newBusiness', 'arrPotential', null, 'DER', 1)), unit: 'money', field: null, measureId: 'nb.arr' },
+        { label: 'Pipeline created in the last 12 months', cell: cell(363.4, 'PRE', src('latam', 'marketCoverage', 'pipelineCreated12m', null, 'PRE')), unit: 'money', field: null, measureId: 'base.pipeline12m' }
       ],
       significance: 0.57, sources: [src('latam', 'newBusiness', 'arrPotential', null, 'DER', 1), src('latam', 'marketCoverage', 'pipelineCreated12m', null, 'PRE')],
       reportId: 'ov-ambition', highlight: target('ov-ambition', 'bar', ['latam'])
@@ -121,10 +124,10 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'At least 50% of a region’s planned customer growth (incremental ARR over three years) in its top 3 accounts.',
       regionIds: ['na'], accountIds: ['na-a01', 'na-a05', 'na-a06'],
       figures: [
-        { label: 'Masvadal Stores', cell: cell(1511.7, 'DER', src('na', 'customerGrowth', 'incrementalArr', 10, 'DER')) },
-        { label: 'Kondicombe Data Centers (high risk)', cell: cell(1210.5, 'DER', src('na', 'customerGrowth', 'incrementalArr', 14, 'DER')) },
-        { label: 'Frosvacombe Labs', cell: cell(909.4, 'DER', src('na', 'customerGrowth', 'incrementalArr', 15, 'DER')) },
-        { label: 'Planned customer growth, all accounts', cell: cell(6044.2, 'DER', src('na', 'customerGrowth', 'incrementalArr', null, 'DER')) }
+        { label: 'Masvadal Stores', cell: cell(1511.7, 'DER', src('na', 'customerGrowth', 'incrementalArr', 10, 'DER')), unit: 'money', field: null, measureId: null },
+        { label: 'Kondicombe Data Centers (high risk)', cell: cell(1210.5, 'DER', src('na', 'customerGrowth', 'incrementalArr', 14, 'DER')), unit: 'money', field: null, measureId: null },
+        { label: 'Frosvacombe Labs', cell: cell(909.4, 'DER', src('na', 'customerGrowth', 'incrementalArr', 15, 'DER')), unit: 'money', field: null, measureId: null },
+        { label: 'Planned customer growth, all accounts', cell: cell(6044.2, 'DER', src('na', 'customerGrowth', 'incrementalArr', null, 'DER')), unit: 'money', field: null, measureId: 'cg.arr' }
       ],
       significance: 0.39, sources: [src('na', 'customerGrowth', 'incrementalArr', null, 'DER'), src('na', 'customerGrowth', 'riskLevel', 14, 'PRE')],
       reportId: null, highlight: target(null, null, ['na'], [], { accountIds: ['na-a01', 'na-a05', 'na-a06'] })
@@ -135,12 +138,12 @@ window.TEST_FIXTURES.insights = (function () {
       description: 'An industry in the attractive, not-yet-able-to-win quadrant for at least 3 regions.',
       regionIds: ['na', 'seu', 'mea', 'apac'], industryIds: ['fsm'],
       figures: [
-        { label: 'Ability to win, North America', cell: cell(1.333333, 'APP', src('na', 'marketCoverage', 'ability', 26, 'APP')) },
-        { label: 'Ability to win, Southern Europe', cell: cell(1.666667, 'APP', src('seu', 'marketCoverage', 'ability', 26, 'APP')) },
-        { label: 'Ability to win, Middle East & Africa', cell: cell(1.333333, 'APP', src('mea', 'marketCoverage', 'ability', 26, 'APP')) },
-        { label: 'Ability to win, Asia Pacific', cell: cell(1.333333, 'APP', src('apac', 'marketCoverage', 'ability', 26, 'APP')) },
-        { label: 'What North America says is needed', cell: cell('Field service references', 'IN', src('na', 'newBusiness', 'successFactors', null, 'IN')) },
-        { label: 'What Middle East & Africa says is needed', cell: cell('Mobile workforce integration partner', 'IN', src('mea', 'newBusiness', 'successFactors', null, 'IN')) }
+        { label: 'Ability to win, North America', cell: cell(1.333333, 'APP', src('na', 'marketCoverage', 'ability', 26, 'APP')), unit: 'score', field: null, measureId: 'ind.ability' },
+        { label: 'Ability to win, Southern Europe', cell: cell(1.666667, 'APP', src('seu', 'marketCoverage', 'ability', 26, 'APP')), unit: 'score', field: null, measureId: 'ind.ability' },
+        { label: 'Ability to win, Middle East & Africa', cell: cell(1.333333, 'APP', src('mea', 'marketCoverage', 'ability', 26, 'APP')), unit: 'score', field: null, measureId: 'ind.ability' },
+        { label: 'Ability to win, Asia Pacific', cell: cell(1.333333, 'APP', src('apac', 'marketCoverage', 'ability', 26, 'APP')), unit: 'score', field: null, measureId: 'ind.ability' },
+        { label: 'What North America says is needed', cell: cell('Field service references', 'IN', src('na', 'newBusiness', 'successFactors', null, 'IN')), unit: 'text', field: null, measureId: null },
+        { label: 'What Middle East & Africa says is needed', cell: cell('Mobile workforce integration partner', 'IN', src('mea', 'newBusiness', 'successFactors', null, 'IN')), unit: 'text', field: null, measureId: null }
       ],
       significance: 0.53, sources: ['na', 'seu', 'mea', 'apac'].map(function (r) { return src(r, 'marketCoverage', 'ability', 26, 'APP'); }),
       reportId: 'ind-quad', highlight: target('ind-quad', 'quadrant', ['na', 'seu', 'mea', 'apac'], ['fsm'], { quadrant: 'attractiveNotYet' })
