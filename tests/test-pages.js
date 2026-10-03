@@ -1,7 +1,8 @@
 /*
  * File: tests/test-pages.js
- * Purpose: Tests for the explanation panel (US-1.6.5), the Guide page (US-1.6.1) and the Insights page (US-1.7.3).
- * Provides: test cases for PAGES stories (#41, #37, #46; later #54, #11)
+ * Purpose: Tests for the explanation panel (US-1.6.5), the Guide page (US-1.6.1), the Insights page (US-1.7.3) and
+ *          hiding insights on it (US-1.7.11).
+ * Provides: test cases for PAGES stories (#41, #37, #46, #54; later #11)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js, tests/fixtures/insights-fixture.js
  * Used by: tests.html
  */
@@ -479,6 +480,67 @@
         a.ok(s.indexOf('[insightsPage.') < 0, 'no missing wording key');
         a.ok(s.indexOf('[object') < 0, 'no object shown as text');
         a.ok(s.indexOf(TAP.content.text('insightsPage.familiesLabel')) >= 0, 'the family row is labelled');
+      });
+    });
+
+    /* ---------- US-1.7.11: hide an insight for this session, Insights page side (#54) ---------- */
+
+    T.test('TPV-TC-267', 'Every insight on the page has a "Hide for this session" control', function (a) {
+      withInsights(function (root) {
+        var all = qsa('.tap-ins__item', root), btns = qsa('.tap-ins__item .tap-ins__hide', root);
+        a.equal(btns.length, all.length, 'one per insight');
+        a.ok(btns.every(function (b) { return txt(b) === TAP.content.text('insightsPage.hide'); }), 'labelled from the content file');
+      });
+    });
+
+    T.test('TPV-TC-268', 'A hidden insight leaves the page at once and the next-ranked one moves up', function (a) {
+      withInsights(function (root) {
+        item(root, 'consensus:education').querySelector('.tap-ins__hide').click();
+        a.deepEqual(TAP.insights.hidden(), ['consensus:education'], 'the engine holds it as hidden');
+        a.ok(!item(root, 'consensus:education'), 'gone from the page');
+        a.deepEqual(items(root.querySelector('.tap-ins__group[data-family="priorities"]')), ['groupPriority:datacenters:ability'],
+          'the next-ranked priorities insight now leads');
+        a.equal(chipCount(root, 'data-family', 'priorities'), 1, 'family count drops');
+        a.equal(chipCount(root, 'data-region', 'mea'), 1, 'region count drops (Middle East & Africa: 2 to 1)');
+        a.equal(txt(root.querySelector('.tap-ins__shown')), TAP.content.text('insightsPage.shown', { n: 7, total: 7 }), 'shown of total');
+      });
+    });
+
+    T.test('TPV-TC-268', 'An insight hidden elsewhere (a panel or the Overview) disappears from the page too', function (a) {
+      withInsights(function (root) {
+        TAP.insights.hide('pipelineCover:latam');
+        a.ok(!item(root, 'pipelineCover:latam'), 'redrawn without it');
+        a.ok(!root.querySelector('.tap-ins__group[data-family="realism"]'), 'an emptied family is left out');
+      });
+    });
+
+    T.test('TPV-TC-270', 'The page shows "N hidden" with a one-click "Show hidden", and each can be shown again', function (a) {
+      withInsights(function (root) {
+        a.ok(!root.querySelector('.tap-ins__hidden'), 'nothing hidden: no hidden count');
+        item(root, 'outlier:nb.hitRate:ceu').querySelector('.tap-ins__hide').click();
+        item(root, 'concentration:na').querySelector('.tap-ins__hide').click();
+        a.equal(txt(root.querySelector('.tap-ins__hidden')), TAP.content.text('insightsPage.hiddenCount', { n: 2 }), '"2 hidden"');
+        var show = root.querySelector('.tap-ins__showhidden');
+        a.equal(txt(show), TAP.content.text('insightsPage.showHidden'), 'a "Show hidden" button');
+        show.click();
+        var back = item(root, 'concentration:na');
+        a.ok(back, 'hidden insights are listed again');
+        a.equal(txt(back.querySelector('.tap-ins__hiddenbadge')), TAP.content.text('insightsPage.hiddenBadge'), 'marked as hidden for this session');
+        a.equal(txt(back.querySelector('.tap-ins__hide')), TAP.content.text('insightsPage.unhide'), 'its control now shows it again');
+        a.equal(txt(root.querySelector('.tap-ins__showhidden')), TAP.content.text('insightsPage.hideHidden'), 'the toggle can hide them again');
+        back.querySelector('.tap-ins__hide').click();
+        a.deepEqual(TAP.insights.hidden(), ['outlier:nb.hitRate:ceu'], 'shown again in the engine too');
+        a.ok(!item(root, 'concentration:na').querySelector('.tap-ins__hiddenbadge'), 'no longer marked hidden');
+        a.equal(txt(root.querySelector('.tap-ins__hidden')), TAP.content.text('insightsPage.hiddenCountOne'), '"1 hidden"');
+      });
+    });
+
+    T.test('X-pages-insights-hide-focus', 'After hiding, keyboard focus lands on a control that is still there', function (a) {
+      withInsights(function (root) {
+        var btn = item(root, 'consensus:education').querySelector('.tap-ins__hide');
+        btn.focus();
+        btn.click();
+        a.ok(root.contains(document.activeElement) && document.activeElement !== document.body, 'focus stays on the page');
       });
     });
 
