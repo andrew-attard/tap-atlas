@@ -97,3 +97,24 @@
 /* The area views mount into */
 .tap-view { display: block; padding: var(--tap-sp-8) var(--tap-edge) var(--tap-sp-12); max-width: var(--tap-max-w); }
 .tap-view:focus { outline: none; }
+
+/* Start-up screens: icon, heading, the cause and what to do; for data errors, the list and a copy button */
+.tap-screen {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--tap-sp-4);
+  max-width: 1080px; padding: var(--tap-sp-12) var(--tap-edge);
+  font-size: var(--tap-fs-body);
+}
+.tap-screen h1 { margin: 0; font-size: var(--tap-fs-h1); line-height: 1.15; }
+.tap-screen__lead { margin: 0; max-width: 72ch; font-size: var(--tap-fs-lead); }
+.tap-screen__count { margin: 0; font-weight: 800; }
+.tap-screen p { margin: 0; }
+.tap-screen__errors { font-size: var(--tap-fs-body); border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-screen__errors th { font-size: var(--tap-fs-label); }
+.tap-screen__path { word-break: break-word; }
+.tap-screen__copy { font-size: var(--tap-fs-body); background: var(--tap-accent-deep); border-color: var(--tap-accent-deep); }
+.tap-screen__status { font-weight: 600; }
+.tap-screen__status:empty { display: none; }
+.tap-screen__copytext {
+  width: 100%; padding: var(--tap-sp-2); font: inherit; font-size: var(--tap-fs-label);
+  background: var(--tap-paper); color: var(--tap-ink); border: var(--tap-rule-w) solid var(--tap-ink);
+}
