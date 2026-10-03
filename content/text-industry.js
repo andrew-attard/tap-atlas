@@ -67,5 +67,40 @@ Object.assign(window.TAP_CONTENT.text, {
     allIndustries: 'All industries',
     takeaway: '{who}: {n} of {total} industries sit in “{area}”.',
     takeawayEvery: '{n} of {total} points (one per region and industry) sit in “{area}”.'
+  },
+
+  // US-1.2.9: the details side panel
+  details: {
+    regionIndustry: '{industry} · {region}',
+    industryAcross: '{industry} · {n} regions',
+    account: '{name} · {region}',
+    priority: 'Priority',
+    priorityCentral: 'Priority (group priority, set centrally as Tier 1)',
+    attractiveness: 'Attractiveness',
+    ability: 'Ability to win',
+    system: 'System figures',
+    commentary: 'Leader commentary',
+    combinedGroup: 'Combined across {n} regions',
+    nbRow: 'New business: {market} · {subVertical}',
+    growthYear: 'Growth, year {n}',
+    arrPotential: 'ARR potential, 3 years',
+    servicesPotential: 'Services potential, 3 years',
+    successFactors: 'Success factors',
+    sections: { marketCoverage: 'Market coverage', newBusiness: 'New business', customerGrowth: 'Customer growth', ambition: 'Ambition' },
+    year: 'Year {n}',
+    perYear: '{label}, {year}',
+    accountGroup: 'Account',
+    planGroup: 'Planned growth',
+    industry: 'Industry',
+    country: 'Country',
+    productLine: 'Product line',
+    riskLevel: 'Risk level',
+    segment: 'Segment',
+    growthPct: 'Growth %',
+    multiplier: '3-year multiplier',
+    servicesRatio: 'Services ratio',
+    incrementalArr: 'Incremental ARR',
+    servicesOi: 'Services order intake',
+    cumulativeOi: 'Cumulative order intake'
   }
 });
