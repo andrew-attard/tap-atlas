@@ -9,4 +9,42 @@
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
-Object.assign(window.TAP_CONTENT.text, {});
+Object.assign(window.TAP_CONTENT.text, {
+  panel: {
+    tools: 'Chart tools',
+    takeaway: 'Main takeaway',
+    close: 'Close',
+    dataDate: 'Data: {date}',
+
+    // Insights for one chart (US-1.2.2, US-1.7.11)
+    insights: 'Insights',
+    insightsCount: '{n} insights for this chart',
+    insightsTitle: 'Insights for this chart',
+    showAll: 'Show all on the Insights page',
+    rule: 'Rule: {text}',
+    highlightOn: 'Highlight on chart',
+    highlightOff: 'Clear highlight',
+    hide: 'Hide for this session',
+    highlighted: 'Highlighted insight',
+    highlightedTarget: 'Highlighted on the chart',
+    clear: 'Clear',
+
+    // The explanation (US-1.6.5)
+    about: 'About',
+    aboutLabel: 'About this chart',
+    shows: 'What this shows',
+    read: 'How to read it',
+    lookFor: 'What to look for',
+
+    industry: 'Industry',
+
+    // States inside the panel
+    errorTitle: 'This report could not be drawn',
+    errorNote: 'The rest of the app is unaffected.',
+    noBuilder: 'No chart builder for the "{shape}" shape.',
+    emptyTitle: 'No region has data for this report',
+    emptyBody: 'None of the regions in this comparison provided the figures this chart needs.',
+    emptyMissing: 'No data from {names}.',
+    missing: 'Not included (no data): {names}.'
+  }
+});
