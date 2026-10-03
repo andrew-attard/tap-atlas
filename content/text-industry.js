@@ -13,8 +13,7 @@ Object.assign(window.TAP_CONTENT.text, {
   // The view itself
   industryView: {
     kicker: 'Industry priorities',
-    title: 'Where do regions agree and differ on which industries matter, and why?',
-    chartType: 'Chart type'
+    title: 'Where do regions agree and differ on which industries matter, and why?'
   },
 
   // US-1.5.4: the tier grid
