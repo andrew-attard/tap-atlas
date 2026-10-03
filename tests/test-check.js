@@ -101,6 +101,40 @@
       a.ok(res.warnings.every(function (w) { return w.region === 'Region C'; }), 'only Region C\u2019s planted gaps');
     });
 
+    T.test('X-check-years-broken', 'Broken or missing plan years are reported once, not once per recap row', function (a) {
+      var p = T_FIXTURE('mini');
+      p.meta.years = 'soon';
+      var res = TAP.check.run(p);
+      a.deepEqual(res.errors.map(function (e) { return e.path; }), ['meta.years'], errorList(res));
+      var p2 = T_FIXTURE('mini');
+      delete p2.meta;
+      var res2 = TAP.check.run(p2);
+      a.deepEqual(res2.errors.map(function (e) { return e.path; }), ['meta'], errorList(res2));
+    });
+
+    T.test('X-check-empty-split', 'An empty channel split names each missing channel', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].newBusiness[0].channelSplit = {};
+      var paths = TAP.check.run(p).errors.map(function (e) { return e.path; });
+      a.deepEqual(paths, ['direct', 'partner', 'allianceA', 'allianceB'].map(function (c) { return 'regions[0].newBusiness[0].channelSplit.' + c; }));
+    });
+
+    T.test('X-check-proto-ids', 'Ids that match built-in object names are not mistaken for duplicates', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].id = 'constructor';
+      p.regions[1].id = 'toString';
+      ['__proto__', 'constructor', 'toString', 'hasOwnProperty'].forEach(function (id, i) { p.regions[0].customerGrowth.accounts[i].id = id; });
+      var res = TAP.check.run(p);
+      a.deepEqual(res.errors, [], errorList(res));
+    });
+
+    T.test('X-check-mc-not-list', 'A Market Coverage section that is not a list gives one error, not one per New Business row', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].marketCoverage = 'see sheet 1';
+      var paths = TAP.check.run(p).errors.map(function (e) { return e.path; });
+      a.deepEqual(paths, ['regions[0].marketCoverage']);
+    });
+
     T.test('X-check-duplicates', 'Duplicate region ids and duplicate industries in a region are errors', function (a) {
       var p = T_FIXTURE('mini');
       p.regions[1].id = 'alpha';
