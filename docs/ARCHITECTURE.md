@@ -375,7 +375,7 @@ The engine drops any finding built from a not-provided value. It skips compariso
 
 - `TAP_CONTENT.glossary[id] = {term, aliases: [], short, why, related: [ids]}`. `TAP.content.terms()` adds `id` and `layer` (`'general'` or `'organization'`).
 - `TAP_CONTENT.guide` holds the Guide page sections.
-- `TAP_CONTENT.text` holds every on-screen phrase: tour steps, headline templates, family lines, combined-figure explanations, system messages, banners, empty and missing states.
+- `TAP_CONTENT.text` holds every on-screen phrase, split by owner: `content/ui-text.js` (CONTENT: app, tour, guide and glossary screens) and one `content/text-<area>.js` per stream (`shell`, `engine`, `panel`, `overview`, `industry`, `pages`), each adding its own top-level keys. It covers: tour steps, headline templates, family lines, combined-figure explanations, system messages, banners, empty and missing states.
 - `TAP_ORG` uses the same shape and overrides or adds keys. It also carries `settings` such as `internalLabel {show, text}`.
 - `TAP.content.text(key, vars)` fills `{name}` placeholders. A missing key returns the key in brackets, so gaps are visible in testing.
 - `TAP.content.term(idOrWord)` returns the merged glossary entry.
@@ -410,7 +410,7 @@ js/ui/app.js
 ## 15. CSS
 
 - `css/base.css` (lead): reset, typography and the Modernist base styles. It reads only the CSS variables that `js/theme.js` writes onto `:root` (`--tap-*`).
-- `css/shell.css`, `layers.css`, `panel.css`, `views.css`: one file per area, each with marked sections per stream.
+- One stylesheet per stream: `css/shell.css` and `layers.css` (SHELL), `glossary.css` (CONTENT), `panel.css` (PANEL), `overview.css` (OVERVIEW), `industry.css` (INDUSTRY), `pages.css` (PAGES).
 - No colour literals and no `px` font sizes outside `js/theme.js` and `css/base.css`.
 
 ## 16. Ownership

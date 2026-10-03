@@ -18,7 +18,8 @@ const APP = [
   'js/theme.js',
   'js/core/namespace.js', 'js/core/dom.js', 'js/core/icons.js', 'js/core/storage.js', 'js/core/store.js', 'js/core/format.js',
   'config/settings.js',
-  'content/ui-text.js', 'content/glossary.js', 'content/guide.js',
+  'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-panel.js',
+  'content/text-overview.js', 'content/text-industry.js', 'content/text-pages.js', 'content/glossary.js', 'content/guide.js',
   'ORG',
   'js/core/content.js',
   'DATA',
@@ -38,7 +39,8 @@ const APP = [
   'js/ui/app.js'
 ];
 
-const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/panel.css', 'css/views.css'];
+const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.css', 'css/panel.css',
+  'css/overview.css', 'css/industry.css', 'css/pages.css'];
 
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [

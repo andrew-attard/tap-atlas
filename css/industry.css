@@ -1,0 +1,8 @@
+/*
+ * File: css/industry.css
+ * Purpose: Industry priorities layout: tier grid, quadrant, ratings, commentary, details.
+ * Provides: styles for this area only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: INDUSTRY stream. Colours and font sizes come from theme variables only.
+ */

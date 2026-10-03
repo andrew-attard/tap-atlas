@@ -49,6 +49,10 @@ You work in your own git worktree on one branch per story, named `feat/<issue>-<
 
 Your test file (`tests/test-<area>.js`) and any fixture you own are already listed in `tests.html`. The header says which stream owns each one. Add your tests there; you never need to edit `tests.html`.
 
+## Your wording and styles
+
+On-screen phrases never go in code. Each stream has its own wording file, `content/text-<area>.js`, adding its own top-level keys to `TAP_CONTENT.text`. Read them with `TAP.content.text('key.path', vars)`. Each stream also has its own stylesheet (see ARCHITECTURE section 15). Both are already listed in the pages.
+
 ## Stubs
 
 Every module already exists, either as a stub or as a real module. To build one:

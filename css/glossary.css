@@ -1,0 +1,8 @@
+/*
+ * File: css/glossary.css
+ * Purpose: Marked glossary terms, the term popover and the glossary list.
+ * Provides: styles for this area only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: CONTENT stream. Colours and font sizes come from theme variables only.
+ */
