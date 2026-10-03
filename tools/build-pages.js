@@ -35,6 +35,7 @@ const APP = [
   'js/panel/panel-insights.js', 'js/panel/panel.js',
   'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/explain.js', 'js/ui/tour.js',
+  'js/ui/showme.js', 'js/ui/keys.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/insights.js', 'js/views/guide.js',
   'js/ui/app.js'
 ];

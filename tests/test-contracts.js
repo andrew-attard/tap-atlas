@@ -42,6 +42,8 @@
     explain: ['open', 'sections'],
     tour: ['offer', 'start', 'stop', 'steps'],
     overviewCards: ['render'],
+    showme: ['go'],
+    keys: ['bind', 'unbind'],
     app: ['start', 'stop', 'mountView', 'current']
   };
 
