@@ -68,6 +68,7 @@
 .tap-ind__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 74rem; }
 .tap-ind__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 .tap-ind__title { margin: 0; font-size: var(--tap-fs-h1); }
+.tap-ind__lead { margin: 0; font-size: var(--tap-fs-lead); }
 .tap-ind__slot { min-width: 0; }
 /* At most two panels side by side (D24); one column on narrow screens */
 .tap-ind__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-6); align-items: start; }
@@ -75,3 +76,23 @@
 /* Legend keys the tier grid adds: a note has no colour key; not provided is an outlined key */
 .tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--note .tap-panel__key { display: none; }
 .tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--notProvided .tap-panel__key { background: transparent; border: var(--tap-rule-w) dashed var(--tap-np-border); }
+
+/* ---------- leaders' commentary (US-1.5.7). Long comments are never cut: the list scrolls ---------- */
+.tap-ind-comments { display: flex; flex-direction: column; min-width: 0; background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-ind-comments__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); padding: var(--tap-sp-4) var(--tap-sp-6); }
+.tap-ind-comments__title { margin: 0; font-size: var(--tap-fs-h2); }
+.tap-ind-comments__intro { margin: 0; color: var(--tap-muted); }
+.tap-ind-comments__list { display: flex; flex-direction: column; max-height: 36rem; overflow-y: auto; border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-ind-comment { display: grid; grid-template-columns: var(--tap-sp-2) minmax(0, 1fr); gap: var(--tap-sp-4); padding: var(--tap-sp-4) var(--tap-sp-6); border-bottom: 1px solid var(--tap-grid); }
+.tap-ind-comment__body { display: flex; flex-direction: column; gap: var(--tap-sp-2); min-width: 0; }
+.tap-ind-comment__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1) var(--tap-sp-3); }
+.tap-ind-comment__name { font-size: var(--tap-fs-lead); font-weight: 800; }
+.tap-ind-comment__tier { padding: 2px var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 700; border: var(--tap-rule-w) solid transparent; }
+.tap-ind-comment__tier--t1 { background: var(--tap-tier1); color: var(--tap-tier1-fg); }
+.tap-ind-comment__tier--t2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); }
+.tap-ind-comment__tier--t3 { background: var(--tap-tier3); color: var(--tap-tier3-fg); }
+.tap-ind-comment__tier--np { color: var(--tap-np-fg); border: var(--tap-rule-w) dashed var(--tap-np-border); font-style: italic; }
+.tap-ind-comment__focus { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-ind-comment__text { margin: 0; max-width: 80ch; font-size: var(--tap-fs-body); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tap-ind-comment__src { font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-ind-comments__foot { padding: var(--tap-sp-2) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-label); color: var(--tap-muted); }

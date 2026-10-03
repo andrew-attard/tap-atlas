@@ -13,7 +13,18 @@ Object.assign(window.TAP_CONTENT.text, {
   // The view itself
   industryView: {
     kicker: 'Industry priorities',
-    title: 'Where do regions agree and differ on which industries matter, and why?'
+    title: 'Where do regions agree and differ on which industries matter, and why?',
+    lead: 'Select an industry in the grid, the chart or the ratings: the ratings and the leaders’ comments below follow it.'
+  },
+
+  // US-1.5.7: leaders' commentary. Only comments that exist are listed; blanks are never called out.
+  commentary: {
+    label: 'Leaders’ commentary',
+    title: 'What leaders say about {industry}',
+    intro: 'Each region’s tier and comment for the selected industry, focus region first. A region appears where its leader wrote a comment.',
+    listLabel: 'Comments, one per region',
+    focus: 'Focus region',
+    foot: '(tier and comment)'
   },
 
   // US-1.5.4: the tier grid
