@@ -142,6 +142,7 @@ Object.assign(window.TAP_CONTENT.text, {
     note: '{label}, {measure}: {text}',
     notPlaced: '{name} is not shown: {measure} not provided',
     notOnRadar: '{name} is not shown on the radar: {measures} not provided',
+    zeroTile: '{name} is not shown: {measure} is zero',
     sizeMissing: '{name} (size not provided)',
     sizeLegend: 'Bubble size: {measure}',
     buildError: 'This report could not be drawn: {message}'

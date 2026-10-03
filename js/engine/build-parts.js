@@ -24,7 +24,7 @@
       notes: k.notes({ rows: rows, columns: ds.columns }, [m]) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;
-    var draw = { k: k, ds: ds, ctx: ctx, m: m, parts: parts, rows: rows };
+    var draw = { k: k, ds: ds, ctx: ctx, m: m, parts: parts, rows: rows, res: res };
     res.option = type === 'treemap' ? treemap(draw) : bars(draw, type);
     return res;
   }
@@ -107,7 +107,7 @@
   function totalSeries(draw, totals, mc) {
     var k = draw.k, th = k.th();
     return { type: 'bar', tapRole: 'total', stack: 'parts', silent: true, data: draw.rows.map(function () { return 0; }),
-      itemStyle: { color: 'transparent' }, tooltip: { show: false },
+      itemStyle: { color: th.echarts.backgroundColor }, tooltip: { show: false },
       label: { show: true, position: 'right', fontSize: th.type.chart, color: th.ink, formatter: function (p) {
         var c = totals[p.dataIndex];
         if (!c || c.state !== 'value') return '';
@@ -115,10 +115,20 @@
       } } };
   }
 
+  // Treemap tiles can't show a blank or a zero, so those regions are named in the notes instead of vanishing.
   function treemap(draw) {
-    var k = draw.k, th = k.th();
-    var data = draw.rows.filter(function (r) { return r.cells[draw.m].state === 'value'; }).map(function (r) {
-      return { name: r.label, entityId: r.entityId, itemStyle: { color: r.entity.color },
+    var k = draw.k, th = k.th(), hl = th.echarts.tap.highlight, mc = k.colOf(draw.ds, draw.m);
+    var data = draw.rows.filter(function (r) {
+      var c = r.cells[draw.m];
+      if (c.state === 'value' && c.v > 0) return true;
+      if (c.state !== 'notApplicable') {
+        draw.res.notes.push(k.t(c.state === 'value' ? 'chart.zeroTile' : 'chart.notPlaced', { name: r.label, measure: k.lower(mc.label) }));
+      }
+      return false;
+    }).map(function (r) {
+      var on = k.highlighted(r.entity, draw.ctx.highlight);
+      return { name: r.label, entityId: r.entityId, mark: 'bar',
+        itemStyle: on ? { color: r.entity.color, borderColor: hl.color, borderWidth: hl.width } : { color: r.entity.color },
         children: draw.parts.map(function (key, pi) {
           var c = r.cells[key];
           if (c.state !== 'value' || !(c.v > 0)) return null;
