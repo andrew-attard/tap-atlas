@@ -3,9 +3,136 @@
  * Purpose: Text for the Guide page: how to use the app and territory account planning explained (US-1.6.1, US-1.6.2).
  * Provides: window.TAP_CONTENT.guide
  * Depends on: nothing
- * Used by: js/core/content.js, js/views/guide.js
+ * Used by: js/core/content.js (TAP.content.guide), js/views/guide.js
  *
- * Filled in by the CONTENT stream (#38).
+ * THE SHAPE (js/views/guide.js renders it; read it through TAP.content.guide(), which lays the organization
+ * layer over it)
+ *
+ *   contents   The short contents list at the top: [{ id, title }]. The ids are the page's three sections:
+ *              'howTo', 'planning' and 'glossary' (the glossary list itself comes from TAP.glossary.render).
+ *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'] }] }
+ *              "How to use this app". The "Take the tour" and "Reset all charts to default" buttons belong here;
+ *              their labels live in content/text-pages.js.
+ *   planning   { title, sections: [{ id, title, paragraphs: ['...'], link: { view: 'industry' } | null }] }
+ *              "Territory account planning explained". link names the view that shows the section (a view id
+ *              from config/views.js), or null when no single view does.
+ *
+ * Paragraphs are plain text, one to three short sentences each. Glossary terms in them are marked by
+ * TAP.content.mark(). The organization layer can replace a section's paragraphs or add sections by id.
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
-window.TAP_CONTENT.guide = window.TAP_CONTENT.guide || {};
+window.TAP_CONTENT.guide = {
+  contents: [
+    { id: 'howTo', title: 'How to use this app' },
+    { id: 'planning', title: 'Territory account planning explained' },
+    { id: 'glossary', title: 'Glossary' }
+  ],
+
+  howTo: {
+    title: 'How to use this app',
+    intro: 'This app puts every region’s territory account plan side by side. It reads the finished workbooks and never changes them.',
+    sections: [
+      { id: 'menu', title: 'The menu', paragraphs: [
+        'The menu at the top lists the views: Overview, Industry priorities, Insights and this Guide. The view you are on is highlighted.',
+        'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.'
+      ] },
+      { id: 'compare', title: 'The comparison bar', paragraphs: [
+        'The comparison bar decides which regions every chart shows. You can show all regions, one focus region against the rest, two regions side by side, a chosen set, or the organization total.',
+        'With one focus region, the other regions can be shown one by one or as one combined figure: their average or their total. Combined figures are drawn in dark grey and say how they were made.',
+        'A single chart can also compare differently for a side question. It shows a "Custom comparison" badge, and goes back to the shared setting when the bar changes.'
+      ] },
+      { id: 'panels', title: 'Report panels', paragraphs: [
+        'Every chart sits in a panel that works the same way. The title is the question the chart answers, and the line below it gives the main takeaway.',
+        'The explanation icon says what the chart shows, how to read it and what to look for. Clicking a bar, point or cell opens a side panel with everything known about that item.',
+        'A panel can be expanded to fill the screen for discussion, and saved or copied as an image for slides. Esc returns to the view.'
+      ] },
+      { id: 'chartTypes', title: 'Chart types', paragraphs: [
+        'The chart type menu lists only the types that suit the data, such as bars, dots, bubbles or a heatmap. The default type is marked and one click goes back to it.',
+        'Your choice is remembered for that chart in this browser. The "Reset all charts to default" button on this page clears every choice.',
+        'Some charts can also be broken down by a second dimension, such as plan year. Only one breakdown is shown at a time.'
+      ] },
+      { id: 'table', title: 'Table view', paragraphs: [
+        'Every chart can be shown as a table with the exact figures. Charts round to one decimal, for example 1.2M; tables show the full value.',
+        'Columns can be sorted, and the focus region’s row is highlighted. The copy button copies the table so it pastes cleanly into a spreadsheet, an email or a slide.'
+      ] },
+      { id: 'sources', title: 'Where figures come from', paragraphs: [
+        'Every figure can be traced to its workbook, sheet and cell. Tooltips and table rows show the address, and say what kind of data it is.',
+        'The data date in the comparison bar opens the data sources panel. It lists each region’s file, when it was saved and imported, and any notes from the import.',
+        'A blank in a workbook shows as "not provided", never as zero. Charts list the regions that had no data.'
+      ] },
+      { id: 'insights', title: 'Insights', paragraphs: [
+        'Insights are short sentences the app writes when a figure stands out, such as regions that disagree on an industry. They are observations to discuss, not conclusions.',
+        'Each insight shows the figures and the rule behind it. "Show me" highlights the data it refers to on its chart.',
+        'The Insights page lists them all, ranked and grouped by family. Any insight can be hidden for the rest of the session.'
+      ] }
+    ]
+  },
+
+  planning: {
+    title: 'Territory account planning explained',
+    sections: [
+      { id: 'what', title: 'What territory account planning is', link: null, paragraphs: [
+        'A territory account plan is each regional leader’s plan for the next three years. It says where to focus, which customers to grow, and how to sell and with whom.',
+        'Organizations do it to agree on these choices before they commit people and money. Writing the plan in one shared template makes the regions’ choices comparable.',
+        'This app does not judge the plans. It shows them side by side so leaders can learn from each other and discuss the differences.'
+      ] },
+      { id: 'operational', title: 'How it feeds operational planning', link: null, paragraphs: [
+        'The plans feed the yearly operational planning that follows. That is where headcount, marketing budgets, partner programmes and product requests are decided.',
+        'For example, an industry many regions put in Tier 2 may justify specialist hires or marketing material. Product gaps rated in many regions may shape product plans.'
+      ] },
+      { id: 'template', title: 'The template', link: null, paragraphs: [
+        'Every leader fills in the same workbook, one per region. It covers three plan years, with money in thousands of one currency.',
+        'It has four sections, each on its own sheet: market coverage, new business, customer growth, and partners with a recap. Each section asks the leader to decide something different.'
+      ] },
+      { id: 'marketCoverage', title: '1. Market coverage', link: { view: 'industry' }, paragraphs: [
+        'The leader rates a fixed list of industries and chooses which to prioritize. For each industry they give six ratings, a tier and a comment.',
+        'System figures sit next to the ratings: current ARR, pipeline and pipeline created in the last 12 months. They show where the region already does business.',
+        'This section is what the Industry priorities view shows: tiers by region, attractiveness against ability to win, and the six ratings for one industry.'
+      ] },
+      { id: 'newBusiness', title: '2. New business', link: { view: 'overview' }, paragraphs: [
+        'For Tier 1 and Tier 2 industries only, the leader breaks each industry into sub-verticals in a geographic market. Each row says how many accounts to target, the expected hit rate and the average deal size.',
+        'The workbook multiplies these into ARR potential and adds services using the services ratio. Each row also splits its value across channels and lists key success factors.',
+        'The Overview shows the new business part of each region’s ambition. More detailed new business views come in a later phase.'
+      ] },
+      { id: 'customerGrowth', title: '3. Customer growth', link: { view: 'overview' }, paragraphs: [
+        'Here the leader works through the region’s existing customers, which come from company systems. For each one they set the expected yearly growth and a services ratio.',
+        'The workbook calculates the extra ARR and services per year, and puts each customer in a segment using the segmentation rule.',
+        'The Overview shows the customer growth part of each region’s ambition, next to new business.'
+      ] },
+      { id: 'partners', title: '4. Partners and recap', link: { view: 'overview' }, paragraphs: [
+        'The recap adds up the plan by plan year and by channel, split into new business and customer growth, ARR and services. Most of it is calculated from the two sections before.',
+        'The leader also lists the partners who will carry the plan, with their channel, expertise and sales capacity.',
+        'The Overview shows the totals. Channel and partner views come in a later phase.'
+      ] },
+      { id: 'tiers', title: 'How to read tiers', link: { view: 'industry' }, paragraphs: [
+        'Every industry gets one of three tiers. Tier 1 is group priority: set centrally for all regions, not chosen by the leader.',
+        'Tier 2 is focus: an industry where the region has a winning recipe and will invest. Tier 3 is opportunistic: the region sells there when a chance comes up, with no active investment.',
+        'When regions agree on tiers, plans line up. When the same industry ranges from Tier 1 to Tier 3, it is worth asking why.'
+      ] },
+      { id: 'ratings', title: 'How to read the six ratings', link: { view: 'industry' }, paragraphs: [
+        'Each rating is a three-step scale with the template’s own wording, scored 1 to 3. A score of 3 is always the favourable end, so higher is better on every chart.',
+        'Three ratings describe the market: growth potential, criticality of the offer to the customer, and competitive intensity. For competitive intensity, 3 means the region is the recognized leader.',
+        'Three ratings describe the region: references, in-house expertise and product fit. A blank rating shows as "not provided" and is never counted as low.'
+      ] },
+      { id: 'scores', title: 'How to read the two scores', link: { view: 'industry' }, paragraphs: [
+        'The app builds two scores from the ratings. Attractiveness is the average of the three market ratings; ability to win is the average of the three region ratings.',
+        'Both run from 1 to 3. The attractiveness chart splits at 2.0 into four areas, and a score of exactly 2.0 counts as high.',
+        'An industry rated attractive with a low ability to win shows where help may be needed. If any rating behind a score is blank, the score is not provided.'
+      ] },
+      { id: 'segments', title: 'How to read segments', link: { view: 'overview' }, paragraphs: [
+        'Existing customers are put in four segments: strategic, growth, core and scaled. The workbook does this with a fixed rule, using limits each leader sets.',
+        'The rule runs in order. Current ARR above the strategic limit makes a customer strategic; below the scaled limit makes it scaled.',
+        'Of the rest, a customer with high planned order intake and ARR above the growth limit is growth. Everyone else is core. Because each region sets its own limits, compare segments with care.'
+      ] },
+      { id: 'channels', title: 'How to read channels', link: null, paragraphs: [
+        'A channel is the route to the customer. The template has four: direct, partner, and two alliances, Alliance A and Alliance B.',
+        'Each new business row splits its value across the channels, adding up to 100%. The split shows how much a plan depends on partners and alliances.'
+      ] },
+      { id: 'dataKinds', title: 'The three kinds of data', link: null, paragraphs: [
+        'Every value is one of three kinds. A leader input is the leader’s own judgement, such as a tier, a rating or a hit rate. A system figure comes from company systems, such as current ARR or pipeline.',
+        'A calculated figure is worked out from the other two, either by the workbook or by this app. Totals and averages across regions are always calculated by this app.',
+        'The app labels every figure with its kind, so you can tell what a leader believes from what the systems show. The source line on each panel names the kinds used.'
+      ] }
+    ]
+  }
+};
