@@ -1,7 +1,8 @@
 /*
  * File: tests/test-insights.js
- * Purpose: Tests for the insight engine: rule checks, scoring, ranking, guardrails (TPV-TC-128 to 137, 167 to 169).
- * Provides: test cases for INSIGHTS stories (#44, #45, #53, #54), X-insights-*
+ * Purpose: Tests for the insight engine: rule definitions, the insight shape, skipped rules and guardrails
+ *          (TPV-TC-128 to 133). Ranking and hiding are in tests/test-ranking.js.
+ * Provides: test cases for INSIGHTS story #44, X-insights-*; window.T_INSIGHT_SHAPE and window.T_INSIGHTS (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -242,6 +243,7 @@
     });
   });
 
-  // Shared with tests/test-rules.js.
+  // Shared with tests/test-rules.js and tests/test-ranking.js.
   window.T_INSIGHT_SHAPE = checkShape;
+  window.T_INSIGHTS = { sample: sample, withRule: withRule, perRegion: perRegion, ofRule: ofRule };
 })(window.TAP);
