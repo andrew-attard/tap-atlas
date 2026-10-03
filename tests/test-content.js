@@ -268,7 +268,7 @@
       withOrg({ glossary: { orgLine: { term: 'Widget Suite', aliases: [], short: 'An invented product line.', why: 'Example.', related: ['arr'] } } }, function () {
         var box = T.dom.mount();
         TAP.glossary.render(box, { termId: 'orgLine' });
-        var entry = box.querySelector('#tap-gloss-orgLine');
+        var entry = box.querySelector('[data-entry="orgLine"]');
         a.ok(entry && entry.classList.contains('is-target'), 'target entry picked out');
         a.ok(entry.textContent.indexOf(TAP.content.text('glossary.orgBadge')) >= 0, 'organization badge');
       });
