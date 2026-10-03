@@ -803,14 +803,12 @@
     });
 
     T.test('TPV-TC-001', 'The first view is on screen within 2 seconds of starting on the sample data', function (a) {
-      withFakes(function () {
-        withApp(function () {
-          var t0 = performance.now();
-          var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
-          var ms = performance.now() - t0;
-          a.ok(TAP.app.current() === 'overview' && root.contains(TAP.shell.viewEl()), 'Overview mounted');
-          a.ok(ms < 2000, 'start took ' + Math.round(ms) + ' ms');
-        });
+      withApp(function () {
+        var t0 = performance.now();
+        var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        var ms = performance.now() - t0;
+        a.ok(TAP.app.current() === 'overview' && root.contains(TAP.shell.viewEl()), 'Overview mounted');
+        a.ok(ms < 2000, 'start took ' + Math.round(ms) + ' ms');
       });
     });
   });
