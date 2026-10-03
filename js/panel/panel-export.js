@@ -29,7 +29,7 @@
         return { label: txt(n), color: key ? key.style.backgroundColor : th().ink };
       }),
       lines: TAP.dom.qsa('.tap-panel__parts, .tap-panel__size-label, .tap-panel__notes li', root).map(txt),
-      source: txt(TAP.dom.qs('.tap-panel__source', root)),
+      source: TAP.dom.qsa('.tap-panel__source > span', root).map(txt).join('   '),
       label: TAP.shell.label()
     };
   }
