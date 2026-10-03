@@ -69,6 +69,8 @@
 .tap-ind__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 .tap-ind__title { margin: 0; font-size: var(--tap-fs-h1); }
 .tap-ind__slot { min-width: 0; }
+/* At most two panels side by side (D24); one column on narrow screens */
+.tap-ind__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-6); align-items: start; }
 
 /* Legend keys the tier grid adds: a note has no colour key; not provided is an outlined key */
 .tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--note .tap-panel__key { display: none; }

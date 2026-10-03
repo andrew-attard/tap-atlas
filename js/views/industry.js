@@ -31,9 +31,11 @@
       el('h1', { class: 'tap-ind__title' }, t('industryView.title'))
     ]));
     var tiers = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' });
+    var quad = el('div', { class: 'tap-ind__slot' });
     page.appendChild(tiers);
+    page.appendChild(el('div', { class: 'tap-ind__pair' }, [quad]));
     root.appendChild(page);
-    var panels = [mountPanel(tiers, 'ind-tiers')];
+    var panels = [mountPanel(tiers, 'ind-tiers'), mountPanel(quad, 'ind-quad')];
     var offs = [TAP.bus.on('industry:select', function (p) {
       if (p && p.industryId && p.industryId !== TAP.store.get().industry) TAP.store.set({ industry: p.industryId });
     })];
