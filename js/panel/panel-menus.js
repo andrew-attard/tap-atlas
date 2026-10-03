@@ -159,11 +159,11 @@
   /* ---------- the toolbar ---------- */
 
   // The "More" menu: actions used less often.
-  function moreMenu(p) {
+  function moreMenu(p, chartOn) {
     var box = pop(t('more'), 'menu');
-    function item(action, icon, label, fn) {
+    function item(action, icon, label, fn, off) {
       box.appendChild(el('button', { type: 'button', class: 'tap-panel__item', role: 'menuitem', 'data-action': action,
-        onclick: fn }, [TAP.icons.svg(icon, { size: 18 }), el('span', { class: 'tap-panel__item-label' }, label)]));
+        disabled: off || null, onclick: fn }, [TAP.icons.svg(icon, { size: 18 }), el('span', { class: 'tap-panel__item-label' }, label)]));
     }
     item('compare', 'compare', t('compareDifferently'), function () {
       p.set({ pop: null, editing: true });
@@ -171,6 +171,11 @@
     var big = TAP.store.get().expanded === p.id;
     item(big ? 'collapse-menu' : 'expand', big ? 'shrink' : 'expand', t(big ? 'closeExpanded' : 'expand'), function () { p.st.pop = null; p.expand(!big); });
     item('fullscreen', 'fullscreen', t('fullscreen'), function () { p.st.pop = null; p.fullscreen(); p.render(); });
+    box.appendChild(el('div', { class: 'tap-panel__sep', role: 'separator' }));
+    // Images are of the chart itself, so they are offered on chart views only (US-1.2.10)
+    item('save-image', 'download', t('saveImage'), function () { p.image('save'); }, !chartOn);
+    item('copy-image', 'copy', t('copyImage'), function () { p.image('copy'); }, !chartOn);
+    if (!chartOn) box.appendChild(el('p', { class: 'tap-panel__pop-note' }, t('imageNone')));
     return box;
   }
 
@@ -203,7 +208,7 @@
     if (b.types) {
       box.appendChild(button('more', null, t('more'), { expanded: open === 'more', menu: true, onclick: function () { p.toggle('more'); } }));
     }
-    if (open === 'more' && b.types) box.appendChild(moreMenu(p));
+    if (open === 'more' && b.types) box.appendChild(moreMenu(p, !p.st.table && !!(b.res && b.res.option && !b.res.empty && !b.errors.length)));
     if (open === 'ins' && info.count) {
       var list = pop(t('insightsTitle'));
       TAP.panelInsights.render(list, info, TAP.panelInsights.handlers(p));

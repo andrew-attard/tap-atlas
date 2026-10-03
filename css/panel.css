@@ -212,3 +212,9 @@ html.tap-noscroll, html.tap-noscroll body { overflow: hidden; }
 .tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes { font-size: var(--tap-fs-lead); }
 .tap-panel--expanded .tap-panel__chart { height: max(340px, calc(100vh - 340px)); }
 .tap-panel--expanded .tap-panel__tablewrap { max-height: max(340px, calc(100vh - 380px)); }
+
+/* More menu separator, and the panel's status line for copy and save messages */
+.tap-panel__sep { margin: 6px 0; border-top: var(--tap-rule-w) solid var(--tap-grid); }
+.tap-panel__item:disabled { opacity: 0.5; cursor: not-allowed; }
+.tap-panel__status { margin: 0; padding: 0 var(--tap-sp-6) 10px; font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-panel__status:empty { display: none; }

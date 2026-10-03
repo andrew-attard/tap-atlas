@@ -51,6 +51,14 @@ Object.assign(window.TAP_CONTENT.text, {
     closeExpanded: 'Close · Esc',
     chartOf: 'Chart {i} of {n} · ← → to step',
 
+    // Chart images for slides (US-1.2.10)
+    saveImage: 'Save image',
+    copyImage: 'Copy image',
+    imageNone: 'Image export works on chart views.',
+    imageSaved: 'Image saved. Look in your downloads folder.',
+    imageCopied: 'Image copied. Paste it into a slide, chat or email.',
+    imageBlocked: 'This browser blocked image copy. Use Save image instead.',
+
     // Compare one chart differently (US-1.1.4). The mode names come from compare.modes in text-shell.js.
     compareDifferently: 'Compare differently…',
     compareTitle: 'Compare this chart differently',
