@@ -108,4 +108,48 @@
       a.ok(!get('consensus:retail'), '3 of 5 is not');
     });
   });
+
+  /* ---------- judgement (US-1.7.5) ---------- */
+  T.suite('rules-judgement', function () {
+    T.test('TPV-TC-149', 'A planted favourable rating with no ARR or pipeline gives a strong-rating insight', function (a) {
+      sample();
+      var x = get('strongRating:neu:pharma');
+      check(a, planted('P04'));
+      a.equal(figure(x, 'ind.references').cell.v, X.p04.references);
+      a.equal(figure(x, 'ind.references').field, 'references', 'the rating names its field');
+      a.equal(figure(x, 'ind.currentArr').cell.v, X.p04.currentArr);
+      a.equal(figure(x, 'ind.pipeline').cell.v, X.p04.pipelineTotal);
+    });
+
+    T.test('TPV-TC-150', 'A planted unfavourable ability rating with large ARR gives a weak-rating insight', function (a) {
+      sample();
+      var x = get('weakRating:ceu:manufacturing');
+      check(a, planted('P05'));
+      a.equal(figure(x, 'ind.expertise').cell.v, X.p05.expertise);
+      a.equal(figure(x, 'ind.currentArr').cell.v, X.p05.currentArr);
+    });
+
+    T.test('TPV-TC-151', 'Tier 3 with a large pipeline share and Tier 2 with no pipeline both appear, with correct figures', function (a) {
+      sample();
+      var x = get('tierVsPipeline:seu:retail');
+      check(a, planted('P06'));
+      a.equal(figure(x, 'ind.pipeline').cell.v, X.p06.pipelineTotal);
+      a.equal(figure(x, 'base.pipeline').cell.v, X.p06.regionPipeline, 'the region pipeline counts every row');
+      check(a, planted('P07'));
+      a.equal(figure(get('priorityNoPipeline:mea:hospitality'), 'ind.pipeline').cell.v, X.p07.pipelineTotal);
+      a.ok(get('priorityNoPipeline:apac:transport'), 'P11 overlaps: Asia Pacific Transportation is Tier 2 with no pipeline');
+    });
+
+    T.test('X-rules-judgement-questions', 'Judgement insights are framed as questions and point at the region and industry', function (a) {
+      sample();
+      var list = TAP.insights.all().filter(function (x) { return x.family === 'judgement'; });
+      a.ok(list.length >= 4);
+      list.forEach(function (x) {
+        a.match(x.sentence, /\?$/, x.id + ' ends with a question');
+        a.equal(x.regionIds.length, 1, x.id + ' names one region');
+        a.equal(x.industryIds.length, 1, x.id + ' names one industry');
+        a.ok(['ind-quad', 'ind-tiers'].indexOf(x.reportId) >= 0, x.id + ' attaches to the quadrant or tier grid');
+      });
+    });
+  });
 })(window.TAP);
