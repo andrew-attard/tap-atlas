@@ -164,6 +164,7 @@ A **combined source** is `{combined: true, how: 'sum'|'mean'|'wmean'|'rating'|'c
 - `notApplicable`: regions where the value doesn't apply. They are left out quietly, never as a gap.
 - The regions actually used are `regionIds` minus both.
 - `weightFallback: true` means the weight couldn't be resolved, so an unweighted mean was used, with a `TAP.notes` entry.
+- `weightMissing`: regions whose rate was provided but whose weight was blank. They are not included, and are named as "weight missing", not "not provided".
 - `parts`: on derived sums, the combined part cells.
 
 A **multi-row source** (a sum over several rows of one region) has `row: null` and `rows: [...]`. App-calculated cells may carry `parts`; score cells carry `fields` (the ratings used).
@@ -179,7 +180,7 @@ A **multi-row source** (a sum over several rows of one region) has `row: null` a
   - `items` for text.
 - Not-provided cells are excluded and named in `src.excluded`; not-applicable ones go in `src.notApplicable`. If nothing is left, the result is `notProvided`, or `notApplicable` when every item was not applicable.
 - Category results also carry `v: [{value, n}]`.
-- Helpers: `TAP.agg.weightBy(measureId, opts)` returns the weight measure id; `TAP.agg.describe(cell)` returns the plain label, e.g. "Average of 6 regions, weighted by target accounts".
+- Helpers: `TAP.agg.weightBy(measureId, weights)` returns the weight measure id (`weights` is a report's `options.weights` map); `TAP.agg.describe(cell)` returns the plain label, e.g. "Weighted average of 6 regions, by target accounts".
 - An unknown `valueKind` throws.
 
 | valueKind | total | average |
