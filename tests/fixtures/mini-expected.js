@@ -20,6 +20,7 @@ window.TEST_EXPECT.mini = {
       'nb.arr.y1': 700,          // 500 + 200
       'nb.services': 451,        // 100 + 110 + 121 + 40 x 3
       'nb.targetAccounts': 30,   // 20 + 10
+      'nb.targetAccountsRated': 30,
       'nb.wins': 6,              // 20 x 0.25 + 10 x 0.1
       'nb.hitRate': 0.2,         // 6 wins / 30 accounts
       'cg.arr': 300,             // a1 50 + a2 100 + a3 0 + a4 150 (multiplier 2.0 on 150)
@@ -42,6 +43,7 @@ window.TEST_EXPECT.mini = {
       'nb.arr': 300,             // row 20 is blank (no hit rate), row 21: 100 x 3
       'nb.arr.y1': 100,
       'nb.targetAccounts': 15,   // 10 + 5: target accounts were entered on both rows
+      'nb.targetAccountsRated': 5, // only row 21 has a hit rate; this is the hit rate's weight
       'nb.wins': 1,              // only row 21 has a hit rate: 5 x 0.2
       'nb.hitRate': 0.2,         // 1 win / 5 accounts on the rows that have a hit rate
       'cg.arr': null,            // not provided: the Customer Growth section is empty
@@ -70,12 +72,12 @@ window.TEST_EXPECT.mini = {
       'nb.arr': 9405,            // 2255 + 4000 + 300 + 2850
       'amb.arr': 10123,          // 2555 + 4150 + 300 + 3118
       'cg.arr': { v: 718, excluded: ['charlie'] },           // 300 + 150 + 268
-      'nb.hitRate': 0.4666667    // weighted by target accounts: (0.2x30 + 0.44x50 + 0.2x15 + 0.6x100) / 195 = 91 / 195
+      'nb.hitRate': 0.4810811    // weighted by target accounts on rows with a hit rate: wins / accounts = (6 + 22 + 1 + 60) / (30 + 50 + 5 + 100) = 89 / 185
     },
     restOfAlphaAverage: {
       'nb.arr': 2383.3333333,    // (4000 + 300 + 2850) / 3
       'amb.arr': 2522.6666667,   // (4150 + 300 + 3118) / 3
-      'nb.hitRate': 0.5151515    // (0.44x50 + 0.2x15 + 0.6x100) / 165 = 85 / 165
+      'nb.hitRate': 0.5354839    // (22 + 1 + 60) / (50 + 5 + 100) = 83 / 155
     },
     restOfDeltaAverage: {
       'cg.arr': { v: 225, excluded: ['charlie'] }             // (300 + 150) / 2
@@ -96,7 +98,8 @@ window.TEST_EXPECT.mini = {
     bravo: { ind1: { a: 3, b: 3, quadrant: 'attractiveAble' }, ind2: { a: 2.6666667, b: 1.3333333, quadrant: 'attractiveNotYet' },
              ind4: { a: 2.6666667, b: 1.3333333, quadrant: 'attractiveNotYet' } },
     charlie: { ind1: { a: 2.3333333, b: null }, ind4: { a: 2.6666667, b: 1.3333333, quadrant: 'attractiveNotYet' } },
-    delta: { ind1: { a: 3, b: 1, quadrant: 'attractiveNotYet' }, ind3: { a: 2, b: 3 }, ind4: { a: 3, b: 1, quadrant: 'attractiveNotYet' } },
+    // Region D ind3 sits exactly on the 2.0 line: 2.0 counts as attractive (and as able)
+    delta: { ind1: { a: 3, b: 1, quadrant: 'attractiveNotYet' }, ind3: { a: 2, b: 3, quadrant: 'attractiveAble' }, ind4: { a: 3, b: 1, quadrant: 'attractiveNotYet' } },
     unrated: 'other'             // ind 'other' gives notApplicable for every rating and score
   },
   // Categories are counted, never averaged.
@@ -104,14 +107,16 @@ window.TEST_EXPECT.mini = {
 
   // Source addresses (US-1.1.5, D26).
   sources: [
-    { src: { regionId: 'alpha', section: 'marketCoverage', field: 'growthPotential', row: 10 },
+    { src: { regionId: 'alpha', section: 'marketCoverage', field: 'growthPotential', row: 10, kind: 'IN' },
       text: 'Region A plan.xlsx › 1. Market Coverage › D10', calculated: false },
-    { src: { regionId: 'bravo', section: 'newBusiness', field: 'arrPotential', row: 21, year: 2 },
+    { src: { regionId: 'bravo', section: 'newBusiness', field: 'arrPotential', row: 21, year: 2, kind: 'DER' },
       text: 'Region B plan.xlsx › 2. New Business › P21', calculated: true },
-    { src: { regionId: 'delta', section: 'customerGrowth', field: 'riskLevel', row: 11 },
+    { src: { regionId: 'delta', section: 'customerGrowth', field: 'riskLevel', row: 11, kind: 'PRE' },
       text: 'Region D plan.xlsx › 3. Customer Growth › H11', calculated: false },
-    { src: { regionId: 'charlie', section: 'customerGrowth', field: 'thresholds.strategicArr' },
-      text: 'Region C plan.xlsx › 3. Customer Growth › N3', calculated: false }
+    { src: { regionId: 'charlie', section: 'customerGrowth', field: 'thresholds.strategicArr', kind: 'IN' },
+      text: 'Region C plan.xlsx › 3. Customer Growth › N3', calculated: false },
+    { src: { regionId: 'alpha', section: 'recap', field: 'value', cell: 'E5', kind: 'DER' },
+      text: 'Region A plan.xlsx › 4. Partner › E5', calculated: true }
   ],
   imports: { dataDate: '2026-10-02T09:00:00Z', datesDiffer: true, notesFor: { charlie: 1 } }
 };

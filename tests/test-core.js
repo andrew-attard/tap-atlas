@@ -56,6 +56,20 @@
     });
   });
 
+  T.suite('notes', function () {
+    T.test('X-core-notes', 'Notes for the data sources panel are kept once each and can be filtered and cleared', function (a) {
+      TAP.notes.clear();
+      TAP.notes.add({ source: 'colours', message: 'Colours repeat after 8 regions.' });
+      TAP.notes.add({ source: 'colours', message: 'Colours repeat after 8 regions.' });
+      TAP.notes.add({ source: 'insights', message: 'Rule x was skipped.' });
+      a.equal(TAP.notes.list().length, 2);
+      a.equal(TAP.notes.list('insights').length, 1);
+      TAP.notes.clear('colours');
+      a.deepEqual(TAP.notes.list().map(function (n) { return n.source; }), ['insights']);
+      TAP.notes.clear();
+    });
+  });
+
   T.suite('storage', function () {
     T.test('X-core-storage', 'Stored choices come back, and clearing by prefix removes only those', function (a) {
       TAP.storage.set('chart:test-a', 'bubble');
@@ -85,6 +99,10 @@
       a.equal(n.textContent, 'Go now');
       n.click();
       a.equal(clicked, 1);
+    });
+
+    T.test('X-core-dom-events', 'Event attributes must be functions, never strings of script', function (a) {
+      a.throws(function () { TAP.dom.el('div', { onclick: 'alert(1)' }); }, 'string handler refused');
     });
 
     T.test('X-core-icons', 'Icons are inline SVG and decorative unless labelled', function (a) {
@@ -121,6 +139,46 @@
       a.equal(TAP.data.industries({ rated: true }).length, 4);
       a.equal(TAP.data.scale('expertise').levels[0].score, 3);
       a.equal(TAP.data.row('alpha', 'accounts', function (x) { return x.id === 'a4'; }).multiplier3y, 2);
+    });
+  });
+
+  T.suite('data guards', function () {
+    T.test('X-core-data-lookups', 'Lookups ignore built-in object names', function (a) {
+      a.equal(TAP.data.regionIndex('toString'), -1);
+      a.equal(TAP.data.region('constructor'), null);
+      a.equal(TAP.content.term('constructor'), null);
+    });
+
+    T.test('X-core-data-check-crash', 'A check that crashes on a malformed file gives the error screen reason, not a crash', function (a) {
+      var saved = TAP.check;
+      TAP.check = { run: function () { throw new Error('boom'); } };
+      try {
+        var r = TAP.data.load(T_FIXTURE('mini'));
+        a.equal(r.ok, false);
+        a.equal(r.reason, 'invalid');
+        a.match(r.errors[0].message, /boom/);
+      } finally {
+        TAP.check = saved;
+      }
+    });
+  });
+
+  T.suite('start-up', function () {
+    T.test('X-core-app-restart', 'Starting the app twice leaves exactly one view on screen', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+      a.equal(TAP.app.current(), 'overview');
+      a.equal(TAP.store.get().view, 'overview');
+      var text = root.textContent;
+      a.ok(text.indexOf('Overview') >= 0, 'the Overview view is shown');
+      a.equal(text.split('the Overview view').length - 1, 1, 'shown once');
+    });
+
+    T.test('X-core-app-missing', 'With no data, start-up reports "missing" instead of drawing views', function (a) {
+      var root = T.dom.mount(), res;
+      try { res = TAP.app.start({ root: root, plan: null }); } catch (e) { res = { reason: 'missing', screensStub: e.message }; }
+      a.equal(res.reason, 'missing');
     });
   });
 

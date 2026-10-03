@@ -42,7 +42,12 @@ const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/panel.css',
 
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [
-  'tests/test-setup.js', 'tests/test-contracts.js', 'tests/test-core.js', 'tests/test-meta.js'
+  'tests/test-setup.js', 'tests/test-contracts.js', 'tests/test-core.js',
+  'tests/test-data.js', 'tests/test-check.js', 'tests/test-sources.js',
+  'tests/test-combine.js', 'tests/test-measures.js', 'tests/test-shapes.js',
+  'tests/test-shell.js', 'tests/test-content.js', 'tests/test-panel.js',
+  'tests/test-overview.js', 'tests/test-industry.js', 'tests/test-insights.js', 'tests/test-rules.js', 'tests/test-pages.js',
+  'tests/test-meta.js'
 ];
 
 const PAGES = {
@@ -56,7 +61,8 @@ const PAGES = {
   },
   'tests.html': {
     purpose: 'The automated test page: runs every automated test case and shows a pass or fail summary.',
-    data: ['data/sample-plan-data.js', 'tests/fixtures/mini-data.js', 'tests/fixtures/mini-expected.js'], org: [],
+    data: ['data/sample-plan-data.js', 'tests/fixtures/mini-data.js', 'tests/fixtures/mini-expected.js',
+      'tests/fixtures/sample-expected.js', 'tests/fixtures/broken-cases.js', 'tests/fixtures/insights-fixture.js'], org: [],
     title: 'TAP Atlas tests', tests: true
   }
 };
