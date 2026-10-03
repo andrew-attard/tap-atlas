@@ -360,4 +360,99 @@
         'cells work too');
     });
   });
+
+  // US-1.2.11: zero, blank and not applicable stay apart through prepare, builders, tables, tooltips and combining.
+  T.suite('missing', function () {
+    function def(measureId, perIndustry) {
+      return { id: 'x-' + measureId, view: 'industry', title: 'x', shape: 'compare', dimension: 'entity', builder: null,
+        measures: [{ id: measureId }], types: ['bar', 'dot', 'table'], defaultType: 'bar', options: { industryPicker: !!perIndustry } };
+    }
+    function run(d, c, extra) {
+      var k = cmp(c || { mode: 'all' });
+      var ctx = Object.assign({ def: d, type: d.defaultType, cmp: k, entities: TAP.scope.entities(k), industryId: null }, extra || {});
+      return { ds: TAP.prepare.run(d, ctx), res: TAP.builders.get(d.builder || d.shape)(ctx) };
+    }
+    function series(res, role) { return (res.option.series || []).filter(function (s) { return s.tapRole === role; }); }
+    function npFor(res, id) {
+      return series(res, 'notProvided').some(function (s) { return s.data.some(function (d) { return d.entityId === id; }); });
+    }
+    function valueFor(res, id) {
+      var hit = null;
+      series(res, 'value').forEach(function (s) { s.data.forEach(function (d) { if (d && d.entityId === id && d.raw !== undefined) hit = d; }); });
+      return hit;
+    }
+    function row(res, id) { return res.table.rows.filter(function (r) { return r.entityId === id; })[0]; }
+
+    T.test('TPV-TC-081', 'Zero is a value: drawn and shown as 0, never as a gap', function (a) {
+      var x = run(def('ind.currentArr', true), null, { industryId: 'ind3' });   // A and C entered 0 for Retail
+      var cell = x.ds.rows[0].cells['ind.currentArr'];
+      a.deepEqual([cell.state, cell.v], ['value', 0]);
+      a.equal(valueFor(x.res, 'alpha').raw, 0, 'a zero bar');
+      a.ok(!npFor(x.res, 'alpha'), 'no "not provided" mark');
+      a.equal(TAP.format.cell(row(x.res, 'alpha').cells['ind.currentArr'], { unit: 'money', exact: true }), '€0');
+      a.deepEqual(x.res.missing, []);
+      // A filled section with no rows in an industry adds up to zero there; an empty section is not provided.
+      var d = TAP.measures.get('cg.arr')('delta', { industryId: 'ind1' });
+      a.deepEqual([d.state, d.v], ['value', 0], 'Region D has no Healthcare accounts: zero growth there');
+      a.equal(TAP.measures.get('cg.arr')('charlie', { industryId: 'ind1' }).state, 'notProvided', 'Region C has no accounts at all');
+      a.equal(TAP.measures.get('cg.segment.core')('delta', { industryId: 'ind1' }).v, 0, 'counts too');
+    });
+
+    T.test('TPV-TC-081', 'A blank is "not provided": an outlined mark with a label, a named gap, never a zero', function (a) {
+      var x = run(TAP.reports.get('ind-ratings'), null, { type: 'dot', industryId: 'ind1' });
+      var c = row(x.res, 'charlie').cells['ind.references'];
+      a.deepEqual([c.state, c.v], ['notProvided', null]);
+      a.equal(TAP.format.cell(c, { unit: 'rating', field: 'references' }), 'not provided', 'table text');
+      a.ok(npFor(x.res, 'charlie'), 'outlined "not provided" mark');
+      var mark = series(x.res, 'notProvided')[0];
+      a.equal(mark.symbol, TAP_THEME.echarts.tap.notProvided.symbol, 'an empty outlined symbol, no hatching');
+      a.match(mark.data[0].text, /not provided/);
+      a.match(mark.tooltip.formatter({ data: mark.data[0] }), /not provided/, 'tooltip');
+      var refs = [];
+      series(x.res, 'value').forEach(function (s) { s.data.forEach(function (d) { if (d.entityId === 'charlie' && d.key === 'ind.references') refs.push(d); }); });
+      a.equal(refs.length, 0, 'no value mark for the blank');
+      a.deepEqual(x.res.missing, [], 'Region C gave other ratings, so it is not missing from the report');
+      var blankBar = run(def('cg.arr'));
+      a.ok(npFor(blankBar.res, 'charlie'), 'blank customer growth is a mark, not a zero bar');
+      a.equal(valueFor(blankBar.res, 'charlie'), null);
+      a.deepEqual(blankBar.res.missing, ['Region C'], 'and Region C is listed as missing');
+    });
+
+    T.test('TPV-TC-081', 'Not applicable is left out quietly and never counted as a gap', function (a) {
+      var tier3 = run(def('ind.nb.arr', true), null, { industryId: 'ind3' });   // Tier 3 for A, B and C: no new business by design
+      a.deepEqual(tier3.res.table.rows.map(function (r) { return r.entityId; }), ['delta'], 'only the region with Retail as Tier 2');
+      a.deepEqual(tier3.res.missing, [], 'nobody is missing');
+      ['alpha', 'bravo', 'charlie'].forEach(function (r) { a.ok(!npFor(tier3.res, r), r + ' has no gap mark'); });
+      var other = run(TAP.reports.get('ind-ratings'), null, { type: 'dot', industryId: 'other' });
+      a.equal(other.res.empty, true, 'no ratings on the Other row: nothing to draw');
+      a.deepEqual(other.res.missing, [], 'and no region is missing');
+      a.equal(other.res.option, null);
+    });
+
+    T.test('TPV-TC-081', 'The three states stay apart in combined figures', function (a) {
+      // Education new business: A Tier 2 with no rows (not provided), B 600, C no tier and no rows (not provided), D Tier 3 (not applicable)
+      var x = run(def('ind.nb.arr', true), { mode: 'org' }, { industryId: 'ind2' });
+      var c = x.ds.rows[0].cells['ind.nb.arr'];
+      a.equal(c.v, 600);
+      a.deepEqual(c.src.excluded, ['alpha', 'charlie']);
+      a.deepEqual(c.src.notApplicable, ['delta']);
+      var d = TAP.agg.describe(c);
+      a.match(d, /Total of 1 region;/, d);
+      a.match(d, /Region A and Region C not included/, d);
+      a.ok(d.indexOf('Region D') < 0, 'Region D is not a gap');
+      a.deepEqual(x.res.missing, ['Region A', 'Region C']);
+      a.ok(x.res.notes.some(function (n) { return /Region A and Region C/.test(n); }), 'note under the chart');
+    });
+
+    T.test('TPV-TC-081', 'A report no region has data for is empty; the missing regions are listed', function (a) {
+      var x = run(def('cg.arr'), { mode: 'set', set: ['charlie'] });
+      a.equal(x.res.empty, true, 'the panel says so instead of drawing');
+      a.equal(x.res.option, null);
+      a.deepEqual(x.res.missing, ['Region C']);
+      var amb = run(TAP.reports.get('ov-ambition'), { mode: 'all' }, { type: 'stackedBar' });
+      a.equal(amb.res.empty, false);
+      var total = series(amb.res, 'total')[0];
+      a.match(total.label.formatter({ dataIndex: 2 }), /partly provided/, 'a partial total says so on the chart');
+    });
+  });
 })(window.TAP);
