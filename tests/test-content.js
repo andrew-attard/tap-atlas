@@ -1,6 +1,6 @@
 /*
  * File: tests/test-content.js
- * Purpose: Tests for the glossary, term marking, guide text and organization layer (TPV-TC-179 to 184).
+ * Purpose: Tests for the glossary, term marking, guide text and organization layer (TPV-TC-178 to 192).
  * Provides: test cases for CONTENT stories (#38, #39, #40, #42, #60)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
@@ -327,6 +327,128 @@
         });
       });
       a.ok(n > 20, 'paragraphs found (' + n + ')');
+    });
+  });
+  // Runs fn as if content/organization.js had thrown a script error while loading.
+  function withOrgScriptError(org, message, fn) {
+    var watch = TAP.orgWatch;
+    watch.onError({ filename: 'file:///C:/plans/app/content/organization.js', message: message, lineno: 7 });
+    try { return withOrg(org, fn); } finally { watch.errors.length = 0; }
+  }
+
+  T.suite('organization layer', function () {
+    T.test('TPV-TC-188', 'A term defined in both layers uses the organization version, everywhere', function (a) {
+      withOrg({ glossary: { hitRate: { term: 'Hit rate', aliases: ['win rate'], short: 'Organization definition of hit rate.', why: 'Org reason.', related: [] } } }, function () {
+        a.equal(TAP.content.term('hit rate').short, 'Organization definition of hit rate.');
+        a.equal(TAP.content.terms().hitRate.layer, 'organization');
+        a.deepEqual(markedIds(TAP.content.mark('Hit rate', {})), ['hitRate'], 'still marked');
+        var box = T.dom.mount();
+        TAP.dom.html(box, TAP.content.mark('hit rate', {}));
+        box.querySelector('.tap-term').click();
+        a.ok(document.querySelector('.tap-popover').textContent.indexOf('Organization definition') >= 0, 'popover shows the organization version');
+        closePopover();
+      });
+    });
+
+    T.test('TPV-TC-189', 'With no organization file, or an empty one, the general layer is used with no error', function (a) {
+      [undefined, null, {}].forEach(function (org, i) {
+        withOrg(org, function () {
+          a.equal(TAP.content.orgError(), null, 'case ' + i + ': no error');
+          a.equal(TAP.content.text('banner.sample'), 'Sample data: all figures are fictional', 'case ' + i + ': general wording');
+          a.equal(TAP.content.term('ARR').layer, 'general', 'case ' + i + ': general glossary');
+          a.equal(TAP.content.setting('internalLabel', 'fallback'), 'fallback', 'case ' + i + ': settings fall back');
+        });
+      });
+    });
+
+    T.test('TPV-TC-190', 'A script error in the organization file is reported clearly, and the general layer is used', function (a) {
+      withOrgScriptError({ text: { banner: { sample: 'Half-loaded wording' } } }, 'Uncaught SyntaxError: Unexpected end of input', function () {
+        var msg = TAP.content.orgError();
+        a.ok(msg, 'reported');
+        a.match(msg, /content\/organization\.js/, 'names the file');
+        a.match(msg, /Unexpected end of input/, 'says what went wrong');
+        a.match(msg, /line 7/, 'says where');
+        a.equal(TAP.content.text('banner.sample'), 'Sample data: all figures are fictional', 'half-loaded wording is not used');
+      });
+      a.equal(TAP.content.orgError(), null, 'cleared afterwards');
+    });
+
+    T.test('TPV-TC-190', 'The data sources panel gets the organization message at start-up', function (a) {
+      withOrg('not an object', function () {
+        var root = T.dom.mount();
+        TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+        var notes = TAP.notes.list('organization');
+        a.equal(notes.length, 1, 'one note for the data sources panel');
+        a.equal(notes[0].message, TAP.content.orgError());
+      });
+    });
+
+    T.test('TPV-TC-190', 'Parts of the wrong shape are named, and the whole file falls back', function (a) {
+      var cases = [
+        [{ glossary: [] }, /"glossary"/],
+        [{ text: 'Hello' }, /"text"/],
+        [{ glossary: { odd: { term: 'Odd' } } }, /"odd"/],
+        [{ regions: { north: 42 } }, /"north"/],
+        [{ guide: { planning: { sections: {} } } }, /guide\.planning\.sections/],
+        [{ guide: { planning: { sections: [{ title: 'No id' }] } } }, /guide\.planning\.sections/],
+        [{ glosary: {} }, /"glosary"/]
+      ];
+      cases.forEach(function (c, i) {
+        withOrg(c[0], function () {
+          var msg = TAP.content.orgError() || '';
+          a.match(msg, c[1], 'case ' + i + ' names the problem');
+          a.match(msg, /general wording/, 'case ' + i + ' says what the app does instead');
+        });
+      });
+      withOrg({ glossary: { arr: { term: 'ARR', short: 'Org ARR.' } }, regions: { north: 7 } }, function () {
+        a.equal(TAP.content.term('ARR').layer, 'general', 'a file with any problem is not used at all');
+      });
+    });
+
+    T.test('X-content-org-wording', 'Wording, tour steps and the internal label can be overridden; the rest stays general', function (a) {
+      withOrg({ text: { tour: { menu: 'Organization tour step' }, banner: { internal: 'Organization label' } },
+        settings: { internalLabel: { show: true, text: 'Organization only' } } }, function () {
+        a.equal(TAP.content.orgError(), null, 'a valid file');
+        a.equal(TAP.content.text('tour.menu'), 'Organization tour step');
+        a.equal(TAP.content.text('banner.internal'), 'Organization label');
+        a.equal(TAP.content.text('banner.sample'), 'Sample data: all figures are fictional', 'keys not overridden stay general');
+        a.equal(TAP.content.setting('internalLabel').text, 'Organization only');
+        a.equal(TAP.content.setting('internalLabel.show'), true);
+      });
+    });
+
+    T.test('TPV-TC-178', 'The organization layer replaces, extends and adds Guide sections by id', function (a) {
+      withOrg({ guide: { planning: { sections: [
+        { id: 'what', paragraphs: ['Our own reason for planning.'] },
+        { id: 'operational', addParagraphs: ['Our planning cycle starts in spring.'] },
+        { id: 'orgCycle', title: 'Our planning calendar', paragraphs: ['Plans are reviewed in a joint session.'], after: 'operational' }
+      ] } } }, function () {
+        a.equal(TAP.content.orgError(), null, 'a valid file');
+        var secs = TAP.content.guide().planning.sections, ids = secs.map(function (s) { return s.id; });
+        var what = secs[ids.indexOf('what')], op = secs[ids.indexOf('operational')];
+        a.deepEqual(what.paragraphs, ['Our own reason for planning.'], 'paragraphs replaced');
+        a.equal(what.title, TAP_CONTENT.guide.planning.sections[0].title, 'title kept');
+        a.equal(op.paragraphs[op.paragraphs.length - 1], 'Our planning cycle starts in spring.', 'paragraph added');
+        a.equal(op.paragraphs.length, TAP_CONTENT.guide.planning.sections[1].paragraphs.length + 1);
+        a.equal(ids[ids.indexOf('operational') + 1], 'orgCycle', 'new section placed after its anchor');
+        a.equal(secs[ids.indexOf('orgCycle')].link, null, 'new section has no view link unless given');
+        a.ok(TAP.content.guide().howTo.sections.length >= 7, 'the other part is untouched');
+      });
+      a.deepEqual(TAP.content.guide().planning.sections[0].paragraphs, TAP_CONTENT.guide.planning.sections[0].paragraphs, 'general text unchanged');
+    });
+
+    T.test('TPV-TC-192', 'Short region names come from the organization layer, else from the data', function (a) {
+      withOrg({ regions: { alpha: 'A-short' } }, function () {
+        a.equal(TAP.content.regionName(TAP.data.region('alpha')), 'A-short');
+        a.equal(TAP.content.regionName(TAP.data.region('bravo')), 'Region B');
+      });
+      a.equal(TAP.content.regionName(TAP.data.region('alpha')), 'Region A');
+    });
+
+    T.test('X-content-org-messages', 'Organization messages live in the content files', function (a) {
+      ['org.error', 'org.script', 'org.notObject', 'org.badPart', 'org.badList', 'org.badTerm', 'org.badRegion', 'org.unknownPart'].forEach(function (k) {
+        a.ok(TAP.content.text(k).charAt(0) !== '[', k + ' is in content');
+      });
     });
   });
 })(window.TAP);
