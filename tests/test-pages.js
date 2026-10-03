@@ -733,6 +733,20 @@
       });
     });
 
+    T.test('X-pages-tour-priority', 'The glossary step spotlights a marked term on the view before the Guide menu item', function (a) {
+      withTour(function () {
+        withApp(function () {
+          var term = TAP.dom.el('button', { type: 'button', class: 'tap-term', 'data-term': 'arr' }, 'ARR');
+          TAP.shell.viewEl().insertBefore(term, TAP.shell.viewEl().firstChild);
+          TAP.tour.start();
+          for (var i = 0; i < 5; i++) press('ArrowRight');
+          a.equal(stepNo(), 6, 'on the glossary step');
+          var hole = document.querySelector('.tap-tour__hole').getBoundingClientRect(), r = term.getBoundingClientRect();
+          a.ok(Math.abs(hole.left - (r.left - 6)) < 2 && Math.abs(hole.width - (r.width + 12)) < 2, 'the spotlight is round the term');
+        });
+      });
+    });
+
     T.test('X-pages-insights-engine', 'Without the insight engine the page shows a plain message', function (a) {
       var old = TAP.insights, root = T.dom.mount();
       TAP.insights = { __stub: 44, ranked: function () { throw new Error('Not built yet (#44): TAP.insights.ranked'); } };
