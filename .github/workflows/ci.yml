@@ -1,0 +1,42 @@
+# Lint and run the browser tests on every pull request to main and every push to main.
+# No secrets: the denylist lives only on the maintainer's machine, so text scans skip here.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Lint
+        run: node tools/lint.js
+
+      - name: Lint self-test
+        run: node tools/lint.js --self-test
+
+      - name: Denylist scan (skipped in CI)
+        run: scripts/check-text.sh README.md
+
+      - name: Browser tests (headless Chrome)
+        run: |
+          google-chrome --version
+          if [ -f tests.html ]; then
+            scripts/test-headless.sh tests.html chrome
+          else
+            echo "tests.html not present yet: running the harness self-test instead"
+          fi
+          scripts/test-headless.sh tests/selftest.html chrome
