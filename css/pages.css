@@ -125,3 +125,36 @@
 .tap-ins__srcs { margin: 0; padding-left: var(--tap-sp-4); }
 .tap-ins__none { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-4); font-size: var(--tap-fs-lead); }
 .tap-ins__none p { margin: 0; }
+
+/* ---------- Welcome card and tour (US-1.1.11): a shaded page with a cut-out round the part being explained ---------- */
+.tap-tour, .tap-tour-welcome { position: fixed; inset: 0; z-index: 95; }
+.tap-tour__shade, .tap-tour-welcome { background: color-mix(in srgb, var(--tap-ink) 62%, transparent); }
+.tap-tour__shade { position: fixed; inset: 0; }
+.tap-tour__hole {
+  position: fixed; pointer-events: none;
+  box-shadow: 0 0 0 9999px color-mix(in srgb, var(--tap-ink) 62%, transparent);
+  outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 3px;
+}
+.tap-tour-welcome { display: flex; align-items: center; justify-content: center; padding: var(--tap-sp-6); }
+.tap-tour-welcome__card, .tap-tour__card {
+  display: flex; flex-direction: column; gap: var(--tap-sp-3);
+  background: var(--tap-ground); border: var(--tap-highlight-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-lg);
+}
+.tap-tour-welcome__card { width: min(580px, 100%); padding: var(--tap-sp-8); }
+.tap-tour__card { position: fixed; padding: var(--tap-sp-4) var(--tap-sp-6); }
+.tap-tour__kicker { margin: 0; font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-tour-welcome__title { margin: 0; font-size: var(--tap-fs-h1); line-height: 1.1; }
+.tap-tour-welcome__text { margin: 0; font-size: var(--tap-fs-lead); line-height: 1.5; }
+.tap-tour-welcome__hint { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }
+.tap-tour__title { margin: 0; font-size: var(--tap-fs-h3); line-height: 1.2; }
+.tap-tour__text { margin: 0; font-size: var(--tap-fs-body); line-height: 1.5; }
+.tap-tour__buttons { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-tour__buttons .tap-btn, .tap-tour__guide, .tap-tour__button { font-size: var(--tap-fs-body); }
+.tap-tour__guide { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--tap-sp-2); }
+.tap-tour__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--tap-sp-2) var(--tap-sp-4); }
+.tap-tour__skip {
+  padding: 0; border: 0; background: none; font: inherit; font-size: var(--tap-fs-body); font-weight: 700;
+  color: var(--tap-accent-deep); text-decoration: underline; cursor: pointer;
+}
+.tap-tour__keys { font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-tour__button { display: inline-flex; align-items: center; gap: var(--tap-sp-2); white-space: nowrap; }
