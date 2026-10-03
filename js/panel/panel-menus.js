@@ -1,8 +1,8 @@
 /*
  * File: js/panel/panel-menus.js
  * Purpose: Draws a panel's controls: the toolbar (insights, explanation, chart type, table, more) with its popovers,
- *          the "compare differently" editor and badge, and the controls row (industry picker, measure, bubble size
- *          and the options a builder offers).
+ *          the "compare differently" editor and badge, and the controls row (industry picker, measure, break down by,
+ *          bubble size and the options a builder offers).
  * Provides: TAP.panelMenus (render, tools, types, spec, compareEditor, customBadge, button, pop, seg, select)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/engine/shapes.js, js/engine/scope.js,
  *             js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js, js/ui/explain.js,
@@ -73,7 +73,10 @@
   // The types the menu offers (the table has its own button), and the one to draw: the chosen type while the
   // comparison allows it, else the default. A stored radar comes back once three or fewer regions are compared.
   function types(def, entityCount, st) {
-    var list = TAP.shapes.types(def, entityCount, { breakdown: st.breakdown || null }).filter(function (x) { return x !== 'table'; });
+    // With a breakdown, point charts drop out: a bubble can't show the second dimension (US-1.2.7)
+    var list = TAP.shapes.types(def, entityCount, { breakdown: st.breakdown || null }).filter(function (x) {
+      return x !== 'table' && !(st.breakdown && /^(bubble|bubbleGrid|scatter)$/.test(x));
+    });
     var fallback = list.indexOf(def.defaultType) >= 0 ? def.defaultType : (list[0] || 'table');
     return { list: list, current: list.indexOf(st.type) >= 0 ? st.type : fallback, def: def.defaultType };
   }
@@ -230,6 +233,12 @@
     if (ms.length > 1 && o.measuresAs !== 'categories' && !xy) {
       own.push({ key: 'measure', label: t('measure'), kind: 'segmented', value: TAP.prepare.selected(def, { measureId: p.st.measureId }),
         options: ms.map(function (m) { return { value: m.id, label: m.label }; }), onPick: function (k, v) { p.set({ measureId: v }); } });
+    }
+    var bds = def.breakdowns || [];
+    if (bds.length) {
+      own.push({ key: 'breakdown', label: t('breakdown'), kind: 'segmented', value: p.st.breakdown || 'none',
+        options: [{ value: 'none', label: t('breakdownNone') }].concat(bds.map(function (x) { return { value: x, label: t('breakdowns.' + x) }; })),
+        onPick: function (k, v) { p.set({ breakdown: v === 'none' ? null : v }); } });
     }
     var sizes = (def.size && def.size.options) || [];
     if (sizes.length > 1 && (type === 'bubble' || type === 'bubbleGrid')) {
