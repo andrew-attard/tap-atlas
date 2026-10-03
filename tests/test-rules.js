@@ -18,7 +18,6 @@
     TAP.data.load(p);
     TAP.insights.reset();
   }
-  function rerun() { TAP.insights.reset(); }
   function get(id) { return TAP.insights.all().filter(function (x) { return x.id === id; })[0]; }
   function ofRule(id) { return TAP.insights.all().filter(function (x) { return x.ruleId === id; }); }
   function figure(x, measureId, nth) { return x.figures.filter(function (f) { return f.measureId === measureId; })[nth || 0]; }
@@ -63,6 +62,9 @@
   ];
   function planted(p) { return PLANTED.filter(function (c) { return c.p === p; })[0]; }
 
+  // Shared with tests/test-guardrails.js and tests/test-ranking.js.
+  window.T_RULES = { sample: sample, get: get, ofRule: ofRule, mc: mc, check: check, planted: planted, PLANTED: PLANTED };
+
   function check(a, c) {
     var x = get(c.id);
     a.ok(x, c.p + ' produces ' + c.id);
@@ -84,8 +86,7 @@
     });
 
     T.test('TPV-TC-145', 'The planted split industry gives a split insight', function (a) {
-      sample();
-      check(a, planted('P02'));
+      sample(); check(a, planted('P02'));
     });
 
     T.test('TPV-TC-146', 'The planted group priority rated low by 4 regions gives a group-priority insight', function (a) {
@@ -100,7 +101,7 @@
       sample(function (p) { p.regions = p.regions.slice(0, 5); });
       var tiers = function (list) {
         list.forEach(function (t, i) { mc(X.regions[i], 'retail').tier = t; });
-        rerun();
+        TAP.insights.reset();
       };
       tiers([2, 2, 2, 2, 3]);
       a.equal((get('consensus:retail') || {}).sentence, 'Retail is Tier 1 or 2 in 4 of 5 regions.', '4 of 5 is enough');
@@ -231,27 +232,6 @@
     });
   });
 
-  /* ---------- priorities rank by what is at stake (review follow-up on #47) ---------- */
-  T.suite('rules-priorities-money', function () {
-    T.test('X-rules-priorities-money', 'Priority insights carry the industry’s share of organization pipeline or ARR, so splits rank apart', function (a) {
-      sample();
-      var orgPipe = X.regions.reduce(function (s, r) { return s + X.totals[r]['base.pipeline']; }, 0), orgArr = X.org['base.arr'];
-      var splits = ofRule('split');
-      a.ok(splits.length >= 2 && get('split:retail'), 'the planted Retail split is still there');
-      a.near(get('split:retail').breadth, 3 / 7, 1e-9, 'breadth counts the 3 regions departing from the most common tier');
-      a.equal(get('split:retail').regionIds.length, 7, 'regionIds still list every region, for scope and highlight');
-      splits.concat(ofRule('consensus'), ofRule('groupPriority')).forEach(function (x) {
-        var ind = x.industryIds[0], pipe = 0, arr = 0;
-        x.regionIds.forEach(function (r) { pipe += mc(r, ind).pipelineTotal || 0; arr += mc(r, ind).currentArr || 0; });
-        a.near(x.money, Math.max(pipe / orgPipe, arr / orgArr), 1e-9, x.id + ': money is the larger share, worked out by hand');
-      });
-      var sig = splits.map(function (x) { return x.significance; });
-      a.equal(sig.filter(function (s, i) { return sig.indexOf(s) === i; }).length, sig.length, 'every split has its own significance');
-      var byMoney = splits.slice().sort(function (p, q) { return q.money - p.money; }).map(function (x) { return x.id; });
-      a.deepEqual(splits.map(function (x) { return x.id; }), byMoney, 'splits are ordered by what is at stake');
-    });
-  });
-
   /* ---------- realism (US-1.7.7) ---------- */
   T.suite('rules-realism', function () {
     T.test('TPV-TC-157', 'A planted year-1 ambition 4x recent pipeline gives a realism insight with the ratio', function (a) {
@@ -280,6 +260,41 @@
       a.near(x.figures[0].cell.v, X.p12.value, 1e-6, 'North America’s implied wins');
       a.near(x.figures[1].cell.v, X.p12.othersAvg, 1e-6, 'the simple average of the other regions');
       a.equal(ofRule('winsVsPeers').length, 1, 'no other region needs twice its peers’ wins');
+    });
+  });
+
+  /* ---------- exposure (US-1.7.8) ---------- */
+  T.suite('rules-exposure', function () {
+    T.test('TPV-TC-160', 'A planted region with over 50% of planned growth in 3 accounts gives an insight naming them and the share', function (a) {
+      sample();
+      var x = get('concentration:na');
+      check(a, planted('P13'));
+      a.deepEqual(x.accountIds, X.p13.top3, 'the three accounts, largest first');
+      region('na').customerGrowth.accounts.filter(function (c) { return x.accountIds.indexOf(c.id) >= 0; })
+        .forEach(function (c) { a.ok(x.sentence.indexOf(c.name) >= 0, 'names ' + c.name); });
+      a.ok(x.figures.some(function (f) { return f.label.indexOf('(high risk)') > 0; }), 'the high-risk account is marked in the figures');
+      a.near(figure(x, 'cg.arr').cell.v, X.totals.na['cg.arr'], 1e-6, 'the total is the chart’s customer growth figure');
+    });
+
+    T.test('TPV-TC-161', 'A planted region with over 25% of planned growth in at-risk accounts gives an at-risk insight', function (a) {
+      sample(); check(a, planted('P14'));
+    });
+
+    T.test('TPV-TC-162', 'A planted region relying mostly on one segment gives a segment insight', function (a) {
+      sample();
+      check(a, planted('P15'));
+      a.near(get('segmentMix:apac:strategic').figures[0].cell.v, X.p15.strategicShare.apac, 1e-5, 'Strategic share');
+      a.ok(!TAP.insights.all().some(function (x) { return x.family === 'exposure' && x.regionIds[0] === 'ceu'; }),
+        'Central Europe’s empty customer growth gives no exposure insight');
+    });
+
+    T.test('TPV-TC-163', 'With account names replaced by anonymous labels, insights use the labels', function (a) {
+      sample(function (p) {
+        p.regions.forEach(function (r) { r.customerGrowth.accounts.forEach(function (c, i) { c.name = 'Account ' + (i + 1); }); });
+      });
+      var x = get('concentration:na'), ids = region('na').customerGrowth.accounts.map(function (c) { return c.id; });
+      a.ok(x, 'still found');
+      x.accountIds.forEach(function (id) { a.ok(x.sentence.indexOf('Account ' + (ids.indexOf(id) + 1)) >= 0, 'uses the label for ' + id); });
     });
   });
 })(window.TAP);

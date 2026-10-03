@@ -1,8 +1,9 @@
 /*
  * File: tests/test-ranking.js
  * Purpose: Tests for ranking insights by significance and hiding them for the session (US-1.7.2, US-1.7.11).
- * Provides: test cases TPV-TC-134 to 137, 268, 269 (engine side), X-ranking-*
- * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (window.T_INSIGHTS), the app scripts,
+ * Provides: test cases TPV-TC-134 to 137, 268, 269 (engine side), X-ranking-*, X-rules-priorities-money
+ * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (window.T_INSIGHTS), tests/test-rules.js
+ *             (window.T_RULES), the app scripts,
  *             data/sample-plan-data.js, tests/fixtures/sample-expected.js
  * Used by: tests.html
  */
@@ -180,4 +181,27 @@
       } finally { TAP.storage.set = set; }
     });
   });
+
+  /* ---------- priorities rank by what is at stake (review follow-up on #47) ---------- */
+  T.suite('rules-priorities-money', function () {
+    var R = window.T_RULES, X = window.SAMPLE_EXPECT, get = R.get, mc = R.mc;
+    T.test('X-rules-priorities-money', 'Priority insights carry the industry’s share of organization pipeline or ARR, so splits rank apart', function (a) {
+      R.sample();
+      var orgPipe = X.regions.reduce(function (s, r) { return s + X.totals[r]['base.pipeline']; }, 0), orgArr = X.org['base.arr'];
+      var splits = R.ofRule('split');
+      a.ok(splits.length >= 2 && get('split:retail'), 'the planted Retail split is still there');
+      a.near(get('split:retail').breadth, 3 / 7, 1e-9, 'breadth counts the 3 regions departing from the most common tier');
+      a.equal(get('split:retail').regionIds.length, 7, 'regionIds still list every region, for scope and highlight');
+      splits.concat(R.ofRule('consensus'), R.ofRule('groupPriority')).forEach(function (x) {
+        var ind = x.industryIds[0], pipe = 0, arr = 0;
+        x.regionIds.forEach(function (r) { pipe += mc(r, ind).pipelineTotal || 0; arr += mc(r, ind).currentArr || 0; });
+        a.near(x.money, Math.max(pipe / orgPipe, arr / orgArr), 1e-9, x.id + ': money is the larger share, worked out by hand');
+      });
+      var sig = splits.map(function (x) { return x.significance; });
+      a.equal(sig.filter(function (s, i) { return sig.indexOf(s) === i; }).length, sig.length, 'every split has its own significance');
+      var byMoney = splits.slice().sort(function (p, q) { return q.money - p.money; }).map(function (x) { return x.id; });
+      a.deepEqual(splits.map(function (x) { return x.id; }), byMoney, 'splits are ordered by what is at stake');
+    });
+  });
+
 })(window.TAP);
