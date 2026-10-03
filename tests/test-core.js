@@ -186,7 +186,7 @@
 
   T.suite('content', function () {
     T.test('X-core-content-text', 'Wording is filled in, and a missing key is shown in brackets', function (a) {
-      a.equal(TAP.content.text('scope.oneAverage', { focus: 'Region C', n: 3 }), 'Showing Region C against the average of the other 3 regions');
+      a.equal(TAP.content.text('scope.oneAverage', { focus: 'Region C', n: 3, regions: 'regions' }), 'Showing Region C against the average of the other 3 regions');
       a.equal(TAP.content.text('no.such.key'), '[no.such.key]');
     });
 
