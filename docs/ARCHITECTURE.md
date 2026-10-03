@@ -386,7 +386,7 @@ TAP_RULES.rules.push({ id: 'consensus', family: 'priorities', enabled: true,
 ```js
 { key: 'healthcare', regionIds: [...], industryIds: [...], accountIds: [],
   vars: { industry: 'Healthcare', n: 6, total: 7 },          // fills the template
-  figures: [{ label, cell }],                                // shown on demand
+  figures: [{ label, cell, unit, field, measureId }],      // shown on demand; unit as in measure meta, field for ratings
   strength: 0.8,                                             // 0..1, how far from normal
   money: 0.12,                                               // 0..1, share of org ARR or pipeline involved
   sources: [src, ...] }
@@ -401,6 +401,8 @@ TAP_RULES.rules.push({ id: 'consensus', family: 'priorities', enabled: true,
 Significance = family weight × (0.5 strength + 0.3 money + 0.2 breadth). Breadth = regions involved ÷ regions in the data. All weights come from `TAP_SETTINGS.insights`.
 
 The engine drops any finding built from a not-provided value. It skips comparison rules when fewer than 3 regions provide the value. It refuses sentences containing a banned word (from `TAP_RULES.wording.banned`).
+
+Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'text'`), and `field` when the unit is `'rating'`, so pages format it with `TAP.format.cell(cell, {unit, field, exact: true})` without guessing. Add `measureId` when the figure comes from a catalogue measure.
 
 **Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, attach, highlight, fallback, label: 'Observation to discuss'}`. `attach` lists every report the insight belongs to; panel lists filter on it, and `reportId` is `attach[0]`. When there is no Phase 1 report, `reportId` is null and `fallback` is `'details'`: "Show me" then calls `TAP.layers.openDetails(highlight)`.
 
