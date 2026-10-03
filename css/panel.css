@@ -49,6 +49,20 @@
 .tap-panel__pop-foot { border-top: var(--tap-rule-w) solid var(--tap-grid); padding-top: var(--tap-sp-2); }
 .tap-panel__pop-foot .tap-btn { font-size: var(--tap-fs-body); color: var(--tap-accent-deep); padding-left: 0; }
 
+/* Menus (chart type): one row per choice, a tick and the words for the current one */
+.tap-panel__pop--menu { width: 320px; padding: var(--tap-sp-2) 0; gap: 0; }
+.tap-panel__pop-kicker { margin: 0; padding: 6px var(--tap-sp-4) var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
+.tap-panel__item {
+  display: flex; width: 100%; align-items: center; gap: 10px; padding: 10px var(--tap-sp-4);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink); text-align: left;
+  background: transparent; border: 0; cursor: pointer;
+}
+.tap-panel__item:hover, .tap-panel__item[aria-checked="true"] { background: var(--tap-surface); }
+.tap-panel__tick { width: 18px; flex: none; font-weight: 800; }
+.tap-panel__item-label { flex: 1; }
+.tap-panel__default { font-size: var(--tap-fs-label); }
+.tap-panel__pop-note { margin: var(--tap-sp-2) 0 0; padding: var(--tap-sp-2) var(--tap-sp-4) var(--tap-sp-1); border-top: var(--tap-rule-w) solid var(--tap-grid); font-size: var(--tap-fs-label); color: var(--tap-muted); }
+
 /* One insight in the list */
 .tap-panel__insight {
   display: flex; flex-direction: column; gap: var(--tap-sp-2);
