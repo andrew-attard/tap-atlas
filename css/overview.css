@@ -6,3 +6,60 @@
  * Used by: index.html, index-sample.html, tests.html
  * Owner: OVERVIEW stream. Colours and font sizes come from theme variables only.
  */
+
+/* ---------- region cards (US-1.5.1) ---------- */
+
+/* Column count is set by js/views/overview-cards.js so rows stay even (7 cards: one row, or 4 + 3). */
+.tap-ov-cards__grid { display: grid; gap: var(--tap-sp-2); align-items: stretch; }
+
+.tap-ov-card {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2); min-width: 0; padding: 0 0 var(--tap-sp-3);
+  background: var(--tap-paper); color: var(--tap-ink); border: var(--tap-rule-w) solid var(--tap-ink);
+  cursor: pointer; font-size: var(--tap-fs-label); line-height: 1.3;
+}
+.tap-ov-card:hover { box-shadow: var(--tap-shadow-md); }
+.tap-ov-card.is-focus { border-width: var(--tap-highlight-w); }
+.tap-ov-card.is-combined { background: var(--tap-combined); border-color: var(--tap-combined); color: var(--tap-on-colour); }
+.tap-ov-card__bar { display: block; height: var(--tap-sp-2); }
+.tap-ov-card.is-focus .tap-ov-card__bar { height: var(--tap-sp-3); }
+.tap-ov-card.is-combined .tap-ov-card__bar { height: 0; }
+
+.tap-ov-card__head, .tap-ov-card__line { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--tap-sp-2); min-width: 0; }
+.tap-ov-card.is-combined .tap-ov-card__head { padding-top: var(--tap-sp-2); }
+.tap-ov-card__kicker { min-height: 1.3em; font-weight: 800; color: var(--tap-accent-deep); }
+.tap-ov-card.is-combined .tap-ov-card__kicker { color: var(--tap-on-colour); }
+.tap-ov-card__name {
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  font-size: var(--tap-fs-lead); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere;
+}
+.tap-ov-card__how { margin: 0; overflow-wrap: anywhere; }
+
+.tap-ov-card__line + .tap-ov-card__line { padding-top: var(--tap-sp-2); }
+.tap-ov-card__focus { border-top: 1px solid var(--tap-grid); margin: 0 var(--tap-sp-2); padding: var(--tap-sp-2) 0 0; }
+.tap-ov-card.is-combined .tap-ov-card__focus { border-top-color: var(--tap-rule); }
+.tap-ov-card__label { font-weight: 600; color: var(--tap-muted); }
+.tap-ov-card.is-combined .tap-ov-card__label,
+.tap-ov-card.is-combined .tap-ov-card__row--minor { color: var(--tap-on-colour); }
+
+.tap-ov-card__partial { margin: 0; font-style: italic; }
+.tap-ov-card__split { display: flex; height: var(--tap-sp-2); margin: var(--tap-sp-1) 0 2px; border: 1px solid currentColor; }
+.tap-ov-card__split > span { display: block; }
+
+.tap-ov-card__rows { display: flex; flex-direction: column; }
+.tap-ov-card__row { display: block; }
+.tap-ov-card__row .tap-ov-fig { text-align: left; }
+.tap-ov-card__row--minor { color: var(--tap-muted); }
+.tap-ov-card__chips { display: flex; flex-wrap: wrap; gap: 0 var(--tap-sp-3); }
+.tap-ov-card__chip { white-space: nowrap; }
+
+/* A figure is a button: it opens its source. It looks like text with a dotted underline on hover. */
+.tap-ov-fig {
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer;
+  font-size: var(--tap-fs-body); font-variant-numeric: tabular-nums; text-align: right;
+  text-decoration: underline dotted transparent; text-underline-offset: 3px;
+}
+.tap-ov-fig:hover, .tap-ov-fig:focus-visible { text-decoration-color: currentColor; }
+.tap-ov-fig--big { font-size: var(--tap-fs-h2); line-height: 1.1; text-align: left; align-self: flex-start; }
+.tap-ov-fig.is-np { font-size: var(--tap-fs-label); font-weight: 600; font-style: italic; }
+.tap-ov-card__row--minor .tap-ov-fig { font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-ov-card__chip .tap-ov-fig { text-align: left; }
