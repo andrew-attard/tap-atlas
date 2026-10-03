@@ -146,6 +146,22 @@
       });
     });
 
+    T.test('X-shell-actions', 'The top bar has an empty actions slot on the right for other streams to fill', function (a) {
+      withApp(function () {
+        var root = startApp();
+        var slot = TAP.shell.actionsEl();
+        a.ok(slot && qs('.tap-topbar', root).contains(slot), 'inside the top bar');
+        a.ok(slot.classList.contains('tap-topbar__actions'), 'the actions slot');
+        a.equal(slot.children.length, 0, 'empty until another stream adds to it');
+        a.equal(qs('.tap-topbar', root).lastElementChild, slot, 'last in the top bar, so it sits at the right');
+        slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Example action'));
+        var menuRight = qs('.tap-menu', root).getBoundingClientRect().right;
+        a.ok(slot.getBoundingClientRect().left >= menuRight - 1, 'right of the menu');
+        a.deepEqual(qsa('.tap-menu__item', root).map(function (b) { return Math.round(b.getBoundingClientRect().top); })
+          .filter(function (t, i, all) { return t !== all[0]; }), [], 'the menu still fits on one line');
+      });
+    });
+
     T.test('X-shell-logo', 'The logo slot shows the theme logo, and leaves no gap when there is none', function (a) {
       var saved = TAP_THEME.logo;
       try {
