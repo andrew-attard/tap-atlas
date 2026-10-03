@@ -781,4 +781,79 @@
       a.ok(parseFloat(getComputedStyle(qs('.tap-panel__title', p.el)).fontSize) > TH.type.h2, 'larger title');
     }));
   });
+
+  /* ---------- US-1.2.10: copy a chart for slides (#22) ---------- */
+
+  // Swaps the export module's two outlets (download and image clipboard) for the length of fn.
+  function capture(fn) {
+    var E = TAP.panelExport, saved = { download: E.download, clipboardImage: E.clipboardImage }, got = {};
+    E.download = function (url, name) { got.url = url; got.name = name; };
+    E.clipboardImage = function (blob) { got.blob = blob; return Promise.resolve(true); };
+    return Promise.resolve(fn(got)).then(function (v) { Object.assign(E, saved); return v; },
+      function (e) { Object.assign(E, saved); throw e; });
+  }
+  // Waits until check() is true (image encoding is asynchronous), for up to about 2 seconds.
+  function until(check) {
+    return new Promise(function (done) {
+      var n = 0;
+      (function poll() { if (check() || ++n > 40) done(); else setTimeout(poll, 50); })();
+    });
+  }
+
+  T.suite('panel-export', function () {
+    T.test('TPV-TC-256', 'Save image writes a PNG that includes the title, the legend and the data label', scene(function (a, s) {
+      var p = s.panel('ov-ambition');
+      return capture(function (got) {
+        more(p, 'save-image');
+        return until(function () { return !!got.url; }).then(function () {
+          a.equal(got.name, 'ov-ambition.png', 'file name');
+          a.match(got.url || '', /^data:image\/png;base64,/, 'a PNG');
+        });
+      }).then(function () {
+        return TAP.panelExport.compose(TAP.panelExport.specOf(p.el));
+      }).then(function (out) {
+        var text = out.texts.join(' | ');
+        a.ok(out.canvas.width > 0 && out.canvas.height > 0, 'drawn');
+        a.ok(text.indexOf(TAP.reports.get('ov-ambition').title) >= 0, 'title');
+        a.ok(text.indexOf(TAP.content.regionName(TAP.data.region('alpha'))) >= 0, 'legend names the regions');
+        a.ok(/Darker: /.test(text), 'legend names the parts');
+        a.ok(text.indexOf(TAP.shell.label().text) >= 0, 'data label');
+      });
+    }));
+
+    T.test('TPV-TC-257', 'Copy image puts a PNG on the clipboard and says so', scene(function (a, s) {
+      var p = s.panel('ov-ambition');
+      return capture(function (got) {
+        more(p, 'copy-image');
+        return until(function () { return !!txt(qs('.tap-panel__status', p.el)); }).then(function () {
+          a.ok(got.blob, 'something copied');
+          a.equal(got.blob && got.blob.type, 'image/png');
+          a.match(txt(qs('.tap-panel__status', p.el)), /copied/i);
+        });
+      });
+    }));
+
+    T.test('TPV-TC-258', 'The image carries the sample or the internal label, whichever applies', scene(function (a, s) {
+      var plan = T_FIXTURE('mini');
+      plan.meta.isSample = false;
+      TAP.data.load(plan);
+      var p = s.panel('ov-ambition');
+      return TAP.panelExport.compose(TAP.panelExport.specOf(p.el)).then(function (out) {
+        a.equal(TAP.shell.label().kind, 'internal');
+        a.ok(out.texts.indexOf(TAP.shell.label().text) >= 0, 'internal label drawn');
+      });
+    }));
+
+    T.test('X-export-disabled', 'Image export is offered on chart views only', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      click(qs('[data-action="more"]', p.el));
+      a.ok(!qs('[data-action="save-image"]', p.el).disabled, 'chart: enabled');
+      click(qs('[data-action="table"]', p.el));
+      click(qs('[data-action="more"]', p.el));
+      a.ok(qs('[data-action="save-image"]', p.el).disabled, 'table: disabled');
+      a.ok(qs('[data-action="copy-image"]', p.el).disabled);
+      a.match(txt(qs('.tap-panel__pop', p.el)), /chart views/, 'says why');
+    }));
+  });
 })(window.TAP);
