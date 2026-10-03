@@ -326,6 +326,20 @@
       a.equal(qsa('.tap-panel__insight [data-action="hide-insight"]', p.el).length, 1, 'list items have it too');
     }));
 
+    T.test('X-panel-legend-parts', 'Stacked parts are named in words by shade, with no grey swatches', scene(function (a, s) {
+      var p = s.panel('ov-ambition');
+      a.equal(qsa('.tap-panel__legend-item--part', p.el).length, 0, 'no swatch for a part');
+      var line = txt(qs('.tap-panel__parts', p.el));
+      a.match(line, /Darker: New business ARR potential/, 'the first part is the darker shade');
+      a.match(line, /lighter: Customer growth ARR/, 'the second the lighter');
+      s.report(fakeDef());
+      FAKE = function () {
+        return { legend: [{ label: 'Region A', color: TH.regions[0], role: 'region' }, { label: 'One', color: TH.ink, role: 'part' },
+          { label: 'Two', color: TH.ink, role: 'part' }, { label: 'Three', color: TH.ink, role: 'part' }] };
+      };
+      a.match(txt(qs('.tap-panel__parts', s.panel('x-fake').el)), /darkest first: One, Two and Three/, 'three parts');
+    }));
+
     T.test('X-panel-destroy', 'destroy disposes the chart and stops listening', scene(function (a, s) {
       s.report(fakeDef());
       var p = s.panel('x-fake'), el = qs('.tap-panel__chart', p.el);
