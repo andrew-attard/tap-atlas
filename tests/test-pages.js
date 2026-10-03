@@ -336,9 +336,9 @@
           var line = txt(root.querySelector('.tap-ins__group[data-family="' + f + '"] .tap-ins__gline'));
           a.equal(line, TAP.content.text('insightsPage.families.' + f + '.line'), f + ' is explained in one line');
         });
-        a.deepEqual(items(root.querySelector('[data-family="priorities"]')), ['consensus:education', 'groupPriority:datacenters:ability'],
+        a.deepEqual(items(root.querySelector('.tap-ins__group[data-family="priorities"]')), ['consensus:education', 'groupPriority:datacenters:ability'],
           'ranked by significance inside a family (0.62 before 0.48)');
-        a.deepEqual(items(root.querySelector('[data-family="judgement"]')), ['tierVsPipeline:seu:retail', 'strongRating:neu:pharma'],
+        a.deepEqual(items(root.querySelector('.tap-ins__group[data-family="judgement"]')), ['tierVsPipeline:seu:retail', 'strongRating:neu:pharma'],
           'judgement: 0.41 before 0.37');
         var labels = qsa('.tap-ins__label', root).map(txt);
         a.ok(labels.length === 8 && labels.every(function (l) { return l === 'Observation to discuss'; }), 'every insight is labelled an observation to discuss');
