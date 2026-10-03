@@ -82,7 +82,9 @@
     });
 
     T.test('X-contract-stubs', 'Each remaining stub names its issue', function (a) {
-      TAP.stub.list().forEach(function (s) { a.ok(s.issue > 0, s.what + ' names an issue'); });
+      var list = TAP.stub.list();
+      a.ok(Array.isArray(list), 'the stub list is readable (empty once everything is built)');
+      list.forEach(function (s) { a.ok(s.issue > 0, s.what + ' names an issue'); });
     });
   });
 })(window.TAP);
