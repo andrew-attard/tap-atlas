@@ -1,10 +1,11 @@
 /*
  * File: js/views/insights.js
  * Purpose: The Insights view: every insight in the comparison, ranked, grouped by family, filterable by region
- *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3).
+ *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
+ *          session" with an "N hidden · Show hidden" note (US-1.7.11).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
  * Depends on: js/engine/registry.js, js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js,
- *             js/engine/scope.js, js/insights/engine.js (ranked, hidden), js/ui/layers.js (openDetails)
+ *             js/engine/scope.js, js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {
@@ -80,16 +81,22 @@
   /* ---------- the page ---------- */
 
   function mount(root) {
-    var ui = { regions: [], families: [], open: {}, status: '' };
+    var ui = { regions: [], families: [], open: {}, status: '', showHidden: false };
     var page = el('div', { class: 'tap-ins' });
     TAP.dom.clear(root);
     root.appendChild(page);
 
     function cmp() { return TAP.store.get().cmp; }
     function hidden() { try { return TAP.insights.hidden() || []; } catch (e) { return []; } }
+    // The ranked list without hidden insights; with "Show hidden" on, the hidden ones in scope follow, by significance.
     function visible() {
       var hid = hidden();
-      return TAP.insights.ranked(cmp(), {}).filter(function (x) { return !has(hid, x.id); });
+      var list = TAP.insights.ranked(cmp(), {}).filter(function (x) { return !has(hid, x.id); });
+      if (!ui.showHidden || !hid.length) return list;
+      var scope = TAP.scope.regionIds(cmp());
+      return list.concat(TAP.insights.all().filter(function (x) {
+        return has(hid, x.id) && x.regionIds.some(function (r) { return has(scope, r); });
+      }).sort(function (p, q) { return q.significance - p.significance; }));
     }
     function byRegion(x) { return !ui.regions.length || x.regionIds.some(function (r) { return has(ui.regions, r); }); }
     function byFamily(x) { return !ui.families.length || has(ui.families, x.family); }
@@ -127,7 +134,19 @@
       return el('div', { class: 'tap-ins__summary' }, [
         el('span', { class: 'tap-ins__shown' }, t('shown', { n: shown, total: total })),
         any ? el('button', { type: 'button', class: 'tap-ins__clear', 'data-key': 'clear', onclick: clear }, t('clear')) : null,
+        hiddenNote(),
         el('span', { class: 'tap-ins__status', role: 'status', 'aria-live': 'polite' }, ui.status)
+      ]);
+    }
+
+    // "2 hidden · Show hidden", so nothing hidden is lost by accident (US-1.7.11).
+    function hiddenNote() {
+      var n = hidden().length;
+      if (!n) return null;
+      return el('span', { class: 'tap-ins__hiddennote' }, [
+        el('span', { class: 'tap-ins__hidden' }, n === 1 ? t('hiddenCountOne') : t('hiddenCount', { n: n })), ' · ',
+        el('button', { type: 'button', class: 'tap-ins__showhidden', 'data-key': 'showhidden', 'aria-pressed': String(!!ui.showHidden),
+          onclick: function () { ui.showHidden = !ui.showHidden; draw(); } }, ui.showHidden ? t('hideHidden') : t('showHidden'))
       ]);
     }
 
@@ -154,7 +173,7 @@
     }
 
     function itemEl(x) {
-      var open = !!ui.open[x.id], key = function (k) { return k + ':' + x.id; };
+      var open = !!ui.open[x.id], key = function (k) { return k + ':' + x.id; }, hid = has(hidden(), x.id);
       var regions = x.regionIds.map(function (id) {
         var sw = el('span', { class: 'tap-swatch', 'aria-hidden': 'true' });
         sw.style.background = TAP.scope.colorOf(id);
@@ -167,10 +186,16 @@
           onclick: function () { ui.open[x.id] = !open; draw(); } }, open ? t('detailsClose') : t('details')),
         el('button', { type: 'button', class: 'tap-btn tap-ins__copy', 'data-key': key('copy'),
           onclick: function () { copy(copyText(x), function (ok) { ui.status = t(ok ? 'copied' : 'copyFailed'); draw(); }); } },
-          [TAP.icons.svg('copy', { size: 18 }), t('copy')])
+          [TAP.icons.svg('copy', { size: 18 }), t('copy')]),
+        el('button', { type: 'button', class: 'tap-btn tap-ins__hide', 'data-key': key('hide'),
+          onclick: function () { if (hid) TAP.insights.unhide(x.id); else TAP.insights.hide(x.id); } },
+          [TAP.icons.svg('hide', { size: 18 }), hid ? t('unhide') : t('hide')])
       ]);
-      return el('article', { class: 'tap-ins__item', 'data-insight': x.id }, [
-        el('span', { class: 'tap-badge tap-ins__label' }, x.label || t('label')),
+      return el('article', { class: 'tap-ins__item' + (hid ? ' is-hidden' : ''), 'data-insight': x.id }, [
+        el('div', { class: 'tap-ins__badges' }, [
+          el('span', { class: 'tap-badge tap-ins__label' }, x.label || t('label')),
+          hid ? el('span', { class: 'tap-badge tap-ins__hiddenbadge' }, t('hiddenBadge')) : null
+        ]),
         TAP.dom.html(el('p', { class: 'tap-ins__sentence' }), TAP.content.mark(x.sentence, {})),
         el('div', { class: 'tap-ins__regions' }, regions),
         actions,
@@ -202,7 +227,7 @@
       var families = familyOrder(list), shown = list.filter(function (x) { return byRegion(x) && byFamily(x); });
       page.appendChild(el('header', { class: 'tap-ins__head' }, [
         el('p', { class: 'tap-ins__kicker' }, t('kicker')),
-        el('h1', { class: 'tap-ins__h1' }, t('heading')),
+        el('h1', { class: 'tap-ins__h1', tabindex: '-1' }, t('heading')),
         el('p', { class: 'tap-ins__intro' }, list.length === 1 ? t('introOne') : t('intro', { n: list.length })),
         el('p', { class: 'tap-ins__scope' }, t('scope', { sentence: TAP.scope.sentence(cmp()) }))
       ]));
@@ -219,6 +244,8 @@
         ]));
       }
       var back = focusKey ? page.querySelector('[data-key="' + focusKey.replace(/["\\]/g, '') + '"]') : null;
+      // The control that was used may be gone (its insight was just hidden): fall back to the hidden count
+      if (!back && focusKey) back = page.querySelector('.tap-ins__showhidden') || page.querySelector('.tap-ins__h1');
       if (back) back.focus();
     }
 

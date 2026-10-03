@@ -71,6 +71,13 @@ Object.assign(window.TAP_CONTENT.text, {
     copySources: 'Sources:',
     none: 'No insights match these filters.',
     empty: 'No insights for this comparison.',
+    hide: 'Hide for this session',
+    unhide: 'Show again',
+    hiddenBadge: 'Hidden for this session',
+    hiddenCount: '{n} hidden',
+    hiddenCountOne: '1 hidden',
+    showHidden: 'Show hidden',
+    hideHidden: 'Hide them again',
     families: {
       priorities: { name: 'Agreement and disagreement on priorities', line: 'Where regions choose the same tier for an industry, or clearly different tiers.' },
       judgement: { name: 'Leader judgement and system figures', line: 'Where a leader’s tier or rating and the system figures for the same industry point different ways.' },

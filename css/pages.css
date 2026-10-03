@@ -105,6 +105,10 @@
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--tap-sp-2);
   padding-bottom: var(--tap-sp-4); margin-bottom: var(--tap-sp-4); border-bottom: var(--tap-rule-w) solid var(--tap-grid);
 }
+.tap-ins__badges { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-ins__hiddenbadge { border-style: dashed; color: var(--tap-muted); }
+.tap-ins__item.is-hidden .tap-ins__sentence { color: var(--tap-muted); }
+.tap-ins__hiddennote { font-weight: 600; }
 .tap-ins__sentence { margin: 0; font-size: var(--tap-fs-lead); line-height: 1.4; font-weight: 600; }
 .tap-ins__regions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-1) var(--tap-sp-4); }
 .tap-ins__region { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
