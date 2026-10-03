@@ -257,6 +257,24 @@
       });
     });
 
+    T.test('X-industry-view-grid', 'The view shows the tier grid in a panel; a row selects its industry, a cell opens details', function (a) {
+      var root = T.dom.mount(), view = TAP.views.get('industry').mount(root);
+      try {
+        var panel = root.querySelector('.tap-panel[data-report="ind-tiers"]');
+        a.ok(panel, 'tier grid panel');
+        panel.querySelector('.tap-tg__name[data-tap-industry="ind3"]').click();
+        a.equal(TAP.store.get().industry, 'ind3', 'row click selects the industry');
+        var opened = null, off = TAP.bus.on('industry:select', function () {});
+        var keep = TAP.layers.openDetails;
+        TAP.layers.openDetails = function (tg) { opened = tg; };
+        try { root.querySelector('.tap-panel[data-report="ind-tiers"] [data-tap-region="delta"][data-tap-industry="ind2"]').click(); }
+        finally { TAP.layers.openDetails = keep; off(); }
+        a.equal(TAP.store.get().industry, 'ind2', 'cell click selects its industry');
+        a.deepEqual(opened && [opened.regionIds, opened.industryIds], [['delta'], ['ind2']], 'and opens its details');
+      } finally { view.destroy(); }
+      a.equal(root.querySelector('.tap-panel'), null, 'destroy removes the panel');
+    });
+
     T.test('X-industry-grid-explain', 'The explanation says which tier is darkest', function (a) {
       a.match(TAP.reports.get('ind-tiers').explain.read, /Tier 1 darkest/);
       a.deepEqual(TAP.reports.validate(TAP.reports.get('ind-tiers')), []);
