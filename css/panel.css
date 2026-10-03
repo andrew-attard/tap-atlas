@@ -1,8 +1,139 @@
 /*
  * File: css/panel.css
- * Purpose: The report panel and its controls, chart area, table and insights list.
- * Provides: styles for this area only
+ * Purpose: The report panel and its controls, chart area, table and insights list, plus the builders' tooltips.
+ * Provides: styles for this area only (.tap-panel*, .tap-tip*)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: PANEL stream. Colours and font sizes come from theme variables only.
  */
+
+/* The frame: 2px ink on the ground, flat (no shadow) */
+.tap-panel {
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); color: var(--tap-ink);
+}
+
+/* Title and takeaway on the left, the toolbar on the right; the toolbar wraps below in a narrow panel */
+.tap-panel__head {
+  display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--tap-sp-3) var(--tap-sp-6);
+  padding: 20px var(--tap-sp-6) var(--tap-sp-4);
+}
+.tap-panel__titles { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: var(--tap-sp-2); }
+.tap-panel__title { margin: 0; font-size: var(--tap-fs-h2); line-height: 1.2; font-weight: 800; letter-spacing: -0.01em; }
+.tap-panel__takeaway {
+  margin: 0; min-height: 1.45em; max-width: 76ch;
+  font-size: var(--tap-fs-lead); line-height: 1.45; font-weight: 600;
+}
+.tap-panel__takeaway:empty { min-height: 0; }
+.tap-panel__hide { min-height: 32px; padding: 0 var(--tap-sp-2); font-weight: 600; vertical-align: middle; }
+
+/* Toolbar: words beside every icon, nothing hover-only */
+.tap-panel__tools { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
+.tap-panel__tool { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); white-space: nowrap; }
+.tap-panel__tool[aria-expanded="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-panel__count {
+  min-width: 24px; padding: 0 6px; text-align: center; line-height: 24px;
+  font-size: var(--tap-fs-label); font-weight: 800; background: var(--tap-accent-deep); color: var(--tap-on-colour);
+}
+.tap-panel__tool:disabled .tap-panel__count { background: var(--tap-muted); }
+
+/* Popovers: 460px, anchored under the toolbar, one at a time */
+.tap-panel__pop {
+  position: absolute; top: calc(100% + var(--tap-sp-2)); right: 0; z-index: 30;
+  width: 460px; max-width: 80vw; max-height: 560px; overflow: auto;
+  display: flex; flex-direction: column; gap: var(--tap-sp-1); padding: var(--tap-sp-4) 20px var(--tap-sp-3);
+  background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-lg);
+}
+.tap-panel__pop-head { display: flex; justify-content: space-between; align-items: center; gap: var(--tap-sp-3); padding-bottom: var(--tap-sp-2); }
+.tap-panel__pop-head h3 { margin: 0; font-size: var(--tap-fs-h3); }
+.tap-panel__pop-foot { border-top: var(--tap-rule-w) solid var(--tap-grid); padding-top: var(--tap-sp-2); }
+.tap-panel__pop-foot .tap-btn { font-size: var(--tap-fs-body); color: var(--tap-accent-deep); padding-left: 0; }
+
+/* One insight in the list */
+.tap-panel__insight {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2);
+  padding: var(--tap-sp-3); margin: 0 calc(-1 * var(--tap-sp-3)); border-top: var(--tap-rule-w) solid var(--tap-grid);
+}
+.tap-panel__insight.is-selected { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: -3px; }
+.tap-panel__insight-text { margin: 0; font-size: var(--tap-fs-body); line-height: 1.4; font-weight: 600; }
+.tap-panel__figures { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--tap-sp-4); margin: 0; font-size: var(--tap-fs-body); }
+.tap-panel__figures dd { margin: 0; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.tap-panel__rule { margin: 0; font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-panel__insight-actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-panel__insight-actions .tap-btn { font-size: var(--tap-fs-body); }
+
+/* Controls row: industry picker and the options a builder offers */
+.tap-panel__controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) 28px;
+  padding: var(--tap-sp-3) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-panel__control { display: flex; align-items: center; gap: 10px; }
+.tap-panel__control-label { font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-panel__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); }
+.tap-panel__seg { display: inline-flex; flex-wrap: wrap; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
+.tap-panel__seg-opt {
+  padding: 7px 14px; font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
+  background: transparent; border: 0; border-left: var(--tap-rule-w) solid var(--tap-ink); cursor: pointer;
+}
+.tap-panel__seg-opt:first-child { border-left: 0; }
+.tap-panel__seg-opt:hover { background: var(--tap-surface); }
+.tap-panel__seg-opt[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+
+/* Highlight strip: names what is ringed on the chart */
+.tap-panel__strip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) 14px; padding: 10px var(--tap-sp-6);
+  border-top: var(--tap-highlight-w) solid var(--tap-accent); border-bottom: var(--tap-highlight-w) solid var(--tap-accent);
+}
+.tap-panel__strip-label { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-size: var(--tap-fs-body); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-panel__ring { width: 16px; height: 16px; border: var(--tap-highlight-w) solid var(--tap-accent); border-radius: 50%; }
+.tap-panel__strip-text { flex: 1 1 320px; font-size: var(--tap-fs-body); font-weight: 600; }
+
+/* Body: chart, builder HTML, error or no-data state */
+.tap-panel__body { position: relative; padding: var(--tap-sp-3) var(--tap-sp-6) var(--tap-sp-4); border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-panel__chart { width: 100%; height: var(--tap-chart-h); }
+.tap-panel__chart--tall { height: var(--tap-chart-h-tall); }
+.tap-panel__html { width: 100%; overflow: auto; }
+.tap-panel__error, .tap-panel__empty {
+  min-height: 220px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: var(--tap-sp-2); padding: 20px; font-size: var(--tap-fs-body);
+}
+.tap-panel__error { border: var(--tap-highlight-w) solid var(--tap-accent); }
+.tap-panel__empty { border: var(--tap-rule-w) solid var(--tap-rule); }
+.tap-panel__error p, .tap-panel__empty p { margin: 0; max-width: 70ch; }
+.tap-panel__state-title { display: inline-flex; align-items: center; gap: 10px; font-size: var(--tap-fs-h3); font-weight: 800; }
+.tap-panel__error .tap-panel__state-title { color: var(--tap-accent-deep); }
+.tap-panel__error-list { margin: 0; padding-left: var(--tap-sp-6); }
+
+/* Legend and size legend: HTML under the chart, so they stay readable and selectable */
+.tap-panel__legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--tap-sp-6);
+  padding: 0 var(--tap-sp-6) 14px; font-size: var(--tap-fs-body);
+}
+.tap-panel__legend-item { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
+.tap-panel__key { width: 16px; height: 16px; flex: none; border: var(--tap-control-w) solid var(--tap-ink); }
+.tap-panel__size { display: inline-flex; align-items: flex-end; gap: 14px; margin-left: auto; }
+.tap-panel__size-label { align-self: center; max-width: 240px; font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-panel__size-items { display: inline-flex; align-items: flex-end; gap: 14px; }
+.tap-panel__size-item { display: inline-flex; flex-direction: column; align-items: center; gap: var(--tap-sp-1); font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-panel__circle { display: block; border: var(--tap-rule-w) solid var(--tap-ink); border-radius: 50%; }
+
+/* Notes under the chart */
+.tap-panel__notes { margin: 0; padding: 0 var(--tap-sp-6) 14px var(--tap-sp-6); list-style: none; font-size: var(--tap-fs-body); color: var(--tap-muted); }
+.tap-panel__notes li + li { margin-top: var(--tap-sp-1); }
+
+/* Source line: kind glyph and word, then the data date */
+.tap-panel__source {
+  display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: auto; padding: 10px var(--tap-sp-6);
+  border-top: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-label); color: var(--tap-muted);
+}
+
+/* The explanation side panel's sections (fallback until the explanation module is built) */
+.tap-panel__explain { padding-top: var(--tap-sp-3); border-top: var(--tap-rule-w) solid var(--tap-grid); margin-top: var(--tap-sp-3); }
+.tap-panel__explain h3 { margin: 0 0 var(--tap-sp-1); font-size: var(--tap-fs-body); }
+.tap-panel__explain p { margin: 0; font-size: var(--tap-fs-body); }
+
+/* Builders' tooltips (ECharts draws the frame from the theme) */
+.tap-tip { display: flex; flex-direction: column; gap: 2px; max-width: 360px; white-space: normal; }
+.tap-tip-title { font-size: var(--tap-fs-label); font-weight: 800; margin-bottom: var(--tap-sp-1); }
+.tap-tip-row { display: flex; justify-content: space-between; gap: var(--tap-sp-4); font-size: var(--tap-fs-label); }
+.tap-tip-row b { font-weight: 800; font-variant-numeric: tabular-nums; }
