@@ -64,7 +64,7 @@ Industries: the template's 18, plus two unrated rows.
 |---|---|---|---|---|---|
 | P01 | priorities / consensus | all | `education` is Tier 2 in A, B, C, D, E, F and Tier 3 in G | Education is Tier 1 or 2 in 6 of 7 regions | TPV-TC-144 |
 | P02 | priorities / split | all | `retail` is Tier 2 in A, B, C and Tier 3 in D, E, F, G | Retail is split: 3 regions Tier 2, 4 regions Tier 3 | TPV-TC-145 |
-| P03 | priorities / group priority vs local view | B, C, E, G | `datacenters` (group priority, Tier 1 everywhere): references 1, expertise 1, product fit 2, so ability = 1.33 in B, C, E and G. Ability is 2.0 or more in A, D and F | Data Centers is a group priority, but 4 regions rate their ability to win there as low | TPV-TC-146 |
+| P03 | priorities / group priority vs local view | B, C, E, G | `datacenters` (group priority, Tier 1 everywhere): references 1, expertise 1, product fit 2, so ability = 1.33 in B, C, E and G. Ability is 2.0 or more in A, D and F. Attractiveness is **below 2.0** in B, C, E and G (e.g. 2, 1, 2 = 1.67), so the capability rule does not repeat this case | Data Centers is a group priority, but 4 regions rate their ability to win there as low | TPV-TC-146 |
 | P04 | judgement / strong rating, little in the system | C | `pharma` in C: references 3; currentArr 0, pipelineTotal 0, pipelineCreated12m 0 | Northern Europe rates its references in Pharma and Biotech as strong, with no current ARR or pipeline there | TPV-TC-149 |
 | P05 | judgement / weak rating, a lot in the system | E | `manufacturing` in E: expertise 1. Its currentArr (2,400) is the largest of E's industries | Central Europe rates its expertise in Manufacturing as limited, where it holds its largest current ARR | TPV-TC-150 |
 | P06 | judgement / priority vs money (Tier 3, large pipeline) | D | `retail` in D is Tier 3 (from P02), with pipelineTotal = 18% of D's total pipeline (all rows, including Other and Unapplied) | Southern Europe placed Retail in Tier 3, but it holds 18% of the region's pipeline | TPV-TC-151 |
@@ -76,12 +76,12 @@ Industries: the template's 18, plus two unrated rows.
 | P12 | realism / pool coverage | A | A's implied wins (target accounts × hit rate, all rows) = 3× the simple average of the other regions' implied wins | North America's plan needs about 3× as many new customer wins as the average of the other regions | TPV-TC-159 |
 | P13 | exposure / concentration | A | Of A's planned customer growth (incremental ARR, 3 years, all accounts), 60% sits in its top 3 accounts, one of them flagged `high` risk | 60% of North America's planned customer growth sits in 3 accounts, one of them flagged high risk | TPV-TC-160 |
 | P14 | exposure / at-risk growth | F | 40% of F's planned customer growth sits in accounts with riskLevel `high` or `medium` | 40% of Middle East & Africa's planned customer growth is in accounts flagged at risk | TPV-TC-161 |
-| P15 | exposure / segment balance | G | 80% of G's planned customer growth comes from Strategic accounts; for the other regions it's 30% to 50% | Asia Pacific's planned customer growth relies mostly on Strategic accounts (80%) | TPV-TC-162 |
+| P15 | exposure / segment balance | G | 80% of G's planned customer growth comes from Strategic accounts; for the other regions that have customer growth data (all but E, see G2) it's 30% to 50% | Asia Pacific's planned customer growth relies mostly on Strategic accounts (80%) | TPV-TC-162 |
 | P16 | capability / attractive but not yet winnable | A, D, F, G | `fsm`: attractiveness 2.33 or more and ability 1.67 or less in A, D, F and G; elsewhere ability is 2.0 or more. A's and F's New Business rows for `fsm` name success factors ("Field service references", "Mobile workforce integration partner") | 4 regions see Field Service Management as attractive but rate their ability to win as low | TPV-TC-164, TPV-TC-165 |
 
 **Other insights may fire too.** That's fine, as long as no planted case is drowned out by a near-duplicate: P03 and P16 deliberately use different industries.
 
-**Per-region attractive-but-not-yet-winnable lists (TPV-TC-165):** the generator records every region's full list in the output's `expectations` comment block (see below). P16 guarantees `fsm` in A, D, F and G, and P03 adds `datacenters` wherever its attractiveness is 2.0 or more.
+**Per-region attractive-but-not-yet-winnable lists (TPV-TC-165):** the generator records every region's full list in the output's `expectations` comment block (see below). P16 guarantees `fsm` in A, D, F and G. P03's `datacenters` is kept out of these lists (attractiveness below 2.0 where ability is low).
 
 ## Planted data states
 

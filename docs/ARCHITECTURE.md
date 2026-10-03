@@ -63,7 +63,7 @@ The three pages load the same app scripts in the same order (lint checks this). 
 
 ## 4. Start-up
 
-1. Scripts load in the fixed order (section 13).
+1. Scripts load in the fixed order (section 14).
 2. `js/ui/app.js` runs on `DOMContentLoaded` unless `<body data-autostart="false">` (the test page sets that and mounts the app itself).
 3. `TAP.data.load()` checks `PLAN_DATA`:
    - a missing data file shows the "no plan data" screen;
@@ -88,7 +88,7 @@ state = {
   industry: null,                // industry selected on the Industry view (US-1.5.7)
   expanded: null,                // report id of the expanded panel, or null
   layer: null,                   // open side panel: {name, payload} or null
-  highlight: null,               // active "Show me" target, see section 10
+  highlight: null,               // active "Show me" target: a Target (section 11)
   hiddenInsights: [],            // insight ids hidden this session (never stored)
   scopeEpoch: 0                  // goes up on any shared comparison change or view change
 }
@@ -102,6 +102,8 @@ state = {
 | `TAP.store.reset()` | Back to the defaults above (used by tests and on load) |
 | `TAP.store.defaults()` | A fresh copy of the defaults |
 | `TAP.bus.on(name, fn)` / `off` / `emit(name, payload)` | Simple event bus |
+
+**Notes for the data sources panel: `TAP.notes`** (also in `store.js`). `add({source, message, regionId?, sheet?, cell?})`, `list(source?)`, `clear(source?)`. Sources are `'data'` (check warnings), `'colours'` (more regions than colours), `'organization'` (a broken organization file) and `'insights'` (rules that were skipped). Notes go **only** to the data sources panel, never onto the main screens (US-1.1.5). `app.start` clears them and adds the load warnings.
 
 Bus events: `showme` `{insightId, target}`, `industry:select` `{industryId}`, `details:open` `{target}`, `charts:reset` (from the Guide's reset button).
 
@@ -132,8 +134,18 @@ Tests call `TAP.data.load(fixture)` to swap in `tests/fixtures/mini-data.js`.
 { v: 1234,                       // number, string, array, or null
   state: 'value',                // 'value' | 'notProvided' | 'notApplicable'
   kind: 'PRE',                   // 'IN' leader input | 'PRE' system figure | 'DER' calculated in the workbook | 'APP' calculated by this app
-  src: { regionId, section, field, row, year } }   // or a combined source, below
+  src: { regionId, section, field, row, year, cell, kind } }   // or a combined source, below
 ```
+
+**A source reference (`src`):**
+- `section`: `marketCoverage`, `newBusiness`, `customerGrowth`, `partners` or `recap`.
+- `field`: the contract field. Dotted for nested fields, e.g. `channelSplit.direct` or `thresholds.strategicArr`.
+- `row`: the item's `sourceRow`.
+- `year`: the **plan year 1, 2 or 3** for fields held by year (never a calendar year).
+- `cell`: a fixed cell when there is one, e.g. a recap item's `sourceCell`.
+- `kind`: the cell's kind, so the address can say "calculated in the workbook".
+
+Measures fill in `kind`; `TAP.sources.address` never guesses it.
 
 A cell may also carry `partial: true` with a `note` when part of it is missing, for example a region's ambition with new business but no customer growth. A figure summed over rows skips blank rows; if every row is blank, the cell is `notProvided`.
 
@@ -223,10 +235,11 @@ One registry feeds reports, cards, headline and insights, so figures can't drift
 | `base.arr`, `base.pipeline`, `base.pipeline12m` | Region totals from Market Coverage | amount / PRE |
 | `focus.tier1`, `focus.tier2`, `focus.tier3` | Number of industries per tier | count / IN |
 | `nb.targetAccounts` | Target accounts | count / IN |
+| `nb.targetAccountsRated` | Target accounts on rows that have a hit rate (the hit rate's weight, so wins add up) | count / IN |
 | `nb.wins` | Implied wins = target accounts × hit rate | count / APP |
-| `nb.hitRate` | Hit rate, weighted by target accounts | rate / IN |
+| `nb.hitRate` | Hit rate = implied wins ÷ target accounts on rows with a hit rate; combined weighted by `nb.targetAccountsRated` | rate / IN |
 | `nb.avgDealSize` | Average deal size, weighted by implied wins | rate / IN |
-| `nb.growthY2`, `nb.growthY3` | Growth assumptions, weighted by year-1 ARR | rate / IN |
+| `nb.growthY2`, `nb.growthY3` | Growth assumptions, weighted by 3-year new business ARR potential | rate / IN |
 | `nb.servicesRatio` | Services ratio, weighted by ARR | rate / PRE |
 | `cg.growthY1..3` | Customer growth % per year, weighted by current ARR | rate / IN |
 | `cg.segment.strategic`, `.growth`, `.core`, `.scaled` | Accounts per segment | count / DER |
@@ -237,7 +250,7 @@ One registry feeds reports, cards, headline and insights, so figures can't drift
 | `ind.nb.arr` | New business ambition in that industry | amount / DER |
 | `ind.commentary` | Leader commentary | text / IN |
 
-`TAP.scores.attractiveness(regionId, industryId)` and `ability(...)` use weights from `TAP_SETTINGS.scores` (equal by default). They return `notProvided` if any rating used is blank, and `notApplicable` for unrated industries. `TAP.scores.quadrant(a, b)` returns `'attractiveAble'|'attractiveNotYet'|'lessAttractiveAble'|'lessBoth'`, splitting at `TAP_SETTINGS.scores.midpoint` (2.0).
+`TAP.scores.attractiveness(regionId, industryId)` and `ability(...)` use weights from `TAP_SETTINGS.scores` (equal by default). They return `notProvided` if any rating used is blank, and `notApplicable` for unrated industries. `TAP.scores.quadrant(a, b)` returns `'attractiveAble'|'attractiveNotYet'|'lessAttractiveAble'|'lessBoth'`, splitting at `TAP_SETTINGS.scores.midpoint` (2.0). **A score equal to the midpoint counts as attractive (or able)**: attractive means `a >= 2.0`, able means `b >= 2.0`.
 
 ## 10. Reports and builders
 
@@ -291,6 +304,10 @@ TAP_REPORTS['ov-ambition'] = {
 
 Display nudging (jitter, label placement) never changes the values shown in tooltips or tables.
 
+**Escaping.** Builder `html` and every ECharts tooltip or label `formatter` that returns HTML must pass every data value (region, industry and account names, commentary, success factors) through `TAP.dom.esc()`. These strings come from the workbooks.
+
+**The bubble view of a `parts` report** (for example `ov-ambition`) is drawn by the `parts` builder, using the definition's `x`, `y` and `size`. `TAP.reports.validate` checks every type against its shape (`TAP.reports.SHAPE_TYPES`) and every measure id it names (`TAP.reports.measureIds`).
+
 Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/engine/build-*.js`. Dedicated builders: `tierGrid` (`js/reports/tier-grid.js`, the only `grid` report in Phase 1) and `quadrant` (`js/reports/quadrant.js`).
 
 ## 11. Panel, views and side panels
@@ -300,7 +317,24 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 - `TAP.layers.open(name, payload)`, `close()` and `openDetails(target)` handle the side panels: details, data sources, glossary, explanation. They don't block the page; Esc closes the top one.
 - `TAP.details.build(target)` returns `{title, groups: [{title, rows: [{label, cell}]}]}` (owned by INDUSTRY; the shell draws it).
 
-**Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant}`. Every field except `reportId` is optional.
+**Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant, mark}`. Every field except `reportId` is optional. `mark` says what to draw: `'industryRow'`, `'regionColumn'`, `'cell'`, `'points'`, `'quadrant'` or `'bar'`. It comes from the rule's `highlight` setting. `state.highlight` holds a Target.
+
+**UI modules** (owned by SHELL unless noted):
+
+| Function | Behaviour |
+|---|---|
+| `TAP.shell.mount(root, {warnings})` | Draws the banner, menu, comparison bar area and an empty view area into `root` |
+| `TAP.shell.viewEl()` | The element views mount into |
+| `TAP.screens.show(root, loadResult)` | Full-page message for `loadResult.reason` (`missing`, `version`, `invalid`), with a copyable error list |
+| `TAP.compareBar.mount(el)` | The comparison bar; reads and writes `state.cmp` |
+| `TAP.layers.top()` | The open side panel's name, or null |
+| `TAP.sourcesPanel.render(el)` | The data sources panel body: imports, `TAP.notes`, insight `failures()` |
+| `TAP.glossary.popover(termId, anchorEl)` / `render(el)` | Term popover / the searchable glossary list (CONTENT) |
+| `TAP.explain.open(reportId)` | The explanation side panel (PAGES) |
+| `TAP.tour.offer()` / `start()` | The welcome card / the tour itself (PAGES) |
+| `TAP.overviewCards.render(el)` | The region cards for the current scope (OVERVIEW) |
+
+**Formatting: `TAP.format`** (`js/core/format.js`). `money(v, {scale, currency})` (chart style, €1.2M; `v` is in thousands unless `scale` says otherwise), `moneyExact`, `pct(v, {exact})`, `num(v, {decimals})`, `rating(v, field)`, `tier(v)`, `cell(cell, {unit, exact, field})`, `kind(k)` (returns `{glyph, label, text}`), `date(iso, {time})`, `list(names)`. The theme's keys are documented in `js/theme.js` itself.
 
 ## 12. Insights (`js/insights/*`, `config/insight-rules.js`)
 
@@ -339,7 +373,7 @@ The engine drops any finding built from a not-provided value. It skips compariso
 
 ## 13. Content (`content/*`, `js/core/content.js`, `js/ui/glossary.js`)
 
-- `TAP_CONTENT.glossary[id] = {term, aliases: [], short, long, layer: 'general'}`.
+- `TAP_CONTENT.glossary[id] = {term, aliases: [], short, why, related: [ids]}`. `TAP.content.terms()` adds `id` and `layer` (`'general'` or `'organization'`).
 - `TAP_CONTENT.guide` holds the Guide page sections.
 - `TAP_CONTENT.text` holds every on-screen phrase: tour steps, headline templates, family lines, combined-figure explanations, system messages, banners, empty and missing states.
 - `TAP_ORG` uses the same shape and overrides or adds keys. It also carries `settings` such as `internalLabel {show, text}`.
@@ -385,6 +419,7 @@ js/ui/app.js
 |---|---|
 | `docs/ARCHITECTURE.md`, `docs/AGENT-BRIEF.md`, the three HTML pages, `css/base.css`, `js/core/namespace|dom|icons|storage|store|data.js`, `js/engine/registry.js`, `config/settings.js`, `config/reports.js`, `config/views.js`, `js/ui/app.js`, `tests/test-contracts.js`, `tests/test-meta.js`, `tests/fixtures/mini-data.js` | lead |
 | `js/theme.js`, `js/core/format.js` | lead (Wave 0, #10 and #18) |
+| `tests/test-<area>.js` and the fixtures `sample-expected.js`, `broken-cases.js`, `insights-fixture.js` | the stream named in each file's header (already listed in `tests.html`) |
 | everything else | the stream named in the build plan |
 
 A stream that needs a change in a lead-owned file asks for it in its PR description under "Contract changes". It does not make the change itself.
