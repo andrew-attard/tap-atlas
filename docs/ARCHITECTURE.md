@@ -103,7 +103,7 @@ state = {
 | `TAP.store.defaults()` | A fresh copy of the defaults |
 | `TAP.bus.on(name, fn)` / `off` / `emit(name, payload)` | Simple event bus |
 
-**Notes for the data sources panel: `TAP.notes`** (also in `store.js`). `add({source, message, regionId?, sheet?, cell?})`, `list(source?)`, `clear(source?)`. Sources are `'data'` (check warnings), `'colours'` (more regions than colours), `'organization'` (a broken organization file) and `'insights'` (rules that were skipped). Notes go **only** to the data sources panel, never onto the main screens (US-1.1.5). `app.start` clears them and adds the load warnings.
+**Notes for the data sources panel: `TAP.notes`** (also in `store.js`). `add({source, message, regionId?, sheet?, cell?})`, `list(source?)`, `clear(source?)`. Sources are `'data'` (check warnings), `'colours'` (more regions than colours) and `'organization'` (a broken organization file). Skipped insight rules come from `TAP.insights.failures()` instead. Notes go **only** to the data sources panel, never onto the main screens (US-1.1.5). `app.start` clears them and adds the load warnings.
 
 Bus events: `showme` `{insightId, target}`, `industry:select` `{industryId}`, `details:open` `{target}`, `charts:reset` (from the Guide's reset button).
 
@@ -398,7 +398,9 @@ TAP_RULES.rules.push({ id: 'consensus', family: 'priorities', enabled: true,
 - `hide(id)` / `unhide(id)` / `hidden()`, held in session state only;
 - `failures()`: rules that threw, which are shown in the data sources panel.
 
-Significance = family weight × (0.5 strength + 0.3 money + 0.2 breadth). Breadth = regions involved ÷ regions in the data. All weights come from `TAP_SETTINGS.insights`.
+Significance = family weight × (0.5 strength + 0.3 money + 0.2 breadth). Breadth = regions involved ÷ regions in the data. All weights come from `TAP_SETTINGS.insights`. Normalization (D49): family weights are divided by the largest family weight (at least 1), and the three part weights by their sum, so significance always stays between 0 and 1.
+
+Comparison rules set `provided` on each finding: the number of regions providing the value. The minimum-regions guard reads it, and a comparison finding without it is logged as a failure. Skipped or failing rules are reported once, through `failures()`, which the data sources panel lists. They are not also added to `TAP.notes`.
 
 The engine drops any finding built from a not-provided value. It skips comparison rules when fewer than 3 regions provide the value. It refuses sentences containing a banned word (from `TAP_RULES.wording.banned`).
 
