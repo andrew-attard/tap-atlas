@@ -32,11 +32,10 @@ Object.assign(window.TAP_CONTENT.text, {
       kickerCombined: '◇ Calculated by this app',
       openDetails: '{name}: open details',
       openSources: '{name}: where each figure comes from',
-      figureTitle: '{label}: {value}. {kind}. Source: {where}',
-      figureTitleCalc: '{label}: {value}. {kind}. Select for the figures behind it',
-      shareLabel: 'Share of the 3-year ARR ambition'
+      figureTitle: '{label}: {value}. {kind}. Source: {where}',      shareLabel: 'Share of the 3-year ARR ambition'
     },
-    // Headline (US-1.5.3). {amb}, {nbShare}, {cgShare}, {rest} and {n} in the Tier 2 sentences are clickable figures.
+    // Headline (US-1.5.3). {amb}, {nbShare}, {cgShare}, {rest} and {n} in the Tier 2 sentences are figures, shown in
+    // bold and listed with their sources behind the Sources button.
     // Tier 1 is set by group strategy, so the headline names the industry most often placed in Tier 2 instead.
     headline: {
       group: '{n} {regions} plan {amb} of new ARR over three years: {nbShare} from new business and {cgShare} from existing customers.',
@@ -60,7 +59,10 @@ Object.assign(window.TAP_CONTENT.text, {
       nbShareLabel: 'Share from new business',
       cgShareLabel: 'Share from existing customers',
       tier2Label: 'Regions with {industry} in Tier 2',
-      tierOf: 'Tier, {name}'
+      tierOf: 'Tier, {name}',
+      sources: 'Sources',
+      sourcesLabel: 'Where the figures in this sentence come from',
+      sourcesTitle: 'Where the headline figures come from'
     },
     // Top insights (US-1.5.3)
     insights: {

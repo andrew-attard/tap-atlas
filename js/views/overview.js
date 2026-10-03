@@ -3,7 +3,8 @@
  * Purpose: The Overview view: the headline sentence and top insights (US-1.5.3), the region cards (US-1.5.1) and
  *          the ambition chart (US-1.5.2), redrawn as soon as the comparison changes.
  * Provides: view 'overview' (registered with TAP.views)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/store.js, js/engine/measures.js, js/engine/scope.js,
+ * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/store.js, js/engine/measures.js,
+ *             js/engine/scope.js, js/ui/layers.js,
  *             js/views/overview-cards.js, js/insights/engine.js, js/panel/panel.js, content/text-overview.js
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
@@ -23,12 +24,18 @@
 
   /* ---------- headline (US-1.5.3) ---------- */
 
-  // Fills a template from the content file: words are marked for the glossary, figures become source buttons.
-  function fill(s, seen) {
+  // Fills a template from the content file: words are marked for the glossary (first use only), figures are plain
+  // bold text and are collected in figs for the Sources panel.
+  function fill(s, seen, figs) {
     var out = [];
     TAP.content.text('overview.headline.' + s.key).split(/(\{\w+\})/).forEach(function (part) {
       var m = /^\{(\w+)\}$/.exec(part), v = m && s.vars[m[1]] != null ? s.vars[m[1]] : part;
-      if (v && v.fig) { out.push(TAP.overviewCards.figure(v.fig)); return; }
+      if (v && v.fig) {
+        var f = v.fig;
+        figs.push(f);
+        out.push(el('b', { class: 'tap-ov__num', 'data-state': f.cell.state }, TAP.format.cell(f.cell, { unit: f.unit })));
+        return;
+      }
       if (v === '') return;
       var span = el('span');
       TAP.dom.html(span, TAP.content.mark(String(v), seen));
@@ -122,14 +129,32 @@
     return out;
   }
 
+  // Every figure in the sentence, each with the lines behind it: value, kind and file › sheet › cell.
+  function openSources(figs) {
+    TAP.layers.open('headline-sources', {
+      title: H('sourcesTitle'),
+      render: function (body) {
+        figs.forEach(function (f) {
+          var group = el('section', { class: 'tap-details__group' }, el('h3', null, f.label));
+          (f.rows || [f]).forEach(function (r) { group.appendChild(TAP.overviewCards.sourceRow(r)); });
+          body.appendChild(group);
+        });
+      }
+    });
+  }
+
   function drawHeadline(host, cmp, seen) {
-    var p = el('p', { class: 'tap-ov__sentence' });
+    var p = el('p', { class: 'tap-ov__sentence' }), figs = [];
     sentences(cmp).forEach(function (s, i) {
       if (i) p.appendChild(document.createTextNode(' '));
-      TAP.dom.append(p, fill(s, seen));
+      TAP.dom.append(p, fill(s, seen, figs));
     });
-    var old = host.querySelector('.tap-ov__sentence');
-    if (old) host.replaceChild(p, old); else host.appendChild(p);
+    var lead = el('div', { class: 'tap-ov__lead' }, [p, figs.length ? el('button', {
+      type: 'button', class: 'tap-btn tap-btn--ghost tap-ov__sources', 'aria-label': H('sourcesLabel'),
+      onclick: function () { openSources(figs); }
+    }, [TAP.icons.svg('data', { size: 16 }), H('sources')]) : null]);
+    var old = host.querySelector('.tap-ov__lead');
+    if (old) host.replaceChild(lead, old); else host.appendChild(lead);
   }
 
   /* ---------- top insights (US-1.5.3) ---------- */
@@ -140,7 +165,8 @@
     else TAP.bus.emit('showme', { insightId: x.id, target: x.highlight });
   }
 
-  function insightItem(x, seen, redraw) {
+  // Hiding goes through the engine, which updates state.hiddenInsights; the view redraws on that change.
+  function insightItem(x, seen) {
     var p = el('p', { class: 'tap-ov-insight__sentence' });
     TAP.dom.html(p, TAP.content.mark(x.sentence, seen));
     var regions = (x.regionIds || []).map(function (id) {
@@ -156,26 +182,26 @@
         el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-ov-insight__show', onclick: function () { showMe(x); } },
           t('insights.showMe')),
         el('button', { type: 'button', class: 'tap-btn tap-btn--ghost tap-ov-insight__hide',
-          onclick: function () { TAP.insights.hide(x.id); redraw(); } }, t('insights.hide'))
+          onclick: function () { TAP.insights.hide(x.id); } }, t('insights.hide'))
       ])
     ]);
   }
 
-  function drawInsights(host, cmp, seen, redraw) {
+  function drawInsights(host, cmp, seen) {
     TAP.dom.clear(host);
     var link = el('a', { class: 'tap-ov__all-insights', href: '#insights',
       onclick: function (e) { e.preventDefault(); TAP.store.set({ view: 'insights' }); } }, t('insights.all'));
     host.appendChild(sectionHead(t('insights.title'), link));
     var list;
+    // The opening screen never shows an error here: a failing engine reads as "no insights" (the reason goes to the console).
     try {
       list = TAP.insights.top(cmp, null, 3) || [];
     } catch (e) {
-      if (!/Not built yet/.test(e.message)) throw e;
-      host.appendChild(el('p', { class: 'tap-stub' }, e.message));
-      return;
+      console.warn('Overview: top insights unavailable:', e.message);
+      list = [];
     }
     if (!list.length) host.appendChild(el('p', { class: 'tap-muted' }, t('insights.none')));
-    else host.appendChild(el('div', { class: 'tap-ov-insights' }, list.map(function (x) { return insightItem(x, seen, redraw); })));
+    else host.appendChild(el('div', { class: 'tap-ov-insights' }, list.map(function (x) { return insightItem(x, seen); })));
   }
 
   /* ---------- the view ---------- */
@@ -212,7 +238,7 @@
     function drawText() {
       var cmp = TAP.store.get().cmp, seen = {};
       drawHeadline(headline, cmp, seen);
-      drawInsights(insights, cmp, seen, drawText);
+      drawInsights(insights, cmp, seen);
     }
     function drawCards() {
       TAP.overviewCards.render(cardsHost);
