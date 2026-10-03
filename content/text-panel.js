@@ -44,6 +44,10 @@ Object.assign(window.TAP_CONTENT.text, {
     size: 'Bubble size',
     industry: 'Industry',
 
+    // Legend line for stacked parts, which are shades of each region's colour
+    partsTwo: 'Darker: {dark} · lighter: {light}',
+    partsMany: 'Shades, darkest first: {list}',
+
     // States inside the panel
     errorTitle: 'This report could not be drawn',
     errorNote: 'The rest of the app is unaffected.',

@@ -125,6 +125,7 @@
 }
 .tap-panel__legend-item { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
 .tap-panel__key { width: 16px; height: 16px; flex: none; border: var(--tap-control-w) solid var(--tap-ink); }
+.tap-panel__parts { flex-basis: 100%; color: var(--tap-muted); }
 .tap-panel__size { display: inline-flex; align-items: flex-end; gap: 14px; margin-left: auto; }
 .tap-panel__size-label { align-self: center; max-width: 240px; font-size: var(--tap-fs-label); font-weight: 600; }
 .tap-panel__size-items { display: inline-flex; align-items: flex-end; gap: 14px; }

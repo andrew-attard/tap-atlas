@@ -91,16 +91,29 @@
     ]));
   }
 
-  // Legend keys: squares for regions and parts (parts carry their shade), each with its name. Never colour alone.
+  // Stacked parts are shades of each region's colour, so they are named in words by shade rather than shown as
+  // grey or black swatches, which would read as "the rest" or "combined".
+  function parts(list) {
+    if (!list.length) return null;
+    var names = list.map(function (l) { return l.label; });
+    var text = names.length === 2 ? t('partsTwo', { dark: names[0], light: names[1] }) :
+      names.length === 1 ? names[0] : t('partsMany', { list: TAP.format.list(names) });
+    return el('span', { class: 'tap-panel__parts' }, text);
+  }
+
+  // Legend keys: a square and the name for each region or combined figure, the parts in words. Never colour alone.
   function legend(res) {
-    var items = res.legend || [], size = res.sizeLegend;
-    if (!items.length && !size) return null;
+    var all = res.legend || [], size = res.sizeLegend;
+    var items = all.filter(function (l) { return l.role !== 'part'; });
+    var shades = parts(all.filter(function (l) { return l.role === 'part'; }));
+    if (!items.length && !size && !shades) return null;
     var box = el('div', { class: 'tap-panel__legend' });
     items.forEach(function (l) {
       box.appendChild(el('span', { class: 'tap-panel__legend-item' + (l.role ? ' tap-panel__legend-item--' + l.role : '') }, [
         el('span', { class: 'tap-panel__key', style: 'background:' + l.color, 'aria-hidden': 'true' }), l.label
       ]));
     });
+    if (shades) box.appendChild(shades);
     if (size) {
       box.appendChild(el('span', { class: 'tap-panel__size' }, [
         el('span', { class: 'tap-panel__size-label' }, [size.label, size.kind ? ' (' + size.kind + ')' : '']),
