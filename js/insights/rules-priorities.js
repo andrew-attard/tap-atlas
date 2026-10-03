@@ -50,6 +50,8 @@
   });
 
   // Tiers spread over all three, or two groups that differ by at most evenGap regions (each of two or more).
+  // Breadth counts only the regions that depart from the most common tier, so seven near-identical splits don't
+  // crowd out single-region insights; regionIds still list every region, for scope and highlight.
   TAP.insights.defineRule('split', function (ctx) {
     var u = ctx.util, p = ctx.params;
     return u.rated().map(function (id) {
@@ -62,7 +64,8 @@
       var parts = used.map(function (k, i) { return u.phrase(i ? 'splitNext' : 'splitFirst', { n: t[k].length, tier: k }); });
       return { key: id, regionIds: t.provided, industryIds: [id], provided: n,
         vars: { industry: u.industry(id), parts: u.list(parts) },
-        figures: t.cells, strength: three ? 1 : 0.5 * (1 - Math.abs(a - b) / n), money: arrShare(u, id, t.provided) };
+        figures: t.cells, strength: three ? 1 : 0.5 * (1 - Math.abs(a - b) / n), money: arrShare(u, id, t.provided),
+        breadth: (n - Math.max.apply(null, used.map(function (k) { return t[k].length; }))) / u.regions().length };
     }).filter(Boolean);
   });
 

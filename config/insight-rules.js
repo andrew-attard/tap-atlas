@@ -38,7 +38,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'split', family: 'priorities',
     description: 'An industry whose tiers spread across all three tiers, or split almost evenly between two (the two groups differ by at most one region).',
     reads: ['marketCoverage.tier'], params: { evenGap: 1 }, compare: true,
-    scoring: 'Strength: 1 across all three tiers; half of how even the split is across two. Money: its pipeline or current ARR across the regions (the larger share of the organization\u2019s).',
+    scoring: 'Strength: 1 across all three tiers; half of how even the split is across two. Money: its pipeline or current ARR across the regions (the larger share of the organization\u2019s). Breadth: only the regions that depart from the most common tier.',
     template: 'Regions are split on {industry}: {parts}.',
     attach: TIERS, highlight: 'industryRow' });
   rule({ id: 'groupPriority', family: 'priorities',
