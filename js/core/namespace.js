@@ -1,7 +1,7 @@
 /*
  * File: js/core/namespace.js
  * Purpose: Creates the shared TAP namespace and the stub helper used for parts not built yet.
- * Provides: window.TAP, TAP.version, TAP.schemaVersion, TAP.stub (+ .builder, .view, .rules, .fn, .list)
+ * Provides: window.TAP, TAP.version, TAP.schemaVersion, TAP.stub (+ .builder, .view, .rules, .fn, .list), TAP.orgWatch
  * Depends on: nothing (loads first after the theme)
  * Used by: every module
  */
@@ -69,4 +69,18 @@
   stub.message = notBuilt;
 
   TAP.stub = stub;
+
+  // Notes any script error inside content/organization.js, so a broken file is reported in the data sources panel
+  // instead of being silently skipped (US-1.6.6). It has to be listening before that file loads, so it lives here,
+  // in the first app script after the theme.
+  (function () {
+    var errors = [];
+    function onError(e) {
+      var file = String((e && e.filename) || '').split(/[?#]/)[0];
+      if (!/(^|[\/\\])content[\/\\]organization\.js$/.test(file)) return;
+      errors.push(String(e.message || 'Script error').replace(/\.$/, '') + (e.lineno ? ' (line ' + e.lineno + ')' : ''));
+    }
+    window.addEventListener('error', onError);
+    TAP.orgWatch = { errors: errors, onError: onError };
+  })();
 })();

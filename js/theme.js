@@ -11,12 +11,15 @@
   'use strict';
 
   var T = {
-    appName: 'TAP Atlas',
+    appName: 'TAP Atlas',            // name in the top bar and browser tab
     logo: null,                       // e.g. 'assets/logo.svg'. Shown 28 px tall left of the app name; no gap when null
-    font: '"Archivo", "Segoe UI", system-ui, sans-serif',
+    font: '"Archivo", "Segoe UI", system-ui, sans-serif',   // every text; Archivo is stored in vendor/fonts
 
     /* Page colours (the Modernist palette) */
-    ground: '#f3f2f2', surface: '#eae9e9', paper: '#ffffff', ink: '#201e1d',
+    ground: '#f3f2f2',               // page background
+    surface: '#eae9e9',              // raised areas: table headers, hover fills
+    paper: '#ffffff',                // panels, cards, fields
+    ink: '#201e1d',                  // main text and strong lines
     muted: '#5a5656',                 // secondary text, 6.2:1 on ground
     rule: '#8c8888',                  // 2 px structural rules
     grid: '#c4c0c0',                  // chart gridlines
@@ -24,8 +27,9 @@
     accent: '#ec3013',                // UI only: active menu item, primary action, focus ring, insight highlight
     accentHover: '#dd2b0f', accentPress: '#ae1800',
     accentDeep: '#ae1800',            // accent at body-text size
-    accentTint: '#fff2ef',
-    bannerSample: '#201e1d', bannerInternal: '#7c1405',
+    accentTint: '#fff2ef',           // pale accent background: focus row in tables, highlight badges
+    bannerSample: '#201e1d',         // "Sample data" banner background
+    bannerInternal: '#7c1405',       // internal confidentiality label background
 
     /* Region colours, in data-file order. Never red (that means "highlight"), never grey (that means "the rest").
        Every pair stays apart by CIEDE2000 10 or more, for normal vision and for protanopia, deuteranopia and
@@ -37,13 +41,14 @@
 
     /* Tiers: neutral ink steps, so no tier reads as good or bad */
     tiers: {
-      1: { bg: '#2d2b2b', fg: '#ffffff', label: 'Tier 1' },
+      1: { bg: '#2d2b2b', fg: '#ffffff', label: 'Tier 1' },   // bg fill, fg text, label for legends
       2: { bg: '#6b6767', fg: '#ffffff', label: 'Tier 2' },
       3: { bg: '#c9c5c5', fg: '#201e1d', label: 'Tier 3' }
     },
-    notProvided: { border: '#8c8888', fg: '#5a5656' },
+    notProvided: { border: '#8c8888', fg: '#5a5656' },   // outline and text of "not provided" spaces
 
-    /* Kinds of value: glyph and word always together, never colour */
+    /* Kinds of value: glyph and word always together, never colour. The organization layer can reword the
+       labels with text keys kinds.IN, kinds.PRE, kinds.DER, kinds.APP */
     kinds: {
       IN: { glyph: '●', label: 'Leader input' },
       PRE: { glyph: '○', label: 'System figure' },
@@ -53,15 +58,15 @@
 
     /* Sizes (px). Shared-screen minimums (D24): body 16, chart labels 13 */
     type: { display: 40, h1: 32, h2: 24, h3: 20, lead: 18, body: 16, label: 14, chart: 14, chartMin: 13, title: 18 },
-    space: { 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32, 12: 48 },
-    radius: 0,
-    border: { rule: 2, control: 1, focus: 2, highlight: 3 },
-    shadow: {
+    space: { 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32, 12: 48 },   // spacing steps (px), as --tap-sp-N
+    radius: 0,                        // corner rounding (px); Modernist style is square
+    border: { rule: 2, control: 1, focus: 2, highlight: 3 },   // line widths (px): rules, controls, focus ring, highlight
+    shadow: {                         // drop shadows for popovers (sm), panels (md) and side panels (lg)
       sm: '0 1px 2px rgba(45,43,43,.14)', md: '0 3px 10px rgba(45,43,43,.16)', lg: '0 12px 32px rgba(45,43,43,.22)'
     },
     motion: { fast: 120, panel: 160, chart: 0 },   // chart animation off: it stutters over Teams
-    chartHeight: { normal: 440, tall: 560 },
-    layout: { maxWidth: 1840, gutter: 24, sidePanel: 440 }
+    chartHeight: { normal: 440, tall: 560 },   // chart heights (px) in a normal and a tall panel
+    layout: { maxWidth: 1840, gutter: 24, sidePanel: 440 }   // page width cap, side gutter, side panel width (px)
   };
 
   // Mixes a colour toward white by t (0 = unchanged, 1 = white). Used for stacked-part shades.

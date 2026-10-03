@@ -91,6 +91,11 @@
       a.equal(F.kind('PRE').text, '○ System figure');
       a.equal(F.kind('DER').text, '◇ Calculated in the workbook');
       a.equal(F.kind('APP').label, 'Calculated by this app');
+      var saved = window.TAP_ORG;
+      try {
+        window.TAP_ORG = { text: { kinds: { PRE: 'CRM figure' } } };
+        a.equal(F.kind('PRE').text, '○ CRM figure', 'the organization layer can reword a kind');
+      } finally { window.TAP_ORG = saved; }
     });
 
     T.test('X-format-date', 'Dates read the same for everyone ("2 Oct 2026")', function (a) {

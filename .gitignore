@@ -6,8 +6,6 @@ data/*.real.js
 
 # Organization-specific wording, branding and terms (only the example file is committed)
 content/organization.js
-css/theme.organization.css
-js/theme.organization.js
 
 # Spreadsheets and exports of any kind
 *.xlsx
