@@ -19,7 +19,7 @@
   function builderOf(def) { return TAP.builders.get(def.builder || (def.shape === 'xyz' ? 'xy' : def.shape)); }
 
   // Choices that last only while the shared comparison stays the same (ARCHITECTURE section 5).
-  function scoped() { return { opts: {}, highlight: null, selected: null, sentence: null }; }
+  function scoped() { return { opts: {}, highlight: null, selected: null, sentence: null, custom: null, editing: false }; }
   // Choices that last until "Reset all charts".
   function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null, table: false, sort: null }; }
 
@@ -51,7 +51,7 @@
 
   // Validates and builds. Returns {def, ctx, res, errors, types, ...}; every problem stays inside this panel.
   function build(p, s) {
-    var def = TAP.reports.get(p.id), errors = TAP.reports.validate(def), cmp = s.cmp;
+    var def = TAP.reports.get(p.id), errors = TAP.reports.validate(def), cmp = p.st.custom || s.cmp;
     var industryId = industryOf(p, def, s), entities = TAP.scope.entities(cmp);
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
     var ctx = def ? { def: def, type: types ? types.current : def.defaultType, measureId: p.st.measureId,
@@ -119,7 +119,7 @@
     if (!p.live) return;
     var s = TAP.store.get(), keep = focusKey(p), I = TAP.panelInsights;
     p.seen = {};   // glossary terms are marked once per panel
-    var b = build(p, s), info = I.get(s.cmp, p.id), ok = !b.errors.length && b.res && !b.res.empty;
+    var b = build(p, s), info = I.get(p.st.custom || s.cmp, p.id), ok = !b.errors.length && b.res && !b.res.empty;
     if (p.root.isConnected) p.wasConnected = true;
     TAP.dom.clear(p.root);
     p.root.setAttribute('aria-label', b.title);
@@ -129,10 +129,12 @@
       el('header', { class: 'tap-panel__head' }, [
         el('div', { class: 'tap-panel__titles' }, [
           el('h2', { class: 'tap-panel__title', html: TAP.content.mark(b.title, p.seen) }),
-          I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide)
+          I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide),
+          p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
         ]),
         TAP.panelMenus.tools(p, b, info)
       ]),
+      p.st.editing && b.types ? TAP.panelMenus.compareEditor(p) : null,
       b.def && !b.errors.length ? TAP.panelMenus.render(TAP.panelMenus.spec(p, b)) : null,
       ok ? I.strip(p, highlightOf(p, s)) : null,
       body(p, b, s),
