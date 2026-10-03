@@ -251,4 +251,35 @@
       a.deepEqual(splits.map(function (x) { return x.id; }), byMoney, 'splits are ordered by what is at stake');
     });
   });
+
+  /* ---------- realism (US-1.7.7) ---------- */
+  T.suite('rules-realism', function () {
+    T.test('TPV-TC-157', 'A planted year-1 ambition 4x recent pipeline gives a realism insight with the ratio', function (a) {
+      sample();
+      var x = get('pipelineCover:latam');
+      check(a, planted('P10'));
+      a.near(figure(x, 'nb.arr').cell.v, X.p10.nbY1, 1e-6, 'year-1 new business ARR potential');
+      a.equal(figure(x, 'nb.arr').cell.src.year, 1, 'traced to plan year 1');
+      a.near(figure(x, 'base.pipeline12m').cell.v, X.p10.pipeline12m, 1e-6, 'pipeline created in the last 12 months');
+      a.equal(x.reportId, 'ov-ambition', 'Show me opens the ambition chart');
+    });
+
+    T.test('TPV-TC-158', 'Planted ambition in an industry with no pipeline gives an insight', function (a) {
+      sample();
+      var x = get('noPipeline:apac:transport');
+      check(a, planted('P11'));
+      a.equal(figure(x, 'ind.pipeline').cell.v, X.p11.pipelineTotal);
+      a.ok(figure(x, 'ind.nb.arr').cell.v > 0, 'new business is planned there');
+      a.ok(!get('noPipeline:mea:hospitality'), 'P07 has no new business rows, so this rule stays quiet');
+    });
+
+    T.test('TPV-TC-159', 'A planted region needing far more implied wins than peers gives a pool-coverage insight', function (a) {
+      sample();
+      var x = get('winsVsPeers:na');
+      check(a, planted('P12'));
+      a.near(x.figures[0].cell.v, X.p12.value, 1e-6, 'North America’s implied wins');
+      a.near(x.figures[1].cell.v, X.p12.othersAvg, 1e-6, 'the simple average of the other regions');
+      a.equal(ofRule('winsVsPeers').length, 1, 'no other region needs twice its peers’ wins');
+    });
+  });
 })(window.TAP);
