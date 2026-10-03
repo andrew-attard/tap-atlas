@@ -1,0 +1,52 @@
+#!/bin/sh
+# Safety check before every commit. This repository is public, so it must never
+# contain real plan data or anything that names the organization behind it.
+#
+# It blocks the commit if:
+#   1. a spreadsheet or CSV file is being added,
+#   2. a file over 1 MB is being added (except third-party files in vendor/),
+#   3. any added line contains a term from the private denylist.
+#
+# The denylist lives OUTSIDE the repository, so the sensitive words themselves are
+# never published: ~/.config/tap-atlas/denylist.txt (one term per line, # for comments).
+
+DENYLIST="${TAP_ATLAS_DENYLIST:-$HOME/.config/tap-atlas/denylist.txt}"
+status=0
+
+# 1 and 2: check the files being added or changed
+for f in $(git diff --cached --name-only --diff-filter=ACMR); do
+  case "$f" in
+    *.xlsx|*.xlsm|*.xls|*.csv|*.tsv)
+      echo "Blocked: $f is a spreadsheet or data export. These never go in this repository."
+      status=1 ;;
+  esac
+  case "$f" in
+    vendor/*) ;;
+    *)
+      size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+      if [ "$size" -gt 1048576 ]; then
+        echo "Blocked: $f is larger than 1 MB. Check it is not a data file."
+        status=1
+      fi ;;
+  esac
+done
+
+# 3: check the added lines against the denylist
+if [ ! -f "$DENYLIST" ]; then
+  echo "Blocked: denylist not found at $DENYLIST. Create it before committing."
+  exit 1
+fi
+added=$(git diff --cached -U0 --no-color | grep '^+' | grep -v '^+++')
+while IFS= read -r term; do
+  case "$term" in ''|\#*) continue ;; esac
+  if printf '%s\n' "$added" | grep -qiwF -- "$term"; then
+    echo "Blocked: a staged change contains a denylisted term (\"$term\")."
+    printf '%s\n' "$added" | grep -niwF -- "$term" | head -3 | sed 's/^/  /'
+    status=1
+  fi
+done < "$DENYLIST"
+
+if [ $status -ne 0 ]; then
+  echo "Commit stopped. Remove the items above, or fix the denylist if it is a false alarm."
+fi
+exit $status

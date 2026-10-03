@@ -1,0 +1,26 @@
+# Real plan data never goes in this repository.
+# The app's live data file is created on the data owner's laptop and stays there.
+# Sample data is committed under a different name: data/sample-plan-data.js
+data/plan-data.js
+data/*.real.js
+
+# Organization-specific wording, branding and terms (only the example file is committed)
+content/organization.js
+css/theme.organization.css
+js/theme.organization.js
+
+# Spreadsheets and exports of any kind
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+*.tsv
+
+# Local and editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
+node_modules/

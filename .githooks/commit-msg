@@ -1,0 +1,13 @@
+#!/bin/sh
+# Checks the commit message against the same private denylist as pre-commit,
+# so organization names can't slip into the public history through a message.
+DENYLIST="${TAP_ATLAS_DENYLIST:-$HOME/.config/tap-atlas/denylist.txt}"
+[ -f "$DENYLIST" ] || { echo "Blocked: denylist not found at $DENYLIST."; exit 1; }
+while IFS= read -r term; do
+  case "$term" in ''|\#*) continue ;; esac
+  if grep -v '^#' "$1" | grep -qiwF -- "$term"; then
+    echo "Blocked: the commit message contains a denylisted term (\"$term\")."
+    exit 1
+  fi
+done < "$DENYLIST"
+exit 0
