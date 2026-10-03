@@ -390,6 +390,19 @@
       check(a, { mode: 'one', focus: 'bravo' }, function (id) { return id === 'bravo' ? own(id) : TH.combined; });
     });
 
+    T.test('X-colours-on-top', 'The focus region is drawn above the grey regions where marks overlap', function (a) {
+      var c = { mode: 'one', focus: 'charlie', restAs: 'individual' };
+      [['ind-ratings', 'dot'], ['ov-ambition', 'bubble']].forEach(function (p) {
+        var vals = seriesOf(build(p[0], p[1], c, { industryId: 'ind1' })).filter(function (s) { return s.tapRole === 'value'; });
+        var focus = vals.filter(function (s) { return s.data.some(function (d) { return d.entityId === 'charlie'; }); });
+        var grey = vals.filter(function (s) { return s.data.every(function (d) { return d.entityId !== 'charlie'; }); });
+        a.ok(grey.length > 0, p.join(' ') + ': grey regions drawn');
+        focus.forEach(function (f) {
+          grey.forEach(function (g) { a.ok(f.z > g.z, p.join(' ') + ': focus above ' + g.name); });
+        });
+      });
+    });
+
     T.test('X-colours-pair', 'In one vs one both regions keep their own colours', function (a) {
       var es = TAP.scope.entities(cmp({ mode: 'pair', focus: 'charlie', second: 'alpha' }));
       a.deepEqual(es.map(function (e) { return e.color; }), [own('charlie'), own('alpha')]);
