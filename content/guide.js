@@ -18,7 +18,8 @@
  *              from config/views.js), or null when no single view does.
  *
  * Paragraphs are plain text, one to three short sentences each. Glossary terms in them are marked by
- * TAP.content.mark(). The organization layer can replace a section's paragraphs or add sections by id.
+ * TAP.content.mark(). The organization layer can replace a section's paragraphs, add paragraphs or add sections
+ * by id (see content/organization.example.js); sections it touched carry layer: 'organization'.
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.guide = {

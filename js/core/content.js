@@ -9,17 +9,63 @@
 (function (TAP) {
   'use strict';
 
-  var orgError = null;
+  var PARTS = ['text', 'glossary', 'guide', 'regions', 'settings'];
+  var cache = { src: undefined, n: -1, layer: {}, error: null };
 
   function base() { return window.TAP_CONTENT || {}; }
+  function isObj(v) { return v != null && typeof v === 'object' && !Array.isArray(v); }
 
-  // The organization layer, or an empty one if it's missing or broken (US-1.6.6).
+  // General wording only: used for the organization layer's own error message, so a broken layer can't hide it.
+  function baseText(key, vars) {
+    var s = pick(base().text || {}, key);
+    if (s == null) return '[' + key + ']';
+    return String(s).replace(/\{(\w+)\}/g, function (m, name) { return vars && vars[name] != null ? String(vars[name]) : m; });
+  }
+
+  // Guide sections: a list where every item has an id. Returns a problem or null.
+  function badSections(g, part) {
+    if (g[part] == null) return null;
+    var path = 'guide.' + part + '.sections';
+    if (!isObj(g[part])) return baseText('org.badPart', { part: 'guide.' + part });
+    var secs = g[part].sections;
+    if (secs == null) return null;
+    var ok = Array.isArray(secs) && secs.every(function (x) { return isObj(x) && typeof x.id === 'string' && x.id; });
+    return ok ? null : baseText('org.badList', { part: path });
+  }
+
+  // Everything wrong with an organization layer, as plain sentences. Empty when it can be used.
+  function problems(o, scriptErrors) {
+    var out = scriptErrors.map(function (d) { return baseText('org.script', { detail: d }); });
+    if (o == null) return out;
+    if (!isObj(o)) return out.concat(baseText('org.notObject'));
+    Object.keys(o).forEach(function (k) {
+      if (PARTS.indexOf(k) < 0) out.push(baseText('org.unknownPart', { part: k }));
+      else if (!isObj(o[k])) out.push(baseText('org.badPart', { part: k }));
+    });
+    if (isObj(o.glossary)) {
+      Object.keys(o.glossary).forEach(function (id) {
+        var e = o.glossary[id];
+        if (!isObj(e) || typeof e.term !== 'string' || typeof e.short !== 'string') out.push(baseText('org.badTerm', { id: id }));
+      });
+    }
+    if (isObj(o.regions)) {
+      Object.keys(o.regions).forEach(function (id) {
+        if (typeof o.regions[id] !== 'string') out.push(baseText('org.badRegion', { id: id }));
+      });
+    }
+    if (isObj(o.guide)) ['howTo', 'planning'].forEach(function (part) { var p = badSections(o.guide, part); if (p) out.push(p); });
+    return out;
+  }
+
+  // The organization layer, or an empty one if it's missing or broken (US-1.6.6). A file with any problem is not
+  // used at all, so half-loaded wording never mixes with the general layer. Checked once per TAP_ORG object.
   function org() {
-    var o = window.TAP_ORG;
-    orgError = null;
-    if (o == null) return {};
-    if (typeof o !== 'object') { orgError = 'The organization file did not set TAP_ORG to an object.'; return {}; }
-    return o;
+    var o = window.TAP_ORG, errs = (TAP.orgWatch && TAP.orgWatch.errors) || [];
+    if (o === cache.src && errs.length === cache.n) return cache.layer;
+    var list = problems(o, errs);
+    cache = { src: o, n: errs.length, layer: list.length ? {} : (o || {}), error: null };
+    if (list.length) cache.error = baseText('org.error', { problems: list.join(' ') });
+    return cache.layer;
   }
 
   function pick(obj, path) {
@@ -59,8 +105,38 @@
     })[0] || null;
   }
 
+  function indexOf(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return i;
+    return -1;
+  }
+
+  // One part of the Guide (howTo or planning) with the organization's sections laid over it, by id:
+  // paragraphs replaces a section's text, addParagraphs adds to it, a new id adds a section (after: id places it).
+  function mergePart(g, o) {
+    var out = Object.assign({}, g, o);
+    var secs = (g.sections || []).map(function (x) { return Object.assign({}, x); });
+    (o.sections || []).forEach(function (x) {
+      var i = indexOf(secs, x.id), add = x.addParagraphs || [];
+      if (i >= 0) {
+        var merged = Object.assign({}, secs[i], x, { layer: 'organization' });
+        merged.paragraphs = (x.paragraphs || secs[i].paragraphs || []).concat(add);
+        secs[i] = merged;
+        return;
+      }
+      var s = Object.assign({ link: null }, x, { paragraphs: (x.paragraphs || []).concat(add), layer: 'organization' });
+      var at = x.after ? indexOf(secs, x.after) : -1;
+      if (at >= 0) secs.splice(at + 1, 0, s); else secs.push(s);
+    });
+    out.sections = secs;
+    return out;
+  }
+
+  // The Guide text (content/guide.js documents the shape), with the organization layer's changes.
   function guide() {
-    return Object.assign({}, base().guide || {}, org().guide || {});
+    var g = base().guide || {}, o = org().guide || {};
+    var out = Object.assign({}, g, o);
+    ['howTo', 'planning'].forEach(function (part) { if (o[part]) out[part] = mergePart(g[part] || {}, o[part]); });
+    return out;
   }
 
   // An organization setting such as 'internalLabel'. Returns the fallback when not set.
@@ -126,7 +202,8 @@
 
   TAP.content = {
     text: text, term: term, terms: terms, guide: guide, setting: setting, regionName: regionName,
-    orgError: function () { org(); return orgError; },
+    // The message for the data sources panel when the organization file is broken, or null.
+    orgError: function () { org(); return cache.error; },
     mark: mark
   };
 })(window.TAP);
