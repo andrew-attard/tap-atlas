@@ -51,3 +51,73 @@
 .tap-guide__link {
   align-self: flex-start; display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-size: var(--tap-fs-body);
 }
+
+/* ---------- Insights page (US-1.7.3): filters, then one block per family ---------- */
+.tap-ins {
+  display: flex; flex-direction: column; gap: var(--tap-sp-6);
+  max-width: var(--tap-max-w); padding: var(--tap-sp-8) var(--tap-gutter) var(--tap-sp-12); font-size: var(--tap-fs-body);
+}
+.tap-ins__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 80ch; }
+.tap-ins__kicker { margin: 0; font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-ins__h1 { margin: 0; font-size: var(--tap-fs-h1); line-height: 1.15; font-weight: 800; }
+.tap-ins__intro { margin: 0; font-size: var(--tap-fs-lead); line-height: 1.5; }
+.tap-ins__scope { margin: 0; font-weight: 600; }
+.tap-ins__filters {
+  display: flex; flex-direction: column; gap: var(--tap-sp-3);
+  padding: var(--tap-sp-3) 0; border-top: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-ins__hint { margin: 0; color: var(--tap-muted); }
+.tap-ins__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
+.tap-ins__rowlabel { min-width: 6em; font-weight: 800; }
+.tap-ins__chip {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-2); min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3);
+  border: var(--tap-control-w) solid var(--tap-ink); background: var(--tap-ground); color: var(--tap-ink);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; cursor: pointer;
+}
+.tap-ins__chip:hover { background: var(--tap-surface); }
+.tap-ins__chip[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-ins__chip[aria-pressed="true"]::before { content: "✓"; font-weight: 800; }
+.tap-ins__n { min-width: 1.5em; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.tap-ins__sw { outline: 1px solid currentColor; }
+.tap-ins__summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-6);
+  padding-bottom: var(--tap-sp-3); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-ins__shown { font-weight: 800; }
+.tap-ins__clear, .tap-ins__showhidden {
+  padding: 0; border: 0; background: none; font: inherit; font-weight: 800; color: var(--tap-accent-deep);
+  text-decoration: underline; cursor: pointer;
+}
+.tap-ins__status { font-weight: 600; }
+.tap-ins__group {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--tap-sp-4);
+  padding-top: var(--tap-sp-4); border-top: var(--tap-rule-w) solid var(--tap-ink);
+}
+@media (min-width: 1100px) {
+  .tap-ins__group { grid-template-columns: minmax(240px, 0.3fr) minmax(0, 1fr); gap: var(--tap-sp-4) var(--tap-sp-8); }
+}
+.tap-ins__ghead { display: flex; flex-direction: column; gap: var(--tap-sp-1); }
+.tap-ins__gname { margin: 0; font-size: var(--tap-fs-h3); line-height: 1.25; }
+.tap-ins__gcount { font-weight: 800; }
+.tap-ins__gline { margin: 0; color: var(--tap-muted); }
+.tap-ins__list { display: flex; flex-direction: column; }
+.tap-ins__item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--tap-sp-2);
+  padding-bottom: var(--tap-sp-4); margin-bottom: var(--tap-sp-4); border-bottom: var(--tap-rule-w) solid var(--tap-grid);
+}
+.tap-ins__sentence { margin: 0; font-size: var(--tap-fs-lead); line-height: 1.4; font-weight: 600; }
+.tap-ins__regions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-1) var(--tap-sp-4); }
+.tap-ins__region { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
+.tap-ins__actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-ins__actions .tap-btn { font-size: var(--tap-fs-body); }
+.tap-ins__details {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2); align-self: stretch; max-width: 820px;
+  padding: var(--tap-sp-3) var(--tap-sp-4); background: var(--tap-surface);
+}
+.tap-ins__dh { margin: var(--tap-sp-1) 0 0; font-size: var(--tap-fs-body); font-weight: 800; }
+.tap-ins__figs { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--tap-sp-1) var(--tap-sp-6); margin: 0; }
+.tap-ins__figs dd { margin: 0; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.tap-ins__rule { margin: 0; }
+.tap-ins__srcs { margin: 0; padding-left: var(--tap-sp-4); }
+.tap-ins__none { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-4); font-size: var(--tap-fs-lead); }
+.tap-ins__none p { margin: 0; }
