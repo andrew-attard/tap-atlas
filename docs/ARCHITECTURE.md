@@ -400,7 +400,7 @@ TAP_RULES.rules.push({ id: 'consensus', family: 'priorities', enabled: true,
 
 Significance = family weight × (0.5 strength + 0.3 money + 0.2 breadth). Breadth = regions involved ÷ regions in the data. All weights come from `TAP_SETTINGS.insights`. Normalization (D49): family weights are divided by the largest family weight (at least 1), and the three part weights by their sum, so significance always stays between 0 and 1.
 
-Comparison rules set `provided` on each finding: the number of regions providing the value. The minimum-regions guard reads it, and a comparison finding without it is logged as a failure. Skipped or failing rules are reported once, through `failures()`, which the data sources panel lists. They are not also added to `TAP.notes`.
+Comparison rules (config `compare: true`) set `provided` on each finding: the number of regions providing the value. The minimum-regions guard reads it, and a comparison finding without it is logged as a failure. Skipped or failing rules are reported once, through `failures()`, which the data sources panel lists. They are not also added to `TAP.notes`.
 
 The engine drops any finding built from a not-provided value. It skips comparison rules when fewer than 3 regions provide the value. It refuses sentences containing a banned word (from `TAP_RULES.wording.banned`).
 
