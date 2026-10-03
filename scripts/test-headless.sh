@@ -65,6 +65,8 @@ for b in $browsers; do
     status=1
     if [ "${TAP_KEEP_DUMP:-0}" = "1" ]; then echo "[$b] page dump kept at $dump"; dump=""; fi
   fi
+  # TAP_DUMP_DIR keeps a copy of each page dump (used to record results in the Test Plan)
+  if [ -n "$dump" ] && [ -n "${TAP_DUMP_DIR:-}" ]; then mkdir -p "$TAP_DUMP_DIR" && cp "$dump" "$TAP_DUMP_DIR/$b.html"; fi
   [ -n "$dump" ] && rm -f "$dump"
 done
 exit $status
