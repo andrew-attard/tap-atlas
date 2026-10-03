@@ -206,6 +206,11 @@
   function clickMode(root, mode) { qs('.tap-cmp__mode[data-mode="' + mode + '"]', root).click(); }
   function choose(select, value) { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); }
   function sentence(root) { return txt(qs('.tap-cmp__sentence', root)); }
+  // The combined figure's label from the scope contract (the stand-in has none, so the wording is used).
+  function combinedLabel(c) {
+    var e = TAP.scope.entities(c).filter(function (x) { return x.kind === 'combined'; })[0];
+    return e ? e.label : TAP.content.text('combined.restAverage', { n: 3, regions: TAP.content.text('combined.regions') });
+  }
   function esc() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); }
 
   T.suite('compare', function () {
@@ -313,7 +318,7 @@
         var pop = qs('.tap-cmp__pop', root);
         a.ok(shown(root, '.tap-cmp__pop'), 'explanation shown on click');
         a.ok(txt(pop).indexOf(TAP.content.text('combined.explainAverage')) >= 0, 'average wording');
-        a.ok(txt(pop).indexOf(TAP.content.text('combined.restAverage', { n: 3 })) >= 0, 'names the combined figure');
+        a.ok(txt(pop).indexOf(combinedLabel(TAP.store.get().cmp)) >= 0, 'names the combined figure as the charts do');
         qs('[data-picker="restAgg"] [data-value="total"]', root).click();
         a.ok(txt(qs('.tap-cmp__pop', root)).indexOf(TAP.content.text('combined.explainTotal')) >= 0, 'total wording');
         esc();
