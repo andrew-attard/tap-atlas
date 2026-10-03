@@ -61,6 +61,7 @@ Object.assign(window.TAP_CONTENT.text, {
   measures: {
     partialYears: 'Some plan years were left blank',
     partNotProvided: '{parts} not provided',
+    partialAccounts: 'Some accounts left this year blank',
     nb: {
       arr: { label: 'New business ARR potential', short: 'New business' },
       services: { label: 'New business services potential', short: 'New business services' },
@@ -76,6 +77,7 @@ Object.assign(window.TAP_CONTENT.text, {
     cg: {
       arr: { label: 'Customer growth ARR', short: 'Customer growth' },
       services: { label: 'Customer growth services', short: 'Customer growth services' },
+      baseArr: { label: 'Current ARR of existing accounts', short: 'Account ARR' },
       growthY1: { label: 'Customer growth %, year 1', short: 'Growth year 1' },
       growthY2: { label: 'Customer growth %, year 2', short: 'Growth year 2' },
       growthY3: { label: 'Customer growth %, year 3', short: 'Growth year 3' },
