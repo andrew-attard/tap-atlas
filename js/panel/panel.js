@@ -222,6 +222,8 @@
     if (p.wasConnected && !p.root.isConnected) { destroy(p); return; }   // removed without destroy()
     if (changed.indexOf('scopeEpoch') >= 0) Object.assign(p.st, scoped());
     if (changed.indexOf('industry') >= 0) p.opts.industryId = null;
+    var shown = changed.indexOf('highlight') >= 0 && s.highlight && s.highlight.reportId === p.id;   // "Show me" wins over the list
+    if (shown) Object.assign(p.st, { highlight: null, selected: null, sentence: null });
     if (REDRAW.some(function (k) { return changed.indexOf(k) >= 0; })) render(p);
   }
 
