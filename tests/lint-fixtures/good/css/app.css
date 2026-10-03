@@ -1,0 +1,9 @@
+/*
+ * File: css/app.css
+ * Purpose: lint fixture.
+ * Provides: nothing
+ * Depends on: nothing
+ * Used by: tools/lint.js --self-test
+ */
+.panel { background: color-mix(in srgb, var(--ink) 10%, var(--paper)); font-size: var(--size-body); }
+.debug { outline: 1px solid #fff; } /* lint-ok: colour (debug outline only) */

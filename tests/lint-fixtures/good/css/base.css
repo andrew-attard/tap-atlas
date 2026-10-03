@@ -1,0 +1,10 @@
+/*
+ * File: css/base.css
+ * Purpose: lint fixture.
+ * Provides: nothing
+ * Depends on: nothing
+ * Used by: tools/lint.js --self-test
+ */
+:root { --ink: var(--theme-ink); --size-body: 16px; }
+body { font-size: 16px; color: var(--ink); }
+#add .x, #fed:hover { color: var(--ink); }

@@ -1,0 +1,8 @@
+/*
+ * File: css/colour.css
+ * Purpose: lint fixture.
+ * Provides: nothing
+ * Depends on: nothing
+ * Used by: tools/lint.js --self-test
+ */
+.a { color: #abc; background: rgba(0, 0, 0, 0.5); }
