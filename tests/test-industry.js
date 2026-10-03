@@ -502,7 +502,8 @@
       a.ok(c.kind && TAP.format.kind(c.kind).label, label + ' ' + r.label + ': kind of value');
       var at = c.src && TAP.sources.address(c.src);
       a.ok(at && at.text, label + ' ' + r.label + ': source');
-      if (at && !at.combined) a.ok(at.file && at.sheet, label + ' ' + r.label + ': file and sheet');
+      // A figure the app adds up itself (the ambition) names the file only; every other value names its sheet too.
+      if (at && !at.combined) a.ok(at.file && (at.sheet || c.kind === 'APP'), label + ' ' + r.label + ': file and sheet');
     });
   }
 
