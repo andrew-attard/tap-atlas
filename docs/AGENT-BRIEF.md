@@ -32,6 +32,7 @@ You work in your own git worktree on one branch per story, named `feat/<issue>-<
    - Build elements with `TAP.dom.el`.
    - Raw HTML goes only through `TAP.dom.html(el, str)`, with `str` built from `TAP.dom.esc()` output or fixed templates.
    - Any other `.innerHTML` line needs an `html-ok` comment saying why it's safe.
+   - Builder `html` and ECharts tooltip or label formatters that return HTML pass **every** data value through `TAP.dom.esc()`. Names, commentary and success factors come from the workbooks.
 8. **Small files.**
    - Aim for 300 lines or fewer. Lint fails at 350.
    - Split by job, not by size alone.
@@ -43,6 +44,10 @@ You work in your own git worktree on one branch per story, named `feat/<issue>-<
     - no animation;
     - works at 1280 and 1920 px wide and at 125% and 150% zoom;
     - never colour alone: always a label or legend too.
+
+## Your test file
+
+Your test file (`tests/test-<area>.js`) and any fixture you own are already listed in `tests.html`. The header says which stream owns each one. Add your tests there; you never need to edit `tests.html`.
 
 ## Stubs
 
