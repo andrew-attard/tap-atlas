@@ -152,4 +152,38 @@
       });
     });
   });
+
+  /* ---------- capability (US-1.7.9) ---------- */
+  T.suite('rules-capability', function () {
+    T.test('TPV-TC-164', 'The industry planted as attractive but not yet winnable in 4 regions gives an insight with the count', function (a) {
+      sample();
+      var x = get('notYetWinnable:fsm');
+      check(a, planted('P16'));
+      a.equal(x.reportId, 'ind-quad');
+      a.equal(x.highlight.quadrant, 'attractiveNotYet', 'highlights the quadrant');
+      X.p16.regions.forEach(function (r) {
+        var f = x.figures.filter(function (g) { return g.measureId === 'ind.ability' && g.cell.src.regionId === r; })[0];
+        a.near(f.cell.v, X.p16.scores[r].b, 1e-5, r + ' ability');
+      });
+      var said = x.figures.filter(function (g) { return g.cell.src.field === 'successFactors'; });
+      X.p16.regions.forEach(function (r) {
+        (X.p16.successFactors[r] || []).filter(Boolean).forEach(function (sf) {
+          a.ok(said.some(function (g) { return g.cell.v === sf && g.cell.src.regionId === r && g.unit === 'text'; }),
+            r + ' shows its success factor "' + sf + '"');
+        });
+      });
+      a.equal(said.length, 3, 'each success factor once: two regions repeat theirs, one row is blank');
+    });
+
+    T.test('TPV-TC-165', 'Each region’s list of attractive-but-not-yet-winnable industries is correct', function (a) {
+      sample();
+      X.regions.forEach(function (r) {
+        var x = get('notYetList:' + r), want = X.attractiveNotYet[r];
+        if (!want.length) { a.ok(!x, r + ' has no list'); return; }
+        a.ok(x, r + ' has a list');
+        a.deepEqual(x.industryIds, want, r + ' list');
+        a.ok(x.sentence.indexOf(want.length === 1 ? '' : want.length + ' industries') >= 0, r + ' counts its industries');
+      });
+    });
+  });
 })(window.TAP);
