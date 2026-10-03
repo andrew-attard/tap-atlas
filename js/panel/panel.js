@@ -21,7 +21,7 @@
   // Choices that last only while the shared comparison stays the same (ARCHITECTURE section 5).
   function scoped() { return { opts: {}, highlight: null, selected: null, sentence: null }; }
   // Choices that last until "Reset all charts".
-  function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null }; }
+  function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null, table: false, sort: null }; }
 
   // The browser may block storage, or the storage module may fail: the panel then simply uses defaults.
   function remembered(id) { try { return TAP.storage.get('chart:' + id, null); } catch (e) { return null; } }
@@ -87,6 +87,15 @@
     var box = el('div', { class: 'tap-panel__body' }), C = TAP.panelChart, res = b.res;
     if (b.errors.length || !res) { C.dispose(p.cs); C.error(box, b.errors); return box; }
     if (res.empty) { C.dispose(p.cs); C.empty(box, res.missing); return box; }
+    if (p.st.table && res.table) {
+      // The chart stays alive off the page, so going back to it is instant
+      if (p.cs.el && p.cs.el.parentNode) p.cs.el.parentNode.removeChild(p.cs.el);
+      TAP.panelTable.render(box, res.table, { sort: p.st.sort, label: TAP.shell.label(), onSort: function (key) {
+        var s0 = p.st.sort;
+        p.set({ sort: { key: key, dir: s0 && s0.key === key ? -s0.dir : 1 } });
+      }, focusIds: b.ctx.entities.filter(function (e) { return e.role === 'focus'; }).map(function (e) { return e.id; }) });
+      return box;
+    }
     if (res.html) {
       C.dispose(p.cs);
       C.html(box, res.html, function (d) { follow(res.target ? res.target({ data: d }) : null); });
@@ -101,7 +110,7 @@
   function focusKey(p) {
     var a = document.activeElement;
     if (!a || !p.root.contains(a)) return null;
-    var k = ['data-action', 'data-control', 'data-value', 'data-type'].filter(function (n) { return a.hasAttribute(n); })
+    var k = ['data-action', 'data-control', 'data-value', 'data-type', 'data-sort'].filter(function (n) { return a.hasAttribute(n); })
       .map(function (n) { return '[' + n + '="' + a.getAttribute(n) + '"]'; }).join('');
     return k || null;
   }
@@ -127,7 +136,7 @@
       b.def && !b.errors.length ? TAP.panelMenus.render(TAP.panelMenus.spec(p, b)) : null,
       ok ? I.strip(p, highlightOf(p, s)) : null,
       body(p, b, s),
-      ok ? TAP.panelChart.legend(b.res) : null,
+      ok && !(p.st.table && b.res.table) ? TAP.panelChart.legend(b.res) : null,
       ok ? TAP.panelChart.notes(b.res) : null,
       source(b.def)
     ]);

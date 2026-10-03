@@ -44,6 +44,16 @@ Object.assign(window.TAP_CONTENT.text, {
     size: 'Bubble size',
     industry: 'Industry',
 
+    // Table view (US-1.2.4)
+    table: 'Table',
+    tableNote: 'A table of the same data is always available from the Table button.',
+    tableCount: '{n} rows · select a column heading to sort · exact figures',
+    source: 'Source',
+    focusRow: 'Focus region',
+    copy: 'Copy to clipboard',
+    copied: 'Table copied. Paste it into Excel, an email or a slide.',
+    copyManual: 'This browser blocked copying. The table text is selected below: press Ctrl+C to copy it.',
+
     // Legend line for stacked parts, which are shades of each region's colour
     partsTwo: 'Darker: {dark} · lighter: {light}',
     partsMany: 'Shades, darkest first: {list}',
