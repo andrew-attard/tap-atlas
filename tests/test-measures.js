@@ -2,7 +2,8 @@
  * File: tests/test-measures.js
  * Purpose: Tests for the measure catalogue, combined figures through the measures, scores and the three missing
  *          states, all checked against the hand calculations in tests/fixtures/mini-expected.js.
- * Provides: test cases TPV-TC-068 to 074 (through the measures), TPV-TC-096, TPV-TC-114, X-measures-*
+ * Provides: test cases TPV-TC-068 to 074 (through the measures), TPV-TC-081, TPV-TC-096, TPV-TC-114, X-measures-*,
+ *           X-scores-midpoint
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
