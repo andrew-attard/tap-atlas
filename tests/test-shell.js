@@ -42,44 +42,8 @@
     });
   }
 
-  // Local stand-ins for modules other streams are still building (TAP.scope, TAP.sources). Each is installed
-  // only while the real module is a stub, and removed afterwards, so the same tests run against the real ones.
-  var FAKES = {
-    scope: function () {
-      return {
-        entities: function () { return []; },
-        regionIds: function () { return TAP.data.regions().map(function (r) { return r.id; }); },
-        colorOf: function (id) { return TAP_THEME.regionColor(TAP.data.regionIndex(id)); },
-        sentence: function (c) { return 'Fake sentence: ' + [c.mode, c.focus, c.second, c.set.join('+'), c.restAs, c.restAgg].join('|'); }
-      };
-    },
-    sources: function () {
-      function imports() {
-        return TAP.data.regions().map(function (r) {
-          return { regionId: r.id, name: r.name, fileName: r.source.fileName, fileModified: r.source.fileModified,
-            importedAt: r.source.importedAt, notes: r.source.notes };
-        });
-      }
-      return {
-        imports: imports,
-        address: function () { return { text: 'fake address', calculated: false, combined: false, regions: [] }; },
-        datesDiffer: function () { return imports().some(function (i, k, all) { return i.importedAt.slice(0, 10) !== all[0].importedAt.slice(0, 10); }); },
-        dataDate: function () { return imports().map(function (i) { return i.importedAt; }).sort().pop(); }
-      };
-    }
-  };
-  function withFakes(fn) {
-    var saved = {};
-    Object.keys(FAKES).forEach(function (k) { if (TAP[k] && TAP[k].__stub) { saved[k] = TAP[k]; TAP[k] = FAKES[k](); } });
-    function restore() { Object.keys(saved).forEach(function (k) { TAP[k] = saved[k]; }); }
-    var out;
-    try { out = fn(); } catch (e) { restore(); throw e; }
-    if (out && out.then) return out.then(function (v) { restore(); return v; }, function (e) { restore(); throw e; });
-    restore();
-    return out;
-  }
-  // The app with stand-ins: the usual way the tests below run.
-  function run(fn) { return withFakes(function () { return withApp(fn); }); }
+  // Every test below starts the app and stops it again.
+  function run(fn) { return withApp(fn); }
 
   // A 1 x 1 transparent image, so the logo test loads nothing from disk.
   var PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -206,10 +170,9 @@
   function clickMode(root, mode) { qs('.tap-cmp__mode[data-mode="' + mode + '"]', root).click(); }
   function choose(select, value) { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); }
   function sentence(root) { return txt(qs('.tap-cmp__sentence', root)); }
-  // The combined figure's label from the scope contract (the stand-in has none, so the wording is used).
+  // The combined figure's label from the scope contract, which the charts use too.
   function combinedLabel(c) {
-    var e = TAP.scope.entities(c).filter(function (x) { return x.kind === 'combined'; })[0];
-    return e ? e.label : TAP.content.text('combined.restAverage', { n: 3, regions: TAP.content.text('combined.regions') });
+    return TAP.scope.entities(c).filter(function (x) { return x.kind === 'combined'; })[0].label;
   }
   function esc() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); }
 
@@ -289,9 +252,7 @@
         clickMode(root, 'one');
         choose(qs('[data-picker="focus"] select', root), 'charlie');
         a.equal(sentence(root), TAP.scope.sentence(TAP.store.get().cmp), 'Region C against the rest');
-        if (!/Fake/.test(sentence(root))) {
-          a.equal(sentence(root), 'Showing Region C against the average of the other 3 regions', 'real wording');
-        }
+        a.equal(sentence(root), 'Showing Region C against the average of the other 3 regions', 'the exact wording');
       });
     });
 
