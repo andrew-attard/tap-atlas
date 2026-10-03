@@ -1,7 +1,7 @@
 /*
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
- * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, X-industry-*, X-details-*
+ * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, X-industry-*, X-details-* (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -612,6 +612,91 @@
       a.match(only.title, /Retail/);
       a.ok(only.groups.length >= 4, 'an industry alone lists the regions in scope');
       a.deepEqual(TAP.details.build(null).groups, [], 'no target, no groups');
+    });
+  });
+
+  /* ---------- US-1.5.7 leaders' commentary ---------- */
+
+  function withView(fn) {
+    var root = T.dom.mount(), view = TAP.views.get('industry').mount(root);
+    try { fn(root); } finally { view.destroy(); TAP.layers.close(); }
+  }
+  function comments(root) { return Array.prototype.slice.call(root.querySelectorAll('.tap-ind-comment')); }
+  function commentRegions(root) { return comments(root).map(function (c) { return c.getAttribute('data-region'); }); }
+  function heading(root) { return root.querySelector('.tap-ind-comments__title').textContent; }
+
+  T.suite('industry-comments', function () {
+    T.test('X-industry-view-layout', 'Tier grid at full width, then the quadrant and ratings side by side, then the commentary', function (a) {
+      withView(function (root) {
+        var ids = Array.prototype.map.call(root.querySelectorAll('.tap-panel'), function (p) { return p.getAttribute('data-report'); });
+        a.deepEqual(ids, ['ind-tiers', 'ind-quad', 'ind-ratings'], 'three panels in order');
+        var pair = root.querySelector('.tap-ind__pair');
+        a.equal(pair.querySelectorAll('.tap-panel').length, 2, 'two panels side by side, never more');
+        var all = Array.prototype.slice.call(root.querySelectorAll('.tap-panel, .tap-ind-comments'));
+        a.ok(/tap-ind-comments/.test(all[all.length - 1].className), 'the commentary comes last');
+      });
+    });
+
+    T.test('X-industry-comments-list', 'Each region’s tier and comment for the selected industry; only comments that exist', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind3' });
+        a.match(heading(root), /Retail/, 'names the industry');
+        a.deepEqual(commentRegions(root), ['bravo', 'delta'], 'only the regions that commented, in file order');
+        var b = comments(root)[0];
+        a.match(b.textContent, /Region B/, 'labelled by region');
+        a.match(b.textContent, /Opportunistic only\./, 'the comment');
+        a.match(b.textContent, /Tier 3/, 'the tier');
+        a.ok(b.textContent.indexOf('Region B plan.xlsx › 1. Market Coverage › N12') >= 0, 'the source cell');
+        a.ok(b.textContent.indexOf(TAP.format.kind('IN').text) >= 0, 'the kind of value');
+        TAP.store.set({ industry: 'ind2' });
+        a.equal(comments(root).length, 0, 'nobody commented on ind2: nothing listed');
+        a.ok(!/no comment|0 comments|not commented/i.test(root.querySelector('.tap-ind-comments').textContent), 'and no "no comment" label or count');
+      });
+    });
+
+    T.test('X-industry-comments-focus', 'The focus region’s comment comes first, and the list follows the comparison', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind1', cmp: { mode: 'one', focus: 'charlie' } });
+        a.deepEqual(commentRegions(root), ['charlie', 'alpha', 'bravo', 'delta'], 'focus first');
+        a.match(comments(root)[0].textContent, /Focus region/, 'marked as the focus');
+        TAP.store.set({ cmp: { mode: 'set', set: ['bravo', 'delta'] } });
+        a.deepEqual(commentRegions(root), ['bravo', 'delta'], 'only the chosen regions');
+      });
+    });
+
+    T.test('X-industry-comments-select', 'Selecting an industry in the grid, the quadrant or the ratings updates the commentary', function (a) {
+      withView(function (root) {
+        root.querySelector('.tap-panel[data-report="ind-tiers"] .tap-tg__name[data-tap-industry="ind4"]').click();
+        a.match(heading(root), /Utilities/, 'grid row');
+        TAP.bus.emit('industry:select', { industryId: 'ind1' });   // what a quadrant point or the ratings picker sends
+        a.match(heading(root), /Healthcare/, 'industry:select');
+        TAP.layers.openDetails({ reportId: 'ind-quad', regionIds: ['delta'], industryIds: ['ind3'] });
+        a.equal(TAP.store.get().industry, 'ind3', 'details naming one industry select it');
+        a.match(heading(root), /Retail/);
+      });
+    });
+
+    T.test('X-industry-comments-long', 'A long comment is shown in full and the list scrolls', function (a) {
+      var plan = T_FIXTURE('mini'), long = new Array(120).join('A long planted comment that keeps going. ') + 'The very end.';
+      plan.regions[0].marketCoverage[0].commentary = long;
+      plan.regions[1].marketCoverage[0].commentary = '<img src=x onerror=alert(1)>';
+      TAP.data.load(plan);
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind1' });
+        var text = root.querySelector('.tap-ind-comment[data-region="alpha"] .tap-ind-comment__text');
+        a.equal(text.textContent, long, 'every word, nothing cut off');
+        var list = root.querySelector('.tap-ind-comments__list');
+        a.equal(getComputedStyle(list).overflowY, 'auto', 'the list scrolls');
+        a.equal(getComputedStyle(text).overflow, 'visible', 'the text itself is never clipped');
+        a.equal(root.querySelector('.tap-ind-comments img'), null, 'commentary is shown as text');
+      });
+    });
+
+    T.test('X-industry-comments-default', 'With no industry selected, the commentary shows the most split industry', function (a) {
+      withView(function (root) {
+        a.equal(TAP.store.get().industry, null);
+        a.match(heading(root), /Education/, 'ind2 is the most split on the mini data');
+      });
     });
   });
 })(window.TAP);
