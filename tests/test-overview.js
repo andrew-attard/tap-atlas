@@ -1,8 +1,9 @@
 /*
  * File: tests/test-overview.js
- * Purpose: Tests for region cards, the ambition chart and the headline (TPV-TC-087, 095, 096, 099).
- * Provides: test cases for OVERVIEW stories (#29, #30, #31): TPV-TC-087, X-overview-*
- * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
+ * Purpose: Tests for region cards, the Overview view and ambition chart, the headline and top insights.
+ *          TPV-TC-095 and 096 live with the engine tests (test-shapes.js, test-measures.js).
+ * Provides: test cases for OVERVIEW stories (#29, #30, #31): TPV-TC-087, TPV-TC-099, X-overview-*
+ * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample, insights)
  * Used by: tests.html
  */
 (function (TAP) {
@@ -455,9 +456,11 @@
           var items = qsa('.tap-ov-insight', m.host);
           a.equal(items.length, 3, 'three insights');
           a.deepEqual(items.map(function (n) { return n.getAttribute('data-insight'); }), list.slice(0, 3).map(function (x) { return x.id; }), 'in order');
-          a.equal(calls[0][1], null, 'not limited to one report');
-          a.equal(calls[0][2], 3, 'three asked for');
-          a.equal(calls[0][0].focus, 'seu', 'with the comparison');
+          // Panels left on the page by other tests also ask, for their own report; the Overview asks for none.
+          var mine = calls.filter(function (c) { return c[1] === null; });
+          a.ok(mine.length >= 1, 'asked across every report');
+          a.equal(mine[0][2], 3, 'three asked for');
+          a.equal(mine[0][0].focus, 'seu', 'with the comparison');
           a.ok(txt(items[0]).indexOf(list[0].sentence.slice(0, 20)) >= 0, 'the sentence shows');
         } finally { m.handle.destroy(); }
       });
