@@ -1,7 +1,7 @@
 /*
  * File: tests/test-data.js
  * Purpose: Tests for the sample data file: shape, consistency and planted gaps (TPV-TC-193 to 199).
- * Provides: test cases for DATA stories (#25, #26, #27): TPV-TC-193, 194, 195, 196, X-data-*
+ * Provides: test cases for DATA stories (#25, #26, #27): TPV-TC-193 to 196, TPV-TC-199, TPV-TC-020 (sample), X-data-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js (window.PLAN_DATA),
  *             tests/fixtures/sample-expected.js (window.SAMPLE_EXPECT)
  * Used by: tests.html
@@ -204,5 +204,173 @@
       });
       a.equal(typeof map.recap.sheet, 'string', 'recap sheet');
     });
+  });
+
+  // ---- planted cases (docs/PLANTED-CASES.md), recomputed from the raw rows ----
+
+  var ids = function () { return P.regions.map(function (r) { return r.id; }); };
+  var reg = function (id) { return P.regions.filter(function (r) { return r.id === id; })[0]; };
+  var mc = function (id, ind) { return mcOf(reg(id), ind); };
+  var score = function (id, ind) {
+    var row = mc(id, ind);
+    var v = RATINGS.map(function (f) { return row[f]; });
+    return { a: (v[0] + v[1] + v[2]) / 3, b: (v[3] + v[4] + v[5]) / 3 };
+  };
+  var ratedRows = function (id) { return reg(id).newBusiness.filter(function (x) { return num(x.hitRate); }); };
+  var wins = function (id) { return sum(ratedRows(id).map(function (x) { return x.targetAccounts * x.hitRate; })); };
+  var hitRate = function (list) { return sum(list.map(wins)) / sum(list.map(function (id) { return sum(ratedRows(id).map(function (x) { return x.targetAccounts; })); })); };
+  var dealSize = function (list) {
+    return sum(list.map(function (id) { return sum(ratedRows(id).map(function (x) { return x.targetAccounts * x.hitRate * x.avgDealSize; })); })) / sum(list.map(wins));
+  };
+  var others = function (id) { return ids().filter(function (x) { return x !== id; }); };
+  var growth = function (acc) { return sum(acc.incrementalArr); };
+  var share = function (id, pred) {
+    var acc = reg(id).customerGrowth.accounts;
+    return sum(acc.filter(pred).map(growth)) / sum(acc.map(growth));
+  };
+  var tiersOf = function (ind) { return ids().map(function (id) { return mc(id, ind).tier; }); };
+
+  T.suite('planted cases', function () {
+    T.test('TPV-TC-199', 'The sample has blanks, one region with an empty section and at least two import notes', function (a) {
+      a.equal(mc('neu', 'finance').criticality, null, 'G1: Northern Europe Financial Services criticality is blank');
+      a.equal(mc('neu', 'property').productFit, null, 'G1: Northern Europe Property Management product fit is blank');
+      a.equal(mc('mea', 'government').tier, null, 'G1: Middle East & Africa Government tier is blank');
+      var blankRows = reg('seu').newBusiness.filter(function (x) { return x.hitRate === null; });
+      a.equal(blankRows.length, 1, 'G1: one Southern Europe New Business row with a blank hit rate');
+      a.deepEqual(blankRows[0].arrPotential.concat(blankRows[0].servicesPotential), [null, null, null, null, null, null], 'its potential is blank too');
+      var cg = reg('ceu').customerGrowth;
+      a.equal(cg.accounts.length, 0, 'G2: Central Europe has no accounts');
+      a.deepEqual(cg.thresholds, { strategicArr: null, scaledArr: null, growthArr: null, growthOrderIntake: null }, 'G2: thresholds blank');
+      var notes = [];
+      P.regions.forEach(function (r) { r.source.notes.forEach(function (n) { notes.push([r.id, n.sheet, n.cell]); }); });
+      a.ok(notes.length >= 2, 'G3: at least two import notes');
+      a.deepEqual(notes, [['neu', '1. Market Coverage', 'E14'], ['ceu', '3. Customer Growth', 'A10']], 'G3: the planted notes');
+      a.equal(mc('neu', 'finance').sourceRow, 14, 'the E14 note points at the blank criticality (column E)');
+    });
+
+    T.test('X-data-planted-P01', 'P01: Education is Tier 2 in A to F and Tier 3 in G', function (a) {
+      a.deepEqual(tiersOf('education'), [2, 2, 2, 2, 2, 2, 3]);
+    });
+    T.test('X-data-planted-P02', 'P02: Retail is Tier 2 in A, B, C and Tier 3 in D, E, F, G', function (a) {
+      a.deepEqual(tiersOf('retail'), [2, 2, 2, 3, 3, 3, 3]);
+    });
+    T.test('X-data-planted-P03', 'P03: Data Centers (Tier 1) has low ability and attractiveness below 2.0 in B, C, E, G; able in A, D, F', function (a) {
+      a.deepEqual(tiersOf('datacenters'), [1, 1, 1, 1, 1, 1, 1], 'Tier 1 everywhere');
+      ['latam', 'neu', 'ceu', 'apac'].forEach(function (id) {
+        var m = mc(id, 'datacenters');
+        a.deepEqual([m.references, m.expertise, m.productFit], [1, 1, 2], id + ' ability ratings');
+        a.ok(score(id, 'datacenters').a < 2, id + ' attractiveness below 2.0');
+      });
+      ['na', 'seu', 'mea'].forEach(function (id) { a.ok(score(id, 'datacenters').b >= 2, id + ' ability 2.0 or more'); });
+    });
+    T.test('X-data-planted-P04', 'P04: Northern Europe rates Pharma references 3, with no ARR or pipeline', function (a) {
+      var m = mc('neu', 'pharma');
+      a.deepEqual([m.references, m.currentArr, m.pipelineTotal, m.pipelineCreated12m], [3, 0, 0, 0]);
+    });
+    T.test('X-data-planted-P05', 'P05: Central Europe rates Manufacturing expertise 1, its largest current ARR (2,400)', function (a) {
+      var m = mc('ceu', 'manufacturing');
+      a.equal(m.expertise, 1);
+      a.equal(m.currentArr, 2400);
+      reg('ceu').marketCoverage.forEach(function (x) { if (x !== m) a.ok(x.currentArr < 2400, x.industryId + ' below 2,400'); });
+    });
+    T.test('X-data-planted-P06', 'P06: Southern Europe Retail is Tier 3 with 18% of the region’s pipeline', function (a) {
+      var m = mc('seu', 'retail');
+      a.equal(m.tier, 3);
+      a.near(m.pipelineTotal / sum(reg('seu').marketCoverage.map(function (x) { return x.pipelineTotal || 0; })), 0.18, 0.0005);
+    });
+    T.test('X-data-planted-P07', 'P07: Middle East & Africa Hospitality is Tier 2 with no pipeline', function (a) {
+      var m = mc('mea', 'hospitality');
+      a.deepEqual([m.tier, m.pipelineTotal, m.pipelineCreated12m], [2, 0, 0]);
+    });
+    T.test('X-data-planted-P08', 'P08: Central Europe’s weighted hit rate is 35%; the others are 12% to 18%, averaging 15% ± 0.5', function (a) {
+      a.near(hitRate(['ceu']), 0.35, 1e-9, 'Central Europe');
+      others('ceu').forEach(function (id) { var h = hitRate([id]); a.ok(h >= 0.12 && h <= 0.18, id + ': ' + h); });
+      a.near(hitRate(others('ceu')), 0.15, 0.005, 'weighted average of the others');
+    });
+    T.test('X-data-planted-P09', 'P09: Latin America’s deal size is 1.6× the others’ and above every other region', function (a) {
+      var b = dealSize(['latam']);
+      a.near(b / dealSize(others('latam')), 1.6, 0.02, 'ratio');
+      others('latam').forEach(function (id) { a.ok(dealSize([id]) < b, id + ' below Latin America'); });
+      a.ok(b / dealSize(others('latam')) < 2, 'under 2×');
+    });
+    T.test('X-data-planted-P10', 'P10: Latin America’s year-1 new business ARR is 4× its pipeline created in 12 months', function (a) {
+      var r = reg('latam');
+      var y1 = sum(r.newBusiness.map(function (x) { return x.arrPotential[0] || 0; }));
+      a.near(y1 / sum(r.marketCoverage.map(function (x) { return x.pipelineCreated12m || 0; })), 4, 0.01);
+    });
+    T.test('X-data-planted-P11', 'P11: Asia Pacific has Transportation New Business rows (Tier 2) with no pipeline', function (a) {
+      a.ok(reg('apac').newBusiness.some(function (x) { return x.industryId === 'transport' && x.tier === 2; }), 'New Business rows');
+      a.equal(mc('apac', 'transport').pipelineTotal, 0);
+    });
+    T.test('X-data-planted-P12', 'P12: North America’s implied wins are 3× the simple average of the others', function (a) {
+      a.near(wins('na') / (sum(others('na').map(wins)) / 6), 3, 0.05);
+    });
+    T.test('X-data-planted-P13', 'P13: 60% of North America’s customer growth sits in its top 3 accounts, one flagged high risk', function (a) {
+      var top = reg('na').customerGrowth.accounts.slice().sort(function (x, y) { return growth(y) - growth(x); }).slice(0, 3);
+      a.near(share('na', function (x) { return top.indexOf(x) !== -1; }), 0.6, 0.005, 'top-3 share');
+      a.equal(top.filter(function (x) { return x.riskLevel === 'high'; }).length, 1, 'one of them high risk');
+    });
+    T.test('X-data-planted-P14', 'P14: 40% of Middle East & Africa’s customer growth is in accounts flagged at risk', function (a) {
+      a.near(share('mea', function (x) { return x.riskLevel === 'high' || x.riskLevel === 'medium'; }), 0.4, 0.005);
+    });
+    T.test('X-data-planted-P15', 'P15: Asia Pacific’s growth is 80% Strategic; the others with customer growth are 30% to 50%', function (a) {
+      var strat = function (id) { return function (x) { return x.segment === 'strategic'; }; };
+      a.near(share('apac', strat('apac')), 0.8, 0.005, 'Asia Pacific');
+      others('apac').filter(function (id) { return id !== 'ceu'; }).forEach(function (id) {
+        var s = share(id, strat(id));
+        a.ok(s >= 0.3 && s <= 0.5, id + ': ' + s);
+      });
+    });
+    T.test('X-data-planted-P16', 'P16: Field Service Management is attractive but not yet winnable in A, D, F and G only', function (a) {
+      ids().forEach(function (id) {
+        var s = score(id, 'fsm');
+        if (['na', 'seu', 'mea', 'apac'].indexOf(id) !== -1) {
+          a.ok(s.a >= 2.33 - 1e-9 && s.b <= 1.67, id + ' attractive, low ability: ' + JSON.stringify(s));
+        } else {
+          a.ok(s.b >= 2, id + ' able: ' + JSON.stringify(s));
+        }
+      });
+      var factors = function (id) { return reg(id).newBusiness.filter(function (x) { return x.industryId === 'fsm'; }).map(function (x) { return x.successFactors; }); };
+      a.ok(factors('na').length && factors('na').every(function (f) { return f === 'Field service references'; }), 'North America success factors');
+      a.ok(factors('mea').length && factors('mea').every(function (f) { return f === 'Mobile workforce integration partner'; }), 'Middle East & Africa success factors');
+      ['latam', 'neu', 'ceu', 'apac'].forEach(function (id) { a.ok(score(id, 'datacenters').a < 2, 'P03 kept out of the lists: ' + id); });
+    });
+
+    T.test('X-data-planted-G4', 'G4 to G6: zero and blank stay distinct, unrated rows have no ratings or tier, Asia Pacific imported a day earlier', function (a) {
+      a.equal(mc('na', 'culture').currentArr, 0, 'North America Culture current ARR is 0');
+      a.equal(mc('neu', 'culture').currentArr, null, 'Northern Europe Culture current ARR is blank');
+      P.regions.forEach(function (r) {
+        ['other', 'unapplied'].forEach(function (ind) {
+          var m = mc(r.id, ind);
+          a.deepEqual(RATINGS.map(function (f) { return m[f]; }).concat([m.tier]), [null, null, null, null, null, null, null], r.id + ' ' + ind);
+        });
+      });
+      var day = function (id) { return reg(id).source.importedAt.slice(0, 10); };
+      others('apac').forEach(function (id) { a.ok(day('apac') < day(id), 'Asia Pacific before ' + id); });
+      a.equal(new Set(others('apac').map(day)).size, 1, 'the others share one import day');
+    });
+
+    T.test('X-data-expect-complete', 'SAMPLE_EXPECT holds every planted figure, the attractive-but-not-yet lists and the headline', function (a) {
+      ['p01', 'p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10', 'p11', 'p12', 'p13', 'p14', 'p15', 'p16', 'gaps', 'headline', 'sources']
+        .forEach(function (k) { a.ok(X[k], k); });
+      a.deepEqual(Object.keys(X.attractiveNotYet), ids(), 'a list for every region');
+      a.deepEqual(X.p16.regions, ['na', 'seu', 'mea', 'apac']);
+      ['na', 'seu', 'mea', 'apac'].forEach(function (id) { a.ok(X.attractiveNotYet[id].indexOf('fsm') !== -1, 'fsm listed for ' + id); });
+      ids().forEach(function (id) { a.equal(X.attractiveNotYet[id].indexOf('datacenters'), -1, 'datacenters not listed for ' + id); });
+    });
+
+    if (TAP.sources.__stub) {
+      T.skip('TPV-TC-020', 'Sample file: each planted check figure gives its expected file › sheet › cell', 'needs TAP.sources (#101)');
+    } else {
+      T.test('TPV-TC-020', 'Sample file: each planted check figure gives its expected file › sheet › cell', function (a) {
+        TAP.data.load(copy(P));
+        a.ok(X.sources.length >= 5, 'check figures listed');
+        X.sources.forEach(function (c) {
+          var ad = TAP.sources.address(c.src);
+          a.equal(ad.text, c.text, c.src.regionId + ' ' + c.src.field);
+          a.equal(ad.calculated, c.calculated, 'calculated: ' + c.src.field);
+        });
+      });
+    }
   });
 })(window.TAP);
