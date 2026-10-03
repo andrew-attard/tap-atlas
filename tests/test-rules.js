@@ -186,4 +186,48 @@
       });
     });
   });
+
+  /* ---------- assumptions (US-1.7.6) ---------- */
+  T.suite('rules-assumptions', function () {
+    T.test('TPV-TC-153', 'A planted hit rate at least twice the others’ weighted average gives an outlier insight with both figures', function (a) {
+      sample();
+      var x = get('outlier:nb.hitRate:ceu');
+      check(a, planted('P08'));
+      a.near(x.figures[0].cell.v, X.p08.value, 1e-9, 'Central Europe’s hit rate');
+      a.near(x.figures[1].cell.v, X.p08.othersAvg, 1e-6, 'the others’ weighted average');
+      a.equal(x.fallback, 'details', 'no Phase 1 report: Show me opens the region’s details');
+    });
+
+    T.test('TPV-TC-154', 'A planted value outside every other region’s range but under 2x is flagged', function (a) {
+      sample();
+      a.ok(X.p09.ratio < 2, 'the planted deal size is under twice the average');
+      check(a, planted('P09'));
+      a.near(get('outlier:nb.avgDealSize:latam').figures[1].cell.v, X.p09.othersAvg, 1e-6);
+    });
+
+    T.test('TPV-TC-155', 'A value provided by fewer than 3 regions gives no outlier insight', function (a) {
+      sample(function (p) {
+        p.regions.slice(2).forEach(function (r) { r.newBusiness.forEach(function (row) { row.hitRate = null; }); });
+      });
+      a.equal(TAP.insights.all().filter(function (x) { return x.id.indexOf('outlier:nb.hitRate:') === 0; }).length, 0,
+        'two regions with a hit rate: nothing to compare');
+      sample(function (p) {
+        p.regions.slice(3).forEach(function (r) { r.newBusiness.forEach(function (row) { row.hitRate = null; }); });
+        p.regions[2].newBusiness.forEach(function (row) { row.hitRate = 0.5; });
+      });
+      a.ok(get('outlier:nb.hitRate:neu'), 'with three regions providing it, the comparison runs');
+    });
+
+    T.test('TPV-TC-156', 'Outlier averages use the same weights as the combining rules (US-1.2.5)', function (a) {
+      sample();
+      var hit = get('outlier:nb.hitRate:ceu').figures[1].cell, deal = get('outlier:nb.avgDealSize:latam').figures[1].cell;
+      var w = window.TAP_SETTINGS.combine.weights;
+      a.equal(hit.src.weightBy, w['nb.hitRate'], 'hit rate weighted by target accounts with a hit rate');
+      a.equal(deal.src.weightBy, w['nb.avgDealSize'], 'deal size weighted by implied wins');
+      var plain = others(X.p09.dealSizes, 'latam').reduce(function (s, v) { return s + v; }, 0) / 6;
+      a.ok(Math.abs(deal.v - plain) > 1, 'the weighted average differs from a plain mean');
+      var ent = { kind: 'combined', regionIds: X.regions.filter(function (r) { return r !== 'latam'; }), how: 'average' };
+      a.near(deal.v, TAP.measures.combined('nb.avgDealSize', ent, { year: null }).v, 1e-9, 'equals the chart’s combined figure');
+    });
+  });
 })(window.TAP);
