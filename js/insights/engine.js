@@ -204,6 +204,14 @@
 
   /* ---------- helpers for the rule files (ctx.util) ---------- */
 
+  // A phrase by path; a key may itself hold dots (measure ids), so the longest matching key wins.
+  function lookup(obj, path) {
+    if (obj == null) return undefined;
+    if (Object.prototype.hasOwnProperty.call(obj, path)) return obj[path];
+    var i = path.indexOf('.');
+    return i < 0 ? undefined : lookup(obj[path.slice(0, i)], path.slice(i + 1));
+  }
+
   // Every figure comes from the measure catalogue, so insight figures match the charts exactly.
   var util = {
     regions: function () { return TAP.data.regions().map(function (r) { return r.id; }); },
@@ -223,10 +231,19 @@
     value: function (c) { return c && c.state === 'value' && isNum(c.v) ? c.v : null; },
     provided: function (c) { return !!c && c.state === 'value' && c.v != null; },
     phrase: function (path, vars) {
-      var s = path.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, wording().phrases);
+      var s = lookup(wording().phrases, path);
       return s == null ? '[' + path + ']' : fill(s, vars);
     },
-    fig: function (what, where, cell) { return { label: util.phrase('figure', { what: what, where: where }), cell: cell }; },
+    // A figure from a catalogue measure: labelled "<measure>, <where>", with the unit (and rating field) to format it.
+    fig: function (measureId, where, cell) {
+      var m = TAP.measures.meta(measureId) || {};
+      return util.figure(util.phrase('figure', { what: m.label || measureId, where: where }), cell, m.unit, m.scale, measureId);
+    },
+    // Any other figure (an account's growth, a segment share, a success factor), with its unit given.
+    figure: function (label, cell, unit, field, measureId) {
+      return { label: label, cell: cell, unit: unit || 'text', field: unit === 'rating' ? field || null : null,
+        measureId: measureId || null };
+    },
     label: function (measureId) { var m = TAP.measures.meta(measureId); return m ? m.label : measureId; },
     money: function (v) { return TAP.format.money(v); },
     pct: function (v) { return TAP.format.pct(v); },
