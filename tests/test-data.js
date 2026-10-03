@@ -359,18 +359,14 @@
       ids().forEach(function (id) { a.equal(X.attractiveNotYet[id].indexOf('datacenters'), -1, 'datacenters not listed for ' + id); });
     });
 
-    if (TAP.sources.__stub) {
-      T.skip('TPV-TC-020', 'Sample file: each planted check figure gives its expected file › sheet › cell', 'needs TAP.sources (#101)');
-    } else {
-      T.test('TPV-TC-020', 'Sample file: each planted check figure gives its expected file › sheet › cell', function (a) {
-        TAP.data.load(copy(P));
-        a.ok(X.sources.length >= 5, 'check figures listed');
-        X.sources.forEach(function (c) {
-          var ad = TAP.sources.address(c.src);
-          a.equal(ad.text, c.text, c.src.regionId + ' ' + c.src.field);
-          a.equal(ad.calculated, c.calculated, 'calculated: ' + c.src.field);
-        });
+    T.test('TPV-TC-020', 'Sample file: each planted check figure gives its expected file › sheet › cell', function (a) {
+      TAP.data.load(copy(P));
+      a.ok(X.sources.length >= 5, 'check figures listed');
+      X.sources.forEach(function (c) {
+        var ad = TAP.sources.address(c.src);
+        a.equal(ad.text, c.text, c.src.regionId + ' ' + c.src.field);
+        a.equal(ad.calculated, c.calculated, 'calculated: ' + c.src.field);
       });
-    }
+    });
   });
 })(window.TAP);
