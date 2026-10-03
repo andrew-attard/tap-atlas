@@ -21,6 +21,10 @@ No server, no install. Download the folder and double-click `index.html`. Everyt
 
 This repository contains **fictional sample data only**. Real plan data is never committed: the live data file is excluded by `.gitignore`, and a pre-commit check blocks spreadsheets and organization-specific terms.
 
+## Tracking and contributing
+
+Epics and user stories are tracked as [issues](https://github.com/andrew-attard/tap-atlas/issues) and on the [project board](https://github.com/users/andrew-attard/projects/3). See [CONTRIBUTING.md](CONTRIBUTING.md) for branch, commit and pull request conventions.
+
 ## Built with
 
 Plain HTML, CSS and JavaScript, plus [Apache ECharts](https://echarts.apache.org/) for charts.
