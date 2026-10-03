@@ -195,6 +195,9 @@
         a.equal(TAP.content.text('banner.internal'), 'Org label');
         a.equal(TAP.content.term('ARR').short, 'Org meaning');
         a.equal(TAP.content.term('arr').layer, 'organization');
+        window.TAP_ORG.regions = { alpha: 'A-short' };
+        a.equal(TAP.content.regionName(TAP.data.region('alpha')), 'A-short', 'short region name from the organization layer');
+        a.equal(TAP.content.regionName(TAP.data.region('bravo')), 'Region B', 'falls back to the data name');
         window.TAP_ORG = undefined;
         a.equal(TAP.content.text('banner.sample'), 'Sample data: all figures are fictional');
         window.TAP_ORG = 'broken';

@@ -1,7 +1,7 @@
 /*
  * File: js/core/content.js
  * Purpose: Gives every part of the app its wording, with the organization layer laid over the general one.
- * Provides: TAP.content (text, term, terms, guide, setting, orgError, mark)
+ * Provides: TAP.content (text, term, terms, guide, setting, regionName, orgError, mark)
  * Depends on: js/core/namespace.js, content/ui-text.js, content/glossary.js, content/guide.js,
  *             content/organization.js (internal edition only)
  * Used by: every module that shows words on screen
@@ -69,8 +69,15 @@
     return v == null ? fallback : v;
   }
 
+  // A region's display name: the organization layer's short name if it gives one, else the name in the data.
+  function regionName(region) {
+    if (!region) return '';
+    var short = (org().regions || {})[region.id];
+    return typeof short === 'string' && short ? short : region.name;
+  }
+
   TAP.content = {
-    text: text, term: term, terms: terms, guide: guide, setting: setting,
+    text: text, term: term, terms: terms, guide: guide, setting: setting, regionName: regionName,
     orgError: function () { org(); return orgError; },
     // Marks the first use of each glossary term in a piece of text (US-1.6.4). Built by the CONTENT stream (#40).
     mark: TAP.stub.fn('TAP.content.mark', 40)
