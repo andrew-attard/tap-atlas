@@ -17,7 +17,7 @@
     bus: ['on', 'off', 'emit', 'clear'],
     notes: ['add', 'list', 'clear'],
     format: ['money', 'moneyExact', 'pct', 'num', 'rating', 'tier', 'cell', 'kind', 'date', 'list'],
-    content: ['text', 'term', 'terms', 'guide', 'setting', 'orgError', 'mark'],
+    content: ['text', 'term', 'terms', 'guide', 'setting', 'regionName', 'orgError', 'mark'],
     sources: ['address', 'imports', 'datesDiffer', 'dataDate'],
     check: ['run'],
     data: ['load', 'plan', 'meta', 'lookups', 'regions', 'region', 'regionIndex', 'industries', 'industry', 'scale', 'row'],

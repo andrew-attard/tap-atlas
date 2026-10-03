@@ -379,6 +379,7 @@ The engine drops any finding built from a not-provided value. It skips compariso
 - `TAP_ORG` uses the same shape and overrides or adds keys. It also carries `settings` such as `internalLabel {show, text}`.
 - `TAP.content.text(key, vars)` fills `{name}` placeholders. A missing key returns the key in brackets, so gaps are visible in testing.
 - `TAP.content.term(idOrWord)` returns the merged glossary entry.
+- `TAP.content.regionName(region)` returns the organization layer's short name (`TAP_ORG.regions[id]`) or the data's name. **Every label that names a region uses it.**
 - `TAP.content.mark(text, seen)` returns safe HTML with the **first** occurrence of each glossary term marked. `seen` is a per-panel object, so a term is marked once per panel.
 
 ## 14. Script order (all three pages; lint compares them)
