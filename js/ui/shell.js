@@ -3,7 +3,7 @@
  * Purpose: Draws the page frame: data status banner, top bar with the menu, comparison bar area and the view area.
  * Provides: TAP.shell (mount, viewEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
- *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/theme.js (logo)
+ *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/theme.js (logo)
  * Used by: js/ui/app.js; panel export reads label() for saved images and copied tables
  */
 (function (TAP) {
@@ -99,6 +99,9 @@
     cleanups.push(TAP.store.on(function (state, changed) {
       if (changed.indexOf('view') >= 0) markCurrent(nav, state.view);
     }));
+
+    // Anything can ask for details by event (e.g. a chart click), and they open in a side panel
+    cleanups.push(TAP.bus.on('details:open', function (p) { TAP.layers.openDetails(p && p.target); }));
 
     tryMount(function (slot) { TAP.compareBar.mount(slot); }, cmp);
     return frame;
