@@ -1,7 +1,7 @@
 /*
  * File: tests/harness.js
  * Purpose: Small in-browser test runner that works from file:// with nothing installed.
- * Provides: window.T (suite, test, skip, run, dom, create, list, resultsText, timeout)
+ * Provides: window.T (suite, test, skip, run, dom, ids, list, release, timeout, resultsText, create)
  * Depends on: nothing (tests/harness.css for looks)
  * Used by: tests.html, tests/selftest.html and every tests/test-*.js file
  */
@@ -203,6 +203,18 @@
 
     h.skip = function (id, title, reason) {
       registry.push({ suite: currentSuite, id: String(id), title: title || '', skip: reason || 'skipped' });
+    };
+
+    h.release = param(query, 'release') === '1';
+
+    // Registered ids, without repeats, in registration order (for the coverage check).
+    h.ids = function () {
+      var seen = {};
+      return registry.map(function (t) { return t.id; }).filter(function (id) {
+        if (seen[id]) return false;
+        seen[id] = true;
+        return true;
+      });
     };
 
     h.list = function () {
@@ -414,7 +426,7 @@
 
   // Global runs use the fixed ids (#t-results, #t-json); nested runs use classes only.
   function makeUi(h, opts, isGlobal) {
-    var root = opts.root || (isGlobal ? document.body : null);
+    var root = opts.root || (isGlobal ? document.getElementById('t-root') || document.body : null);
     if (!root) return null;
     function find(id, tag) {
       var e = isGlobal ? document.getElementById(id) : null;
