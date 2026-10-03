@@ -230,4 +230,23 @@
       a.near(deal.v, TAP.measures.combined('nb.avgDealSize', ent, { year: null }).v, 1e-9, 'equals the chart’s combined figure');
     });
   });
+
+  /* ---------- priorities rank by what is at stake (review follow-up on #47) ---------- */
+  T.suite('rules-priorities-money', function () {
+    T.test('X-rules-priorities-money', 'Priority insights carry the industry’s share of organization pipeline or ARR, so splits rank apart', function (a) {
+      sample();
+      var orgPipe = X.regions.reduce(function (s, r) { return s + X.totals[r]['base.pipeline']; }, 0), orgArr = X.org['base.arr'];
+      var splits = ofRule('split');
+      a.ok(splits.length >= 2 && get('split:retail'), 'the planted Retail split is still there');
+      splits.concat(ofRule('consensus'), ofRule('groupPriority')).forEach(function (x) {
+        var ind = x.industryIds[0], pipe = 0, arr = 0;
+        x.regionIds.forEach(function (r) { pipe += mc(r, ind).pipelineTotal || 0; arr += mc(r, ind).currentArr || 0; });
+        a.near(x.money, Math.max(pipe / orgPipe, arr / orgArr), 1e-9, x.id + ': money is the larger share, worked out by hand');
+      });
+      var sig = splits.map(function (x) { return x.significance; });
+      a.equal(sig.filter(function (s, i) { return sig.indexOf(s) === i; }).length, sig.length, 'every split has its own significance');
+      var byMoney = splits.slice().sort(function (p, q) { return q.money - p.money; }).map(function (x) { return x.id; });
+      a.deepEqual(splits.map(function (x) { return x.id; }), byMoney, 'splits are ordered by what is at stake');
+    });
+  });
 })(window.TAP);
