@@ -1,7 +1,7 @@
 /*
  * File: tests/test-pages.js
- * Purpose: Tests for the explanation panel (US-1.6.5). The Guide, Insights page and tour add theirs below.
- * Provides: test cases for PAGES stories (#41; later #37, #46, #54, #11)
+ * Purpose: Tests for the explanation panel (US-1.6.5) and the Guide page (US-1.6.1); the Insights page and tour follow.
+ * Provides: test cases for PAGES stories (#41, #37; later #46, #54, #11)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -28,6 +28,18 @@
   function sectionText(sections, key) {
     var s = sections.filter(function (x) { return x.key === key; })[0];
     return s ? s.paras.join(' ') : '';
+  }
+
+  // Mounts the Guide view, runs fn and always destroys it.
+  function withGuide(fn) {
+    var root = T.dom.mount(), handle = TAP.views.get('guide').mount(root);
+    try { return fn(root); } finally { handle.destroy(); }
+  }
+  // "Open Industry priorities": the content template with a view title filled in.
+  function isViewLink(s) {
+    return TAP.views.order().some(function (id) {
+      return s === TAP.content.text('guidePage.openView', { view: TAP.views.title(id) });
+    });
   }
 
   /* ---------- US-1.6.5: an explanation for every report (#41) ---------- */
@@ -143,6 +155,123 @@
       withExplain('no-such-report', function (panel) {
         a.ok(panel, 'the panel still opens');
         a.ok(txt(panel).indexOf(TAP.content.text('explain.unknown')) >= 0, 'says there is no explanation');
+      });
+    });
+
+    /* ---------- US-1.6.1: the Guide page (#37) ---------- */
+
+    T.test('TPV-TC-172', 'The Guide has three sections with a contents list at the top that jumps to each', function (a) {
+      withGuide(function (root) {
+        var g = TAP.content.guide();
+        var links = qsa('.tap-guide__toc button', root);
+        a.deepEqual(links.map(txt), g.contents.map(function (c) { return c.title; }), 'contents list titles, in order');
+        var secs = qsa('.tap-guide__sec', root).map(function (n) { return n.getAttribute('data-guide'); });
+        a.deepEqual(secs, ['howTo', 'planning', 'glossary'], 'three sections, in order');
+        var toc = root.querySelector('.tap-guide__toc');
+        a.ok(toc.compareDocumentPosition(root.querySelector('.tap-guide__sec')) & Node.DOCUMENT_POSITION_FOLLOWING, 'contents come first');
+        links[2].click();
+        a.equal(document.activeElement, root.querySelector('[data-guide="glossary"] h2'), 'the glossary link moves to the glossary heading');
+        links[0].click();
+        a.equal(document.activeElement, root.querySelector('[data-guide="howTo"] h2'), 'the first link moves to How to use this app');
+      });
+    });
+
+    T.test('TPV-TC-173', 'How to use this app covers the menu, comparison bar, panels, chart types, table view, sources and insights', function (a) {
+      withGuide(function (root) {
+        var ids = qsa('[data-guide="howTo"] .tap-guide__part', root).map(function (n) { return n.getAttribute('data-part'); });
+        ['menu', 'compare', 'panels', 'chartTypes', 'table', 'sources', 'insights'].forEach(function (id) {
+          a.ok(ids.indexOf(id) >= 0, 'covers ' + id);
+        });
+        var first = TAP.content.guide().howTo.sections[0].paragraphs[0];
+        a.ok(txt(root.querySelector('[data-guide="howTo"]')).indexOf(first.slice(0, 30)) >= 0, 'paragraph text shown');
+      });
+    });
+
+    T.test('TPV-TC-173', 'How to use this app has a "Take the tour" button that starts the tour', function (a) {
+      var calls = 0, old = TAP.tour.start;
+      TAP.tour.start = function () { calls++; };
+      try {
+        withGuide(function (root) {
+          var btn = root.querySelector('[data-guide="howTo"] .tap-guide__tour');
+          a.ok(btn, 'the button is in How to use this app');
+          a.equal(txt(btn), TAP.content.text('guidePage.tour'), 'its label comes from the content file');
+          btn.click();
+          a.equal(calls, 1, 'the tour starts');
+        });
+      } finally { TAP.tour.start = old; }
+    });
+
+    T.test('TPV-TC-174', '"Reset all charts to default" clears every remembered chart choice and tells the charts', function (a) {
+      var events = 0;
+      TAP.storage.set('chart:ov-ambition', { type: 'treemap' });
+      TAP.storage.set('chart:ind-quad', { type: 'scatter' });
+      TAP.storage.set('x-pages-keep', true);
+      TAP.bus.on('charts:reset', function () { events++; });
+      try {
+        withGuide(function (root) {
+          var btn = root.querySelector('[data-guide="howTo"] .tap-guide__reset');
+          a.equal(txt(btn), TAP.content.text('guidePage.reset'), 'labelled from the content file');
+          btn.click();
+          a.equal(TAP.storage.get('chart:ov-ambition', null), null, 'first chart choice cleared');
+          a.equal(TAP.storage.get('chart:ind-quad', null), null, 'second chart choice cleared');
+          a.equal(TAP.storage.get('x-pages-keep', null), true, 'other remembered things are kept');
+          a.equal(events, 1, 'charts:reset is sent once');
+          a.equal(txt(root.querySelector('.tap-guide__status')), TAP.content.text('guidePage.resetDone'), 'says it is done');
+        });
+      } finally { TAP.storage.remove('x-pages-keep'); }
+    });
+
+    T.test('TPV-TC-175', 'Every word on the Guide page comes from the content files', function (a) {
+      var pool = [];
+      (function collect(v) {
+        if (typeof v === 'string') pool.push(v);
+        else if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { collect(v[k]); });
+      })([TAP.content.guide(), window.TAP_CONTENT.text]);
+      var all = pool.join('\n');
+      withGuide(function (root) {
+        var gloss = root.querySelector('[data-guide="glossary"] .tap-gloss');
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, stray = [];
+        while ((n = walker.nextNode())) {
+          if (gloss && gloss.contains(n)) continue;   // the glossary list is CONTENT's, checked in its own tests
+          var s = n.nodeValue.replace(/\s+/g, ' ').trim();
+          if (s && all.indexOf(s) < 0 && !isViewLink(s)) stray.push(s);
+        }
+        a.deepEqual(stray, [], 'no text written into the page code');
+        a.ok(gloss, 'the glossary list is drawn by TAP.glossary.render');
+      });
+    });
+
+    T.test('X-pages-guide-links', 'A planning section with a view link opens that view (TPV-TC-177)', function (a) {
+      withGuide(function (root) {
+        var secs = TAP.content.guide().planning.sections;
+        var sec = secs.filter(function (x) { return x.link && x.link.view === 'industry'; })[0];
+        var btn = root.querySelector('[data-part="' + sec.id + '"] .tap-guide__link');
+        a.ok(btn, 'the section has a link');
+        a.ok(txt(btn).indexOf(TAP.views.title('industry')) >= 0, 'it names the view');
+        btn.click();
+        a.equal(TAP.store.get().view, 'industry', 'the view changes');
+        var none = secs.filter(function (x) { return !x.link; })[0];
+        a.ok(!root.querySelector('[data-part="' + none.id + '"] .tap-guide__link'), 'a section without a view has no link');
+      });
+    });
+
+    T.test('X-pages-guide-org', 'An organization paragraph replaces the general one, with a badge (TPV-TC-178)', function (a) {
+      var old = window.TAP_ORG;
+      window.TAP_ORG = { guide: { planning: { sections: [{ id: 'tiers', paragraphs: ['Our tiers follow the yearly group review.'] }] } } };
+      try {
+        withGuide(function (root) {
+          var part = root.querySelector('[data-part="tiers"]');
+          a.ok(txt(part).indexOf('Our tiers follow the yearly group review.') >= 0, 'organization paragraph shown');
+          var general = window.TAP_CONTENT.guide.planning.sections.filter(function (x) { return x.id === 'tiers'; })[0];
+          a.ok(txt(part).indexOf(general.paragraphs[0].slice(0, 30)) < 0, 'general paragraph replaced');
+          a.ok(part.querySelector('.tap-badge'), 'marked as an organization section');
+        });
+      } finally { window.TAP_ORG = old; }
+    });
+
+    T.test('X-pages-guide-terms', 'Glossary terms in the guide text are marked', function (a) {
+      withGuide(function (root) {
+        a.ok(qsa('[data-guide="planning"] .tap-term', root).length > 0, 'planning text has marked terms');
       });
     });
   });
