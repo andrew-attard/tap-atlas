@@ -14,13 +14,17 @@ Object.assign(window.TAP_CONTENT.text, {
   sources: {
     sep: ' › ',
     calculated: 'calculated in the workbook',
+    regionOne: '1 region',
+    regionMany: '{n} regions',
+    // A figure added up over rows that are not next to each other, e.g. "O20:O31 (4 rows)"
+    someRows: '{range} ({n} rows)',
     combined: {
-      sum: 'Combined by this app: total of {n} regions',
-      mean: 'Combined by this app: average of {n} regions',
-      wmean: 'Combined by this app: weighted average of {n} regions',
-      rating: 'Combined by this app: average rating of {n} regions',
-      count: 'Combined by this app: counted across {n} regions',
-      list: 'Combined by this app: listed for {n} regions'
+      sum: 'Combined by this app: total of {regions}',
+      mean: 'Combined by this app: average of {regions}',
+      wmean: 'Combined by this app: weighted average of {regions}',
+      rating: 'Combined by this app: average rating of {regions}',
+      count: 'Combined by this app: counted across {regions}',
+      list: 'Combined by this app: listed for {regions}'
     },
     excluded: '{names} not included: not provided',
     unknownFile: 'unknown file'

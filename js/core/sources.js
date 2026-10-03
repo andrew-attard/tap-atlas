@@ -7,13 +7,15 @@
  *
  * A source reference (src) is described in docs/ARCHITECTURE.md section 7 and docs/DATA-CONTRACT.md.
  * The cell comes from meta.sourceMap: a fixed cell (src.cell or the section's cells map), or the field's
- * column (one per plan year for fields held by year) plus the item's row.
+ * column (one per plan year for fields held by year) plus the item's row. A sum over several rows
+ * (src.rows) or over all three years (year null on a by-year field) gives a range such as "G10:G14".
  */
 (function (TAP) {
   'use strict';
 
   function say(key, vars) { return TAP.content.text('sources.' + key, vars); }
   function has(o, k) { return !!o && Object.prototype.hasOwnProperty.call(o, k); }
+  function num(v) { return typeof v === 'number' && isFinite(v); }
 
   function regionNames(ids) {
     return (ids || []).map(function (id) {
@@ -22,21 +24,37 @@
     });
   }
 
+  function regionCount(n) { return n === 1 ? say('regionOne') : say('regionMany', { n: n }); }
+
+  // The rows a figure was read from: src.row, or src.rows for a sum over several rows.
+  function rowsOf(src) {
+    if (src.row != null) return [src.row];
+    return (src.rows || []).filter(num).slice().sort(function (a, b) { return a - b; });
+  }
+
   function cellFor(src, map) {
     if (src.cell) return src.cell;
     if (!map) return null;
     if (has(map.cells, src.field)) return map.cells[src.field];
     var col = has(map.columns, src.field) ? map.columns[src.field] : null;
-    if (Array.isArray(col)) col = src.year >= 1 && src.year <= col.length ? col[src.year - 1] : null;
-    return col && src.row != null ? col + src.row : null;
+    var first = col, last = col;
+    if (Array.isArray(col)) {
+      if (src.year == null) { first = col[0]; last = col[col.length - 1]; } else first = last = col[src.year - 1];
+    }
+    var rows = rowsOf(src);
+    if (!first || !rows.length) return null;
+    var lo = rows[0], hi = rows[rows.length - 1];
+    if (first === last && lo === hi) return first + lo;
+    var range = first + lo + ':' + last + hi;
+    return rows.length > 1 && hi - lo + 1 !== rows.length ? say('someRows', { range: range, n: rows.length }) : range;
   }
 
   function combinedAddress(src) {
-    var excluded = src.excluded || [];
-    var used = (src.regionIds || []).filter(function (id) { return excluded.indexOf(id) === -1; });
+    var excluded = src.excluded || [], notApplicable = src.notApplicable || [];
+    var used = (src.regionIds || []).filter(function (id) { return excluded.indexOf(id) === -1 && notApplicable.indexOf(id) === -1; });
     return { file: null, sheet: null, cell: null, calculated: false, combined: true,
-      text: say('combined.' + (src.how || 'mean'), { n: used.length }),
-      regions: regionNames(used), excluded: regionNames(excluded) };
+      text: say('combined.' + (src.how || 'mean'), { regions: regionCount(used.length) }),
+      regions: regionNames(used), excluded: regionNames(excluded), notApplicable: regionNames(notApplicable) };
   }
 
   // {file, sheet, cell, text, calculated, combined, regions}, or null without a source.
@@ -63,22 +81,23 @@
     });
   }
 
+  // Readable import dates only: [{iso, time}]
   function importDates() {
-    return imports().map(function (r) { return r.importedAt; }).filter(Boolean);
+    return imports().map(function (r) { return { iso: r.importedAt, time: r.importedAt ? new Date(r.importedAt).getTime() : NaN }; })
+      .filter(function (d) { return !isNaN(d.time); });
   }
 
-  // True when regions were imported on different days (times on the same day don't count).
+  // True when regions were imported on different UTC days (as TAP.format.date shows them).
   function datesDiffer() {
     var days = {};
-    importDates().forEach(function (d) { days[String(d).slice(0, 10)] = true; });
+    importDates().forEach(function (d) { days[new Date(d.time).toISOString().slice(0, 10)] = true; });
     return Object.keys(days).length > 1;
   }
 
-  // The latest import, as stored (ISO date-time), for "Data: 2 Oct 2026". Null if no region has one.
+  // The latest import, as stored, for "Data: 2 Oct 2026". Null if no region has a readable one.
   function dataDate() {
-    return importDates().reduce(function (best, d) {
-      return best === null || Date.parse(d) > Date.parse(best) ? d : best;
-    }, null);
+    var latest = importDates().reduce(function (best, d) { return !best || d.time > best.time ? d : best; }, null);
+    return latest ? latest.iso : null;
   }
 
   TAP.sources = { address: address, imports: imports, datesDiffer: datesDiffer, dataDate: dataDate };
