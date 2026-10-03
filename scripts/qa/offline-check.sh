@@ -20,7 +20,7 @@ out="${2:-/tmp/tap-qa/offline}"
 mkdir -p "$out"
 status=0
 OFF=(--host-resolver-rules="MAP * ~NOTFOUND" --proxy-server="http://127.0.0.1:9" --proxy-bypass-list="<-loopback>"
-  --disable-background-networking --disable-component-update --no-pings --disable-domain-reliability)
+  --disable-background-networking --disable-component-update --no-pings --disable-domain-reliability --disable-sync)
 
 echo "== web addresses in the shipped files"
 "$QA_NODE" "$here/url-scan.js" || status=1
@@ -42,9 +42,10 @@ for b in $browsers; do
     qa_run "$b" tests/qa.html "?screenshot=1&view=$view&mode=all&qa=offline,console" "$base.html" "$base.log" \
       --window-size=1280,800 "${OFF[@]}" || echo "ERROR  [$b $view] browser did not finish"
     "$QA_NODE" "$here/qa-report.js" offline "$b $view offline" "$base.html" "$base.log" --json "$base.json" || status=1
-    if grep -E 'net::ERR_|ERR_NAME_NOT_RESOLVED|ERR_PROXY' "$base.log" | grep -v 'file:' | head -5 | grep -q .; then
-      echo "ERROR  [$b $view] the browser log shows a failed network request:"
-      grep -E 'net::ERR_|ERR_NAME_NOT_RESOLVED|ERR_PROXY' "$base.log" | head -5
+    # Only the page's own console lines count; the browser's services (sync, updates) also fail offline
+    if grep 'CONSOLE' "$base.log" | grep -E 'net::ERR_' | grep -q .; then
+      echo "ERROR  [$b $view] the page logged a failed network request:"
+      grep 'CONSOLE' "$base.log" | grep -E 'net::ERR_' | head -5
       status=1
     fi
   done

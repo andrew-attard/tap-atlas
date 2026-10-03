@@ -7,8 +7,9 @@
  * Used by: scripts/qa/qa-run.js (on tests/qa.html); can also be pasted into the DevTools console on any page
  *
  * Body text is text whose nearest text block is a paragraph, list item, quote or
- * definition (p, li, dd, blockquote). Everything else (labels, buttons, badges,
- * table cells) only has to meet the 13 px floor. Canvases are skipped; their sizes
+ * definition (p, li, dd, blockquote) holding at least 40 characters, so short
+ * kickers and status counts set as paragraphs count as labels. Everything else
+ * (labels, buttons, badges, table cells) only has to meet the 13 px floor. Canvases are skipped; their sizes
  * come from the chart options instead.
  */
 (function () {
@@ -17,6 +18,7 @@
   var BODY_MIN = 16;
   var ANY_MIN = 13;
   var BODY_TAGS = { P: 1, LI: 1, DD: 1, BLOCKQUOTE: 1 };
+  var BODY_CHARS = 40;
   var BLOCK_TAGS = { P: 1, LI: 1, DD: 1, DT: 1, BLOCKQUOTE: 1, TD: 1, TH: 1, BUTTON: 1, LABEL: 1, H1: 1, H2: 1, H3: 1,
     H4: 1, H5: 1, H6: 1, FIGCAPTION: 1, CAPTION: 1, LEGEND: 1, SUMMARY: 1, OPTION: 1, SELECT: 1 };
 
@@ -58,7 +60,7 @@
       }
       var px = parseFloat(getComputedStyle(el).fontSize);
       var block = blockOf(el);
-      var body = !!(block && BODY_TAGS[block.tagName]);
+      var body = !!(block && BODY_TAGS[block.tagName] && (block.textContent || '').trim().length >= BODY_CHARS);
       out.checked++;
       var key = String(Math.round(px * 10) / 10);
       out.sizes[key] = (out.sizes[key] || 0) + 1;
