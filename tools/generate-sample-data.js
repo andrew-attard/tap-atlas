@@ -162,6 +162,11 @@ function expectText(x) {
 function main() {
   const made = makePlan();
   const x = expect.build(made.plan);
+  // The vetted name parts, so the tests can check every account and partner name comes from them
+  const kinds = [];
+  Object.keys(NAMES.accountKinds).forEach(function (k) { NAMES.accountKinds[k].forEach(function (w) { if (kinds.indexOf(w) === -1) kinds.push(w); }); });
+  NAMES.partnerKinds.forEach(function (w) { if (kinds.indexOf(w) === -1) kinds.push(w); });
+  x.vettedNames = { stems: NAMES.stems, kinds: kinds };
   const out = {};
   out[DATA_FILE] = dataText(made.plan, expect.comment(x));
   out[EXPECT_FILE] = expectText(x);

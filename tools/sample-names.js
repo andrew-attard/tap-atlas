@@ -1,7 +1,7 @@
 /*
  * File: tools/sample-names.js
  * Purpose: Invented words for the sample data: account and partner names, markets, sub-verticals, success factors
- *          and commentary. Account and partner names are coined nonsense words, so none can pass for a real company.
+ *          and commentary. Account and partner names use vetted coined stems, so none can pass for a real company.
  * Provides: module.exports ({stems, accountKinds, partnerKinds, markets, countries, subVerticals, successFactors,
  *           commentary, maturity, expertiseProduct})
  * Depends on: nothing
@@ -10,30 +10,45 @@
 'use strict';
 
 module.exports = {
-  // Coined words, combined with a kind of business ("Quorbel Logistics"). Each name is used once in the file.
+  // The vetted list of coined stems: a nonsense root plus a neutral, place-like ending (-holm, -stead, -dal,
+  // -wick, -mere, -by, -ford, -thorpe, -vale, -combe), screened so no root is a real word, name or brand
+  // fragment, or reads as a joke. Each is used once, with a kind of business ("Bulvamere Water"). Keep at
+  // least 30% more stems than the file uses; the tests check names come only from this list.
   stems: [
-    'Quorbel', 'Vantrisk', 'Zelmora', 'Brindlecap', 'Ostravel', 'Fenwyrd', 'Kalvenna', 'Mirrowen', 'Plimsoth',
-    'Tarnquill', 'Axelbrim', 'Calvexa', 'Dornquist', 'Elvaroth', 'Gribbleton', 'Hollowmere', 'Istravon', 'Jorvanta',
-    'Kestrelwick', 'Lumbervox', 'Mossgrave', 'Nimbrook', 'Orvelline', 'Pellucar', 'Quillmarsh', 'Rustavel',
-    'Sombrevane', 'Tindlewharf', 'Umbrafeld', 'Valquessa', 'Wendrak', 'Xanthorpe', 'Yarrowmede', 'Zorvalith',
-    'Brackenvolt', 'Cindermoor', 'Draxwell', 'Embervale', 'Frostlinden', 'Glimmerholt', 'Hazelquort', 'Ironwimple',
-    'Juniperra', 'Kobblestane', 'Larkspindle', 'Marrowgate', 'Nettlebrisk', 'Ombravia', 'Pimbleford', 'Quinsbarrow',
-    'Ravenbrisk', 'Saltmarrow', 'Thistlequay', 'Ulvenbrook', 'Wimbleshaw', 'Yelvarran', 'Zandrovic',
-    'Arvenhusk', 'Belquorra', 'Corvenna', 'Dremblewick', 'Estravane', 'Fizzlemoor', 'Grommelin', 'Hextravel',
-    'Inglefrost', 'Jabberlune', 'Krindlemark', 'Lornquessa', 'Mabblethorn', 'Noxberrow', 'Opalwhistle', 'Pruntavel',
-    'Quibbleton', 'Rindlevast', 'Snorrendal', 'Trevvelin', 'Uptwhistle', 'Vorpaline', 'Wobblecombe', 'Xyrellian',
-    'Yonderquill', 'Zibbleford', 'Amberquoth', 'Blusterfen', 'Crumblevane', 'Dabbleroot', 'Eldertwine', 'Fumblequay',
-    'Gloamstead', 'Hobblemere', 'Ickleburn', 'Jollimarsh', 'Knottlewick', 'Lumpkinvale', 'Mizzleton', 'Nobblecrest',
-    'Oddlethwaite', 'Puddlequirk', 'Quagmorrow', 'Rumbleshaw', 'Spindlewhit', 'Tumbleforth', 'Umbleton', 'Vexillor',
-    'Wizzlecroft', 'Yabbleton', 'Zonkerfield', 'Antlerquay', 'Bimblewood', 'Crankleton', 'Drizzlefen', 'Elbowmere',
-    'Flimmerlake', 'Gobbleshire', 'Hufflemarsh', 'Inkwhistle', 'Jumblecross', 'Lollygrove', 'Muddlecombe',
-    'Niblethorpe', 'Ozzlewick', 'Prattlefen', 'Quizzlebank', 'Ruddlestone', 'Squabbleby', 'Twiddlemore',     'Vimbleshore', 'Waddlecote', 'Yammerholt', 'Zigglebrook', 'Brumbleton', 'Clatterwick', 'Doddlemere', 'Fiddlestow',
-    'Grizzlefen', 'Hiccupvale', 'Jigglethorn', 'Kibblewick', 'Mumblefield', 'Noodlecombe', 'Rattlebury',
-    'Scrumbleton', 'Tottlemere', 'Wibbleford', 'Zumbleshaw', 'Blimberly', 'Chortlewick', 'Dinglequay', 'Frazzlemoor',
-    'Gruntlefield', 'Honklewick', 'Jangleshire', 'Klonkerby', 'Mozzlebrook', 'Nubbleton', 'Pifflestead', 'Quackenvale',
-    'Rumpleford', 'Snickerholt', 'Tiddlecombe', 'Wonkleton', 'Zizzlemere', 'Bonkersby', 'Cobblequirk', 'Dozzlefen',
-    'Fribbleton', 'Glumberwick', 'Hootlecombe', 'Jostlemere', 'Mangleshaw', 'Nozzlebury', 'Pozzlewick',
-    'Quibberfen', 'Razzlecombe', 'Shimbleford', 'Twonkleby', 'Whiffleton', 'Zoodlemere'
+    'Balqidal', 'Baltevale', 'Basvathorpe', 'Basveby', 'Bilqovale', 'Bilvoby', 'Binvestead', 'Binviby', 'Birdimere',
+    'Bonvawick', 'Branvaby', 'Branviford', 'Brenvostead', 'Brisveby', 'Brondevale', 'Bronviby', 'Brosvicombe',
+    'Brusvemere', 'Bulqathorpe', 'Bulqomere', 'Bulvamere', 'Burdoby', 'Burveholm', 'Busviford', 'Daltoford',
+    'Danvicombe', 'Danvothorpe', 'Denveholm', 'Desvidal', 'Dirvoholm', 'Disvemere', 'Disvidal', 'Dolqawick',
+    'Donvithorpe', 'Donvocombe', 'Dralqiby', 'Dranvamere', 'Dranvostead', 'Drarvathorpe', 'Drasviwick', 'Drelqoby',
+    'Drenvastead', 'Drenvavale', 'Drilmeby', 'Drisvestead', 'Dronvidal', 'Drulqiwick', 'Drulvivale', 'Drunvastead',
+    'Drusvoby', 'Dulqawick', 'Dunvemere', 'Dunvocombe', 'Durdadal', 'Durdiholm', 'Dusvamere', 'Falqoby', 'Fanviby',
+    'Fanvocombe', 'Fasvadal', 'Fasvemere', 'Felqithorpe', 'Fenvedal', 'Fervicombe', 'Fesvastead', 'Fesvocombe',
+    'Filvothorpe', 'Finviby', 'Firdawick', 'Firdicombe', 'Firkecombe', 'Folqacombe', 'Folqewick', 'Folqimere',
+    'Fonvodal', 'Forvoby', 'Fraltostead', 'Frenvethorpe', 'Frenvostead', 'Frervaford', 'Fresvaby', 'Frirkowick',
+    'Frirvaford', 'Frisvemere', 'Frondaby', 'Frondeford', 'Frosvacombe', 'Frundaby', 'Frurkewick', 'Fundithorpe',
+    'Funvaford', 'Furkovale', 'Galqivale', 'Galtestead', 'Ganvodal', 'Garvimere', 'Gelqemere', 'Girvaholm',
+    'Golqiholm', 'Gondostead', 'Gosvavale', 'Gosviford', 'Gosvimere', 'Grasveby', 'Grervemere', 'Gresvaby',
+    'Grilmeby', 'Grilqaford', 'Grilqoholm', 'Grilveholm', 'Grilviholm', 'Grinvadal', 'Grirdoby', 'Grisvaford',
+    'Grolqewick', 'Grosvecombe', 'Grulmicombe', 'Grulqecombe', 'Grulqestead', 'Grulvithorpe', 'Grulvivale',
+    'Grunvodal', 'Grusvadal', 'Grusvovale', 'Gunvomere', 'Haltidal', 'Hasvecombe', 'Henvithorpe', 'Hesvoford',
+    'Hinvaholm', 'Hirdicombe', 'Hirkethorpe', 'Horvacombe', 'Horviby', 'Horvocombe', 'Hosvidal', 'Hulqacombe',
+    'Hulqavale', 'Husvedal', 'Husvowick', 'Kalqidal', 'Kaltomere', 'Karvoholm', 'Kelqiford', 'Kelqothorpe',
+    'Kenvomere', 'Kervaford', 'Kilqaford', 'Kolqethorpe', 'Kolqiwick', 'Kondemere', 'Kondicombe', 'Konveholm',
+    'Kosvacombe', 'Kulmostead', 'Kulvavale', 'Kunvecombe', 'Kunvedal', 'Kurvaford', 'Kurvecombe', 'Kusvawick',
+    'Lanvacombe', 'Lanvostead', 'Lasvothorpe', 'Lenviford', 'Lervaford', 'Lilmeby', 'Lilvithorpe', 'Lirdedal',
+    'Lirkiholm', 'Lolqathorpe', 'Lulmewick', 'Lulqovale', 'Malqacombe', 'Malqedal', 'Manvodal', 'Masvadal',
+    'Melqomere', 'Mesvivale', 'Milmimere', 'Milmostead', 'Milqecombe', 'Minviford', 'Morvedal', 'Mosviwick',
+    'Mulqoby', 'Mulvowick', 'Musviby', 'Musvicombe', 'Musvomere', 'Nalqastead', 'Naltacombe', 'Nanvaford',
+    'Nanveholm', 'Narvecombe', 'Nasvewick', 'Nelqothorpe', 'Nesvaholm', 'Nilqeford', 'Nirvethorpe', 'Nirvocombe',
+    'Nirvostead', 'Nisvimere', 'Nolqiwick', 'Nondiby', 'Norkevale', 'Norveby', 'Nosvathorpe', 'Nosvedal',
+    'Nulmecombe', 'Nundivale', 'Nunvaford', 'Nunvecombe', 'Nurvistead', 'Nusviford', 'Palqedal', 'Panvivale',
+    'Penvavale', 'Penviby', 'Pilvidal', 'Pilvomere', 'Pulmostead', 'Pulqethorpe', 'Punvemere', 'Ralqivale',
+    'Raltevale', 'Rarvothorpe', 'Rasvemere', 'Rasvidal', 'Rasvomere', 'Rilmowick', 'Rirdovale', 'Risvathorpe',
+    'Rolqawick', 'Ronvicombe', 'Rorkemere', 'Rulqoholm', 'Rundeford', 'Runvevale', 'Runvostead', 'Rurdodal',
+    'Salqaby', 'Salqecombe', 'Silqothorpe', 'Solqacombe', 'Solqethorpe', 'Solqowick', 'Sonvaby', 'Sonvedal',
+    'Sorkowick', 'Sosviford', 'Sosvoholm', 'Surkiby', 'Susvimere', 'Talqestead', 'Telqeholm', 'Telqidal', 'Tilmemere',
+    'Tirkithorpe', 'Tirkovale', 'Tisvothorpe', 'Tolqavale', 'Tralqeby', 'Tralqethorpe', 'Trasveholm', 'Trasvethorpe',
+    'Trelqamere', 'Tresviby', 'Trilqimere', 'Trinveholm'
   ],
 
   // Kinds of business per industry, for account names.
