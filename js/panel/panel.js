@@ -83,8 +83,9 @@
     }).concat([el('span', { class: 'tap-panel__date' }, t('dataDate', { date: TAP.format.date(TAP.sources.dataDate()) }))]));
   }
 
-  function body(p, b, s) {
-    var box = el('div', { class: 'tap-panel__body' }), C = TAP.panelChart, res = b.res;
+  // Fills the body once it is on the page, so the chart measures its real size on the first draw.
+  function body(p, b, s, box) {
+    var C = TAP.panelChart, res = b.res;
     if (b.errors.length || !res) { C.dispose(p.cs); C.error(box, b.errors); return box; }
     if (res.empty) { C.dispose(p.cs); C.empty(box, res.missing); return box; }
     if (p.st.table && res.table) {
@@ -126,6 +127,7 @@
     p.root.setAttribute('aria-label', b.title);
     p.root.className = 'tap-panel' + (big ? ' tap-panel--expanded' : '');
 
+    var bodyBox = el('div', { class: 'tap-panel__body' });
     var takeaway = el('p', { class: 'tap-panel__takeaway', 'aria-live': 'polite', 'data-tour': 'takeaway' });
     TAP.dom.append(p.root, [
       big ? expandStrip(p, s) : null,
@@ -140,11 +142,13 @@
       p.st.editing && b.types ? TAP.panelMenus.compareEditor(p) : null,
       b.def && !b.errors.length ? TAP.panelMenus.render(TAP.panelMenus.spec(p, b)) : null,
       ok ? I.strip(p, highlightOf(p, s)) : null,
-      body(p, b, s),
+      bodyBox,
       ok && !(p.st.table && b.res.table) ? TAP.panelChart.legend(b.res) : null,
       ok ? TAP.panelChart.notes(b.res) : null,
-      source(b.def)
+      source(b.def),
+      p.statusEl
     ]);
+    body(p, b, s, bodyBox);
     // Focus follows the change: into the expanded chart's Close button, and back to More when it closes
     if (big !== !!p.big) keep = big ? '[data-action="collapse"]' : '[data-action="more"]';
     p.big = big;
@@ -273,6 +277,11 @@
     };
     p.expand = function (on) { if (on) TAP.store.set({ expanded: reportId }); else collapse(); };
     p.fullscreen = function () { fullscreen(reportId); };
+    p.statusEl = el('p', { class: 'tap-panel__status', role: 'status' });   // kept across redraws, so a message stays
+    p.image = function (how) {
+      p.set({ pop: null });
+      TAP.panelExport[how === 'save' ? 'saveImage' : 'copyImage'](p.root).then(function (msg) { TAP.dom.text(p.statusEl, msg); });
+    };
     p.root = el('section', { class: 'tap-panel', 'data-report': reportId, 'data-tour': 'panel' });
     host.appendChild(p.root);
     live.push(p);
