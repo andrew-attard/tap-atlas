@@ -29,5 +29,17 @@ Object.assign(window.TAP_CONTENT.text, {
     combinedLine: '{label}: {how}',
     rateWeight: '{measure} is a weighted average, with each region counting in proportion to its {weight}.',
     ratingRange: 'Ratings are averaged, and the lowest and highest region ratings are shown as a range.'
+  },
+
+  // The Guide page (US-1.6.1). Its sections and paragraphs come from content/guide.js.
+  guidePage: {
+    kicker: 'Guide',
+    heading: 'How to use this app, and how to read a territory account plan',
+    contents: 'Contents',
+    tour: 'Take the tour',
+    reset: 'Reset all charts to default',
+    resetDone: 'Every chart is back to its default type.',
+    openView: 'Open {view}',
+    orgBadge: 'Organization wording'
   }
 });
