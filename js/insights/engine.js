@@ -138,7 +138,9 @@
     var regionIds = f.regionIds, n = TAP.data.regions().length;
     var attach = (rule.attach || []).slice();
     var reportId = attach.length && TAP.reports.get(attach[0]) ? attach[0] : null;
-    var strength = clamp(f.strength), money = clamp(f.money), breadth = clamp(n ? regionIds.length / n : 0);
+    // A finding may say how many of its regions really count (a split counts the regions that depart from the rest).
+    var strength = clamp(f.strength), money = clamp(f.money);
+    var breadth = clamp(typeof f.breadth === 'number' ? f.breadth : n ? regionIds.length / n : 0);
     return {
       id: rule.id + ':' + f.key, ruleId: rule.id, family: rule.family, sentence: sentence, figures: f.figures,
       description: rule.description, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
