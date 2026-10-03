@@ -164,17 +164,28 @@
   });
 
   T.suite('start-up', function () {
-    T.test('X-core-app-restart', 'Starting the app twice leaves exactly one view on screen', function (a) {
-      var root = T.dom.mount();
-      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
-      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
-      a.equal(TAP.app.current(), 'overview');
-      a.equal(TAP.store.get().view, 'overview');
-      var text = root.textContent;
-      a.ok(text.indexOf('Overview') >= 0, 'the Overview view is shown');
-      a.equal(text.split('the Overview view').length - 1, 1, 'shown once');
-      TAP.app.stop();
-      a.equal(TAP.app.current(), null, 'stopped');
+    T.test('X-core-app-restart', 'Starting the app twice leaves exactly one view mounted', function (a) {
+      var root = T.dom.mount(), spec = TAP.views.get('overview'), realMount = spec.mount, live = 0;
+      // Count live mounts of the view (mounted minus destroyed), whatever the view draws
+      spec.mount = function (el) {
+        var h = realMount.call(spec, el) || {}, realDestroy = h.destroy;
+        live++;
+        h.destroy = function () { live--; if (realDestroy) realDestroy.call(h); };
+        return h;
+      };
+      try {
+        TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+        TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+        a.equal(TAP.app.current(), 'overview');
+        a.equal(TAP.store.get().view, 'overview');
+        a.equal(live, 1, 'one live view after two starts');
+        TAP.app.stop();
+        a.equal(live, 0, 'none after stop');
+        a.equal(TAP.app.current(), null, 'stopped');
+      } finally {
+        spec.mount = realMount;
+        TAP.app.stop();
+      }
     });
 
     T.test('X-core-app-missing', 'With no data, start-up reports "missing" instead of drawing views', function (a) {
