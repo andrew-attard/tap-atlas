@@ -1,11 +1,107 @@
 /*
  * File: css/base.css
- * Purpose: Page reset and base typography. Placeholder until the theme (#10) folds in the full base styles.
- * Provides: base element styles
- * Depends on: the CSS variables written by js/theme.js
+ * Purpose: Fonts, page reset, typography and the small shared building blocks (buttons, fields, tables, labels)
+ *          in the Modernist style. Area styles live in shell.css, layers.css, panel.css and views.css.
+ * Provides: base element styles and shared classes: .tap-btn, .tap-iconbtn, .tap-field, .tap-table, .tap-kind,
+ *           .tap-np, .tap-badge, .tap-muted, .tap-sr, .tap-stub
+ * Depends on: the CSS variables (--tap-*) written by js/theme.js; vendor/fonts/archivo-*.woff2
  * Used by: index.html, index-sample.html, tests.html
  */
+
+/* Archivo, stored in the folder (OFL licence: vendor/fonts/OFL.txt). Falls back to Segoe UI, then the system font. */
+@font-face { font-family: "Archivo"; font-weight: 400; font-style: normal; font-display: swap; src: url("../vendor/fonts/archivo-400.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-weight: 600; font-style: normal; font-display: swap; src: url("../vendor/fonts/archivo-600.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-weight: 800; font-style: normal; font-display: swap; src: url("../vendor/fonts/archivo-800.woff2") format("woff2"); }
+
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-body { font-family: var(--tap-font, system-ui, sans-serif); font-size: 16px; line-height: 1.5; }
-.tap-stub { padding: 16px; font-weight: 600; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--tap-ground);
+  color: var(--tap-ink);
+  font-family: var(--tap-font);
+  font-size: var(--tap-fs-body);
+  line-height: 1.5;
+}
+[hidden] { display: none !important; }
+
+/* Type scale: shared-screen minimums (D24), body 16 px and up */
+h1, h2, h3, h4 { margin: 0 0 var(--tap-sp-3); line-height: 1.2; font-weight: 800; }
+h1 { font-size: var(--tap-fs-h1); }
+h2 { font-size: var(--tap-fs-h2); }
+h3 { font-size: var(--tap-fs-h3); }
+h4 { font-size: var(--tap-fs-lead); }
+p { margin: 0 0 var(--tap-sp-3); }
+small, .tap-small { font-size: var(--tap-fs-label); }
+a { color: var(--tap-ink); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: var(--tap-accent-deep); }
+strong, b { font-weight: 800; }
+
+/* One focus ring everywhere, visible over a screen share */
+:focus-visible { outline: var(--tap-focus-w) solid var(--tap-accent); outline-offset: 2px; }
+
+/* Buttons */
+.tap-btn {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-2);
+  min-height: 40px; padding: var(--tap-sp-2) var(--tap-sp-4);
+  font: inherit; font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-ink);
+  background: var(--tap-paper); border: var(--tap-control-w) solid var(--tap-ink); border-radius: var(--tap-radius);
+  cursor: pointer; transition: background var(--tap-motion-fast);
+}
+.tap-btn:hover { background: var(--tap-surface); }
+.tap-btn[aria-pressed="true"], .tap-btn.is-active { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-btn--primary { background: var(--tap-accent); border-color: var(--tap-accent); color: var(--tap-on-colour); }
+.tap-btn--primary:hover { background: var(--tap-accent-hover); }
+.tap-btn--primary:active { background: var(--tap-accent-press); }
+.tap-btn--ghost { background: transparent; border-color: transparent; }
+.tap-btn--ghost:hover { background: var(--tap-surface); }
+.tap-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Square icon button; always has an accessible name (aria-label or visible text) */
+.tap-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--tap-sp-1);
+  min-width: 40px; height: 40px; padding: 0 var(--tap-sp-2);
+  font: inherit; font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-ink);
+  background: transparent; border: var(--tap-control-w) solid transparent; border-radius: var(--tap-radius); cursor: pointer;
+}
+.tap-iconbtn:hover { background: var(--tap-surface); border-color: var(--tap-rule); }
+.tap-iconbtn[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-icon { display: inline-flex; line-height: 0; }
+
+/* Form fields */
+.tap-field, select.tap-field, input.tap-field {
+  min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3);
+  font: inherit; font-size: var(--tap-fs-label); color: var(--tap-ink);
+  background: var(--tap-paper); border: var(--tap-control-w) solid var(--tap-ink); border-radius: var(--tap-radius);
+}
+label { font-size: var(--tap-fs-label); font-weight: 600; }
+
+/* Tables: exact figures, numbers right-aligned, headers stay put when the body scrolls */
+.tap-table { width: 100%; border-collapse: collapse; font-size: var(--tap-fs-label); background: var(--tap-paper); }
+.tap-table th, .tap-table td { padding: var(--tap-sp-2) var(--tap-sp-3); text-align: left; border-bottom: 1px solid var(--tap-grid); vertical-align: top; }
+.tap-table th { position: sticky; top: 0; z-index: 1; background: var(--tap-surface); font-weight: 800; border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-table td.num, .tap-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tap-table tr.is-focus td { background: var(--tap-accent-tint); font-weight: 600; }
+
+/* Kind of value: glyph plus word, never colour alone */
+.tap-kind { display: inline-flex; align-items: baseline; gap: var(--tap-sp-1); font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-kind__glyph { color: var(--tap-ink); }
+
+/* "not provided": an outlined empty space with a text label, no hatching */
+.tap-np {
+  display: inline-block; padding: 0 var(--tap-sp-2);
+  border: 1px dashed var(--tap-np-border); color: var(--tap-np-fg);
+  font-size: var(--tap-fs-label); font-style: italic;
+}
+
+/* Small labels and badges */
+.tap-badge {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-1); padding: 2px var(--tap-sp-2);
+  font-size: var(--tap-fs-label); font-weight: 600; border: var(--tap-control-w) solid var(--tap-ink); background: var(--tap-paper);
+}
+.tap-badge--accent { border-color: var(--tap-accent); color: var(--tap-accent-deep); background: var(--tap-accent-tint); }
+.tap-swatch { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; }
+
+.tap-muted { color: var(--tap-muted); }
+.tap-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tap-stub { padding: var(--tap-sp-4); font-weight: 600; color: var(--tap-muted); border: 1px dashed var(--tap-rule); }
