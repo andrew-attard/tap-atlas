@@ -4,6 +4,20 @@ What the import must do, so it can be built in Microsoft 365 Copilot with the re
 
 This brief sets the requirements and lists the open choices. It does not decide how the import is built: that is decided in the Copilot phase, once the real workbooks and their differences can be seen (decision D27).
 
+## Copilot early pack
+
+Give Copilot these first, in one new chat, before any real workbook. They are enough to start designing the import a day early.
+
+| Give | Why |
+|---|---|
+| `docs/DATA-CONTRACT.md` | The exact shape of the data file. It wins wherever another document differs |
+| `docs/IMPORT-BRIEF.md` (this file) | What the import must do, and the choices still open |
+| Prompt 2 in `docs/COPILOT-PROMPTS.md` | The ready-made prompt that starts the work |
+| `tests/fixtures/mini-data.js` | A small valid example of the shape: four regions, every section, a full `meta.sourceMap`. It sets `window.TEST_FIXTURES.mini` and has `isSample: true`; the real file sets `window.PLAN_DATA` and has `isSample: false` |
+| `js/core/check.js` and `content/text-data.js` | The app's contract check and the wording of its messages, so Copilot knows what the app will reject and how each problem is reported |
+
+Then add one real workbook, or screenshots of each sheet's header rows, inside Copilot only.
+
 **Read with:** `docs/DATA-CONTRACT.md` (the exact shape of the data file; it wins wherever this brief and the contract differ) and `docs/ARCHITECTURE.md` (how the app uses the file).
 
 **Generic on purpose.** This copy uses generic terms: the organization, regional leader, planning template, Product line 1 to 3, Alliance A and B. It holds no real sheet names, region names, cell addresses or figures. Organization-specific details (the real template's sheet names and layout, the region list, short names) go in the internal project folder, outside this repository (D2). Never add them here.
@@ -20,7 +34,7 @@ These carry over from decisions D11, D26, D27 and D1. However the import is buil
 |---|---|---|
 | R1 | **Repeatable** | Running it again on the same workbooks gives the same file. Refreshing one region, or all of them, takes minutes, not a rebuild. No hand edits to the output. |
 | R2 | **Checked before presenting** | It validates every workbook (section 5) and reports problems per region **before** the data file is replaced. A problem surfaces at import time, never in front of the audience. |
-| R3 | **One data file matching the contract** | Output is exactly one file, `data/plan-data.js`, setting `window.PLAN_DATA = { meta, lookups, regions }` as in `docs/DATA-CONTRACT.md`, with `meta.schemaVersion` equal to the version the app reads. Only the fields the contract lists. |
+| R3 | **One data file matching the contract** | Output is exactly one file, `data/plan-data.js`, setting `window.PLAN_DATA = { meta, lookups, regions }` as in `docs/DATA-CONTRACT.md`, with `meta.schemaVersion` equal to the version the app reads (`TAP.schemaVersion` in `js/core/namespace.js`, now `"0.2"`). Every field the contract lists must be there. Extra fields and sections are allowed: the app's check ignores them (D47). |
 | R4 | **Every figure traceable to file › sheet › cell** | Every list item carries `sourceRow` (the worksheet row it came from). `meta.sourceMap` gives, per section, the sheet name and the column of every field (plus fixed cells for single values). Recap items carry `sourceCell`. Each region's `source.fileName` names the workbook. Together they give an address such as `Region C plan.xlsx › 1. Market Coverage › E17`. |
 | R5 | **Three missing-value states** | A number, including `0`, means the leader entered it. `null` means the cell was blank ("not provided"); never turn a blank into `0` or `""`. Not applicable is not stored: it follows from the template's rules (unrated rows, Tier 3 industries with no New Business rows). |
 | R6 | **Import notes with sheet and cell** | Anything worth checking that doesn't stop the import goes into the region's `source.notes` as `{ message, sheet, cell }`. The app shows these only in the data sources panel. |
@@ -46,7 +60,7 @@ One workbook per region, four sections, each on its own sheet. Three-year horizo
 | 3 | Customer Growth | an existing customer account (pre-filled, with spare rows) | `customerGrowth.accounts[]`, plus `thresholds` |
 | 4 | Partner and Recap | a partner, plus a recap grid by year, channel, motion and type | `partners[]`, `recap[]` |
 
-**Three kinds of cell.** Every value is one of these, and the app labels each figure with its kind:
+**Three kinds of cell, plus what the import adds.** Every value is one of the first three, and the app labels each figure with its kind:
 
 | Tag | Kind | Examples |
 |---|---|---|
@@ -69,9 +83,9 @@ One workbook per region, four sections, each on its own sheet. Three-year horizo
 
 The copy reviewed is a first version. The real template has more sections than the four above. The current contract covers only those four, so:
 
-- New sections are left out of the data file until the contract is extended for them.
-- To add one: agree the fields first, then extend `docs/DATA-CONTRACT.md` (field, type, tag, notes), the contract check (`js/core/check.js`), `meta.sourceMap`, and any measure or report that will show it.
-- Raise `meta.schemaVersion` only when an existing field changes meaning or shape, and update the app's expected version at the same time. Otherwise the app stops with a version message.
+- **The import may carry new sections early.** The app's contract check ignores fields and sections the contract doesn't name: they are neither errors nor warnings (D47). Nothing on screen uses them until the contract is extended.
+- To show one in the app: agree the fields first, then extend `docs/DATA-CONTRACT.md` (field, type, tag, notes), the contract check (`js/core/check.js`), `meta.sourceMap`, and any measure or report that will show it.
+- **The version rule.** Adding a field or section never changes `meta.schemaVersion`. Raise it only when an existing field changes meaning or shape, and change `TAP.schemaVersion` in `js/core/namespace.js` to match at the same time. A mismatch stops the app with a version message.
 - Allowed values not in the copy reviewed (partner maturity, some rating dropdowns) need confirming against the real template.
 
 ## 5. Validation rules
@@ -132,7 +146,7 @@ Whatever is chosen: it runs on the data owner's laptop, keeps R1 to R9, and live
 
 Before calling the import done, the data file should have:
 
-- [ ] `window.PLAN_DATA = { meta, lookups, regions }` and nothing else
+- [ ] `window.PLAN_DATA = { meta, lookups, regions }` (extra sections are allowed, D47)
 - [ ] `meta.schemaVersion` as in `docs/DATA-CONTRACT.md`, `meta.isSample` set to `false`, `meta.currency`, `meta.years`, `meta.generatedAt`, `meta.templateVersion`
 - [ ] `meta.sourceMap` covering every field the views read, in the shape shown in `tests/fixtures/mini-data.js`
 - [ ] the same `lookups` (industries, product lines, channels, tiers, segments, scales) for every region
