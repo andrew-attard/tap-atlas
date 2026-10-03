@@ -2,12 +2,64 @@
  * File: js/ui/keys.js
  * Purpose: Keyboard shortcuts for presenting: 1 to 4 for the views, and one Esc order across popovers,
  *          side panels and expanded charts.
- * Provides: TAP.keys (bind, unbind)
- * Depends on: js/core/store.js, js/engine/registry.js, js/ui/layers.js
+ * Provides: TAP.keys (bind, unbind, viewFor)
+ * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js (all read at call time)
  * Used by: js/ui/app.js (bound at start-up)
+ *
+ * The Esc order: a glossary popover closes first (it listens in the capture phase), then a panel's or the
+ * comparison bar's popover (they mark the Esc as handled), then the side panel, then the expanded chart. The tour
+ * handles its own keys in the capture phase. Whoever handles an Esc calls preventDefault, so each Esc closes one thing.
+ * The arrow keys that step through expanded charts belong to the panel (js/panel/panel.js).
  */
 (function (TAP) {
   'use strict';
-  // Not built yet: a stub of the right shape (#65). Built by the INTEGRATOR stream in Wave 3.
-  TAP.stub('keys', ['bind', 'unbind'], 65);
+
+  var bound = null;
+
+  // Typing in a field never switches views.
+  function typing(node) {
+    if (!node || !node.tagName) return false;
+    return /^(input|select|textarea)$/i.test(node.tagName) || !!node.isContentEditable;
+  }
+
+  function tourOn() { return !!document.querySelector('.tap-tour, .tap-tour-welcome'); }
+
+  // The view a digit key opens, or null.
+  function viewFor(key) {
+    if (!/^[1-9]$/.test(String(key))) return null;
+    return TAP.views.order()[Number(key) - 1] || null;
+  }
+
+  function closeExpanded() {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () { /* already out */ });
+    TAP.store.set({ expanded: null });
+  }
+
+  function onKey(e) {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'Escape') {
+      if (TAP.layers.top()) { e.preventDefault(); TAP.layers.close(); return; }
+      if (TAP.store.get().expanded) { e.preventDefault(); closeExpanded(); }
+      return;
+    }
+    var id = viewFor(e.key);
+    if (!id || typing(e.target) || tourOn()) return;
+    e.preventDefault();
+    if (TAP.layers.top()) TAP.layers.close();
+    if (TAP.store.get().view !== id) TAP.store.set({ view: id });
+  }
+
+  // Listens on window, after popovers on the document; safe to call again.
+  function bind() {
+    unbind();
+    window.addEventListener('keydown', onKey);
+    bound = onKey;
+  }
+
+  function unbind() {
+    if (bound) window.removeEventListener('keydown', bound);
+    bound = null;
+  }
+
+  TAP.keys = { bind: bind, unbind: unbind, viewFor: viewFor };
 })(window.TAP);
