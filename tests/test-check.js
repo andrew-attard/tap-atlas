@@ -90,6 +90,17 @@
       a.ok(res2.errors.some(function (e) { return e.path === 'regions[1].marketCoverage'; }), 'a missing section is named');
     });
 
+    T.test('X-check-extra-fields', 'Fields and sections the contract does not name add no errors and no warnings (D47)', function (a) {
+      var base = TAP.check.run(T_FIXTURE('mini'));
+      var p = T_FIXTURE('mini');
+      window.TEST_FIXTURES.broken.extras(p);
+      var res = TAP.check.run(p);
+      a.deepEqual(res.errors, [], errorList(res));
+      // The mini fixture's own planted empty sections (Region C) are its only warnings; the extras add none
+      a.deepEqual(res.warnings, base.warnings, 'no warnings beyond the fixture\u2019s planted ones');
+      a.ok(res.warnings.every(function (w) { return w.region === 'Region C'; }), 'only Region C\u2019s planted gaps');
+    });
+
     T.test('X-check-duplicates', 'Duplicate region ids and duplicate industries in a region are errors', function (a) {
       var p = T_FIXTURE('mini');
       p.regions[1].id = 'alpha';
