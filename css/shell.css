@@ -36,6 +36,8 @@
 
 /* Menu: one line at 1280 px. The current view is bold with an ink bar; red is kept for actions and highlights */
 .tap-menu { display: flex; align-items: stretch; gap: var(--tap-sp-1); flex: 1; min-width: 0; }
+.tap-topbar__actions { display: flex; align-items: center; gap: var(--tap-sp-2); flex: none; }
+.tap-topbar__actions:empty { display: none; }
 .tap-menu__item {
   display: flex; align-items: center; padding: 0 var(--tap-sp-4);
   font: inherit; font-size: var(--tap-fs-lead); font-weight: 600; color: var(--tap-ink); white-space: nowrap;

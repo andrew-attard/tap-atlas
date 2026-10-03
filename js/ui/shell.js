@@ -1,7 +1,7 @@
 /*
  * File: js/ui/shell.js
  * Purpose: Draws the page frame: data status banner, top bar with the menu, comparison bar area and the view area.
- * Provides: TAP.shell (mount, viewEl, label)
+ * Provides: TAP.shell (mount, viewEl, actionsEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
  *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/theme.js (logo)
  * Used by: js/ui/app.js; panel export reads label() for saved images and copied tables
@@ -82,18 +82,19 @@
     root.classList.add('tap-app');
 
     var nav = menu();
+    var actions = el('div', { class: 'tap-topbar__actions' });   // filled by other streams, e.g. the tour button
     var slot = el('div', { class: 'tap-banner-slot' });
     var cmp = el('div', { class: 'tap-cmp', 'data-tour': 'compare' });
     var stack = el('div', { class: 'tap-stack' }, [
       slot,
-      el('header', { class: 'tap-topbar' }, [brand(), nav]),
+      el('header', { class: 'tap-topbar' }, [brand(), nav, actions]),
       cmp
     ]);
     var view = el('main', { class: 'tap-view', id: 'tap-view', tabindex: '-1' });
     var layers = el('div', { class: 'tap-layers' });
     TAP.dom.append(root, [stack, view, layers]);
 
-    frame = { root: root, view: view, menu: nav, layers: layers };
+    frame = { root: root, view: view, menu: nav, actions: actions, layers: layers };
     banner(slot);
     markCurrent(nav, TAP.store.get().view);
     cleanups.push(TAP.store.on(function (state, changed) {
@@ -112,5 +113,11 @@
     return frame.view;
   }
 
-  TAP.shell = { mount: mount, viewEl: viewEl, label: label };
+  // The slot at the right of the top bar for page-wide actions (empty until another stream adds to it).
+  function actionsEl() {
+    if (!frame) throw new Error('The shell is not drawn yet: call TAP.shell.mount first.');
+    return frame.actions;
+  }
+
+  TAP.shell = { mount: mount, viewEl: viewEl, actionsEl: actionsEl, label: label };
 })(window.TAP);
