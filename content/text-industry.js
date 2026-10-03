@@ -44,5 +44,28 @@ Object.assign(window.TAP_CONTENT.text, {
     takeawayFocus: '{region} places {n} of {total} industries in a different tier from most other regions, for example {industry}.',
     takeawaySame: 'Every region shown gives each industry the same tier.',
     countPart: 'Tier {tier}: {n}'
+  },
+
+  // US-1.5.5: attractiveness vs ability to win. Area labels stay neutral (D20).
+  quadrant: {
+    areas: {
+      attractiveAble: 'Attractive, able to win',
+      attractiveNotYet: 'Attractive, not yet able to win',
+      lessAttractiveAble: 'Less attractive, able to win',
+      lessBoth: 'Less attractive, less able'
+    },
+    area: 'Area',
+    average: 'Average of {n} {regions}',
+    averageStatement: 'Each bubble averages the scores of the regions shown',
+    everyStatement: 'Each point is one region’s view of one industry',
+    averageNote: 'Each bubble averages the regions’ scores, following the rule for ratings: every region counts equally, and a region that left a rating blank is left out of that score.',
+    sizeLegend: 'Bubble size: {measure}, not a leader rating',
+    show: 'Show',
+    showAverage: 'Average per industry',
+    showEvery: 'Every region',
+    filter: 'Industry',
+    allIndustries: 'All industries',
+    takeaway: '{who}: {n} of {total} industries sit in “{area}”.',
+    takeawayEvery: '{n} of {total} points (one per region and industry) sit in “{area}”.'
   }
 });
