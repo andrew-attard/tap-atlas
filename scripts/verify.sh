@@ -67,6 +67,10 @@ step "lint${lint_flag:+ --release}" "$node_bin" tools/lint.js "${lint_flag[@]}"
 step "lint self-test" "$node_bin" tools/lint.js --self-test
 step "denylist scan" denylist_scan
 step "ignored-files guard" ignored_guard
+# The committed sample data must be exactly what the generator writes (US-1.3.3)
+if [ -f tools/generate-sample-data.js ]; then
+  step "sample data reproducible" "$node_bin" tools/generate-sample-data.js --check
+fi
 
 one="$browser"
 [ "$one" = "both" ] && one=chrome
