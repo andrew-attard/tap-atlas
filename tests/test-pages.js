@@ -1,8 +1,8 @@
 /*
  * File: tests/test-pages.js
  * Purpose: Tests for the explanation panel (US-1.6.5), the Guide page (US-1.6.1), the Insights page (US-1.7.3) and
- *          hiding insights on it (US-1.7.11).
- * Provides: test cases for PAGES stories (#41, #37, #46, #54; later #11)
+ *          hiding insights on it (US-1.7.11), and the welcome tour (US-1.1.11).
+ * Provides: test cases for PAGES stories (#41, #37, #46, #54, #11)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js, tests/fixtures/insights-fixture.js
  * Used by: tests.html
  */
@@ -92,6 +92,31 @@
   }
   function chip(root, attr, id) { return root.querySelector('.tap-ins__chip[' + attr + '="' + id + '"]'); }
   function item(root, id) { return root.querySelector('.tap-ins__item[data-insight="' + id + '"]'); }
+
+  // The tour: a key press, the open callout and a clean slate after each test.
+  function press(key) {
+    var e = new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true });
+    document.dispatchEvent(e);
+    return e;
+  }
+  function callout() { return document.querySelector('.tap-tour__card'); }
+  function welcome() { return document.querySelector('.tap-tour-welcome'); }
+  function stepNo() { var c = callout(); return c ? Number(c.getAttribute('data-step')) : null; }
+  function withTour(fn) {
+    TAP.storage.remove('tour:done');
+    var oldFs = TAP.tour.fullscreen;
+    try { return fn(); } finally { TAP.tour.stop(); TAP.tour.fullscreen = oldFs; TAP.storage.remove('tour:done'); TAP.layers.close(); }
+  }
+  // Starts the app in the sandbox (as the shell tests do) and always stops it again.
+  function withApp(fn) {
+    var root = T.dom.mount();
+    TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+    try { return fn(root); } finally {
+      try { TAP.app.start({ root: T.dom.mount(), plan: null }); } catch (e) { /* screens may differ */ }
+      TAP.data.load(T_FIXTURE('mini'));
+    }
+  }
+  var STEPS = ['purpose', 'menu', 'compare', 'panel', 'freshness', 'glossary', 'guide'];
 
   /* ---------- US-1.6.5: an explanation for every report (#41) ---------- */
   T.suite('pages', function () {
@@ -541,6 +566,166 @@
         btn.focus();
         btn.click();
         a.ok(root.contains(document.activeElement) && document.activeElement !== document.body, 'focus stays on the page');
+      });
+    });
+
+    /* ---------- US-1.1.11: the guided welcome tour (#11) ---------- */
+
+    T.test('TPV-TC-233', 'In a browser that never opened the app, a welcome card offers the tour or Skip', function (a) {
+      withTour(function () {
+        a.equal(TAP.tour.offer(), true, 'offered');
+        var card = welcome();
+        a.ok(card, 'the welcome card is shown');
+        var labels = Array.prototype.slice.call(card.querySelectorAll('button')).map(txt);
+        a.ok(labels.indexOf(TAP.content.text('tourUi.take')) >= 0, '"Take the 1-minute tour"');
+        a.ok(labels.indexOf(TAP.content.text('tourUi.skip')) >= 0, '"Skip"');
+        a.equal(TAP.content.text('tourUi.take'), 'Take the 1-minute tour', 'wording as in the story');
+      });
+    });
+
+    T.test('TPV-TC-234', 'At most 7 steps of one or two sentences, in the order of the story', function (a) {
+      var ids = TAP.tour.steps().map(function (s) { return s.id; });
+      a.deepEqual(ids, STEPS, 'purpose, menu, comparison bar, report panel, data freshness, glossary, then the Guide');
+      a.ok(ids.length <= 7, 'no more than 7 steps');
+      ids.forEach(function (id) {
+        var s = TAP.content.text('tour.' + id, { app: 'X' });
+        var n = (s.match(/[.?!](\s|$)/g) || []).length;
+        a.ok(n >= 1 && n <= (id === 'purpose' ? 1 : 2), id + ': ' + n + ' sentence(s)');
+      });
+    });
+
+    T.test('TPV-TC-235', 'The last step points to the Guide page, with a button that opens it', function (a) {
+      withTour(function () {
+        TAP.tour.start();
+        for (var i = 0; i < 6; i++) press('ArrowRight');
+        a.equal(stepNo(), 7, 'on the last step');
+        a.ok(txt(callout()).indexOf(TAP.views.title('guide')) >= 0, 'names the Guide');
+        var open = callout().querySelector('.tap-tour__guide');
+        a.ok(open, 'an Open the Guide button');
+        open.click();
+        a.equal(TAP.store.get().view, 'guide', 'it opens the Guide');
+        a.ok(!callout(), 'and ends the tour');
+      });
+    });
+
+    T.test('TPV-TC-236', 'Arrow keys move forward and back, Skip ends it at any step, Esc closes it', function (a) {
+      withTour(function () {
+        TAP.tour.start();
+        a.equal(stepNo(), 1, 'starts at step 1');
+        a.ok(txt(callout()).indexOf(TAP.content.text('tourUi.step', { n: 1, total: 7 })) >= 0, '"Step 1 of 7"');
+        press('ArrowRight');
+        press('ArrowRight');
+        a.equal(stepNo(), 3, 'right arrow moves forward');
+        press('ArrowLeft');
+        a.equal(stepNo(), 2, 'left arrow moves back');
+        callout().querySelector('.tap-tour__skip').click();
+        a.ok(!callout() && !document.querySelector('.tap-tour'), 'Skip ends it');
+        TAP.tour.start();
+        press('ArrowLeft');
+        a.equal(stepNo(), 1, 'no step before the first');
+        var e = press('Escape');
+        a.ok(!callout(), 'Esc closes it');
+        a.ok(e.defaultPrevented, 'and uses the key, so nothing underneath also closes');
+      });
+    });
+
+    T.test('TPV-TC-236', 'Esc closes the tour before an open side panel', function (a) {
+      withTour(function () {
+        TAP.layers.open('test', { title: 'Side panel', render: function () {} });
+        TAP.tour.start();
+        press('Escape');
+        a.ok(!callout(), 'the tour closed');
+        a.equal(TAP.layers.top(), null, 'starting the tour closed the side panel first');
+      });
+    });
+
+    T.test('TPV-TC-236', 'Next walks every step and Finish ends the tour', function (a) {
+      withTour(function () {
+        TAP.tour.start();
+        for (var i = 1; i < 7; i++) callout().querySelector('.tap-tour__next').click();
+        var next = callout().querySelector('.tap-tour__next');
+        a.equal(txt(next), TAP.content.text('tourUi.finish'), 'the last Next reads Finish');
+        next.click();
+        a.ok(!callout(), 'Finish ends it');
+      });
+    });
+
+    T.test('TPV-TC-237', 'Once skipped, the card is not offered again, and "Take the tour" still replays it', function (a) {
+      withTour(function () {
+        TAP.tour.offer();
+        welcome().querySelector('.tap-tour__skipcard').click();
+        a.ok(!welcome(), 'Skip closes the card');
+        a.equal(TAP.tour.offer(), false, 'not offered on the next opening');
+        a.ok(!welcome(), 'no card');
+        TAP.tour.start();
+        a.equal(stepNo(), 1, 'the tour still replays');
+      });
+    });
+
+    T.test('TPV-TC-237', 'Once completed, the card is not offered again', function (a) {
+      withTour(function () {
+        TAP.tour.offer();
+        welcome().querySelector('.tap-tour__take').click();
+        a.ok(!welcome() && stepNo() === 1, 'the card leads into the tour');
+        press('Escape');
+        a.equal(TAP.tour.offer(), false, 'not offered again');
+      });
+    });
+
+    T.test('TPV-TC-237', 'A "Take the tour" button in the top bar replays the tour', function (a) {
+      withTour(function () {
+        withApp(function (root) {
+          TAP.storage.set('tour:done', true);
+          TAP.tour.offer();
+          var btn = root.querySelector('.tap-topbar__actions .tap-tour__button');
+          a.ok(btn, 'the button is in the top bar');
+          a.equal(txt(btn), TAP.content.text('tourUi.button'), 'labelled from the content file');
+          TAP.tour.offer();
+          a.equal(root.querySelectorAll('.tap-tour__button').length, 1, 'added once only');
+          btn.click();
+          a.equal(stepNo(), 1, 'the tour starts');
+        });
+      });
+    });
+
+    T.test('TPV-TC-238', 'The tour is never offered while a chart is expanded or the page is full screen', function (a) {
+      withTour(function () {
+        TAP.store.set({ expanded: 'ov-ambition' });
+        a.equal(TAP.tour.offer(), false, 'not offered with a chart expanded');
+        a.ok(!welcome() && !callout(), 'nothing shown');
+        TAP.store.set({ expanded: null });
+        TAP.tour.fullscreen = function () { return true; };
+        a.equal(TAP.tour.offer(), false, 'not offered in full screen');
+        a.ok(!welcome(), 'nothing shown');
+        TAP.tour.fullscreen = function () { return false; };
+        a.equal(TAP.tour.offer(), true, 'offered once neither applies');
+      });
+    });
+
+    T.test('TPV-TC-239', 'Changed step wording in the content file is what the tour shows', function (a) {
+      var text = window.TAP_CONTENT.text.tour, old = text.menu;
+      text.menu = 'The menu moves between the views; this sentence came from the content file.';
+      try {
+        withTour(function () {
+          TAP.tour.start();
+          press('ArrowRight');
+          a.ok(txt(callout()).indexOf(text.menu) >= 0, 'new wording shown');
+        });
+      } finally { text.menu = old; }
+    });
+
+    T.test('X-pages-tour-target', 'A step highlights its part of the screen, and still shows when the part is missing', function (a) {
+      withTour(function () {
+        withApp(function () {
+          TAP.tour.start();
+          press('ArrowRight');
+          a.ok(document.querySelector('.tap-tour__hole'), 'the menu is spotlit');
+          a.equal(document.activeElement && document.activeElement.className.indexOf('tap-tour__next') >= 0, true, 'focus is on Next');
+        });
+        TAP.tour.start();
+        press('ArrowRight');
+        a.ok(callout(), 'with no shell drawn the step still shows');
+        a.ok(!document.querySelector('.tap-tour__hole'), 'without a spotlight');
       });
     });
 
