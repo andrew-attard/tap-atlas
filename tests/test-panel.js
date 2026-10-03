@@ -590,4 +590,87 @@
       a.equal(getComputedStyle(qs('thead th', tbl)).position, 'sticky', 'headers stay put');
     }));
   });
+
+  /* ---------- US-1.1.4: compare one chart differently (#5) ---------- */
+
+  function openCompare(p) {
+    if (!qs('.tap-panel__custom-editor', p.el)) { click(qs('[data-action="more"]', p.el)); click(qs('[data-action="compare"]', p.el)); }
+    return qs('.tap-panel__custom-editor', p.el);
+  }
+  function choose(p, control, value) {
+    var sel = qs('select[data-control="' + control + '"]', p.el);
+    sel.value = value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  T.suite('panel-compare', function () {
+    T.test('TPV-TC-228', '"Compare differently" offers the same five modes as the comparison bar', scene(function (a, s) {
+      s.report(fakeDef());
+      var ed = openCompare(s.panel('x-fake'));
+      a.ok(ed, 'editor opens');
+      var opts = qsa('select[data-control="cmp-mode"] option', ed);
+      a.deepEqual(opts.map(function (o) { return o.value; }), ['all', 'one', 'pair', 'set', 'org']);
+      a.deepEqual(opts.map(function (o) { return txt(o); }), ['all', 'one', 'pair', 'set', 'org'].map(function (m) {
+        return TAP.content.text('compare.modes.' + m);
+      }), 'same words');
+    }));
+
+    T.test('TPV-TC-229', 'A panel with its own comparison shows a badge and its own sentence; the page keeps its setting', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      openCompare(p);
+      choose(p, 'cmp-mode', 'one');
+      choose(p, 'cmp-focus', 'bravo');
+      var c = last().cmp;
+      a.equal(c.mode, 'one');
+      a.equal(c.focus, 'bravo');
+      a.deepEqual(last().entities.map(function (e) { return e.id; }), ['bravo', 'rest']);
+      a.equal(TAP.store.get().cmp.mode, 'all', 'shared comparison untouched');
+      var badge = qs('.tap-panel__custom', p.el);
+      a.match(txt(badge), /Custom comparison/);
+      a.ok(txt(badge).indexOf(TAP.scope.sentence(c)) >= 0, 'its own sentence');
+      choose(p, 'cmp-mode', 'pair');
+      a.equal(last().cmp.second !== last().cmp.focus && !!last().cmp.second, true, 'one vs one gets a second region');
+      choose(p, 'cmp-mode', 'set');
+      a.ok(last().cmp.set.length >= 2, 'a set starts with two regions');
+      click(qs('[data-control="cmp-set"] [data-value="delta"]', p.el));
+      a.ok(last().cmp.set.indexOf('delta') >= 0, 'region added to the set');
+      click(qs('[data-action="custom-done"]', p.el));
+      a.equal(qs('.tap-panel__custom-editor', p.el), null, 'editor closed');
+      a.ok(qs('.tap-panel__custom', p.el), 'badge stays');
+    }));
+
+    T.test('TPV-TC-230', 'One click on reset follows the shared setting again', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      openCompare(p);
+      choose(p, 'cmp-mode', 'org');
+      a.equal(last().cmp.mode, 'org');
+      click(qs('[data-action="custom-reset"]', p.el));
+      a.deepEqual(last().cmp, TAP.store.get().cmp, 'shared comparison');
+      a.equal(qs('.tap-panel__custom', p.el), null, 'badge gone');
+    }));
+
+    T.test('TPV-TC-231', 'Changing the shared comparison clears the panel\'s own', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      openCompare(p);
+      choose(p, 'cmp-mode', 'org');
+      TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
+      a.equal(last().cmp.mode, 'one');
+      a.equal(last().cmp.focus, 'charlie');
+      a.equal(qs('.tap-panel__custom', p.el), null);
+    }));
+
+    T.test('TPV-TC-232', 'Leaving the view clears the panel\'s own comparison', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      openCompare(p);
+      choose(p, 'cmp-mode', 'org');
+      TAP.store.set({ view: 'industry' });
+      TAP.store.set({ view: 'overview' });
+      a.equal(last().cmp.mode, 'all');
+      a.equal(qs('.tap-panel__custom', p.el), null);
+    }));
+  });
 })(window.TAP);
