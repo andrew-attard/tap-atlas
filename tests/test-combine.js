@@ -156,8 +156,120 @@
 
     T.test('TPV-TC-074', 'Rate weights come from the report first, then the settings', function (a) {
       a.equal(TAP.agg.weightBy('nb.hitRate'), 'nb.targetAccountsRated', 'settings default');
-      a.equal(TAP.agg.weightBy('nb.hitRate', { 'nb.hitRate': 'nb.arr' }), 'nb.arr', 'report override');
-      a.equal(TAP.agg.weightBy('nb.growthY2', { 'nb.hitRate': 'nb.arr' }), 'nb.arr', 'other rates keep the settings');
+      a.equal(TAP.agg.weightBy('nb.hitRate', { 'nb.hitRate': 'nb.wins' }), 'nb.wins', 'report override');
+      a.equal(TAP.agg.weightBy('nb.growthY2', { 'nb.hitRate': 'nb.wins' }), 'nb.arr', 'other rates keep the settings');
+      a.equal(TAP.agg.weightBy(null), null, 'no measure, no weight');
+    });
+
+    // A stand-in measure registry, so the weight lookup inside combine is tested on its own: values from the
+    // hand calculations, labels for the describe text, and a record of the context each lookup received.
+    function withMeasures(fn) {
+      var saved = TAP.measures, seen = [];
+      var weights = {
+        'nb.targetAccountsRated': { alpha: 30, bravo: 50, charlie: 5, delta: 100 },
+        'nb.arr': { alpha: 2255, bravo: 4000, charlie: 300, delta: 2850 },
+        'x.blankForC': { alpha: 30, bravo: 50, charlie: null, delta: 100 },
+        'x.allBlank': { alpha: null, bravo: null, charlie: null, delta: null }
+      };
+      TAP.measures = {
+        get: function (id) {
+          if (!weights[id]) return null;
+          return function (r, ctx) { seen.push({ id: id, r: r, ctx: ctx }); return cell(weights[id][r], 'IN'); };
+        },
+        meta: function (id) { return { id: id, label: id === 'nb.targetAccountsRated' ? 'Target accounts with a hit rate' : 'ARR potential' }; },
+        define: function () {}, list: function () { return Object.keys(weights); }, combined: function () {}
+      };
+      try { fn(seen); } finally { TAP.measures = saved; }
+    }
+    function rates() { return ALL.map(function (r) { return { regionId: r, cell: cell(X.region[r]['nb.hitRate'], 'IN') }; }); }
+
+    T.test('TPV-TC-069', 'Without item weights, combine looks the weight up through the measures (settings default)', function (a) {
+      withMeasures(function (seen) {
+        var ctx = { year: null, industryId: 'ind1' };
+        var r = TAP.agg.combine(rates(), 'rate', 'total', { measureId: 'nb.hitRate', ctx: ctx });
+        a.near(r.v, X.combined.orgTotal['nb.hitRate'], TOL, '89 / 185');
+        a.equal(r.src.weightBy, 'nb.targetAccountsRated');
+        a.equal(r.src.weighted, true);
+        a.equal(r.src.weightFallback, undefined);
+        a.deepEqual(seen.map(function (s) { return s.r; }), ALL, 'one lookup per region');
+        a.ok(seen.every(function (s) { return s.id === 'nb.targetAccountsRated' && s.ctx === ctx; }), 'with the caller’s context');
+        a.equal(TAP.agg.describe(r), 'Weighted average of 4 regions, by target accounts with a hit rate');
+      });
+    });
+
+    T.test('TPV-TC-074', 'The report’s weight override is looked up through the measures', function (a) {
+      withMeasures(function () {
+        var r = TAP.agg.combine(rates(), 'rate', 'average', { measureId: 'nb.hitRate', weights: { 'nb.hitRate': 'nb.arr' } });
+        a.near(r.v, 0.4232855, TOL, '3981 / 9405 (hand calculation above)');
+        a.equal(r.src.weightBy, 'nb.arr');
+        a.equal(TAP.agg.describe(r), 'Weighted average of 4 regions, by ARR potential', 'acronyms keep their capitals');
+      });
+    });
+
+    T.test('X-agg-weight-missing', 'A rate whose weight is blank is left out and named as "weight missing"', function (a) {
+      withMeasures(function () {
+        // (0.2 x 30 + 0.44 x 50 + 0.6 x 100) / (30 + 50 + 100) = 88 / 180 = 0.4888889
+        var r = TAP.agg.combine(rates(), 'rate', 'total', { measureId: 'nb.hitRate', weights: { 'nb.hitRate': 'x.blankForC' } });
+        a.near(r.v, 0.4888889, TOL);
+        a.deepEqual(r.src.weightMissing, ['charlie']);
+        a.deepEqual(r.src.excluded, [], 'Region C provided its hit rate');
+        a.equal(TAP.agg.describe(r), 'Weighted average of 3 regions, by ARR potential; Region C not included: weight missing');
+        // No region has a weight: never drop them all; each counts equally. (0.2 + 0.44 + 0.2 + 0.6) / 4 = 0.36
+        var none = TAP.agg.combine(rates(), 'rate', 'total', { measureId: 'nb.hitRate', weights: { 'nb.hitRate': 'x.allBlank' } });
+        a.near(none.v, 0.36, TOL);
+        a.equal(none.src.weightFallback, true);
+        a.deepEqual(none.src.weightMissing, []);
+        a.equal(TAP.agg.describe(none), 'Average of 4 regions');
+      });
+    });
+
+    T.test('X-agg-weight-unresolved', 'A weight that can’t be found falls back to a plain average with a note', function (a) {
+      TAP.notes.clear();
+      withMeasures(function () {
+        var r = TAP.agg.combine(rates(), 'rate', 'total', { measureId: 'nb.hitRate', weights: { 'nb.hitRate': 'nb.typo' } });
+        a.near(r.v, 0.36, TOL, '(0.2 + 0.44 + 0.2 + 0.6) / 4');
+        a.equal(r.src.weightFallback, true);
+        a.deepEqual(r.src.excluded, []);
+        a.equal(TAP.agg.describe(r), 'Average of 4 regions');
+      });
+      a.equal(TAP.notes.list('data').length, 1, 'a note for the data sources panel');
+      a.match(TAP.notes.list('data')[0].message, /nb\.typo/);
+      var saved = TAP.measures;
+      TAP.measures = { __stub: 13, get: function () { throw new Error('stub'); }, meta: function () { throw new Error('stub'); } };
+      try {
+        var s = TAP.agg.combine(rates(), 'rate', 'total', { measureId: 'nb.hitRate' });
+        a.near(s.v, 0.36, TOL, 'measures not built yet: still a figure');
+        a.equal(s.src.weightFallback, true);
+      } finally { TAP.measures = saved; }
+      TAP.notes.clear();
+    });
+
+    T.test('X-agg-zero-weights', 'When every weight is zero, each region counts equally', function (a) {
+      var items = rates().map(function (it) { return Object.assign(it, { weight: 0 }); });
+      var r = TAP.agg.combine(items, 'rate', 'total');
+      a.near(r.v, 0.36, TOL);
+      a.equal(r.src.weightFallback, true);
+      a.equal(TAP.agg.describe(r), 'Average of 4 regions');
+      var w = TAP.agg.combine(rates().map(function (it, i) { return Object.assign(it, { weight: i + 1 }); }), 'rate', 'total');
+      a.equal(TAP.agg.describe(w), 'Weighted average of 4 regions', 'weights given directly, no weight measure named');
+    });
+
+    T.test('X-agg-text', 'Text is listed by region, never combined', function (a) {
+      var r = TAP.agg.combine(mcItems('ind1', 'commentary').map(function (it, i) {
+        if (i === 2) it.cell = cell(null, 'IN');
+        return it;
+      }), 'text', 'total');
+      a.deepEqual(r.items, [{ regionId: 'alpha', v: 'Strong base in clinics.' }, { regionId: 'bravo', v: 'Group priority, strong fit.' },
+        { regionId: 'delta', v: 'Group priority, but no references yet.' }]);
+      a.deepEqual(r.v, ['Strong base in clinics.', 'Group priority, strong fit.', 'Group priority, but no references yet.']);
+      a.equal(r.src.how, 'list');
+      a.deepEqual(r.src.excluded, ['charlie']);
+      a.equal(TAP.agg.describe(r), 'Listed by region (3 regions); Region C not included: not provided');
+    });
+
+    T.test('X-agg-kind', 'An unknown kind of value is an error, never quietly treated as an amount', function (a) {
+      a.throws(function () { TAP.agg.combine(planted('nb.arr', ALL), 'amounts', 'total'); });
+      a.throws(function () { TAP.agg.combine(planted('nb.arr', ALL), undefined, 'total'); });
     });
 
     T.test('X-agg-describe', 'A combined figure says how it was combined', function (a) {
@@ -233,6 +345,29 @@
       a.equal(TAP.scope.entities(cmp({ mode: 'set', set: [] })).length, 4, 'empty set');
       a.deepEqual(TAP.scope.entities(cmp({ mode: 'pair', focus: 'bravo', second: null })).map(function (e) { return e.role; }),
         ['focus'], 'pair without a second region');
+    });
+
+    T.test('X-scope-fallback', 'After a fallback the sentence says what is drawn: all regions', function (a) {
+      [{ mode: 'set', set: [] }, { mode: 'set', set: ['nowhere'] }, { mode: 'one', focus: 'nowhere' },
+        { mode: 'pair', focus: null, second: 'alpha' }, { mode: 'mystery' }].forEach(function (c) {
+        a.equal(TAP.scope.sentence(cmp(c)), 'Showing all 4 regions side by side', JSON.stringify(c));
+      });
+      a.equal(TAP.scope.sentence(cmp({ mode: 'pair', focus: 'bravo', second: 'nowhere' })), 'Showing Region B only');
+    });
+
+    T.test('X-scope-plural', 'Sentences and labels say "region" for one and "regions" for more', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions = plan.regions.slice(0, 2);
+      TAP.data.load(plan);
+      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha' })), 'Showing Region A against the average of the other 1 region');
+      a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha', restAgg: 'total' }))[1].label, 'Total of the other 1 region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha', restAs: 'individual' })), 'Showing Region A against the other 1 region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'set', set: ['bravo'] })), 'Showing 1 chosen region: Region B');
+      plan.regions = plan.regions.slice(0, 1);
+      TAP.data.load(plan);
+      a.equal(TAP.scope.sentence(cmp({ mode: 'all' })), 'Showing all 1 region side by side');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'Showing the organization total across all 1 region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha' })), 'Showing Region A only');
     });
 
     T.test('X-scope-colours', 'Each region keeps its colour by file order; past 8 regions colours repeat with a note', function (a) {
