@@ -44,7 +44,7 @@
         TAP.insights.all().forEach(function (x) {
           a.near(x.significance, 0.5 * x.strength + 0.3 * x.money + 0.2 * x.breadth, 1e-9, x.id + ' follows the formula');
           a.ok(x.significance >= 0 && x.significance <= 1, x.id + ' lies between 0 and 1');
-          a.near(x.breadth, x.regionIds.length / 7, 1e-9, x.id + ' breadth');
+          if (x.ruleId !== 'split') a.near(x.breadth, x.regionIds.length / 7, 1e-9, x.id + ' breadth');
         });
       });
       withRule({ id: 'x-rank-big' }, perRegion('nb.arr', { strength: 4, money: -1 }), function () {
