@@ -55,5 +55,93 @@ Object.assign(window.TAP_CONTENT.text, {
     notProvided: 'not provided',
     empty: 'No region has data for this report yet.',
     missing: 'Not included (no data): {names}'
+  },
+
+  // Measure names (ARCHITECTURE section 9). The key path follows the measure id: 'nb.arr' -> measures.nb.arr.
+  measures: {
+    partialYears: 'Some plan years were left blank',
+    partNotProvided: '{parts} not provided',
+    nb: {
+      arr: { label: 'New business ARR potential', short: 'New business' },
+      services: { label: 'New business services potential', short: 'New business services' },
+      targetAccounts: { label: 'Target accounts', short: 'Target accounts' },
+      targetAccountsRated: { label: 'Target accounts with a hit rate', short: 'Rated target accounts' },
+      wins: { label: 'Implied wins', short: 'Wins' },
+      hitRate: { label: 'Hit rate', short: 'Hit rate' },
+      avgDealSize: { label: 'Average deal size', short: 'Deal size' },
+      growthY2: { label: 'New business growth, year 2', short: 'Growth year 2' },
+      growthY3: { label: 'New business growth, year 3', short: 'Growth year 3' },
+      servicesRatio: { label: 'Services ratio', short: 'Services ratio' }
+    },
+    cg: {
+      arr: { label: 'Customer growth ARR', short: 'Customer growth' },
+      services: { label: 'Customer growth services', short: 'Customer growth services' },
+      growthY1: { label: 'Customer growth %, year 1', short: 'Growth year 1' },
+      growthY2: { label: 'Customer growth %, year 2', short: 'Growth year 2' },
+      growthY3: { label: 'Customer growth %, year 3', short: 'Growth year 3' },
+      segment: {
+        strategic: { label: 'Strategic accounts', short: 'Strategic' },
+        growth: { label: 'Growth accounts', short: 'Growth' },
+        core: { label: 'Core accounts', short: 'Core' },
+        scaled: { label: 'Scaled accounts', short: 'Scaled' }
+      }
+    },
+    amb: {
+      arr: { label: '3-year ARR ambition', short: 'ARR ambition' },
+      services: { label: 'Services ambition', short: 'Services' },
+      oi: { label: 'Total order intake', short: 'Order intake' }
+    },
+    base: {
+      arr: { label: 'Current ARR', short: 'Current ARR' },
+      pipeline: { label: 'Pipeline', short: 'Pipeline' },
+      pipeline12m: { label: 'Pipeline created in the last 12 months', short: 'Pipeline, 12 months' }
+    },
+    focus: {
+      tier1: { label: 'Tier 1 industries', short: 'Tier 1' },
+      tier2: { label: 'Tier 2 industries', short: 'Tier 2' },
+      tier3: { label: 'Tier 3 industries', short: 'Tier 3' }
+    },
+    ind: {
+      tier: { label: 'Tier', short: 'Tier' },
+      growthPotential: { label: 'Growth potential', short: 'Growth potential' },
+      criticality: { label: 'Criticality', short: 'Criticality' },
+      competitiveIntensity: { label: 'Competitive intensity', short: 'Competitive intensity' },
+      references: { label: 'References', short: 'References' },
+      expertise: { label: 'Expertise', short: 'Expertise' },
+      productFit: { label: 'Product fit', short: 'Product fit' },
+      attractiveness: { label: 'Attractiveness', short: 'Attractiveness' },
+      ability: { label: 'Ability to win', short: 'Ability to win' },
+      currentArr: { label: 'Current ARR', short: 'Current ARR' },
+      pipeline: { label: 'Pipeline', short: 'Pipeline' },
+      pipeline12m: { label: 'Pipeline created in the last 12 months', short: 'Pipeline, 12 months' },
+      nb: { arr: { label: 'New business ARR potential', short: 'New business' } },
+      commentary: { label: 'Leader commentary', short: 'Commentary' }
+    }
+  },
+
+  // Chart type menu names (US-1.2.3)
+  chartTypes: {
+    bar: 'Bar', groupedBar: 'Grouped bar', stackedBar: 'Stacked bar', stacked100: '100% stacked bar', treemap: 'Treemap',
+    dot: 'Dot plot', radar: 'Radar', scatter: 'Scatter', bubble: 'Bubble', heatmap: 'Heatmap', bubbleGrid: 'Bubble grid',
+    line: 'Line', table: 'Table'
+  },
+
+  // Words inside charts, tooltips and tables
+  chart: {
+    entityColumn: 'Region',
+    industryColumn: 'Industry',
+    total: 'Total',
+    kind: 'Kind of value',
+    how: 'Combined',
+    partial: 'Partly provided',
+    partialMark: '(partly provided)',
+    year: 'Year {n}',
+    npFor: '{name}: not provided',
+    note: '{label}, {measure}: {text}',
+    notPlaced: '{name} is not shown: {measure} not provided',
+    notOnRadar: '{name} is not shown on the radar: {measures} not provided',
+    sizeMissing: '{name} (size not provided)',
+    sizeLegend: 'Bubble size: {measure}',
+    buildError: 'This report could not be drawn: {message}'
   }
 });
