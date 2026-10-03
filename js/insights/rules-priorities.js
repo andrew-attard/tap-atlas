@@ -22,11 +22,15 @@
     return t;
   }
 
-  // Money at stake: the industry's current ARR in the regions involved, as a share of the organization's.
+  // Money at stake: the industry's pipeline or current ARR in the regions involved, as a share of the organization's,
+  // whichever share is larger. It sets apart priorities that otherwise score alike, such as two even splits.
   function arrShare(u, industryId, regionIds) {
-    var sum = 0;
-    regionIds.forEach(function (r) { sum += u.value(u.m('ind.currentArr', r, { industryId: industryId })) || 0; });
-    return u.moneyShare(sum, 'arr');
+    var pipe = 0, arr = 0;
+    regionIds.forEach(function (r) {
+      pipe += u.value(u.m('ind.pipeline', r, { industryId: industryId })) || 0;
+      arr += u.value(u.m('ind.currentArr', r, { industryId: industryId })) || 0;
+    });
+    return Math.max(u.moneyShare(pipe, 'pipeline'), u.moneyShare(arr, 'arr'));
   }
 
   function inOrder(u, ids) { return u.regions().filter(function (r) { return ids.indexOf(r) >= 0; }); }
