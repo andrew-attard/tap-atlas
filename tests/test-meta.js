@@ -1,7 +1,7 @@
 /*
  * File: tests/test-meta.js
  * Purpose: Checks about the test page and the build itself: every automated test case has a test, no stubs at release.
- * Provides: test cases TPV-TC-219, TPV-TC-202, TPV-TC-203, TPV-TC-204, X-meta-*
+ * Provides: test cases TPV-TC-219, TPV-TC-202, TPV-TC-203, TPV-TC-204, TPV-TC-042, X-meta-*
  * Depends on: tests/harness.js, tests/auto-cases.js, every test file (loads last)
  * Used by: tests.html
  */
