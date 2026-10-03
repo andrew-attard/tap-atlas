@@ -460,31 +460,101 @@
       a.deepEqual([q[0].coord, q[1].coord], [[2, 2], [3, 3]], 'the top-right area is a square from 2 to 3');
     });
 
+    // A label's box on screen, from the option's own plot margins and the size the builder was given.
+    function labelBoxes(res, size) {
+      var g = res.option.grid, w = size.w - g.left - g.right, h = size.h - g.top - g.bottom, fs = TH.type.chart;
+      return points(res).filter(function (d) { return d.label.show; }).map(function (d) {
+        var lines = String(d.label.formatter).split('\n'), tw = Math.max.apply(null, lines.map(function (l) { return l.length; })) * fs * 0.5;
+        var x = g.left + (d.value[0] - 1) / 2 * w, y = g.top + (3 - d.value[1]) / 2 * h, r = d.symbolSize / 2, gap = d.label.position[0] - (d.label.side === 'right' ? d.symbolSize : 0);
+        var bh = lines.length * fs;
+        return { name: d.name, x: d.label.side === 'right' ? x + r + gap : x - r + gap - tw, y: y + d.label.dy - bh / 2, w: tw, h: bh, d: d };
+      });
+    }
+    function overlaps(boxes) {
+      var out = [];
+      boxes.forEach(function (p, i) {
+        boxes.slice(i + 1).forEach(function (q) {
+          if (p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h) out.push(p.name + ' / ' + q.name);
+        });
+      });
+      return out;
+    }
+
     T.test('X-industry-quad-labels', 'Labels move apart with leader lines; hiding is the last resort and nothing is lost', function (a) {
       [{}, { everyRegion: true }].forEach(function (o) {
         valueSeries(quad('bubble', { mode: 'all' }, { opts: o })).forEach(function (s) {
+          if (!(s.data || []).length) return;
           a.equal(s.labelLayout.hideOverlap, true, 'a label that still overlaps hides');
           a.ok(s.labelLine && s.labelLine.show, 'short leader lines');
         });
       });
       sample();
-      var res = quad('bubble', { mode: 'all' }), shown = points(res).filter(function (d) { return d.label.show; });
-      a.ok(shown.length >= 14, 'most of the 18 averaged bubbles keep a label (' + shown.length + ')');
-      a.ok(shown.some(function (d) { return d.label.dy !== 0; }), 'crowded labels step up or down');
-      // On the narrowest plot (480 x 440 px for 1 to 3), no two label boxes overlap.
-      var fs = TH.type.chart;
-      function box(d) {
-        var x = (d.value[0] - 1) * 240, y = (3 - d.value[1]) * 220 + d.label.dy, w = d.label.formatter.length * fs * 0.5, r = d.symbolSize / 2;
-        return { x: d.label.side === 'right' ? x + r + 6 : x - r - 6 - w, y: y - fs / 2, w: w, h: fs };
-      }
-      shown.forEach(function (d, i) {
-        shown.slice(i + 1).forEach(function (e) {
-          var p = box(d), q = box(e), hit = p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h;
-          a.ok(!hit, d.label.formatter + ' and ' + e.label.formatter + ' do not overlap');
-        });
+      [{ w: 440, h: 560 }, { w: 560, h: 560 }, { w: 900, h: 640 }].forEach(function (size) {
+        var res = quad('bubble', { mode: 'all' }, { size: size }), boxes = labelBoxes(res, size), tag = size.w + ' px: ';
+        a.ok(boxes.length >= 14, tag + 'most of the 18 averaged bubbles keep a label (' + boxes.length + ')');
+        a.deepEqual(overlaps(boxes), [], tag + 'no two labels overlap where they are drawn');
+        a.equal(res.sized, true, tag + 'the panel is asked to pass the real size');
       });
+      var res = quad('bubble', { mode: 'all' }, { size: { w: 560, h: 560 } });
+      a.ok(points(res).some(function (d) { return d.label.show && d.label.dy !== 0; }), 'crowded labels step up or down');
+      a.ok(points(res).some(function (d) { return /\n/.test(d.label.formatter); }), 'a long name breaks onto two lines');
       a.equal(res.table.rows.length, points(res).length, 'every point, labelled or not, is in the table');
       a.ok(points(res).every(function (d) { return res.target({ data: d }); }), 'and opens its details on click');
+    });
+
+    T.test('X-industry-quad-label-order', 'QA-3 (d): the largest bubbles, then group priorities, win label spots', function (a) {
+      sample();
+      [{ w: 560, h: 560 }, { w: 440, h: 560 }].forEach(function (size) {
+        ['ind.pipeline', 'ind.currentArr'].forEach(function (sizeId) {
+          var res = quad('bubble', { mode: 'all' }, { size: size, sizeId: sizeId }), pts = points(res), tag = size.w + ' px, ' + sizeId + ': ';
+          var big = pts.slice().sort(function (p, q) { return q.symbolSize - p.symbolSize; })[0];
+          a.ok(big.label.show, tag + 'the largest bubble (' + big.name + ') is labelled');
+          pts.filter(function (d) { return TAP.data.industry(d.industryId).groupPriority; }).forEach(function (d) {
+            a.ok(d.label.show, tag + 'group priority ' + d.name + ' is labelled');
+          });
+        });
+      });
+    });
+
+    T.test('X-industry-quad-frame', 'QA-3: area names sit outside the plot and labels sit over the midpoint lines', function (a) {
+      sample();
+      var size = { w: 560, h: 560 }, res = quad('bubble', { mode: 'all' }, { size: size }), g = res.option.grid;
+      a.equal(g.containLabel, false, 'fixed margins, so the plot is where the labels were placed');
+      var names = res.option.graphic.filter(function (x) { return x.tapQuadrant; });
+      a.equal(names.length, 4, 'four area names');
+      names.forEach(function (n) {
+        var out = n.y <= g.top - 8 || n.y >= size.h - g.bottom + 8;
+        a.ok(out, n.style.text + ' is outside the plot');
+        a.ok(n.style.fontSize >= TH.type.chartMin, n.style.text + ' at 13 px or more');
+      });
+      var lines = series(res).filter(function (x) { return x.markLine && x.tapRole !== 'link'; })[0];
+      valueSeries(res).filter(function (x) { return (x.data || []).length; }).forEach(function (x) {
+        a.ok(x.z > (lines.markLine.z || 5) && x.z > 5, x.name + ': bubbles and labels draw over the midpoint lines');
+        x.data.forEach(function (d) { a.equal(d.label.backgroundColor, TH.ground, d.name + ': the label breaks the line behind it'); });
+      });
+      var hl = quad('bubble', { mode: 'all' }, { size: size, highlight: { reportId: 'ind-quad', mark: 'quadrant', quadrant: 'attractiveNotYet' } });
+      var on = hl.option.graphic.filter(function (x) { return x.tapQuadrant === 'attractiveNotYet'; })[0];
+      a.equal(on.style.fontWeight, 800, 'the highlighted area name is bold, beside its outline');
+    });
+
+    T.test('X-industry-quad-pairs', 'QA-3, QA-6: one against the rest and a pair name each industry once, join its bubbles and caption the chart right', function (a) {
+      sample();
+      var R = sampleIds(), size = { w: 560, h: 560 };
+      [[{ mode: 'one', focus: R[0] }, 'focusStatement'], [{ mode: 'pair', focus: R[0], second: R[2] }, 'everyStatement']].forEach(function (c) {
+        var res = quad('bubble', c[0], { size: size }), tag = c[0].mode + ': ', seen = {}, twice = [];
+        points(res).filter(function (d) { return d.label.show; }).forEach(function (d) { if (seen[d.industryId]) twice.push(d.name); seen[d.industryId] = true; });
+        a.deepEqual(twice, [], tag + 'no industry is named twice');
+        var link = series(res).filter(function (x) { return x.tapRole === 'link'; })[0];
+        a.ok(link && link.markLine.data.length >= 15, tag + 'a thin line joins each industry\'s two bubbles');
+        a.equal(res.option.title.text, TAP.content.text('quadrant.' + c[1], { focus: TAP.content.regionName(TAP.data.region(R[0])) }), tag + 'caption');
+        a.ok(res.notes.some(function (n) { return n.indexOf(TAP.content.regionName(TAP.data.region(R[0]))) >= 0; }), tag + 'a note says where the names sit');
+        a.deepEqual(overlaps(labelBoxes(res, size)), [], tag + 'no two labels overlap');
+      });
+      var pair = quad('bubble', { mode: 'pair', focus: R[0], second: R[2] }, { size: size });
+      a.ok(pair.notes.indexOf(TAP.content.text('quadrant.averageNote')) < 0, 'pair: no note about averages, as nothing is averaged');
+      var all = quad('bubble', { mode: 'all' }, { size: size });
+      a.equal(all.option.title.text, TAP.content.text('quadrant.averageStatement'), 'All regions: each bubble is an average');
+      a.ok(!series(all).some(function (x) { return x.tapRole === 'link'; }), 'All regions: nothing to join');
     });
 
     T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {

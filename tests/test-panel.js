@@ -959,5 +959,26 @@
         TAP.insights.reset();
       }
     }));
+
+    T.test('X-panel-chart-size', 'A builder that places labels for the chart size gets that size, and again after a resize', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { sized: true }; };
+      var p = s.panel('x-fake'), chart = qs('.tap-panel__chart', p.el);
+      a.ok(chart && chart.clientWidth > 0, 'the chart has a size');
+      a.deepEqual(last().size, { w: chart.clientWidth, h: chart.clientHeight }, 'the last build was given the real size');
+      var n = calls.length;
+      FAKE = null;
+      p.refresh();
+      a.equal(calls.length, n + 1, 'a builder that does not ask is built once per draw');
+      FAKE = function () { return { sized: true }; };
+      p.refresh();
+      n = calls.length;
+      window.dispatchEvent(new Event('resize'));
+      a.equal(calls.length, n, 'a resize that leaves the chart the same size builds nothing');
+      chart.style.width = '300px';
+      window.dispatchEvent(new Event('resize'));
+      a.ok(calls.length > n, 'a resize that changes the chart builds it again');
+      a.equal(last().size.w, 300, 'with the new size');
+    }));
   });
 })(window.TAP);
