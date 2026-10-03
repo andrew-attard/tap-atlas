@@ -150,12 +150,20 @@
 
   // What a combined figure on screen means, in plain words, or null when none is shown.
   function combinedNote(c) {
-    var n = TAP.data.regions().length;
-    if (c.mode === 'org') return { label: t('combined.org', { n: n }), text: t('combined.explainTotal') };
-    if (c.mode !== 'one' || c.restAs !== 'combined') return null;
-    return c.restAgg === 'total'
-      ? { label: t('combined.restTotal', { n: n - 1 }), text: t('combined.explainTotal') }
-      : { label: t('combined.restAverage', { n: n - 1 }), text: t('combined.explainAverage') };
+    var isOrg = c.mode === 'org';
+    if (!isOrg && (c.mode !== 'one' || c.restAs !== 'combined')) return null;
+    var total = isOrg || c.restAgg === 'total';
+    return { label: combinedLabel(c, isOrg, total), text: t(total ? 'combined.explainTotal' : 'combined.explainAverage') };
+  }
+
+  // The same label the charts use: the combined scope entity's own, or the wording if the scope isn't ready.
+  function combinedLabel(c, isOrg, total) {
+    try {
+      var e = TAP.scope.entities(c).filter(function (x) { return x.kind === 'combined'; })[0];
+      if (e && e.label) return e.label;
+    } catch (err) { /* scope not built yet */ }
+    var n = TAP.data.regions().length - (isOrg ? 0 : 1);
+    return t(isOrg ? 'combined.org' : total ? 'combined.restTotal' : 'combined.restAverage', { n: n, regions: t('combined.regions') });
   }
 
   function sentenceFor(c) {
