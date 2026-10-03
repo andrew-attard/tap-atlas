@@ -55,6 +55,18 @@
       });
     });
 
+    T.test('TPV-TC-134', 'A finding may set its own breadth, held to 0..1; otherwise breadth is regions involved / regions', function (a) {
+      sample();
+      [[0.5, 0.5], [3, 1], [-1, 0], [undefined, 1 / 7]].forEach(function (c) {
+        withRule({ id: 'x-rank-breadth' }, perRegion('nb.arr', { breadth: c[0] }), function () {
+          var x = ofRule('x-rank-breadth')[0];
+          a.near(x.breadth, c[1], 1e-9, 'breadth ' + c[0] + ' gives ' + c[1]);
+          a.near(x.significance, 0.5 * x.strength + 0.3 * x.money + 0.2 * c[1], 1e-9, 'and feeds the significance');
+          a.equal(x.regionIds.length, 1, 'regionIds are unchanged');
+        });
+      });
+    });
+
     T.test('TPV-TC-135', 'With a focus region, its insights come first, then by significance', function (a) {
       sample();
       withRule({ id: 'x-rank-a' }, fixed(PAIR), function () {

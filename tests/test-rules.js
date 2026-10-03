@@ -238,6 +238,8 @@
       var orgPipe = X.regions.reduce(function (s, r) { return s + X.totals[r]['base.pipeline']; }, 0), orgArr = X.org['base.arr'];
       var splits = ofRule('split');
       a.ok(splits.length >= 2 && get('split:retail'), 'the planted Retail split is still there');
+      a.near(get('split:retail').breadth, 3 / 7, 1e-9, 'breadth counts the 3 regions departing from the most common tier');
+      a.equal(get('split:retail').regionIds.length, 7, 'regionIds still list every region, for scope and highlight');
       splits.concat(ofRule('consensus'), ofRule('groupPriority')).forEach(function (x) {
         var ind = x.industryIds[0], pipe = 0, arr = 0;
         x.regionIds.forEach(function (r) { pipe += mc(r, ind).pipelineTotal || 0; arr += mc(r, ind).currentArr || 0; });
