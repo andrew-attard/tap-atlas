@@ -14,6 +14,7 @@
   };
 
   window.T_BEFORE_EACH = function () {
+    window.TAP.app.stop();   // a test that started the app and forgot to stop it can't leak into the next
     window.TAP.bus.clear();
     window.TAP.store.reset();
     window.TAP.data.load(window.T_FIXTURE('mini'));

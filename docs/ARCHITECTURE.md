@@ -297,7 +297,7 @@ TAP_REPORTS['ov-ambition'] = {
 | `TAP.shapes.kit` | Shared drawing helpers for builders (sizes, shades, rings, tooltips). `TAP.shapes.types(def, n, {breakdown})` offers `groupedBar` only when a breakdown is chosen |
 | `TAP.builders.register(name, fn)` / `get(name)` | The builder registry |
 
-**ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme, opts}`. `ctx.opts` holds the report option values chosen in the panel, e.g. `sort` (tier grid), `everyRegion` and `industryFilter` (quadrant). The panel keeps them per panel and resets them when `scopeEpoch` changes, like the comparison override.
+**ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme, opts, size}`. `ctx.size` is the chart's real `{width, height}` in pixels when known. `ctx.opts` holds the report option values chosen in the panel, e.g. `sort` (tier grid), `everyRegion` and `industryFilter` (quadrant). The panel keeps them per panel and resets them when `scopeEpoch` changes, like the comparison override.
 
 **Builder result** (pure functions; no DOM access except to build the returned `html`):
 
@@ -312,6 +312,9 @@ TAP_REPORTS['ov-ambition'] = {
   empty: false,                // true means no region has data: the panel says so instead of drawing
   error: null,
   controls: [{key, label, kind: 'segmented'|'select', value, options: [{value, label}]}],   // optional: options the builder offers
+  sized: false,                // true: build again once ctx.size is known or changes (label placement)
+  height: null,                // optional height hint in px for the chart area
+  // legend items may carry `mark` (a number drawn on the marks) and `color: null` (no key swatch)
   target(params) }             // maps an ECharts click (or an HTML click's data) to a target, or null
 ```
 

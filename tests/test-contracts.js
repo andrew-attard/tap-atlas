@@ -44,6 +44,7 @@
     overviewCards: ['render'],
     showme: ['go'],
     keys: ['bind', 'unbind'],
+    quadrantLabels: ['place'],
     app: ['start', 'stop', 'mountView', 'current']
   };
 
