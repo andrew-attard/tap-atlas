@@ -433,4 +433,70 @@
       a.equal(opt.xAxis.max({ min: 0, max: 3 }), 3, 'a larger value keeps its own end');
     });
   });
+
+  /* ---------- dot plot (US-2.7.3), on the mini fixture ---------- */
+
+  T.suite('dot', function () {
+    var M = window.TEST_EXPECT.mini;
+    function dots(id, mode, extra) {
+      var d = def('compare', [id], ['year']), c = cmp(mode);
+      return TAP.builders.get('compare')(Object.assign({ def: d, type: 'dot', cmp: c, entities: TAP.scope.entities(c) }, extra || {}));
+    }
+    function points(opt) {
+      var out = [];
+      values(opt).forEach(function (s) { s.data.forEach(function (d) { out.push({ s: s, d: d }); }); });
+      return out;
+    }
+
+    T.test('TPV-TC-293', 'Dot plot is offered for compare reports and not for other shapes', function (a) {
+      a.ok(TAP.shapes.types(def('compare', ['nb.arr']), 4).indexOf('dot') >= 0);
+      a.ok(TAP.shapes.types(def('parts', ['amb.arr'], [], { 'amb.arr': ['nb.arr', 'cg.arr'] }), 4).indexOf('dot') < 0);
+      a.equal(TAP.shapes.label('dot'), 'Dot plot');
+    });
+
+    T.test('TPV-TC-294', 'One row per entity, a dot at its value, the value written next to it (hand figures)', function (a) {
+      var opt = dots('nb.arr', { mode: 'all' }).option, pts = points(opt);
+      a.equal(pts.length, 4, 'one dot per region');
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r, i) {
+        var p = pts.filter(function (x) { return x.d.entityId === r; })[0];
+        a.near(p.d.value[0], M.region[r]['nb.arr'], TOL, r + ' value');
+        a.equal(p.d.value[1], i, r + ' sits on its own row');
+        a.equal(p.s.label.formatter({ data: p.d }), TAP.format.cell({ v: M.region[r]['nb.arr'], state: 'value' }, { unit: 'money' }), r + ' value is written');
+      });
+    });
+
+    T.test('TPV-TC-295', 'The rest and the organization total are their own row in dark grey, as on bars', function (a) {
+      var grey = window.TAP_THEME.combined;
+      var rest = points(dots('nb.arr', { mode: 'one', focus: 'alpha', restAgg: 'average' }).option).filter(function (x) { return x.d.entityId === 'rest'; });
+      a.equal(rest.length, 1, 'the rest has one row');
+      a.near(rest[0].d.value[0], M.combined.restOfAlphaAverage['nb.arr'], 1e-6);
+      a.equal(rest[0].d.itemStyle.color, grey);
+      var bar = values(TAP.builders.get('compare')({ def: def('compare', ['nb.arr']), type: 'bar', cmp: cmp({ mode: 'org' }), entities: [org()] }).option)[0].data[0];
+      var o = points(dots('nb.arr', { mode: 'org' }).option)[0];
+      a.near(o.d.value[0], M.combined.orgTotal['nb.arr'], 1e-6);
+      a.equal(o.d.itemStyle.color, grey);
+      a.equal(o.d.itemStyle.color, bar.itemStyle.color, 'the same colour as its bar');
+    });
+
+    T.test('TPV-TC-296', 'With a year breakdown each row has one dot per year, labelled Y1, Y2 and Y3', function (a) {
+      var opt = dots('nb.arr', { mode: 'all' }, { breakdown: 'year' }).option;
+      var alpha = points(opt).filter(function (x) { return x.d.entityId === 'alpha'; });
+      a.equal(alpha.length, 3);
+      // Region A by plan year: rows 20 and 21: 500 + 200, 550 + 200, 605 + 200
+      [700, 750, 805].forEach(function (v, i) {
+        a.near(alpha[i].d.value[0], v, TOL, 'year ' + (i + 1));
+        a.equal(alpha[i].d.value[1], 0, 'on Region A’s row');
+        a.equal(alpha[i].s.label.formatter({ data: alpha[i].d }), 'Y' + (i + 1));
+      });
+      a.equal(points(opt).length, 12, 'four regions, three years each (Region C from its row 21; row 20 is blank)');
+    });
+
+    T.test('TPV-TC-298', 'The axis starts at zero for amounts; for rates it may start at the smallest value, written on the axis', function (a) {
+      a.equal(dots('nb.arr', { mode: 'all' }).option.xAxis.min, 0);
+      a.equal(dots('nb.targetAccounts', { mode: 'all' }).option.xAxis.min, 0, 'counts too');
+      var ax = dots('nb.hitRate', { mode: 'all' }).option.xAxis;   // hit rates 0.2, 0.44, 0.2, 0.6
+      a.ok(ax.min > 0 && ax.min <= 0.2, 'starts above zero, at or below the smallest rate');
+      a.equal(ax.axisLabel.showMinLabel, true, 'the start is written on the axis');
+    });
+  });
 })(window.TAP);
