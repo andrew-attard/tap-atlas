@@ -106,11 +106,13 @@
       panels[2] = mountPanel(ratings, 'ind-ratings', { industryId: shown });
     }
     drawComments(notes);
+    var handle;
     var offs = [
       TAP.bus.on('industry:select', function (p) {
         if (p && p.industryId && p.industryId !== TAP.store.get().industry) TAP.store.set({ industry: p.industryId });
       }),
       TAP.store.on(function (s, changed) {
+        if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
         // Details that name one industry select it too, so the commentary follows any click (ARCHITECTURE s10)
         var tg = changed.indexOf('layer') >= 0 && s.layer && s.layer.name === 'details' && s.layer.payload && s.layer.payload.target;
         if (tg && (tg.industryIds || []).length === 1 && tg.industryIds[0] !== s.industry) { TAP.store.set({ industry: tg.industryIds[0] }); return; }
@@ -119,10 +121,11 @@
         if (['industry', 'cmp', 'scopeEpoch'].some(function (k) { return changed.indexOf(k) >= 0; })) drawComments(notes);
       })
     ];
-    return { destroy: function () {
+    handle = { destroy: function () {
       panels.forEach(function (p) { if (p && p.destroy) p.destroy(); });
       offs.forEach(function (f) { if (typeof f === 'function') f(); });
     } };
+    return handle;
   }
 
   TAP.industryView = { current: current };

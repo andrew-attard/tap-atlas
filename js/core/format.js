@@ -130,10 +130,14 @@
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   // "A, B and C"
+  // "A, B and C". When a name itself holds "and" or a comma ("Pharma and Biotech"), semicolons keep the names apart:
+  // "A; Pharma and Biotech; and C".
   function list(items) {
-    items = (items || []).filter(function (x) { return x != null && x !== ''; });
+    items = (items || []).filter(function (x) { return x != null && x !== ''; }).map(String);
     if (items.length < 2) return items.join('');
-    return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+    var last = items[items.length - 1], rest = items.slice(0, -1);
+    if (items.some(function (x) { return / and |,/.test(x); })) return rest.join('; ') + '; and ' + last;
+    return rest.join(', ') + ' and ' + last;
   }
 
   TAP.format = {

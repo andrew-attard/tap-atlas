@@ -131,6 +131,7 @@
     var s = TAP.store.get(), keep = focusKey(p), I = TAP.panelInsights;
     p.seen = {};   // glossary terms are marked once per panel
     var b = build(p, s), info = I.get(p.st.custom || s.cmp, p.id), ok = !b.errors.length && b.res && !b.res.empty;
+    p.drewHl = !!(b.ctx && b.ctx.highlight);
     var big = s.expanded === p.id;
     if (p.root.isConnected) p.wasConnected = true;
     TAP.dom.clear(p.root);
@@ -234,7 +235,10 @@
     if (changed.indexOf('industry') >= 0) p.opts.industryId = null;
     var shown = changed.indexOf('highlight') >= 0 && s.highlight && s.highlight.reportId === p.id;   // "Show me" wins over the list
     if (shown) Object.assign(p.st, { highlight: null, selected: null, sentence: null });
-    if (REDRAW.some(function (k) { return changed.indexOf(k) >= 0; })) render(p);
+    // A highlight for another chart changes nothing here, so only the chart it was or is for redraws
+    var hl = highlightOf(p, s), mine = !!hl || !!p.drewHl;
+    var only = changed.filter(function (k) { return REDRAW.indexOf(k) >= 0; });
+    if (only.length && !(only.length === 1 && only[0] === 'highlight' && !mine)) render(p);
   }
 
   function destroy(p) {
