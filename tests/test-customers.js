@@ -609,13 +609,13 @@
       });
     });
 
-    T.test('X-cg-bubble-scope', 'Rows follow the comparison: focus first in its colour, the rest in grey underneath', function (a) {
+    T.test('X-cg-bubble-scope', 'Rows follow the comparison: focus first in its colour, the other regions’ accounts in light grey underneath', function (a) {
       var th = window.TAP_THEME;
       var pair = bubbles(build('cg-bubble', { mode: 'pair', focus: 'delta', second: 'alpha' }));
       a.deepEqual(pair.map(function (b) { return b.regionId; }).filter(function (r, i, l) { return l.indexOf(r) === i; }), ['delta', 'alpha'], 'focus first, then the second');
       var one = bubbles(build('cg-bubble', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }));
       one.forEach(function (b) {
-        a.equal(b.color, b.regionId === 'alpha' ? TAP.scope.colorOf('alpha') : th.combined, b.rowId + ' colour');
+        a.equal(b.color, b.regionId === 'alpha' ? TAP.scope.colorOf('alpha') : th.focusGrey, b.rowId + ' colour');
       });
       var top = one.filter(function (b) { return b.regionId === 'alpha'; })[0].series.z, under = one.filter(function (b) { return b.regionId !== 'alpha'; })[0].series.z;
       a.ok(top > under, 'the focus region is drawn on top');

@@ -34,11 +34,20 @@
   function entityOf(entities, regionId) {
     return entities.filter(function (e) { return e.regionIds.indexOf(regionId) >= 0; })[0] || null;
   }
-  // The organization total has no region colours of its own; rows are not combined, so each keeps its region's.
-  function byRegion(entities) {
-    if (!(entities.length === 1 && entities[0].id === 'org')) return entities;
-    return entities[0].regionIds.map(function (r) {
-      return { id: r, kind: 'region', regionIds: [r], how: null, role: 'region', color: TAP.scope.colorOf(r), label: rname(r) };
+  // Rows are never combined, so combined entities are redrawn for single rows: under the organization total each
+  // row keeps its region's colour; "the rest" becomes the other regions in the light grey of other muted regions,
+  // so the focus region stands out as on other charts.
+  function drawEntities(entities) {
+    var th = window.TAP_THEME;
+    if (entities.length === 1 && entities[0].id === 'org') {
+      return entities[0].regionIds.map(function (r) {
+        return { id: r, kind: 'region', regionIds: [r], how: null, role: 'region', color: TAP.scope.colorOf(r), label: rname(r) };
+      });
+    }
+    return entities.map(function (e) {
+      if (e.kind !== 'combined') return e;
+      return { id: e.id, kind: 'combined', regionIds: e.regionIds, how: null, role: 'muted', color: th.focusGrey,
+        label: TAP.content.text('rowBubble.others', { n: e.regionIds.length }) };
     });
   }
 
@@ -94,7 +103,7 @@
     var k = TAP.shapes.kit, th = k.th(), def = ctx.def, source = def.rows, opts = def.options || {};
     var sizeKey = ctx.sizeId || (def.size && def.size.default) || null;
     var cx = colOf(source, def.x), cy = colOf(source, def.y), cs = sizeKey ? colOf(source, sizeKey) : null, cn = colOf(source, 'name');
-    var entities = byRegion(ctx.entities || TAP.scope.entities(ctx.cmp)), regions = regionsOf(ctx);
+    var entities = drawEntities(ctx.entities || TAP.scope.entities(ctx.cmp)), regions = regionsOf(ctx);
     var pts = [], notes = [], missing = [], max = 0;
     regions.forEach(function (r) {
       var list = TAP.rows.list(source, [r]);
