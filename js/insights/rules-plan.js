@@ -36,7 +36,10 @@
     var u = ctx.util, p = ctx.params;
     var channels = ((TAP.data.lookups() || {}).channels || []).map(function (c) { return c.id; });
     if (!channels.length) return [];
-    var ids = u.regions().filter(function (r) { return u.value(u.m('rc.share.' + channels[0], r)) !== null; });
+    // Only regions whose share is whole for every channel take part: a blank recap item would shift every share
+    var ids = u.regions().filter(function (r) {
+      return channels.every(function (c) { var s = u.m('rc.share.' + c, r); return u.value(s) !== null && !s.partial; });
+    });
     if (ids.length < 2) return [];
     return ids.map(function (r) {
       var best = null;
