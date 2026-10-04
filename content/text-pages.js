@@ -36,14 +36,14 @@ Object.assign(window.TAP_CONTENT.text, {
   // A view without a line here shows none. "Hide tips" hides them all until the page is reloaded.
   viewTips: {
     hide: 'Hide tips',
-    overview: 'Start with the headline and the insights below it, then use the region cards to compare each plan’s size and make-up.',
-    industry: 'Start with the tier grid to see where regions agree, then select an industry to read its ratings and the leaders’ commentary.',
-    newBusiness: 'Start with the industry grid, then compare channels and levers; the list further down names every sub-industry each region targets.',
-    customers: 'Start with the segments, then compare the growth each region assumes and how much of it rests on a few accounts.',
-    partners: 'Start with how much each plan relies on partners and alliances, then look at the people the named partners have behind it.',
-    regions: 'Pick a region to see its whole plan on one page; the back button returns to the list of regions.',
-    insights: 'Filter by region or family, then use "Show me" to see the figures behind an observation on its chart.',
-    guide: 'Use the contents list to jump to a section; the glossary at the bottom defines every term.'
+    overview: 'Start with the headline and the top insights, then compare the region cards.',
+    industry: 'Start with the tier grid to see where regions agree and differ.',
+    newBusiness: 'Start with the industry grid, then compare the channels and the levers.',
+    customers: 'Start with the segments, then compare the growth each region assumes.',
+    partners: 'Start with how much each plan relies on partners and alliances.',
+    regions: 'Pick a region to see its whole plan on one page.',
+    insights: 'Filter by region or family, then use "Show me" to see the figures.',
+    guide: 'Use the contents to jump to a section; the glossary defines every term.'
   },
 
   // The Guide page (US-1.6.1). Its sections and paragraphs come from content/guide.js.
