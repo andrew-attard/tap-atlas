@@ -42,11 +42,52 @@
     });
   }
 
+  // A name beside the bubble, a number on it (named in the key), or nothing.
+  function labelOf(p, e, th) {
+    if (p.lab) return { show: true, position: p.lab, align: 'left', verticalAlign: 'top', fontSize: th.type.chart, color: th.ink, formatter: function () { return p.label; } };
+    if (p.num) return { show: true, position: 'inside', fontSize: th.type.chartMin, fontWeight: 700,
+      color: e.role === 'muted' ? th.ink : th.onColour, formatter: function () { return String(p.num); } };
+    return { show: false };
+  }
+
   function isMarked(hl, p) {
     if (!hl) return false;
     var items = hl.items || [], regs = hl.regionIds || [];
     if (items.length) return items.some(function (i) { return i.regionId === p.regionId && i.row === p.row.sourceRow; });
     return regs.length > 0 && regs.indexOf(p.regionId) >= 0;
+  }
+
+  /* ---------- names: beside the bubble where one fits, else a number with the name in the key (as QA-3) ---------- */
+
+  var MARGIN = { left: 84, right: 24, top: 44, bottom: 64 };
+
+  // The plot in screen pixels: the panel passes the chart's size (ctx.size) once drawn; until then a typical panel.
+  function frame(ctx) {
+    var z = ctx.size && ctx.size.w > 200 ? ctx.size : { w: 560, h: window.TAP_THEME.chartHeight.normal };
+    return { x0: MARGIN.left, y0: MARGIN.top, w: Math.max(120, z.w - MARGIN.left - MARGIN.right), h: Math.max(120, z.h - MARGIN.top - MARGIN.bottom) };
+  }
+  // An axis range from zero (or the lowest value, if below zero) to a round number past the highest.
+  function nice(v) { if (!(v > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)); return Math.ceil(v * 1.08 / p) * p; }
+  function range(vals) { var lo = Math.min.apply(null, vals.concat([0])), hi = Math.max.apply(null, vals.concat([0])); return { min: lo < 0 ? -nice(-lo) : 0, max: nice(hi) }; }
+
+  function meet(a, b) { return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h; }
+  function inside(b, F) { return b.x >= F.x0 && b.y >= F.y0 - 8 && b.x + b.w <= F.x0 + F.w + MARGIN.right && b.y + b.h <= F.y0 + F.h; }
+
+  // Each named point (in priority order) gets p.lab, the name's offset from its symbol's corner, at the first spot
+  // (right, left, above, below) that is inside the plot, clear of names already placed and of other bubbles' centres.
+  // A point with no clean spot gets p.num instead: a number on the bubble, with the name in the key.
+  function place(named, all, F, fs) {
+    var boxes = [], n = 0;
+    named.forEach(function (p) {
+      var w = Math.ceil(p.label.length * fs * 0.56) + 4, h = fs + 4, r = p.d / 2, g = 4;
+      var spots = [[p.px + r + g, p.py - h / 2], [p.px - r - g - w, p.py - h / 2], [p.px - w / 2, p.py - r - g - h], [p.px - w / 2, p.py + r + g]];
+      var hit = spots.map(function (s) { return { x: s[0], y: s[1], w: w, h: h }; }).filter(function (b) {
+        return inside(b, F) && !boxes.some(function (o) { return meet(o, b); }) &&
+          !all.some(function (q) { return q !== p && q.px > b.x && q.px < b.x + b.w && q.py > b.y && q.py < b.y + b.h; });
+      })[0];
+      if (hit) { boxes.push(hit); p.lab = [Math.round(hit.x - (p.px - r)), Math.round(hit.y - (p.py - r))]; }
+      else p.num = ++n;
+    });
   }
 
   function build(ctx) {
@@ -72,30 +113,33 @@
       });
     });
 
-    // Which bubbles carry a name: every one, or the largest by labelBy up to the limit in settings.
-    var named = {};
-    if (opts.label === 'all') pts.forEach(function (p) { named[p.row.id] = true; });
-    else {
-      var by = opts.labelBy || def.y, limit = ((window.TAP_SETTINGS || {}).rowBubble || {}).labelMax;
-      limit = typeof limit === 'number' ? limit : 10;
-      pts.map(function (p) { var c = TAP.rows.cell(source, by, p.row); return { p: p, v: c.state === 'value' ? c.v : -Infinity }; })
-        .sort(function (a, b) { return b.v - a.v; }).slice(0, limit).forEach(function (x) { named[x.p.row.id] = true; });
-    }
+    // Which bubbles carry a name: every one, or the largest by labelBy up to the limit in settings; biggest first.
+    var by = opts.label === 'all' ? sizeKey : (opts.labelBy || def.y), limit = ((window.TAP_SETTINGS || {}).rowBubble || {}).labelMax;
+    limit = opts.label === 'all' ? pts.length : typeof limit === 'number' ? limit : 10;
+    var named = pts.map(function (p) { var c = by ? TAP.rows.cell(source, by, p.row) : {}; return { p: p, v: c.state === 'value' ? c.v : -Infinity }; })
+      .sort(function (a, b) { return b.v - a.v; }).slice(0, limit).map(function (x) { return x.p; });
 
+    // Where each bubble is drawn, in pixels, so the names can be placed without overlapping
     var size = cs ? k.sizeScale(max) : function () { return th.space[4]; }, hl = th.echarts.tap.highlight, ring = [];
+    var F = frame(ctx), rx = range(pts.map(function (p) { return p.x.v; })), ry = range(pts.map(function (p) { return p.y.v; }));
+    pts.forEach(function (p) {
+      p.d = size(p.s && p.s.state === 'value' ? p.s.v : 0);
+      p.px = F.x0 + (p.x.v - rx.min) / (rx.max - rx.min) * F.w;
+      p.py = F.y0 + F.h - (p.y.v - ry.min) / (ry.max - ry.min) * F.h;
+    });
+    place(named, pts, F, th.type.chart);
     var order = { muted: 0, combined: 1, region: 2, second: 3, focus: 4 };
     var groups = entities.filter(function (e) { return pts.some(function (p) { return p.e === e; }); });
     var series = groups.map(function (e) {
       var mine = pts.filter(function (p) { return p.e === e; });
       return { type: 'scatter', tapRole: 'value', name: e.label, z: 2 + (order[e.role] || 0),
-        labelLayout: { moveOverlap: 'shiftY' }, labelLine: { show: true, lineStyle: { color: th.muted } },
         data: mine.map(function (p) {
-          var d = size(p.s && p.s.state === 'value' ? p.s.v : 0), on = isMarked(ctx.highlight, p);
+          var d = p.d, on = isMarked(ctx.highlight, p);
           if (on) ring.push({ value: [p.x.v, p.y.v], entityId: e.id, size: d });
           return { value: [p.x.v, p.y.v], raw: [p.x.v, p.y.v, p.s ? p.s.v : null], keys: [def.x, def.y, sizeKey],
             entityId: e.id, regionId: p.regionId, row: p.row.sourceRow, rowId: p.row.id, name: p.label, symbolSize: d,
             itemStyle: { color: e.color, opacity: e.role === 'muted' ? 0.85 : 0.8, borderColor: th.ground, borderWidth: th.border.control },
-            label: { show: !!named[p.row.id], position: 'right', fontSize: th.type.chart, color: th.ink, formatter: function () { return p.label; } } };
+            label: labelOf(p, e, th) };
         }),
         tooltip: { formatter: function (q) {
           var p = pts.filter(function (x) { return x.row.id === q.data.rowId; })[0];
@@ -117,7 +161,8 @@
     }) };
 
     var res = k.result(def, null, { table: table, notes: notes, missing: missing, empty: !pts.length,
-      legend: groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; }),
+      legend: groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; }).concat(named.filter(function (p) { return p.num; })
+        .map(function (p) { return { label: TAP.content.text('rowBubble.key', { name: p.label, region: rname(p.regionId) }), color: null, mark: p.num, role: 'key' }; })),
       sizeLegend: cs && max > 0 ? k.sizeLegend(max, cs) : null });
     res.target = function (params) {
       var d = params && params.data;
@@ -126,9 +171,11 @@
         items: [{ section: SECTION[source], regionId: d.regionId, row: d.row }] };
     };
     if (!pts.length || (ctx.type || def.defaultType) === 'table') return res;
-    res.option = { grid: k.grid({ right: th.space[12] * 3 }), tooltip: { trigger: 'item' },
-      xAxis: k.valueAxis(cx, { name: cx.label, nameLocation: 'middle', nameGap: th.space[8], nameTextStyle: { fontSize: th.type.chart } }),
-      yAxis: k.valueAxis(cy, { name: cy.label, nameLocation: 'end', nameTextStyle: { fontSize: th.type.chart, align: 'left' } }),
+    res.sized = true;   // names are placed for the chart's real size, so build again once it is known
+    res.option = { grid: { left: MARGIN.left, right: MARGIN.right, top: MARGIN.top, bottom: MARGIN.bottom, containLabel: false },
+      tooltip: { trigger: 'item' },
+      xAxis: k.valueAxis(cx, { min: rx.min, max: rx.max, name: cx.label, nameLocation: 'middle', nameGap: th.space[8], nameTextStyle: { fontSize: th.type.chart } }),
+      yAxis: k.valueAxis(cy, { min: ry.min, max: ry.max, name: cy.label, nameLocation: 'end', nameTextStyle: { fontSize: th.type.chart, align: 'left' } }),
       series: series };
     return res;
   }

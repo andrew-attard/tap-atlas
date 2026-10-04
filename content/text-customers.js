@@ -42,7 +42,8 @@ Object.assign(window.TAP_CONTENT.text, {
   rowBubble: {
     noName: 'Row {row}',
     left: '{name} ({region}) is not on the chart: no {measure} given.',
-    sourceRow: 'Source row'
+    sourceRow: 'Source row',
+    key: '{name} ({region})'
   },
 
   // US-2.7.2 details for row targets (an account, a partner, a new business row), and US-2.2.2 segment thresholds

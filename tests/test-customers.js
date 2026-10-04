@@ -561,14 +561,16 @@
       var all = bubbles(build('cg-bubble', { mode: 'all' }));
       a.equal(all.filter(function (b) { return b.labelled; }).length, 9, 'nine accounts, all within the limit of 10');
       withLabelMax(3, function () {
-        var three = bubbles(build('cg-bubble', { mode: 'all' })).filter(function (b) { return b.labelled; });
+        var res3 = build('cg-bubble', { mode: 'all' }), three = bubbles(res3).filter(function (b) { return b.labelled; });
         // the three largest increments: d1 168, a4 150, b1 120
         a.deepEqual(three.map(function (b) { return b.rowId; }).sort(), ['alpha:13', 'bravo:10', 'delta:10'], 'exactly the top 3');
         three.forEach(function (b) {
           var held = TAP.data.region(b.regionId).customerGrowth.accounts.filter(function (x) { return x.sourceRow === b.row; })[0].name;
           a.equal(b.name, held, b.rowId + ' shows the name the data holds');
-          var d = b.series.data.filter(function (x) { return x.rowId === b.rowId; })[0];
-          a.equal(d.label.formatter(), held, b.rowId + ' label text');
+          var d = b.series.data.filter(function (x) { return x.rowId === b.rowId; })[0], text = d.label.formatter();
+          // A name beside the bubble, or a number on it with the name in the key
+          var key = res3.legend.filter(function (l) { return l.mark != null && String(l.mark) === text; })[0];
+          a.ok(text === held || (key && key.label.indexOf(held) === 0), b.rowId + ' is named: ' + text);
         });
       });
     });
@@ -618,9 +620,27 @@
       var top = one.filter(function (b) { return b.regionId === 'alpha'; })[0].series.z, under = one.filter(function (b) { return b.regionId !== 'alpha'; })[0].series.z;
       a.ok(top > under, 'the focus region is drawn on top');
       var org = build('cg-bubble', { mode: 'org' });
-      a.deepEqual(org.legend.map(function (l) { return l.label; }), ['Region A', 'Region B', 'Region D'], 'organization total: each account keeps its region colour, named in the key');
+      a.deepEqual(org.legend.filter(function (l) { return l.role !== 'key'; }).map(function (l) { return l.label; }), ['Region A', 'Region B', 'Region D'], 'organization total: each account keeps its region colour, named in the key');
       var set = bubbles(build('cg-bubble', { mode: 'set', set: ['bravo'] }));
       a.ok(set.length === 2 && set.every(function (b) { return b.regionId === 'bravo'; }), 'a chosen set shows only its regions');
+    });
+
+    T.test('X-cg-bubble-names', 'At every chart size the largest accounts are named beside their bubble or numbered in the key', function (a) {
+      sample();
+      [{ w: 560, h: 440 }, { w: 1100, h: 560 }, { w: 380, h: 300 }].forEach(function (z) {
+        var res = build('cg-bubble', { mode: 'all' }, { size: z });
+        a.ok(res.sized, 'placed for the chart size');
+        var named = 0, numbered = 0;
+        ((res.option || {}).series || []).forEach(function (s) {
+          (s.data || []).forEach(function (d) {
+            if (!d.label || !d.label.show) return;
+            if (Array.isArray(d.label.position)) named++;
+            else numbered++;
+          });
+        });
+        a.equal(named + numbered, Math.min(10, bubbles(res).length), z.w + ': the 10 largest are named or numbered');
+        a.equal(res.legend.filter(function (l) { return l.role === 'key'; }).length, numbered, z.w + ': one key line per number');
+      });
     });
 
     T.test('X-cg-bubble-target', 'A bubble click opens that account’s details', function (a) {
