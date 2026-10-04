@@ -423,6 +423,26 @@
       a.equal(res.target({ data: {} }), null, 'nothing named, nothing opened');
     });
 
+    T.test('X-nb-grid-drill-target', 'The grid drills to the sub-industry list; a cell names its level for the breadcrumb', function (a) {
+      var def = TAP.reports.get(IND);
+      a.deepEqual(def.drill && def.drill.next, 'nb-rows', 'the next level is the list');
+      var res = grid({ mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' });
+      a.equal(res.target({ data: { regionId: 'alpha', industryId: 'ind1' } }).label, 'Healthcare, Region A', 'a region’s cell');
+      a.equal(res.target({ data: { regionId: 'rest', industryId: 'ind1' } }).label, 'Healthcare', 'a combined cell: the industry');
+    });
+
+    when(!!TAP.panelDrill && !TAP.panelDrill.__stub, 'waits for drill-down in the panel (PANEL2, #269)')('X-nb-grid-drill',
+      'On the view, a cell opens that region’s rows for the industry in the same panel', function (a) {
+        withView(function (root) {
+          var panel = root.querySelector('.tap-panel[data-report="nb-industries"]');
+          panel.querySelector('.tap-nbg__cell[data-tap-region="bravo"][data-tap-industry="ind1"]').click();
+          panel = root.querySelector('[data-slot="nb-industries"] .tap-panel');
+          var rows = Array.prototype.map.call(panel.querySelectorAll('tr[data-tap-row]'), function (tr) { return tr.getAttribute('data-tap-row'); });
+          a.deepEqual(rows, ['newBusiness:bravo:20'], 'only Region B’s Healthcare row');
+          a.match(panel.querySelector('.tap-panel__crumbs').textContent, /Healthcare, Region B/, 'the breadcrumb names the level');
+        });
+      });
+
     T.test('X-nb-grid-highlight', 'A highlight marks the industry row or the cell', function (a) {
       var box = parse(grid({ mode: 'all' }, { highlight: { reportId: IND, regionIds: ['delta'], industryIds: ['ind3'], mark: 'cell' } }).html);
       var hl = box.querySelectorAll('.tap-nbg__cell.is-hl');

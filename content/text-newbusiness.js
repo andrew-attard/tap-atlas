@@ -28,7 +28,8 @@ Object.assign(window.TAP_CONTENT.text, {
     legendTier: '{short} = {tier}',
     legendNp: 'Dashed: rows filled in without a usable figure',
     combinedNoTier: 'A tier is one region’s choice, so combined figures show the amount without a tier.',
-    noTierParts: 'The Tier 1 and Tier 2 figures are not available yet.'
+    noTierParts: 'The Tier 1 and Tier 2 figures are not available yet.',
+    drillLabel: '{industry}, {region}'
   },
 
   // US-2.1.6: the success factors panel. Only entries that exist are listed; blanks are never called out.
