@@ -29,5 +29,18 @@ Object.assign(window.TAP_CONTENT.text, {
     legendNp: 'Dashed: rows filled in without a usable figure',
     combinedNoTier: 'A tier is one region’s choice, so combined figures show the amount without a tier.',
     noTierParts: 'The Tier 1 and Tier 2 figures are not available yet.'
+  },
+
+  // US-2.1.6: the success factors panel. Only entries that exist are listed; blanks are never called out.
+  nbFactors: {
+    label: 'What leaders say they need to win',
+    title: 'What leaders say they need to win in {industry}',
+    titleNone: 'What leaders say they need to win',
+    intro: 'Each region’s key success factors for the selected industry, by sub-industry and market, focus region first.',
+    listLabel: 'Success factors, by region and sub-industry',
+    ask: 'Select an industry in the grid above, or in the list’s industry filter, to read what each region wrote.',
+    none: 'None of the regions shown wrote success factors for {industry}. Pick another industry, or compare other regions.',
+    focus: 'Focus region',
+    foot: '(success factors, as written)'
   }
 });
