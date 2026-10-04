@@ -44,7 +44,8 @@ Object.assign(window.TAP_CONTENT.text, {
     left: '{name} ({region}) is not on the chart: no {measure} given.',
     sourceRow: 'Source row',
     key: '{name} ({region})',
-    others: 'The other {n} regions, account by account'
+    others: { accounts: 'The other {n} regions, account by account', partners: 'The other {n} regions, partner by partner' },
+    noSize: '{name} ({region}) is drawn as an empty outline: no {measure} given.'
   },
 
   // US-2.7.2 details for row targets (an account, a partner, a new business row), and US-2.2.2 segment thresholds

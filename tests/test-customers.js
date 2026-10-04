@@ -635,7 +635,11 @@
           (s.data || []).forEach(function (d) {
             if (!d.label || !d.label.show) return;
             if (Array.isArray(d.label.position)) named++;
-            else numbered++;
+            else {
+              numbered++;
+              var small = d.symbolSize < window.TAP_THEME.type.chartMin * 1.4;
+              a.equal(d.label.position, small ? 'right' : 'inside', d.rowId + ': a number sits ' + (small ? 'beside a small bubble' : 'on its bubble'));
+            }
           });
         });
         a.equal(named + numbered, Math.min(10, bubbles(res).length), z.w + ': the 10 largest are named or numbered');
@@ -661,6 +665,42 @@
       var b1 = bubbles(res).filter(function (b) { return b.rowId === 'bravo:10'; })[0], d = b1.series.data.filter(function (x) { return x.rowId === 'bravo:10'; })[0];
       var html = b1.series.tooltip.formatter({ data: d });
       a.ok(html.indexOf('<b>Fictional') < 0 && html.indexOf('&lt;b&gt;Fictional &amp; Co') >= 0, 'tooltip escapes the name');
+    });
+
+    T.test('X-cg-bubble-left', 'A blank incremental ARR leaves the account off; a blank order intake draws an empty outline, with a note', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[3].customerGrowth.accounts[1].incrementalArr = [null, null, null];   // d2: no y
+      plan.regions[3].customerGrowth.accounts[0].cumulativeOrderIntake = null;         // d1: no size
+      a.ok(TAP.data.load(plan).ok, 'the changed fixture loads');
+      var res = build('cg-bubble', { mode: 'all' }), seen = bubbles(res);
+      a.ok(!seen.some(function (b) { return b.rowId === 'delta:11'; }), 'd2 not drawn');
+      a.ok(res.notes.some(function (n) { return /^Fictional Account D2 \(Region D\) is not on the chart/.test(n); }), 'd2 named: ' + res.notes.join(' | '));
+      var d1 = seen.filter(function (b) { return b.rowId === 'delta:10'; })[0];
+      var item = d1.series.data.filter(function (x) { return x.rowId === 'delta:10'; })[0];
+      a.equal(item.itemStyle.borderColor, window.TAP_THEME.notProvided.border, 'd1 is outlined as not provided');
+      a.ok(res.notes.some(function (n) { return /^Fictional Account D1 \(Region D\) is drawn as an empty outline/.test(n); }), 'and named in a note');
+    });
+
+    T.test('X-cg-bubble-ring', 'Highlights ring the target’s accounts, by row items or by region', function (a) {
+      var rings = function (hl) {
+        var res = build('cg-bubble', { mode: 'all' }, { highlight: hl });
+        var r = ((res.option || {}).series || []).filter(function (s) { return s.tapRole === 'highlight'; })[0];
+        return r ? r.data.length : 0;
+      };
+      a.equal(rings({ reportId: 'cg-bubble', items: [{ section: 'customerGrowth', regionId: 'alpha', row: 13 }] }), 1, 'one account');
+      a.equal(rings({ reportId: 'cg-bubble', items: [{ section: 'partners', regionId: 'alpha', row: 10 }] }), 0, 'a partner row is not an account');
+      a.equal(rings({ reportId: 'cg-bubble', regionIds: ['delta'] }), 3, 'every account of a region');
+      a.equal(rings(null), 0, 'nothing without a target');
+    });
+
+    T.test('X-cg-bubble-empty', 'With no accounts anywhere, the chart says so instead of drawing', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions.forEach(function (r) { r.customerGrowth.accounts = []; });
+      TAP.data.load(plan);
+      var res = build('cg-bubble', { mode: 'all' });
+      a.ok(res.empty, 'empty');
+      a.equal(res.option, null, 'nothing drawn');
+      a.deepEqual(res.missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region named as not provided');
     });
 
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {

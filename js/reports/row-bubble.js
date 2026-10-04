@@ -37,7 +37,7 @@
   // Rows are never combined, so combined entities are redrawn for single rows: under the organization total each
   // row keeps its region's colour; "the rest" becomes the other regions in the light grey of other muted regions,
   // so the focus region stands out as on other charts.
-  function drawEntities(entities) {
+  function drawEntities(entities, source) {
     var th = window.TAP_THEME;
     if (entities.length === 1 && entities[0].id === 'org') {
       return entities[0].regionIds.map(function (r) {
@@ -47,22 +47,31 @@
     return entities.map(function (e) {
       if (e.kind !== 'combined') return e;
       return { id: e.id, kind: 'combined', regionIds: e.regionIds, how: null, role: 'muted', color: th.focusGrey,
-        label: TAP.content.text('rowBubble.others', { n: e.regionIds.length }) };
+        label: TAP.content.text('rowBubble.others.' + source, { n: e.regionIds.length }) };
     });
   }
 
-  // A name beside the bubble, a number on it (named in the key), or nothing.
+  // A name beside the bubble, a number on it (named in the key), or nothing. A bubble too small to hold its number
+  // carries it just to its right, in ink.
   function labelOf(p, e, th) {
     if (p.lab) return { show: true, position: p.lab, align: 'left', verticalAlign: 'top', fontSize: th.type.chart, color: th.ink, formatter: function () { return p.label; } };
-    if (p.num) return { show: true, position: 'inside', fontSize: th.type.chartMin, fontWeight: 700,
-      color: e.role === 'muted' ? th.ink : th.onColour, formatter: function () { return String(p.num); } };
-    return { show: false };
+    if (!p.num) return { show: false };
+    var fits = p.d >= th.type.chartMin * 1.4 && !p.noSize;
+    return { show: true, position: fits ? 'inside' : 'right', distance: 2, fontSize: th.type.chartMin, fontWeight: 700,
+      color: !fits || e.role === 'muted' ? th.ink : th.onColour, formatter: function () { return String(p.num); } };
+  }
+  // A bubble whose size is not provided is drawn as an empty outline, as not-provided marks are elsewhere.
+  function styleOf(p, e, th) {
+    if (p.noSize) return { color: th.echarts.backgroundColor, borderColor: th.notProvided.border, borderWidth: th.border.rule, opacity: 1 };
+    return { color: e.color, opacity: e.role === 'muted' ? 0.85 : 0.8, borderColor: th.ground, borderWidth: th.border.control };
   }
 
-  function isMarked(hl, p) {
+  function isMarked(hl, p, section) {
     if (!hl) return false;
     var items = hl.items || [], regs = hl.regionIds || [];
-    if (items.length) return items.some(function (i) { return i.regionId === p.regionId && i.row === p.row.sourceRow; });
+    if (items.length) {
+      return items.some(function (i) { return (!i.section || i.section === section) && i.regionId === p.regionId && i.row === p.row.sourceRow; });
+    }
     return regs.length > 0 && regs.indexOf(p.regionId) >= 0;
   }
 
@@ -103,7 +112,7 @@
     var k = TAP.shapes.kit, th = k.th(), def = ctx.def, source = def.rows, opts = def.options || {};
     var sizeKey = ctx.sizeId || (def.size && def.size.default) || null;
     var cx = colOf(source, def.x), cy = colOf(source, def.y), cs = sizeKey ? colOf(source, sizeKey) : null, cn = colOf(source, 'name');
-    var entities = drawEntities(ctx.entities || TAP.scope.entities(ctx.cmp)), regions = regionsOf(ctx);
+    var entities = drawEntities(ctx.entities || TAP.scope.entities(ctx.cmp), source), regions = regionsOf(ctx);
     var pts = [], notes = [], missing = [], max = 0;
     regions.forEach(function (r) {
       var list = TAP.rows.list(source, [r]);
@@ -129,10 +138,12 @@
       .sort(function (a, b) { return b.v - a.v; }).slice(0, limit).map(function (x) { return x.p; });
 
     // Where each bubble is drawn, in pixels, so the names can be placed without overlapping
-    var size = cs ? k.sizeScale(max) : function () { return th.space[4]; }, hl = th.echarts.tap.highlight, ring = [];
+    var size = cs ? k.sizeScale(max) : function () { return th.space[4]; }, ring = [];
     var F = frame(ctx), rx = range(pts.map(function (p) { return p.x.v; })), ry = range(pts.map(function (p) { return p.y.v; }));
     pts.forEach(function (p) {
-      p.d = size(p.s && p.s.state === 'value' ? p.s.v : 0);
+      p.noSize = !!cs && (!p.s || p.s.state !== 'value');
+      if (p.noSize) notes.push(TAP.content.text('rowBubble.noSize', { name: p.label, region: rname(p.regionId), measure: k.lower(cs.label) }));
+      p.d = size(p.noSize ? 0 : p.s.v);
       p.px = F.x0 + (p.x.v - rx.min) / (rx.max - rx.min) * F.w;
       p.py = F.y0 + F.h - (p.y.v - ry.min) / (ry.max - ry.min) * F.h;
     });
@@ -143,11 +154,11 @@
       var mine = pts.filter(function (p) { return p.e === e; });
       return { type: 'scatter', tapRole: 'value', name: e.label, z: 2 + (order[e.role] || 0),
         data: mine.map(function (p) {
-          var d = p.d, on = isMarked(ctx.highlight, p);
+          var d = p.d, on = isMarked(ctx.highlight, p, SECTION[source]);
           if (on) ring.push({ value: [p.x.v, p.y.v], entityId: e.id, size: d });
           return { value: [p.x.v, p.y.v], raw: [p.x.v, p.y.v, p.s ? p.s.v : null], keys: [def.x, def.y, sizeKey],
             entityId: e.id, regionId: p.regionId, row: p.row.sourceRow, rowId: p.row.id, name: p.label, symbolSize: d,
-            itemStyle: { color: e.color, opacity: e.role === 'muted' ? 0.85 : 0.8, borderColor: th.ground, borderWidth: th.border.control },
+            itemStyle: styleOf(p, e, th),
             label: labelOf(p, e, th) };
         }),
         tooltip: { formatter: function (q) {
