@@ -506,8 +506,7 @@
       // a1's increments made blank: it has no incremental ARR, so it counts in neither share and is never listed
       var plan = window.T_FIXTURE('mini');
       plan.regions[0].customerGrowth.accounts[0].incrementalArr = [null, null, null];
-      plan.regions[0].customerGrowth.accounts[2].riskLevel = 'low';   // not high or medium: not at risk
-      TAP.data.load(plan);
+      a.ok(TAP.data.load(plan).ok, 'the changed fixture loads');
       var rows = function (m) { return TAP.cgBuilders.accountItems(['alpha'], m).map(function (i) { return i.row; }); };
       a.deepEqual(rows('cg.top3Share'), [13, 11, 12], 'a4 150, a2 100, a3 0; a1 has no figure');
       a.deepEqual(rows('cg.riskShare'), [13, 11], 'high and medium only');
