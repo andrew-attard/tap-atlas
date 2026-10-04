@@ -3,7 +3,8 @@
  * Purpose: Draws a panel's controls: the toolbar (insights, explanation, chart type, table, more) with its popovers,
  *          the "compare differently" editor and badge, and the controls row (industry picker, measure, break down by,
  *          bubble size and the options a builder offers).
- * Provides: TAP.panelMenus (render, tools, types, spec, compareEditor, customBadge, button, pop, seg, select)
+ * Provides: TAP.panelMenus (render, tools, types, spec, compareEditor, customBadge, button, pop, seg, select, breakdowns,
+ *           fitBreakdown)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
  *             js/engine/shapes.js, js/engine/scope.js, js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js,
  *             js/ui/explain.js, js/panel/panel-insights.js (all read at call time)
@@ -69,6 +70,14 @@
   }
 
   /* ---------- chart types (US-1.2.3) ---------- */
+
+  // The breakdowns on offer: the report's, narrowed to the dimensions the selected measure lists (17.3), once the
+  // engine can say so. fitBreakdown drops a chosen one that is no longer offered, for example after a measure switch.
+  function breakdowns(def, st) {
+    var P = TAP.prepare;
+    return (P.breakdowns && !P.breakdowns.__stub ? P.breakdowns(def, { measureId: st.measureId }) : def.breakdowns) || [];
+  }
+  function fitBreakdown(def, st) { if (st.breakdown && breakdowns(def, st).indexOf(st.breakdown) < 0) st.breakdown = null; }
 
   // The types the menu offers (the table has its own button), and the one to draw: the chosen type while the
   // comparison allows it, else the default. A stored radar comes back once three or fewer regions are compared.
@@ -235,7 +244,7 @@
       own.push({ key: 'measure', label: t('measure'), kind: 'segmented', value: TAP.prepare.selected(def, { measureId: p.st.measureId }),
         options: ms.map(function (m) { return { value: m.id, label: m.label }; }), onPick: function (k, v) { p.set({ measureId: v }); } });
     }
-    var bds = def.breakdowns || [];
+    var bds = breakdowns(def, p.st);
     if (bds.length) {
       own.push({ key: 'breakdown', label: t('breakdown'), kind: 'segmented', value: p.st.breakdown || 'none',
         options: [{ value: 'none', label: t('breakdownNone') }].concat(bds.map(function (x) { return { value: x, label: t('breakdowns.' + x) }; })),
@@ -273,5 +282,5 @@
   }
 
   TAP.panelMenus = { render: render, tools: tools, types: types, spec: spec, compareEditor: compareEditor, customBadge: customBadge,
-    button: button, pop: pop, seg: seg, select: select };
+    button: button, pop: pop, seg: seg, select: select, breakdowns: breakdowns, fitBreakdown: fitBreakdown };
 })(window.TAP);
