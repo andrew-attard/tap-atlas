@@ -28,6 +28,7 @@
 }
 
 /* Details: sections of rows, each value with its kind and file › sheet › cell */
+.tap-details__actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); margin: 0; padding-top: var(--tap-sp-2); }
 .tap-details__group { padding-top: var(--tap-sp-4); }
 .tap-details__group h3 {
   margin: 0; padding-bottom: var(--tap-sp-2); font-size: var(--tap-fs-lead);

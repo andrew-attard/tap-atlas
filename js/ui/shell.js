@@ -98,8 +98,9 @@
     frame = { root: root, view: view, menu: nav, actions: actions, layers: layers };
     banner(slot);
     markCurrent(nav, TAP.store.get().view);
+    root.setAttribute('data-view', TAP.store.get().view);   // lets a view's stylesheet adjust the frame (e.g. no comparison bar)
     cleanups.push(TAP.store.on(function (state, changed) {
-      if (changed.indexOf('view') >= 0) markCurrent(nav, state.view);
+      if (changed.indexOf('view') >= 0) { markCurrent(nav, state.view); root.setAttribute('data-view', state.view); }
     }));
 
     // Anything can ask for details by event (e.g. a chart click), and they open in a side panel

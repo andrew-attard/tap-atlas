@@ -25,6 +25,7 @@
     if (q.get('rest')) cmp.restAgg = q.get('rest');
     var patch = { cmp: cmp };
     if (q.get('view')) patch.view = q.get('view');
+    if (q.get('region')) patch.region = q.get('region');
     return patch;
   }
 
@@ -102,10 +103,10 @@
       });
     }
 
-    var first = TAP.store.get().view;
-    if (window.location.hash.replace('#', '') !== first) {
+    var first = TAP.store.get().view, firstHash = hashFor(TAP.store.get());
+    if (window.location.hash.replace('#', '') !== firstHash) {
       // replaceState keeps the opening view out of the back-button history
-      history.replaceState(null, '', window.location.pathname + window.location.search + '#' + first);
+      history.replaceState(null, '', window.location.pathname + window.location.search + '#' + firstHash);
     }
     // Insights are worked out afresh for this data (they are cached per plan)
     if (TAP.insights && !TAP.insights.__stub) TAP.insights.reset();
