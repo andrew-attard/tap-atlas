@@ -286,7 +286,9 @@
       var s = values(opt);
       a.near(s[0].data[0].raw, X2['rc.all.arr'], TOL, 'ARR part of the direct stack');
       a.near(s[1].data[0].raw, X2['rc.all.services'], TOL, 'services part of the direct stack');
-      a.near(res.table.rows[0].cells['rc.all.oi'].v, X2['rc.all.oi'], TOL, 'the stack total');
+      var total = opt.series.filter(function (x) { return x.tapRole === 'total'; })[0];
+      a.equal(total.label.formatter({ dataIndex: 0 }), TAP.format.cell({ v: X2['rc.all.oi'], state: 'value' }, { unit: 'money' }), 'the stack total');
+      a.near(res.table.rows[0].cells['rc.all.oi@channel:direct'].v, X2['rc.all.oi'], TOL, 'the table column for direct');
     });
 
     T.test('TPV-TC-314', 'Each breakdown gives one table column per value, adding up to the total (hand figures)', function (a) {
