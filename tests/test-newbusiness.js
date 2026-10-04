@@ -455,6 +455,114 @@
     });
   });
 
+  /* ---------- US-2.1.4 the levers behind each region's number ---------- */
+
+  var LEV = 'nb-levers';
+  var LEVERS = ['nb.targetAccounts', 'nb.hitRate', 'nb.avgDealSize', 'nb.wins', 'nb.growthY2', 'nb.growthY3'];
+  // Hand-calculated from tests/fixtures/mini-data.js (rows: targetAccounts, hitRate, avgDealSize, growth, 3-year ARR).
+  var MINI_LEVERS = {
+    alpha: { 'nb.targetAccounts': 30, 'nb.hitRate': 0.2, 'nb.wins': 6,                 // 20 x 0.25 + 10 x 0.1 = 6; 6 / 30
+      'nb.avgDealSize': 700 / 6,                                                           // (100 x 5 + 200 x 1) / 6 wins
+      'nb.growthY2': 165.5 / 2255, 'nb.growthY3': 165.5 / 2255 },                          // (0.1 x 1655 + 0 x 600) / 2255
+    bravo: { 'nb.targetAccounts': 50, 'nb.hitRate': 0.44, 'nb.wins': 22, 'nb.avgDealSize': 1200 / 22,   // (50 x 20 + 100 x 2) / 22
+      'nb.growthY2': 0.17, 'nb.growthY3': 0 },                                             // (0.2 x 3400 + 0 x 600) / 4000
+    charlie: { 'nb.targetAccounts': 15, 'nb.hitRate': 0.2, 'nb.wins': 1, 'nb.avgDealSize': 100,         // row 20 has no hit rate
+      'nb.growthY2': 0, 'nb.growthY3': 0 },                                                // row 20 has no ARR, row 21 grows 0
+    delta: { 'nb.targetAccounts': 100, 'nb.hitRate': 0.6, 'nb.wins': 60, 'nb.avgDealSize': 10, 'nb.growthY2': 0.5, 'nb.growthY3': 0.5 }
+  };
+  function lever(c, id, extra) { return build(LEV, c, Object.assign({ measureId: id }, extra || {})); }
+  function lcell(res, entityId, id) {
+    var row = res.table.rows.filter(function (r) { return r.entityId === entityId; })[0];
+    return row ? row.cells[id] : null;
+  }
+
+  T.suite('newbusiness-levers', function () {
+    T.test('TPV-TC-350', 'Measure switch: the six levers in order, target accounts by default', function (a) {
+      var def = TAP.reports.get(LEV);
+      a.deepEqual(def.measures.map(function (m) { return m.id; }), LEVERS, 'the catalogue measures, in order');
+      a.deepEqual(def.measures.map(function (m) { return m.label; }),
+        ['Target accounts', 'Hit rate', 'Average deal size', 'Expected wins', 'Year 2 growth', 'Year 3 growth'], 'their names');
+      a.equal(TAP.prepare.selected(def, {}), 'nb.targetAccounts', 'target accounts first');
+      a.equal(def.title, 'How does each region build its new business number?', 'the question');
+    });
+
+    T.test('TPV-TC-351', 'Mini data: each lever per region equals the hand calculation and what the insight rules read', function (a) {
+      LEVERS.forEach(function (id) {
+        var res = lever({ mode: 'all' }, id);
+        a.equal(res.error, null, id + ' builds');
+        Object.keys(MINI_LEVERS).forEach(function (r) {
+          var c = lcell(res, r, id);
+          a.near(c.v, MINI_LEVERS[r][id], 1e-6, r + ' ' + id);
+          a.equal(c.v, TAP.measures.get(id)(r, {}).v, r + ' ' + id + ': the same catalogue figure the rules read');
+        });
+      });
+    });
+
+    T.test('TPV-TC-352', 'Combined levers: counts summed or simply averaged, rates weighted by the catalogue weights', function (a) {
+      var avg = { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' };
+      var tot = { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'total' };
+      a.near(lcell(lever(avg, 'nb.targetAccounts'), 'rest', 'nb.targetAccounts').v, 55, 1e-9, 'average of the rest: (50 + 15 + 100) / 3');
+      a.near(lcell(lever(tot, 'nb.targetAccounts'), 'rest', 'nb.targetAccounts').v, 165, 1e-9, 'rest as total: 50 + 15 + 100');
+      a.near(lcell(lever(avg, 'nb.wins'), 'rest', 'nb.wins').v, 83 / 3, 1e-9, 'wins, average of the rest: (22 + 1 + 60) / 3');
+      a.near(lcell(lever(avg, 'nb.hitRate'), 'rest', 'nb.hitRate').v, 83 / 155, 1e-9, 'hit rate: wins 83 / rated accounts 155');
+      a.near(lcell(lever(tot, 'nb.hitRate'), 'rest', 'nb.hitRate').v, 83 / 155, 1e-9, 'a rate is weighted the same as a total');
+      a.near(lcell(lever(avg, 'nb.avgDealSize'), 'rest', 'nb.avgDealSize').v, 1900 / 83, 1e-9, 'deal size by wins: (1200 + 100 + 600) / 83');
+      a.near(lcell(lever(avg, 'nb.growthY2'), 'rest', 'nb.growthY2').v, 2105 / 7150, 1e-9, 'year 2 growth by ARR: (0.17 x 4000 + 0 x 300 + 0.5 x 2850) / 7150');
+      var org = { mode: 'org' };
+      a.near(lcell(lever(org, 'nb.targetAccounts'), 'org', 'nb.targetAccounts').v, 195, 1e-9, 'organization target accounts');
+      a.near(lcell(lever(org, 'nb.hitRate'), 'org', 'nb.hitRate').v, 89 / 185, 1e-9, 'organization hit rate: 89 / 185');
+    });
+
+    T.test('TPV-TC-353', 'Bar by default; dot plot and table offered; breakdown by industry allowed', function (a) {
+      var def = TAP.reports.get(LEV), types = TAP.shapes.types(def, 7);
+      a.equal(def.defaultType, 'bar', 'bar first');
+      ['dot', 'table', 'bubble'].forEach(function (x) { a.ok(types.indexOf(x) >= 0, x + ' offered'); });
+      a.ok(def.breakdowns.indexOf('industry') >= 0, 'break down by industry');
+      a.ok(TAP.measures.meta('nb.targetAccounts').dims.indexOf('industry') >= 0, 'the measure supports it');
+      a.ok(lever({ mode: 'all' }, 'nb.hitRate', { type: 'dot' }).option, 'the dot plot draws');
+    });
+
+    T.test('TPV-TC-354', 'Bubble: x target accounts, y hit rate, size average deal size, per region', function (a) {
+      var res = lever({ mode: 'all' }, null, { type: 'bubble' }), seen = {};
+      a.equal(res.error, null, 'builds');
+      res.option.series.forEach(function (s) {
+        (s.data || []).forEach(function (d) {
+          if (!d.keys) return;
+          a.deepEqual(d.keys, ['nb.targetAccounts', 'nb.hitRate', 'nb.avgDealSize'], d.entityId + ': the three measures');
+          var w = MINI_LEVERS[d.entityId];
+          a.near(d.raw[0], w['nb.targetAccounts'], 1e-9, d.entityId + ' x');
+          a.near(d.raw[1], w['nb.hitRate'], 1e-9, d.entityId + ' y');
+          a.near(d.raw[2], w['nb.avgDealSize'], 1e-6, d.entityId + ' size');
+          seen[d.entityId] = true;
+        });
+      });
+      a.deepEqual(Object.keys(seen).sort(), ['alpha', 'bravo', 'charlie', 'delta'], 'one bubble per region');
+      a.ok(res.sizeLegend, 'a size legend');
+    });
+
+    T.test('TPV-TC-355', 'All regions: each bar takes its region’s colour; no colour depends on the value', function (a) {
+      LEVERS.forEach(function (id) {
+        var res = lever({ mode: 'all' }, id), n = 0;
+        res.option.series.filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) {
+          s.data.forEach(function (d) {
+            if (d.value == null) return;
+            a.equal(d.itemStyle.color, TAP.scope.colorOf(d.entityId), id + ' ' + d.entityId + ': region colour');
+            n++;
+          });
+        });
+        a.equal(n, 4, id + ': four bars');
+      });
+    });
+
+    T.test('X-nb-levers-view', 'The levers panel draws at full width on the view', function (a) {
+      withView(function (root) {
+        var p = root.querySelector('.tap-nb__wide .tap-panel[data-report="nb-levers"]');
+        a.ok(p, 'a full-width panel');
+        a.equal(p.querySelector('.tap-panel__error'), null, 'with no error');
+      });
+    });
+  });
+
   /* ---------- US-2.1.6 what leaders say they need to win ---------- */
 
   function entries(root) { return Array.prototype.slice.call(root.querySelectorAll('.tap-nbf__entry')); }
