@@ -439,15 +439,89 @@
       withApp(function (root) {
         TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });
         var bar = root.querySelector('.tap-cmp'), controls = bar.querySelector('.tap-cmp__row--controls');
-        var full = bar.getBoundingClientRect().height;
-        a.ok(controls.getBoundingClientRect().height > 0, 'Overview: the controls show');
+        var full = bar.getBoundingClientRect().height, controlsH = controls.getBoundingClientRect().height;
+        a.ok(controlsH > 0, 'Overview: the controls show');
         TAP.store.set({ view: 'guide' });
         a.equal(controls.getBoundingClientRect().height, 0, 'Guide: the controls are hidden');
         a.ok(bar.querySelector('.tap-cmp__sentence').textContent.length > 0, 'Guide: the sentence stays');
         a.ok(bar.querySelector('.tap-cmp__date').getBoundingClientRect().height > 0, 'Guide: the data date stays');
-        a.ok(bar.getBoundingClientRect().height < full / 2, 'Guide: under half the height (' + Math.round(bar.getBoundingClientRect().height) + ' of ' + Math.round(full) + ' px)');
+        var slim = bar.getBoundingClientRect().height;
+        a.ok(slim <= full - controlsH + 1 && slim <= 64, 'Guide: only the sentence line (' + Math.round(slim) + ' of ' + Math.round(full) + ' px)');
         TAP.store.set({ view: 'insights' });
         a.ok(controls.getBoundingClientRect().height > 0, 'Insights follows the comparison: the controls are back');
+      });
+    });
+
+    // The page edge is 3% of the window (css/shell.css); a test sandbox has a narrower window, so set it as on a real screen.
+    function screen(root, w) { root.style.width = w + 'px'; root.style.setProperty('--tap-edge', Math.max(24, Math.min(48, w * 0.03)) + 'px'); }
+    // Regions by name length, longest first: the widest pickers the sample data can make.
+    function longest() {
+      return TAP.data.regions().slice().sort(function (x, y) { return TAP.content.regionName(y).length - TAP.content.regionName(x).length; })
+        .map(function (r) { return r.id; });
+    }
+    function visible(n) { var r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
+    // Groups the bar's visible parts into rows by their vertical middle.
+    function barRows(bar) {
+      var parts = qsa('.tap-cmp__title, .tap-cmp__mode, .tap-cmp__label, .tap-cmp__select, [data-picker] .tap-seg, .tap-cmp__setbtn, ' +
+        '.tap-cmp__sentence, .tap-cmp__explain, .tap-cmp__date', bar).filter(visible);
+      var rows = [];
+      parts.forEach(function (n) {
+        var r = n.getBoundingClientRect(), mid = (r.top + r.bottom) / 2;
+        var row = rows.filter(function (x) { return Math.abs(x.mid - mid) <= 12; })[0];
+        if (row) row.parts.push(n); else rows.push({ mid: mid, parts: [n] });
+      });
+      return rows.sort(function (x, y) { return x.mid - y.mid; });
+    }
+
+    T.test('X-int-qa11-bar-rows', 'QA-11, D50: at 1280 px every mode\'s comparison bar is two rows: the controls, then the sentence', function (a) {
+      withApp(function (root) {
+        screen(root, 1280);
+        var ids = longest(), bar = root.querySelector('.tap-cmp');
+        var cases = {
+          all: { mode: 'all' },
+          one: { mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'average' },
+          pair: { mode: 'pair', focus: ids[0], second: ids[1] },
+          set: { mode: 'set', set: TAP.data.regions().map(function (r) { return r.id; }) },
+          org: { mode: 'org' }
+        };
+        Object.keys(cases).forEach(function (m) {
+          TAP.store.set({ cmp: cases[m] });
+          var rows = barRows(bar), h = Math.round(bar.getBoundingClientRect().height);
+          a.ok(rows.length <= 2, m + ': ' + rows.length + ' rows');
+          var last = rows[rows.length - 1].parts;
+          a.ok(last.indexOf(bar.querySelector('.tap-cmp__sentence')) >= 0 && last.indexOf(bar.querySelector('.tap-cmp__date')) >= 0,
+            m + ': the sentence and the data date share the last row');
+          a.ok(rows[0].parts.indexOf(bar.querySelector('.tap-cmp__mode')) >= 0, m + ': the modes lead the first row');
+          a.ok(h <= 120, m + ': the bar is ' + h + ' px high (was about 220 in one vs the rest)');
+        });
+      });
+    });
+
+    T.test('X-int-qa11-first-screen', 'QA-11: at 853 x 533 the first panel of the Overview and the Industry view starts on the first screen', function (a) {
+      withApp(function (root) {
+        screen(root, 853);
+        var screenH = 533, ids = longest();
+        [{ mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'average' }, { mode: 'set', set: ids.slice(0, 3) }].forEach(function (c) {
+          ['overview', 'industry'].forEach(function (view) {
+            TAP.store.set({ view: view, cmp: c });
+            // The Overview's first block after its headline; the Industry view's first report panel.
+            var first = root.querySelector('.tap-view .tap-panel, .tap-view [data-part]:not([data-part="headline"])');
+            var top = Math.round(first.getBoundingClientRect().top - root.getBoundingClientRect().top);
+            a.ok(top + 48 <= screenH, view + ', ' + c.mode + ': the first panel starts at ' + top + ' px, with its heading above ' + screenH);
+          });
+        });
+      });
+    });
+
+    T.test('X-int-qa11-title-gap', 'QA-11: no large gap between the comparison bar and the view title', function (a) {
+      withApp(function (root) {
+        screen(root, 1280);
+        var bar = root.querySelector('.tap-cmp');
+        [['overview', '.tap-ov__title'], ['industry', '.tap-ind__head'], ['insights', '.tap-ins__head']].forEach(function (v) {
+          TAP.store.set({ view: v[0] });
+          var gap = Math.round(root.querySelector(v[1]).getBoundingClientRect().top - bar.getBoundingClientRect().bottom);
+          a.ok(gap >= 8 && gap <= 32, v[0] + ': ' + gap + ' px from the bar to the title');
+        });
       });
     });
 

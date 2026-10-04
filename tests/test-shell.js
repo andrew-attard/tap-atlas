@@ -181,7 +181,7 @@
   /* ---------- US-1.1.3: set the comparison once for every chart (#4) ---------- */
   function shown(root, sel) { var e = qs(sel, root); return !!e && !e.hidden && !e.closest('[hidden]'); }
   function pickers(root) {
-    return ['focus', 'second', 'restAs', 'restAgg', 'set'].filter(function (k) { return shown(root, '[data-picker="' + k + '"]'); });
+    return ['focus', 'second', 'rest', 'set'].filter(function (k) { return shown(root, '[data-picker="' + k + '"]'); });
   }
   function clickMode(root, mode) { qs('.tap-cmp__mode[data-mode="' + mode + '"]', root).click(); }
   function choose(select, value) { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); }
@@ -210,16 +210,16 @@
         var root = startApp();
         var labels = qsa('.tap-cmp__mode', root).map(txt);
         a.deepEqual(labels, ['All regions', 'One vs the rest', 'One vs one', 'Chosen set', 'Organization total'], 'five modes');
-        var expect = { all: [], one: ['focus', 'restAs', 'restAgg'], pair: ['focus', 'second'], set: ['set'], org: [] };
+        var expect = { all: [], one: ['focus', 'rest'], pair: ['focus', 'second'], set: ['set'], org: [] };
         Object.keys(expect).forEach(function (mode) {
           clickMode(root, mode);
           a.equal(TAP.store.get().cmp.mode, mode, 'mode written: ' + mode);
           a.deepEqual(pickers(root), expect[mode], 'pickers for ' + mode);
         });
         clickMode(root, 'one');
-        qs('[data-picker="restAs"] [data-value="individual"]', root).click();
+        qs('[data-picker="rest"] [data-value="individual"]', root).click();
         a.equal(TAP.store.get().cmp.restAs, 'individual', 'restAs written');
-        a.deepEqual(pickers(root), ['focus', 'restAs'], 'Average | Total only while the rest is one figure');
+        a.deepEqual(pickers(root), ['focus', 'rest'], 'the rest stays one control (D50)');
       });
     });
 
@@ -290,10 +290,60 @@
       run(function () {
         var root = startApp();
         TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
-        qs('[data-picker="restAgg"] [data-value="total"]', root).click();
+        qs('[data-picker="rest"] [data-value="total"]', root).click();
         a.equal(TAP.store.get().cmp.restAgg, 'total');
-        a.equal(qs('[data-picker="restAgg"] [data-value="total"]', root).getAttribute('aria-pressed'), 'true');
+        a.equal(qs('[data-picker="rest"] [data-value="total"]', root).getAttribute('aria-pressed'), 'true');
         a.equal(sentence(root), TAP.scope.sentence(TAP.store.get().cmp));
+      });
+    });
+
+    T.test('X-compare-rest-one-control', 'D50: the others are shown Individually, as their Average or their Total, from one control', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.store.set({ cmp: { mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'average' } });
+        var opts = qsa('[data-picker="rest"] .tap-seg__opt', root);
+        a.deepEqual(opts.map(txt), ['Individually', 'Average', 'Total'], 'three options, in this order');
+        var pressed = function () { return qsa('[data-picker="rest"] [aria-pressed="true"]', root).map(function (b) { return b.getAttribute('data-value'); }); };
+        a.deepEqual(pressed(), ['average'], 'the average of the rest is pressed');
+        qs('[data-picker="rest"] [data-value="total"]', root).click();
+        a.deepEqual([TAP.store.get().cmp.restAs, TAP.store.get().cmp.restAgg], ['combined', 'total'], 'Total: combined, as a total');
+        qs('[data-picker="rest"] [data-value="individual"]', root).click();
+        a.equal(TAP.store.get().cmp.restAs, 'individual', 'Individually');
+        a.equal(TAP.store.get().cmp.restAgg, 'total', 'how to combine is remembered for later');
+        a.deepEqual(pressed(), ['individual'], 'only Individually is pressed');
+        a.equal(sentence(root), TAP.scope.sentence(TAP.store.get().cmp), 'the sentence follows');
+        qs('[data-picker="rest"] [data-value="average"]', root).click();
+        a.deepEqual([TAP.store.get().cmp.restAs, TAP.store.get().cmp.restAgg], ['combined', 'average'], 'Average: combined, as an average');
+        opts.forEach(function (b) { a.ok(b.getBoundingClientRect().height >= 40, txt(b) + ': 40 px touch height'); });
+      });
+    });
+
+    T.test('X-compare-set-button', 'D50: a chosen set is one button with the count; it opens the regions by click and closes with Esc', function (a) {
+      run(function () {
+        var root = startApp();
+        TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo'] } });
+        var btn = qs('[data-picker="set"] .tap-cmp__setbtn', root);
+        a.ok(btn && shown(root, '.tap-cmp__setbtn'), 'one button in the bar');
+        a.equal(txt(btn), TAP.content.text('compare.setButton', { n: 2, total: 4 }), 'it shows the count');
+        a.equal(btn.getAttribute('aria-expanded'), 'false', 'closed at first');
+        a.ok(!shown(root, '.tap-cmp__chip'), 'the regions are not on the bar');
+        btn.focus();
+        btn.click();
+        a.equal(btn.getAttribute('aria-expanded'), 'true', 'a click opens it');
+        a.equal(qsa('.tap-cmp__chip', root).filter(function (c) { return c.getBoundingClientRect().height >= 40; }).length, 4, 'every region shows, 40 px high');
+        qs('[data-picker="set"] [data-region="charlie"]', root).click();
+        a.deepEqual(TAP.store.get().cmp.set, ['alpha', 'bravo', 'charlie'], 'a region added');
+        a.equal(txt(btn), TAP.content.text('compare.setButton', { n: 3, total: 4 }), 'the count follows');
+        a.equal(btn.getAttribute('aria-expanded'), 'true', 'still open for the next choice');
+        esc();
+        a.equal(btn.getAttribute('aria-expanded'), 'false', 'Esc closes it');
+        a.equal(document.activeElement, btn, 'focus back on the button');
+        btn.click();
+        document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        a.equal(btn.getAttribute('aria-expanded'), 'false', 'a click elsewhere closes it');
+        btn.click();
+        clickMode(root, 'all');
+        a.ok(!shown(root, '.tap-cmp__chip'), 'another mode closes it');
       });
     });
 
@@ -310,7 +360,7 @@
         a.ok(shown(root, '.tap-cmp__pop'), 'explanation shown on click');
         a.ok(txt(pop).indexOf(TAP.content.text('combined.explainAverage')) >= 0, 'average wording');
         a.ok(txt(pop).indexOf(combinedLabel(TAP.store.get().cmp)) >= 0, 'names the combined figure as the charts do');
-        qs('[data-picker="restAgg"] [data-value="total"]', root).click();
+        qs('[data-picker="rest"] [data-value="total"]', root).click();
         a.ok(txt(qs('.tap-cmp__pop', root)).indexOf(TAP.content.text('combined.explainTotal')) >= 0, 'total wording');
         esc();
         a.ok(!shown(root, '.tap-cmp__pop'), 'Esc closes it');
@@ -337,7 +387,7 @@
         var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
         var t0 = performance.now();
         clickMode(root, 'one');
-        qs('[data-picker="restAgg"] [data-value="total"]', root).click();
+        qs('[data-picker="rest"] [data-value="total"]', root).click();
         clickMode(root, 'all');
         var ms = (performance.now() - t0) / 3;
         a.ok(ms < 500, 'each change took ' + Math.round(ms) + ' ms');
@@ -350,7 +400,7 @@
         var off = TAP.store.on(function (s, changed) { keys = keys.concat(changed); });
         try {
           clickMode(root, 'one');
-          qs('[data-picker="restAs"] [data-value="individual"]', root).click();
+          qs('[data-picker="rest"] [data-value="individual"]', root).click();
           clickMode(root, 'set');
         } finally { off(); }
         a.deepEqual(keys.filter(function (k) { return k !== 'cmp' && k !== 'scopeEpoch'; }), [], 'nothing else changed');
