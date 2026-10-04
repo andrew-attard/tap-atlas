@@ -2,7 +2,8 @@
  * File: js/views/customers.js
  * Purpose: The Customer growth view: segments, growth assumptions, exposure, the accounts bubble and the account list
  *          (Epic 2.2), under the shared view header. Also the page layout the Partners view uses too: the view's
- *          reports two by two (D24), with list reports and an odd last report at full width.
+ *          reports two by two (D24), with list reports and an odd last report at full width. A report not defined
+ *          yet takes no slot.
  * Provides: view 'customers' (registered with TAP.views), TAP.cgpLayout (rows, mount)
  * Depends on: js/ui/view-head.js, js/panel/panel.js, js/engine/registry.js, js/core/dom.js, js/core/content.js
  *             (all at call time)
@@ -15,9 +16,9 @@
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   function t(key, vars) { return TAP.content.text(key, vars); }
 
-  // The view's report ids grouped into rows: pairs side by side, a list (or a report left over) on its own row.
-  function rows(viewId) {
-    var ids = ((window.TAP_VIEWS || {})[viewId] || {}).reports || [], out = [], open = null;
+  // Report ids grouped into rows: pairs side by side, a list (or a report left over) on its own row.
+  function rows(ids) {
+    var out = [], open = null;
     ids.forEach(function (id) {
       var def = TAP.reports.get(id);
       if (def && def.shape === 'list') { open = null; out.push([id]); return; }
@@ -37,10 +38,12 @@
     var body = el('section', { class: 'tap-cgp__body', 'aria-label': t(text + '.label') });
     page.appendChild(body);
     var panels = [];
-    rows(viewId).forEach(function (ids) {
-      var slots = ids.map(function (id) { return el('div', { class: 'tap-vh-slot', 'data-slot': id }); });
+    // A report not defined yet takes no slot, so the view grows as the reports land
+    var ids = (((window.TAP_VIEWS || {})[viewId] || {}).reports || []).filter(function (id) { return !!TAP.reports.get(id); });
+    rows(ids).forEach(function (row) {
+      var slots = row.map(function (id) { return el('div', { class: 'tap-vh-slot', 'data-slot': id }); });
       body.appendChild(slots.length > 1 ? TAP.viewHead.pair(slots) : el('div', { class: 'tap-cgp__wide' }, slots));
-      slots.forEach(function (slot, i) { panels.push(TAP.viewHead.mountPanel(slot, ids[i])); });
+      slots.forEach(function (slot, i) { panels.push(TAP.viewHead.mountPanel(slot, row[i])); });
     });
     return { destroy: function () {
       panels.forEach(function (p) { if (p && p.destroy) p.destroy(); });
