@@ -163,8 +163,9 @@
       big ? X().strip(p, s) : null,
       el('header', { class: 'tap-panel__head' }, [
         el('div', { class: 'tap-panel__titles' }, [
-          p.drill.crumbs(b.def),
+          p.drill.crumbs(),
           el('h2', { class: 'tap-panel__title', html: TAP.content.mark(b.title, p.seen) }),
+          b.errors.length ? null : p.drill.hint(b.def),
           I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide),
           p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
         ]),

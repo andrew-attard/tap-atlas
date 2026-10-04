@@ -78,7 +78,8 @@ Object.assign(window.TAP_CONTENT.text, {
 
     // Drill-down (US-2.7.1)
     drillPath: 'Drill-down path',
-    drillHint: 'Select part of the chart to step down to {level}. Backspace or Alt + ← steps back up.',
+    drillHint: 'Select part of the chart to step down to {level}.',
+    drillKeys: '(Backspace or Alt + ← goes back up)',
     drillUnknown: 'The next drill level "{id}" is not a report.',
     drillLoop: 'The drill levels lead back to "{id}".',
 
