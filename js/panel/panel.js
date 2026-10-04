@@ -55,6 +55,8 @@
   // The panel's comparison: its own override, else the one its page fixed (opts.cmp, #216), else the shared one.
   function cmpOf(p, s) { return p.st.custom || p.opts.cmp || s.cmp; }
 
+  function ownMeasure(id, m) { var d = TAP.reports.get(id); return !!m && !!d && (d.measures || []).some(function (x) { return x.id === m; }); }
+
   function highlightOf(p, s) {
     if (p.st.highlight) return p.st.highlight;
     return !p.drill.depth() && s.highlight && s.highlight.reportId === p.id ? s.highlight : null;
@@ -206,6 +208,7 @@
       p.drill.top({ quiet: true });
       Object.assign(p.st, { highlight: null, selected: null, sentence: null });
       delete p.st.opts.theme;   // a theme clicked earlier would hide the one the "Show me" points at (#72)
+      if (ownMeasure(p.id, s.highlight.measureId)) p.st.measureId = s.highlight.measureId;   // the insight's measure (#223)
     }
     // A highlight for another chart changes nothing here, so only the chart it was or is for redraws
     var hl = highlightOf(p, s), mine = !!hl || !!p.drewHl;
