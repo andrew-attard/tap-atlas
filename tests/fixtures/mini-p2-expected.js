@@ -18,6 +18,7 @@
  *      NB services 150 / 225 / 300 (direct 225, partner 225, aA 25+40+50 = 115, aB 25+35+50 = 110)
  *      CG ARR 180 / 88 / 0 (direct 268); CG services 70 / 22 / 0 (direct 92)
  *   C: no recap at all, so every recap figure is not provided and combined figures leave it out.
+ *   A's NB ARR alliance B 2029 is blank (it was 0): the sums are unchanged but partly provided.
  * Accounts (three-year incremental ARR, current ARR, cumulative order intake, segment, risk):
  *   A: a1 50, 500, 60, strategic, -; a2 100, 200, 110, core, high; a3 0, 30, 0, scaled, -;
  *      a4 150, 150, 180, growth, medium (3-year multiplier); a5 20, 80, 22, core, -   -> incremental 320
@@ -43,8 +44,10 @@ window.TEST_EXPECT.miniP2 = {
       'rc.share.allianceA': 0,
       'rc.share.direct.y1': 0.6666667, // year 1: direct 400 + 80 + 100 + 20 = 600 of 600 + 120 + 150 + 30 = 900
       'nb.oi': 2706,                 // nb.arr 2255 + nb.services 451
-      'nb.arr.tier1': 1655,          // row 20 (Tier 1): 500 + 550 + 605
-      'nb.arr.tier2': 600,           // row 21 (Tier 2): 200 x 3
+      // Tiers come from Market Coverage (D48). Tier 1: ind1 (row 20) 500 + 550 + 605. Tier 2: ind2 (no row: not
+      // provided) and ind4 (row 21) 200 x 3, so 600, partly provided.
+      'nb.arr.tier1': 1655,
+      'nb.arr.tier2': 600,
       'nb.services.tier1': 331,      // 100 + 110 + 121
       'nb.oi.tier1': 1986,           // 1655 + 331
       'nb.oi.tier2': 720,            // 600 + 120
@@ -69,7 +72,7 @@ window.TEST_EXPECT.miniP2 = {
       'rc.nb.arr': 3200, 'rc.nb.services': 320, 'rc.nb.oi': 3520, 'rc.cg.arr': 150, 'rc.cg.oi': 160, 'rc.all.oi': 3680,
       'rc.nb.arr.allianceA': 1200, 'rc.nb.arr.partner': 0,
       'rc.share.direct': 0.6277174,  // (2000 + 200 + 100 + 10) / 3680 = 2310 / 3680
-      'nb.arr.tier1': 3400, 'nb.arr.tier2': 600,  // 1000 + 1200 + 1200; 200 x 3
+      'nb.arr.tier1': 3400, 'nb.arr.tier2': 600,  // ind1 1000 + 1200 + 1200; ind2 200 x 3 + ind4 no row (partly provided)
       'cg.accounts': 2, 'cg.currentArr': 700, 'cg.oi3': 162,
       'cg.growth.all': 0.2142857,    // 150 / 700
       'cg.multiplierAccounts': 0,
@@ -80,8 +83,8 @@ window.TEST_EXPECT.miniP2 = {
     },
     charlie: {
       'rc.nb.arr': null, 'rc.all.oi': null, 'rc.share.direct': null,
-      'nb.arr.tier1': null,          // the Tier 1 row has no hit rate, so its ARR is blank
-      'nb.arr.tier2': 300,
+      'nb.arr.tier1': null,          // ind1's row has no hit rate, so its ARR is blank
+      'nb.arr.tier2': 300,           // ind4 100 x 3 (ind2's tier is blank, so it is in no tier)
       'cg.accounts': null, 'cg.currentArr': null, 'cg.top3Share': null, 'cg.riskShare': null,
       'pt.count': null, 'pt.fte': null, 'pt.oiPerFte': null,
       'amb.nbShare': null            // customer growth not provided, so no share can be given
@@ -91,8 +94,8 @@ window.TEST_EXPECT.miniP2 = {
       'rc.nb.services.allianceA': 115, 'rc.nb.services.allianceB': 110,
       'rc.share.direct': 0.3975904,  // (900 + 225 + 268 + 92) / 3735 = 1485 / 3735
       'rc.share.partner': 0.3012048, // 1125 / 3735
-      'nb.arr.tier1': 0,             // new business is filled in, with no Tier 1 row
-      'nb.arr.tier2': 2850,
+      'nb.arr.tier1': null,          // ind1 is Tier 1 with no row: not provided (D48), never zero
+      'nb.arr.tier2': 2850,          // ind3 600 + 900 + 1350; ind4 no row (partly provided)
       'cg.accounts': 3, 'cg.currentArr': 1250, 'cg.oi3': 360,
       'cg.growth.all': 0.2144,       // 268 / 1250
       'cg.top3Share': 1, 'cg.riskShare': 0.3731343,   // d2 100 of 268
@@ -119,13 +122,27 @@ window.TEST_EXPECT.miniP2 = {
     { id: 'ind.nb.oi', region: 'alpha', ctx: { industryId: 'ind3' }, v: 'na' }      // Tier 3: not applicable (D48)
   ],
 
+  // Partly provided figures (yes) and fully provided ones (no). The blanks are listed in the header.
+  // A: alliance B 2029 makes A's three-year and 2029 recap sums partial; a1's year 3 makes every three-year
+  // customer growth figure that includes a1 partial (growth %, top 3, at risk, the new business share).
+  // Tier 2 is partial in A, B and D: a Tier 2 industry with no new business row.
+  // D: partner D1's year 3 services makes services and order intake per head partial.
+  partial: {
+    alpha: { yes: ['rc.nb.arr', 'rc.nb.arr.y3', 'rc.nb.arr.allianceB', 'rc.all.oi', 'rc.share.direct', 'nb.arr.tier2', 'nb.oi.tier2',
+      'cg.growth.all', 'cg.top3Share', 'cg.riskShare', 'amb.nbShare'],
+      no: ['rc.nb.arr.y1', 'rc.nb.arr.direct', 'nb.arr.tier1', 'cg.growth.all.y1', 'cg.currentArr', 'pt.oiPerFte'] },
+    bravo: { yes: ['nb.arr.tier2'], no: ['nb.arr.tier1', 'rc.nb.arr', 'cg.top3Share'] },
+    delta: { yes: ['pt.services', 'pt.oiPerFte', 'nb.arr.tier2'], no: ['pt.arr', 'rc.nb.arr', 'cg.riskShare'] },
+    orgTotal: { yes: ['rc.nb.arr', 'cg.top3Share', 'pt.oiPerFte', 'nb.arr.tier2'], no: ['cg.currentArr', 'pt.arr', 'nb.arr.tier1'] }
+  },
+
   // Combined figures. Region C has no recap, accounts or partners, so it is left out (named as not provided).
   combined: {
     orgTotal: {
       'rc.nb.arr': 8000,             // 2100 + 3200 + 2700
       'rc.all.oi': 10235,            // 2820 + 3680 + 3735
       'rc.share.direct': 0.5466536,  // ratio of sums: (1800 + 2310 + 1485) / 10235 = 5595 / 10235 (the mean of shares would be 0.5545)
-      'nb.arr.tier1': 5055,          // 1655 + 3400 + 0 (C not provided)
+      'nb.arr.tier1': 5055,          // 1655 + 3400 (C and D not provided)
       'nb.arr.tier2': 4350,          // 600 + 600 + 300 + 2850
       'cg.accounts': 10, 'cg.currentArr': 2910, 'cg.oi3': 894,
       'cg.growth.all': 0.2536082,    // (320 + 150 + 268) / (960 + 700 + 1250) = 738 / 2910
@@ -137,6 +154,7 @@ window.TEST_EXPECT.miniP2 = {
       'amb.nbShare': 0.9250229       // (2255 + 4000 + 2850) / (2575 + 4150 + 3118) = 9105 / 9843
     },
     restOfAlphaAverage: {
+      'nb.arr.tier1': 3400,          // B only: C and D not provided, never averaged in as zero
       'rc.nb.arr': 2950,             // (3200 + 2700) / 2, C not provided
       'cg.currentArr': 975,          // (700 + 1250) / 2
       'cg.top3Share': 0.9282297,     // B and D pooled: d1 168 + b1 120 + d2 100 = 388 of 418

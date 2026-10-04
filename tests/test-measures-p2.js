@@ -169,6 +169,31 @@
       a.deepEqual(t.src.rows.slice().sort(), [10, 11, 13], 'the top 3 accounts are the rows it names (a1, a2, a4)');
     });
 
+    T.test('X-measures-p2-partial', 'A blank inside a sum, a share or a ratio marks the figure partly provided', function (a) {
+      load();
+      Object.keys(X.partial).forEach(function (name) {
+        ['yes', 'no'].forEach(function (want) {
+          X.partial[name][want].forEach(function (key) {
+            var k = parse(key);
+            var c = name === 'orgTotal' ? TAP.measures.combined(k.id, org(), { year: k.year }) : TAP.measures.get(k.id)(name, { year: k.year });
+            a.equal(c.state, 'value', name + ' ' + key + ' has a value');
+            a.equal(!!c.partial, want === 'yes', name + ' ' + key + (want === 'yes' ? ' is' : ' is not') + ' partly provided');
+            if (c.partial) a.ok(c.note && c.note.charAt(0) !== '[', name + ' ' + key + ' says why');
+          });
+        });
+      });
+      a.match(TAP.measures.get('nb.arr.tier2')('alpha', {}).note, /Education/, 'the tier names the industry not provided');
+    });
+
+    T.test('X-measures-p2-tier', 'A tier with no industry in Market Coverage is not applicable (D48)', function (a) {
+      var p = window.T_FIXTURE('miniP2'), c = p.regions[2];
+      c.marketCoverage[3].tier = 3;                        // Region C's ind4 moves to Tier 3 ...
+      c.newBusiness = c.newBusiness.slice(0, 1);           // ... and loses its new business row
+      TAP.data.load(p);
+      a.equal(TAP.measures.get('nb.arr.tier2')('charlie', {}).state, 'notApplicable', 'no Tier 2 industry left');
+      a.equal(TAP.measures.combined('nb.arr.tier2', org(), {}).src.notApplicable.indexOf('charlie') >= 0, true, 'left out quietly');
+    });
+
     T.test('X-measures-p2-fixture', 'The miniP2 fixture passes the contract check, and mini is unchanged', function (a) {
       var res = TAP.data.load(window.T_FIXTURE('miniP2'));
       a.ok(res.ok, 'miniP2 loads');
