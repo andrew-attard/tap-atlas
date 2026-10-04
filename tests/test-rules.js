@@ -197,7 +197,8 @@
       check(a, planted('P08'));
       a.near(x.figures[0].cell.v, X.p08.value, 1e-9, 'Central Europe’s hit rate');
       a.near(x.figures[1].cell.v, X.p08.othersAvg, 1e-6, 'the others’ weighted average');
-      a.equal(x.fallback, 'details', 'no Phase 1 report: Show me opens the region’s details');
+      a.equal(x.reportId, TAP.reports.get('nb-levers') ? 'nb-levers' : null, 'Show me goes to the levers report (US-2.5.6)');
+      a.equal(x.highlight.measureId, 'nb.hitRate', 'on Hit rate');
     });
 
     T.test('TPV-TC-154', 'A planted value outside every other region’s range but under 2x is flagged', function (a) {
