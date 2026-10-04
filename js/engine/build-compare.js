@@ -52,16 +52,20 @@
   function catLabels(draw) { return draw.keys.map(function (key) { return draw.k.colOf(draw.ds, key).label; }); }
   function isRating(col) { return col.unit === 'rating' || col.unit === 'score'; }
 
+  // The number a region's dots carry when many groups share a row (QA-4): its place in the file, so it never changes.
+  function numberOf(e) { return e.kind === 'region' ? TAP.data.regionIndex(e.regionIds[0]) + 1 : null; }
+
   // Dot plot. Groups sit side by side within a category; the nudge moves only the category position,
-  // never the value, and tooltips read the cell itself.
+  // never the value, and tooltips read the cell itself. With more than 3 groups each dot carries its region's number,
+  // matching the legend, so dots that share a rating are told apart without colour, and the chart grows to fit them.
   function dot(draw) {
     var k = draw.k, th = k.th(), col = k.colOf(draw.ds, draw.keys[0]), rating = isRating(col);
-    var G = draw.cats ? draw.rows.length : 1, np = [], ring = [];
-    var off = function (gi) { return G > 1 ? (gi - (G - 1) / 2) * Math.min(0.12, 0.72 / G) : 0; };
-    var npX = rating ? 0.5 : 0, size = G > 4 ? th.space[3] : th.space[4];
+    var G = draw.cats ? draw.rows.length : 1, np = [], ring = [], many = draw.cats && G > 3;
+    var off = function (gi) { return G < 2 ? 0 : many ? (gi / (G - 1) - 0.5) * 0.84 : (gi - (G - 1) / 2) * Math.min(0.12, 0.72 / G); };
+    var npX = rating ? 0.5 : 0, size = many ? 18 : G > 4 ? th.space[3] : th.space[4];
     var groups = draw.cats ? draw.rows.map(function (r) { return [r]; }) : [draw.rows];
     var series = groups.map(function (rs, gi) {
-      var data = [];
+      var data = [], e = rs[0].entity, n = many ? numberOf(e) : null;
       rs.forEach(function (row, ri) {
         draw.keys.forEach(function (key, j) {
           var c = row.cells[key], y = draw.cats ? j + off(gi) : ri;
@@ -74,15 +78,21 @@
         });
       });
       // Grey regions sit underneath, so the focus region stays visible where dots overlap (US-1.1.6)
-      var under = draw.cats && rs[0].entity.role === 'muted';
-      return { type: 'scatter', tapRole: 'value', name: draw.cats ? rs[0].entity.label : col.label, symbolSize: size, z: under ? 2 : 3,
-        itemStyle: { color: draw.cats ? rs[0].entity.color : th.ink, opacity: 1 }, data: data, tooltip: tooltip(draw) };
+      var under = draw.cats && e.role === 'muted';
+      return { type: 'scatter', tapRole: 'value', name: draw.cats ? e.label : col.label, symbolSize: size, z: under ? 2 : 3,
+        itemStyle: { color: draw.cats ? e.color : th.ink, opacity: 1 }, data: data, tooltip: tooltip(draw),
+        label: n ? { show: true, position: 'inside', formatter: String(n), fontSize: th.type.chartMin, fontWeight: 700,
+          color: e.role === 'muted' ? th.ink : th.onColour } : undefined };
     });
+    if (many) {
+      draw.res.legend = draw.res.legend.map(function (l, i) { return Object.assign({}, l, { mark: numberOf(draw.rows[i].entity) }); });
+      draw.res.height = draw.keys.length * Math.ceil(G * (size + 1) / 0.84) + th.space[12] + th.space[6];
+    }
     var labels = draw.cats ? catLabels(draw) : draw.rows.map(function (r) { return r.label; });
     var xAxis = rating ? k.valueAxis(col, { min: 0.5, max: 3.5, interval: 0.5,
       axisLabel: { fontSize: th.type.chart, formatter: function (v) { return v % 1 === 0 ? String(v) : ''; } } }) : k.valueAxis(col);
     return { grid: k.grid(), tooltip: { trigger: 'item' }, xAxis: xAxis,
-      yAxis: { type: 'value', inverse: true, min: -0.5, max: labels.length - 0.5, interval: 1, splitLine: { show: false },
+      yAxis: { type: 'value', inverse: true, min: -0.5, max: labels.length - 0.5, interval: 1, splitLine: { show: many, lineStyle: { color: th.grid } },
         axisLine: { show: true }, axisTick: { show: false },
         axisLabel: { fontSize: th.type.chart, customValues: labels.map(function (l, i) { return i; }),
           formatter: function (v) { return labels[Math.round(v)] || ''; } } },

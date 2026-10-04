@@ -73,9 +73,6 @@
 /* At most two panels side by side (D24); one column on narrow screens */
 .tap-ind__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-6); align-items: start; }
 
-/* Legend keys the tier grid adds: a note has no colour key; not provided is an outlined key */
-.tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--note .tap-panel__key { display: none; }
-.tap-panel[data-report="ind-tiers"] .tap-panel__legend-item--notProvided .tap-panel__key { background: transparent; border: var(--tap-rule-w) dashed var(--tap-np-border); }
 
 /* ---------- leaders' commentary (US-1.5.7). Long comments are never cut: the list scrolls ---------- */
 .tap-ind-comments { display: flex; flex-direction: column; min-width: 0; background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); }
