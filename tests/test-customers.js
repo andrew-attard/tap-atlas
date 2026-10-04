@@ -703,6 +703,65 @@
       a.deepEqual(res.missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region named as not provided');
     });
 
+    /* ---------- US-2.2.6 the account list ---------- */
+
+    var ACC_COLS = ['region', 'name', 'industry', 'country', 'productLine', 'segment', 'riskLevel', 'currentArr',
+      'growthY1', 'growthY2', 'growthY3', 'multiplier3y', 'incr3', 'oi3'];
+    function listRows(res) { return res.table.rows.map(function (r) { return r.id; }); }
+    function riskWord(regionId, row) { return TAP.rows.cell('accounts', 'riskLevel', { regionId: regionId, row: row }).v; }
+
+    T.test('TPV-TC-406', 'Columns: region, account, industry, country, product line, segment, risk, current ARR, growth per year or multiplier, incremental ARR, order intake', function (a) {
+      var def = TAP.reports.get('cg-accounts');
+      a.deepEqual(def.columns.map(function (c) { return c.key; }), ACC_COLS, 'definition');
+      var res = build('cg-accounts', { mode: 'all' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ACC_COLS, 'table');
+      a.equal(res.table.rows.length, 9, 'every account on the mini data');
+    });
+
+    T.test('TPV-TC-391', 'The account list shows a multiplier account’s multiplier', function (a) {
+      var row = build('cg-accounts', { mode: 'all' }).table.rows.filter(function (r) { return r.id === 'alpha:13'; })[0];
+      a.equal(row.cells.multiplier3y.v, 2, 'a4 shows its 3-year multiplier');
+      a.equal(row.cells.growthY1.state, 'notApplicable', 'and no growth % for its years');
+    });
+
+    T.test('TPV-TC-407', 'Filters by segment and risk level, alone and together', function (a) {
+      var def = TAP.reports.get('cg-accounts');
+      a.deepEqual(def.filter.map(function (f) { return f.key; }), ['segment', 'riskLevel'], 'two filters');
+      var medium = riskWord('alpha', 13);
+      var core = build('cg-accounts', { mode: 'all' }, { opts: { 'filter:segment': 'core' } });
+      a.deepEqual(listRows(core).sort(), ['alpha:11', 'bravo:11', 'delta:11'], 'core: a2, b2, d2');
+      var med = build('cg-accounts', { mode: 'all' }, { opts: { 'filter:riskLevel': medium } });
+      a.deepEqual(listRows(med).sort(), ['alpha:13', 'delta:11'], 'medium risk: a4, d2');
+      var both = build('cg-accounts', { mode: 'all' }, { opts: { 'filter:segment': 'core', 'filter:riskLevel': medium } });
+      a.deepEqual(listRows(both), ['delta:11'], 'core and medium: d2 only');
+      var ctl = core.controls.map(function (c) { return c.key; });
+      a.deepEqual(ctl, ['filter:segment', 'filter:riskLevel'], 'a select for each');
+    });
+
+    T.test('TPV-TC-408', 'First prepared, rows are sorted by incremental ARR, highest first', function (a) {
+      // d1 168, a4 150, b1 120, a2 100, d2 100, a1 50, b2 30, a3 0, d3 0 (ties keep region and row order)
+      a.deepEqual(listRows(build('cg-accounts', { mode: 'all' })),
+        ['delta:10', 'alpha:13', 'bravo:10', 'alpha:11', 'delta:11', 'alpha:10', 'bravo:11', 'alpha:12', 'delta:12']);
+      a.deepEqual(TAP.reports.get('cg-accounts').sort, { key: 'incr3', dir: 'desc' }, 'the definition’s sort');
+    });
+
+    T.test('TPV-TC-409', 'Every row names its region file and its account row', function (a) {
+      var res = build('cg-accounts', { mode: 'all' });
+      res.table.rows.forEach(function (r) {
+        var where = TAP.sources.address(r.src).text, file = TAP.data.region(r.regionId).source.fileName;
+        a.ok(where.indexOf(file) === 0, r.id + ': ' + where);
+        a.match(where, new RegExp('3\\. Customer Growth › [A-Z]+' + r.sourceRow + '$'), r.id + ' names its row');
+      });
+    });
+
+    T.test('X-cg-accounts-target', 'A row click opens that account’s details', function (a) {
+      var res = build('cg-accounts', { mode: 'all' });
+      var tg = res.target({ data: { regionId: 'bravo', row: 'accounts:bravo:11' } });
+      a.deepEqual(tg.items, [{ section: 'customerGrowth', regionId: 'bravo', row: 11 }]);
+      a.equal(TAP.details.build(tg).title, 'Fictional Account B2, Region B', 'details name the account');
+    });
+
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.partners.reports), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
