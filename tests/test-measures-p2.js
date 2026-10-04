@@ -194,6 +194,21 @@
       a.equal(TAP.measures.combined('nb.arr.tier2', org(), {}).src.notApplicable.indexOf('charlie') >= 0, true, 'left out quietly');
     });
 
+    T.test('X-measures-p2-channel-names', 'Channel measures are named from the channel lookup, read when asked', function (a) {
+      var p = window.T_FIXTURE('miniP2');
+      p.lookups.channels[0].name = 'Own sales force';
+      TAP.data.load(p);
+      a.equal(TAP.measures.meta('rc.nb.arr.direct').label, 'New business ARR, Own sales force');
+      a.equal(TAP.measures.meta('rc.nb.arr.direct').short, 'Own sales force');
+      a.equal(TAP.measures.meta('rc.all.oi.direct').label, 'Order intake, Own sales force');
+      a.equal(TAP.measures.meta('rc.share.direct').short, 'Own sales force share');
+      a.equal(TAP.measures.meta('rc.share.direct').label, 'Share of order intake through Own sales force');
+      a.equal(TAP.measures.meta('rc.nb.arr.partner').short, 'Partner', 'the other channels keep their lookup names');
+      TAP.data.lookups().channels.pop();   // no allianceB in the lookup (changed after loading): the fixed words stand
+      a.equal(TAP.measures.meta('rc.nb.arr.allianceB').short, 'Alliance B');
+      a.equal(TAP.measures.meta('rc.nb.arr.allianceB').label, 'New business ARR, alliance b');
+    });
+
     T.test('X-measures-p2-fixture', 'The miniP2 fixture passes the contract check, and mini is unchanged', function (a) {
       var res = TAP.data.load(window.T_FIXTURE('miniP2'));
       a.ok(res.ok, 'miniP2 loads');
