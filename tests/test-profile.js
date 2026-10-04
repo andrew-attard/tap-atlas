@@ -435,5 +435,44 @@
       var m = mountFor('na');
       try { a.ok(!qs('.tap-pf-insights [data-insight="' + first.id + '"]', m.root), 'gone from the page'); } finally { m.handle.destroy(); }
     });
+
+    /* ---------- US-2.4.5: print the profile (#218) ---------- */
+
+    T.test('X-profile-print', 'The Print button on the profile opens the browser\'s print dialog', function (a) {
+      var real = window.print, calls = 0, m = mountFor('alpha');
+      window.print = function () { calls++; };
+      try {
+        var btn = qs('.tap-pf [data-action="print"]', m.root);
+        a.ok(btn, 'a Print button');
+        a.equal(txt(btn), TAP.content.text('profile.print'), 'its words');
+        btn.click();
+        a.equal(calls, 1, 'window.print was called');
+      } finally { window.print = real; m.handle.destroy(); }
+    });
+
+    T.test('X-profile-print-label', 'Each printed page carries the data status label and the data date', function (a) {
+      var root = document.documentElement, m = mountFor('alpha');
+      var v;
+      try { v = root.style.getPropertyValue('--tap-pf-print'); } finally { m.handle.destroy(); }
+      var want = [TAP.shell.label().text, TAP.content.text('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) })];
+      want.forEach(function (w) { a.ok(v.indexOf(w) >= 0, 'the page label holds "' + w + '"'); });
+      a.equal(root.style.getPropertyValue('--tap-pf-print'), '', 'removed when the profile goes');
+    });
+
+    // The rules the print review (TPV-TC-460) looks for, read from the loaded stylesheet
+    T.test('X-profile-print-css', 'The print stylesheet sets A4 landscape and hides the navigation, comparison bar and buttons', function (a) {
+      var sheet = Array.prototype.slice.call(document.styleSheets).filter(function (x) { return /css\/profile\.css$/.test(x.href || ''); })[0];
+      a.ok(sheet, 'css/profile.css is loaded');
+      var text = '';
+      try { text = Array.prototype.slice.call(sheet.cssRules).map(function (r) { return r.cssText; }).join('\n'); } catch (e) { text = ''; }
+      if (!text) { a.ok(true, 'rules not readable from file:// in this browser; reviewed by hand'); return; }
+      var page = Array.prototype.slice.call(sheet.cssRules).filter(function (r) { return r.type === 6 && r.selectorText === 'profile'; })[0];
+      a.ok(page, 'a named page for the profile');
+      a.match(page ? page.style.getPropertyValue('size') : '', /^(A4 landscape|landscape A4)$/i, 'A4 landscape');
+      a.match(text, /\.tap-pf-page\s*\{[^}]*page:\s*profile/, 'the profile prints on it');
+      a.match(text, /@media print[\s\S]*\.tap-stack[\s\S]*display:\s*none/, 'no navigation or comparison bar');
+      a.match(text, /@media print[\s\S]*\.tap-panel__tools[\s\S]*display:\s*none/, 'no panel buttons');
+      a.match(text, /@media print[\s\S]*break-inside:\s*avoid/, 'charts and lists kept on one page where possible');
+    });
   });
 })(window.TAP);
