@@ -76,11 +76,15 @@
         return recap(r, ctx, ms, TYPES[t], ctx.channel || null);
       });
       CH.forEach(function (c) {
-        M.define(id + '.' + c, named(k.amount('DER', ['year']), function () {
+        // A both-motion channel part splits by motion too, so channel stacks can be broken down by motion (#210)
+        M.define(id + '.' + c, named(k.amount('DER', m === 'all' ? ['year', 'motion'] : ['year']), function () {
           var name = channelName(c);
           return name ? { label: TAP.content.text('measures.rc.withChannel', { measure: TAP.content.text('measures.' + id + '.short'), channel: name }),
             short: name } : null;
-        }), function (r, ctx) { return recap(r, ctx || {}, fixed, TYPES[t], c); });
+        }), function (r, ctx) {
+          ctx = ctx || {};
+          return recap(r, ctx, m === 'all' && MOTION[ctx.motion] ? [MOTION[ctx.motion]] : fixed, TYPES[t], c);
+        });
       });
     });
   });
