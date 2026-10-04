@@ -113,3 +113,6 @@ if (missing.length) {
   process.exit(1);
 }
 process.stdout.write('Wrote ' + Object.keys(PAGES).join(', ') + '\n');
+// The QA page is generated from index-sample.html; keep it in step whenever the pages change.
+const qa = path.join(ROOT, 'scripts', 'qa', 'make-qa-page.js');
+if (fs.existsSync(qa)) require('child_process').execFileSync(process.execPath, [qa], { stdio: 'inherit' });
