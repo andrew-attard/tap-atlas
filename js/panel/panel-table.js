@@ -89,9 +89,12 @@
 
   var KINDS = ['IN', 'PRE', 'DER', 'APP'];
 
+  // Columns that name a thing rather than hold a figure: no kind, even when the row source sets one (#227)
+  var IDENTITY = ['region', 'name', 'industry', 'subVertical', 'market', 'channel'];
+
   // The kinds a column shows: the one it names, else those of its cells (blank cells count), in a fixed order.
   function kindsOf(table, col) {
-    if (col.key === SRC) return [];
+    if (col.key === SRC || IDENTITY.indexOf(col.key) >= 0) return [];
     if (col.kind) return [col.kind];
     var seen = {};
     table.rows.forEach(function (r) { var c = r.cells[col.key]; if (c && c.kind) seen[c.kind] = true; });
