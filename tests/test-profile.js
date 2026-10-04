@@ -216,5 +216,98 @@
         a.equal(JSON.stringify(TAP.store.get().cmp), before, 'state.cmp as it was');
       });
     });
+
+    /* ---------- US-2.4.2: the plan at a glance against the rest (#215) ---------- */
+
+    // Hand-calculated from the mini fixture: Region A against the average of B, C and D (C has no customer growth).
+    var ALPHA = {
+      ambition: { 'amb.arr': [2555, 2592.3333333], 'nb.arr': [2255, 2383.3333333], 'cg.arr': [300, 209] },  // 209 = (150 + 268) / 2
+      focus: { 'focus.tier1': [1, 1], 'focus.tier2': [2, 1.6666667] },                                      // (2 + 1 + 2) / 3
+      pool: { 'nb.targetAccounts': [30, 55] },                                                            // (50 + 15 + 100) / 3
+      customers: { 'cg.segment.strategic': [1, 1], 'cg.segment.growth': [1, 0], 'cg.segment.core': [1, 1], 'cg.segment.scaled': [1, 0.5] }
+    };
+    function lineOf(lines, key) { return lines.filter(function (l) { return l.key === key; })[0]; }
+    function figOf(line, id) { return ((line || {}).figures || []).filter(function (f) { return f.measure === id; })[0]; }
+    function parts() { return TAP.profileParts; }
+
+    T.test('TPV-TC-443', 'The four card lines show the region and the average of the rest, as worked out by hand', function (a) {
+      var lines = parts().glance('alpha');
+      a.deepEqual(lines.map(function (l) { return l.key; }), ['ambition', 'focus', 'pool', 'customers'], 'the four lines, in card order');
+      Object.keys(ALPHA).forEach(function (key) {
+        Object.keys(ALPHA[key]).forEach(function (id) {
+          var f = figOf(lineOf(lines, key), id), want = ALPHA[key][id];
+          a.ok(f, key + ' shows ' + id);
+          if (!f) return;
+          a.near(f.region.v, want[0], 1e-6, id + ': Region A');
+          a.near(f.rest.v, want[1], 1e-6, id + ': average of the rest');
+        });
+      });
+      var c = figOf(lineOf(lines, 'customers'), 'cg.segment.strategic');
+      a.deepEqual(c.rest.src.excluded, ['charlie'], 'the rest leaves out Region C, which has no customer growth');
+    });
+
+    T.test('X-profile-glance-drawn', 'The glance draws each figure with its value and the average of the rest', function (a) {
+      var m = mountFor('alpha');
+      try {
+        var box = qs('.tap-pf-glance', m.root);
+        a.ok(box, 'the glance is on the profile');
+        a.equal(qsa('.tap-pf-glance__line', box).length, 4, 'four lines');
+        var row = qs('[data-measure="nb.targetAccounts"]', box);
+        a.equal(txt(qs('[data-part="region"]', row)), '30', 'Region A\'s target accounts');
+        a.equal(txt(qs('[data-part="rest"]', row)), '55', 'the average of the rest');
+        a.equal(txt(qs('[data-part="compare"]', row)), TAP.content.text('profile.glance.below'), 'the neutral comparison');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('TPV-TC-445', 'Above, below and equal use the neutral phrases from the content file, with no banned word', function (a) {
+      var cell = function (v) { return { v: v, state: 'value', kind: 'APP' }; };
+      var cases = [[cell(5), cell(3), 'above'], [cell(2), cell(3), 'below'], [cell(3), cell(3), 'same'], [cell(1 / 3), cell(0.3333333333333), 'same']];
+      var banned = (window.TAP_RULES.wording || {}).banned || [];
+      cases.forEach(function (c) {
+        var r = parts().compare(c[0], c[1]);
+        a.equal(r.key, c[2], c[0].v + ' against ' + c[1].v);
+        a.equal(r.text, TAP.content.text('profile.glance.' + c[2]), 'the phrase comes from the content file');
+        banned.forEach(function (w) { a.ok(!new RegExp('\\b' + w + '\\b', 'i').test(r.text), '"' + r.text + '" avoids "' + w + '"'); });
+        a.ok(!/\b(good|bad|better|worse)\b/i.test(r.text), 'no judgement in "' + r.text + '"');
+      });
+      a.equal(TAP.content.text('profile.glance.above'), 'above the average of the rest', 'the agreed wording');
+      a.equal(parts().compare({ v: null, state: 'notProvided' }, cell(3)).key, null, 'no comparison with a value not provided');
+    });
+
+    T.test('TPV-TC-447', 'Every figure on the card lines has a source and a details target', function (a) {
+      var n = 0;
+      parts().glance('alpha').forEach(function (l) {
+        l.figures.forEach(function (f) {
+          a.ok(f.region.src, f.measure + ': the region\'s figure has a source');
+          a.ok(f.rest.src && f.rest.src.combined, f.measure + ': the average has a combined source');
+          a.deepEqual(f.target && f.target.regionIds, ['alpha'], f.measure + ': opens the region\'s details');
+          a.deepEqual(f.restTarget && f.restTarget.regionIds, ['bravo', 'charlie', 'delta'], f.measure + ': the average names its regions');
+          n++;
+        });
+      });
+      a.ok(n >= 10, n + ' figures checked');
+    });
+
+    T.test('X-profile-glance-click', 'A figure on the glance opens the region\'s details', function (a) {
+      var m = mountFor('alpha');
+      try {
+        qs('.tap-pf-glance [data-measure="amb.arr"] [data-part="region"]', m.root).click();
+        var l = TAP.store.get().layer;
+        a.equal(l && l.name, 'details', 'the details panel opened');
+        a.deepEqual(l && l.payload.target.regionIds, ['alpha'], 'for Region A');
+      } finally { m.handle.destroy(); TAP.layers.close(); }
+    });
+
+    T.test('TPV-TC-448', 'The region with an empty customer growth section reads "not provided" on its customers line', function (a) {
+      var line = lineOf(parts().glance('charlie'), 'customers');
+      a.ok(line.np, 'the customers line is marked not provided');
+      line.figures.forEach(function (f) { a.equal(f.region.state, 'notProvided', f.measure + ': not provided'); });
+      var m = mountFor('charlie');
+      try {
+        var el = qs('.tap-pf-glance__line[data-line="customers"]', m.root);
+        a.match(txt(el), new RegExp(TAP.content.text('states.notProvided'), 'i'), 'the line reads "not provided"');
+        a.equal(qsa('[data-part="compare"]', el).filter(function (x) { return txt(x); }).length, 0, 'no comparison where nothing is provided');
+      } finally { m.handle.destroy(); }
+    });
   });
 })(window.TAP);
