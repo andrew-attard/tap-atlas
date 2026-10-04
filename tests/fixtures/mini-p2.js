@@ -10,6 +10,8 @@
  * - recap: a full grid (3 plan years x 2 motions x 2 types x 4 channels) for Regions A, B and D; Region C stays empty.
  * - Region A gets account a5 (core, no risk) so its top 3 accounts are not all of its growth.
  * - Region A gets two more partners: A2 with a blank consultant FTE, A3 with no FTE at all.
+ * - Three blanks where the mini fixture has a zero, so partly provided figures are tested without changing any sum:
+ *   Region A's recap New business ARR, alliance B, 2029; account a1's year 3 incremental ARR; partner D1's year 3 services.
  * Everything else (market coverage, new business, the other accounts and partners) is exactly the mini fixture.
  */
 window.TEST_FIXTURES = window.TEST_FIXTURES || {};
@@ -23,7 +25,7 @@ window.TEST_FIXTURES = window.TEST_FIXTURES || {};
   // in the order direct, partner, allianceA, allianceB.
   var RECAP = {
     alpha: {
-      newBusiness: { arr: [[400, 200, 0, 0], [400, 300, 0, 0], [500, 300, 0, 0]],
+      newBusiness: { arr: [[400, 200, 0, 0], [400, 300, 0, 0], [500, 300, 0, null]],
         services: [[80, 40, 0, 0], [80, 60, 0, 0], [100, 60, 0, 0]] },
       customerGrowth: { arr: [[100, 50, 0, 0], [50, 0, 0, 0], [50, 0, 0, 0]],
         services: [[20, 10, 0, 0], [10, 0, 0, 0], [10, 0, 0, 0]] }
@@ -60,7 +62,9 @@ window.TEST_FIXTURES = window.TEST_FIXTURES || {};
 
   p.regions.forEach(function (r) {
     r.recap = RECAP[r.id] ? recap(RECAP[r.id]) : [];
+    if (r.id === 'delta') r.partners[0].services = [0, 0, null];
     if (r.id !== 'alpha') return;
+    r.customerGrowth.accounts[0].incrementalArr = [50, 0, null];
     r.customerGrowth.accounts.push({ sourceRow: 14, id: 'a5', name: 'Fictional Account A5', industryId: 'ind2', country: 'Country 1',
       productLine: 'pl1', currentArr: 80, riskLevel: null, growthPct: [0.25, 0, 0], multiplier3y: null, servicesRatio: 0.1,
       incrementalArr: [20, 0, 0], servicesOrderIntake: [2, 0, 0], cumulativeOrderIntake: 22, segment: 'core' });
