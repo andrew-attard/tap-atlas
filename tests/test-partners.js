@@ -161,6 +161,55 @@
       });
     });
 
+    /* ---------- US-2.3.4 the partner list ---------- */
+
+    var PT_COLS = ['region', 'name', 'channel', 'maturity', 'expertiseGeo', 'expertiseProduct', 'fteSales', 'fteConsultants',
+      'centralSupportPct', 'arr3', 'services3', 'oiPerFte', 'alsoNamed'];
+    function ids(res) { return res.table.rows.map(function (r) { return r.id; }); }
+
+    T.test('TPV-TC-430', 'Columns: region, partner, channel, maturity, expertise, sales and consultant FTE, central support, ARR, services, order intake per FTE', function (a) {
+      a.deepEqual(TAP.reports.get('pt-list').columns.map(function (c) { return c.key; }), PT_COLS, 'definition');
+      var res = H.build('pt-list', { mode: 'all' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), PT_COLS, 'table');
+      a.equal(res.table.rows.length, 3, 'every partner on the mini data');
+      a.deepEqual(res.missing, ['Region C'], 'the region with no partner list is named');
+    });
+
+    T.test('TPV-TC-431', 'Sorted by three-year ARR, highest first; the channel filter keeps only that channel', function (a) {
+      // A1 450, D1 240, B1 150
+      a.deepEqual(ids(H.build('pt-list', { mode: 'all' })), ['alpha:10', 'delta:10', 'bravo:10'], 'by ARR, highest first');
+      a.deepEqual(TAP.reports.get('pt-list').filter.map(function (f) { return f.key; }), ['channel'], 'one filter: channel');
+      var partner = TAP.rows.cell('partners', 'channel', { regionId: 'alpha', row: 10 }).v;
+      a.deepEqual(ids(H.build('pt-list', { mode: 'all' }, { opts: { 'filter:channel': partner } })), ['alpha:10', 'delta:10'], 'partner channel only');
+      var alliance = TAP.rows.cell('partners', 'channel', { regionId: 'bravo', row: 10 }).v;
+      a.deepEqual(ids(H.build('pt-list', { mode: 'all' }, { opts: { 'filter:channel': alliance } })), ['bravo:10'], 'alliance A only');
+    });
+
+    T.test('TPV-TC-432', 'A partner named by two regions, ignoring case and spaces, shows "also named by"; different names don’t', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[1].partners[0].name = '  fictional   PARTNER a1 ';   // B1 now names A1, with other case and spacing
+      a.ok(TAP.data.load(plan).ok, 'the changed fixture loads');
+      var res = H.build('pt-list', { mode: 'all' }), row = function (id) { return res.table.rows.filter(function (r) { return r.id === id; })[0]; };
+      a.equal(row('alpha:10').cells.alsoNamed.v, 'Region B', 'A1 is also named by Region B');
+      a.equal(row('bravo:10').cells.alsoNamed.v, 'Region A', 'and the other way round');
+      a.ok(row('delta:10').cells.alsoNamed.state !== 'value', 'D1, a different name, shows nothing');
+    });
+
+    T.test('TPV-TC-433', 'Every row names its region file and its partner row', function (a) {
+      H.build('pt-list', { mode: 'all' }).table.rows.forEach(function (r) {
+        var where = TAP.sources.address(r.src).text;
+        a.ok(where.indexOf(TAP.data.region(r.regionId).source.fileName) === 0, r.id + ': ' + where);
+        a.match(where, new RegExp('4\\. Partner › [A-Z]+' + r.sourceRow + '$'), r.id + ' names its row');
+      });
+    });
+
+    T.test('X-pt-list-target', 'A row click opens that partner’s details', function (a) {
+      var tg = H.build('pt-list', { mode: 'all' }).target({ data: { regionId: 'delta', row: 'partners:delta:10' } });
+      a.deepEqual(tg.items, [{ section: 'partners', regionId: 'delta', row: 10 }]);
+      a.equal(TAP.details.build(tg).title, 'Fictional Partner D1, Region D');
+    });
+
     T.test('X-pt-capacity-target', 'A bubble click opens that partner’s details', function (a) {
       var res = H.build('pt-capacity', { mode: 'all' }), b = H.bubbles(res).filter(function (x) { return x.rowId === 'delta:10'; })[0];
       var d = b.series.data.filter(function (x) { return x.rowId === 'delta:10'; })[0];
