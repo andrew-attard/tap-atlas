@@ -110,6 +110,12 @@
       a.equal(F.list(['A']), 'A');
       a.equal(F.list(['A', 'B']), 'A and B');
       a.equal(F.list(['A', 'B', 'C']), 'A, B and C');
+      // Polish (e): names that hold "and" or a comma are kept apart with semicolons
+      a.equal(F.list(['Retail', 'Pharma and Biotech', 'Property Management']), 'Retail; Pharma and Biotech; and Property Management');
+      a.equal(F.list(['Pharma and Biotech', 'Property Management']), 'Pharma and Biotech; and Property Management');
+      a.equal(F.list(['Retail', 'Utilities', 'Culture and Tourism']), 'Retail; Utilities; and Culture and Tourism');
+      a.equal(F.list(['Region A', 'Region B, North']), 'Region A; and Region B, North');
+      a.equal(F.list(['Grand', 'Andorra', 'Sandy']), 'Grand, Andorra and Sandy', 'only a whole word "and" counts');
     });
 
     T.test('X-format-locale', 'Formatting never depends on the browser’s language (part of TPV-TC-078)', function (a) {

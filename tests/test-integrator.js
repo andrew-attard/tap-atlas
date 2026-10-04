@@ -36,6 +36,7 @@
   }
 
   // True when the panel draws a highlight: outlined grid rows or cells, or ringed marks on the chart.
+  function drawnHl(root, reportId) { return drawn(root, reportId); }
   function drawn(root, reportId) {
     var p = panelEl(root, reportId);
     if (!p) return false;
@@ -83,7 +84,7 @@
   // Runs "Show me" for each insight (default: every sample insight) from the given comparison. Returns the problems.
   function everyInsight(root, cmp, list) {
     var problems = [];
-    (list || TAP.insights.all()).forEach(function (x) {
+    (list || TAP.insights.all()).slice().sort(function (p, q) { return String(p.reportId).localeCompare(String(q.reportId)); }).forEach(function (x) {
       reset(cmp);
       TAP.showme.go({ insightId: x.id, target: x.highlight });
       var bad = landed(root, x);
@@ -447,6 +448,41 @@
         a.ok(bar.getBoundingClientRect().height < full / 2, 'Guide: under half the height (' + Math.round(bar.getBoundingClientRect().height) + ' of ' + Math.round(full) + ' px)');
         TAP.store.set({ view: 'insights' });
         a.ok(controls.getBoundingClientRect().height > 0, 'Insights follows the comparison: the controls are back');
+      });
+    });
+
+    /* ---------- test hygiene (polish f) ---------- */
+
+    T.test('X-int-hygiene-views', 'Polish (f): a view taken off the page without destroy() stops redrawing and asking for insights', function (a) {
+      ['overview', 'industry', 'insights'].forEach(function (id) {
+        var host = T.dom.mount();
+        TAP.views.get(id).mount(host);
+        host.parentNode.removeChild(host);
+        var calls = 0, keep = { top: TAP.insights.top, ranked: TAP.insights.ranked };
+        TAP.insights.top = function () { calls++; return keep.top.apply(TAP.insights, arguments); };
+        TAP.insights.ranked = function () { calls++; return keep.ranked.apply(TAP.insights, arguments); };
+        try {
+          TAP.store.set({ cmp: { mode: 'org' } });       // the first change tells it that it is gone
+          calls = 0;
+          TAP.store.set({ cmp: { mode: 'all' } });
+          TAP.store.set({ hiddenInsights: ['x:y'] });
+          a.equal(calls, 0, id + ': no more insight queries once it is off the page');
+        } finally { TAP.insights.top = keep.top; TAP.insights.ranked = keep.ranked; TAP.store.set({ hiddenInsights: [] }); }
+      });
+    });
+
+    T.test('X-int-hygiene-highlight', 'A highlight for one chart redraws only that chart', function (a) {
+      withApp(function (root) {
+        reset(null, 'industry');
+        var drawn = {};
+        ['ind-tiers', 'ind-quad', 'ind-ratings'].forEach(function (id) { drawn[id] = panelEl(root, id).querySelector('.tap-panel__head'); });
+        TAP.store.set({ highlight: { reportId: 'ind-quad', regionIds: [], industryIds: [TAP.data.industries({ rated: true })[0].id], mark: 'points' } });
+        a.equal(panelEl(root, 'ind-tiers').querySelector('.tap-panel__head'), drawn['ind-tiers'], 'the tier grid was not redrawn');
+        a.equal(panelEl(root, 'ind-ratings').querySelector('.tap-panel__head'), drawn['ind-ratings'], 'the ratings were not redrawn');
+        a.ok(panelEl(root, 'ind-quad').querySelector('.tap-panel__head') !== drawn['ind-quad'], 'the quadrant was redrawn');
+        a.ok(drawnHl(root, 'ind-quad'), 'and shows the highlight');
+        TAP.store.set({ highlight: null });
+        a.ok(!panelEl(root, 'ind-quad').querySelector('.tap-panel__strip'), 'clearing it redraws the quadrant without the strip');
       });
     });
   });
