@@ -148,6 +148,14 @@
       series: series.concat(np.length ? [k.npSeries(np)] : []) };
   }
 
+  // A long axis name breaks at the space nearest its middle (display only; the name itself is unchanged).
+  function twoLines(name) {
+    var n = String(name), mid = n.length / 2, best = -1;
+    if (n.length <= 12) return n;
+    for (var i = 0; i < n.length; i++) if (n[i] === ' ' && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i;
+    return best < 0 ? n : n.slice(0, best) + '\n' + n.slice(best + 1);
+  }
+
   // Radar: only for categories with 3 or fewer groups. A radar can't show a gap (it would draw it at the centre,
   // reading as a very low rating), so a group with a blank is left off the radar and named in the notes.
   function radar(draw) {
@@ -175,7 +183,8 @@
         lineStyle: { color: on ? hl.color : row.entity.color, width: on ? hl.width : th.border.rule } };
     });
     return { tooltip: { trigger: 'item' },
-      radar: { radius: '66%', splitNumber: isRating(col) ? 3 : 4, axisName: { fontSize: th.type.chart },
+      // A smaller radius and names on two lines keep long names such as "Competitive intensity" inside a half-width panel
+      radar: { radius: '58%', splitNumber: isRating(col) ? 3 : 4, axisName: { fontSize: th.type.chart, lineHeight: th.type.chart + 4, formatter: twoLines },
         indicator: catLabels(draw).map(function (n) { return { name: n, min: 0, max: max || 1 }; }) },
       series: [{ type: 'radar', tapRole: 'value', symbolSize: th.space[3], data: data, tooltip: { formatter: function (p) {
         var row = rowFor(draw.rows, p.data), lines = [];
