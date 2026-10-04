@@ -37,7 +37,7 @@
       var u = ctx.util, p = ctx.params, total = u.regions().length;
       return shared(source, field, p.minRegions || 2).map(function (g) {
         var vars = { n: g.regionIds.length, regions: u.list(g.regionIds.map(u.name)) };
-        vars[nameVar] = String(g.rows[0].item[field]).trim();
+        vars[nameVar] = String(g.rows[0].item[field]).trim().replace(/\s+/g, ' ');
         var amounts = g.rows.map(function (row) { return TAP.rows.cell(source, 'arr3', row); }).filter(u.provided);
         return { key: g.key, regionIds: g.regionIds, vars: vars,
           industryIds: g.rows.map(function (row) { return row.item.industryId; }).filter(function (id, i, all) { return id && all.indexOf(id) === i; }),
@@ -54,25 +54,27 @@
   TAP.insights.defineRule('sharedSubIndustry', sharedRule('newBusiness', 'subVertical', 'subIndustry'));
   TAP.insights.defineRule('sharedPartner', sharedRule('partners', 'name', 'partner'));
 
-  // Partners with a whole order intake per person, against the average across partners (total order intake over
-  // total FTE, the organization's pt.oiPerFte). Not computed with fewer than minPartners partners with FTE.
+  // Each partner's order intake per person, against the average across partners (total order intake over total
+  // FTE, the organization's pt.oiPerFte, which counts partly provided partners too; their figure carries its note).
+  // Not computed with fewer than minPartners partners with FTE.
   TAP.insights.defineRule('partnerCapacity', function (ctx) {
-    var u = ctx.util, p = ctx.params;
-    var staffed = TAP.rows.list('partners').map(function (row) { return { row: row, cell: TAP.rows.cell('partners', 'oiPerFte', row) }; })
-      .filter(function (x) { return u.provided(x.cell) && !x.cell.partial; });
-    if (staffed.length < p.minPartners) return [];
+    var u = ctx.util, p = ctx.params, rows = TAP.rows.list('partners');
+    var withFte = rows.filter(function (row) { return u.value(TAP.rows.cell('partners', 'fte', row)) > 0; });
+    if (withFte.length < p.minPartners) return [];
+    var staffed = withFte.map(function (row) { return { row: row, cell: TAP.rows.cell('partners', 'oiPerFte', row) }; })
+      .filter(function (x) { return u.provided(x.cell); });
     var avg = u.org('pt.oiPerFte');
     if (!(u.value(avg) > 0)) return [];
     return staffed.map(function (x) {
-      var multiple = x.cell.v / avg.v, r = x.row.regionId, name = String(x.row.item.name || '').trim();
+      var multiple = x.cell.v / avg.v, r = x.row.regionId, name = String(x.row.item.name || '').trim().replace(/\s+/g, ' ');
       if (multiple < p.multiple - SLACK) return null;
-      var fte = TAP.rows.cell('partners', 'fte', x.row);
+      var fte = TAP.rows.cell('partners', 'fte', x.row), arr = TAP.rows.cell('partners', 'arr3', x.row);
       return { key: r + ':' + x.row.sourceRow, regionIds: [r], items: [item('partners', x.row)],
         vars: { partner: name, region: u.name(r), amount: u.money(x.cell.v), multiple: u.phrase('about', { n: Math.round(multiple) }),
           avg: u.money(avg.v) },
         figures: [u.figure(u.phrase('perPerson', { partner: name }), x.cell, 'money'),
           u.fig('pt.oiPerFte', u.phrase('allPartners'), avg), u.figure(u.phrase('partnerFte', { partner: name }), fte, 'count')],
-        strength: u.ratioStrength(multiple, p.multiple), money: u.moneyShare(x.cell.v * (fte.v || 0), 'arr') };
+        strength: u.ratioStrength(multiple, p.multiple), money: u.moneyShare(u.value(arr) || 0, 'arr') };
     }).filter(Boolean);
   });
 })(window.TAP);
