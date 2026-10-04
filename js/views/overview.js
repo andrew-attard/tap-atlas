@@ -249,8 +249,9 @@
     drawCards();
     var panel = mountPanel(panelHost);
 
-    var handle;
+    var handle, dead = false;   // dead: destroyed; the store may still call this once from its listener copy
     var off = TAP.store.on(function (state, changed) {
+      if (dead) return;
       if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
       if (changed.indexOf('cmp') >= 0) { drawText(); drawCards(); }
       else if (changed.indexOf('hiddenInsights') >= 0) drawText();
@@ -261,6 +262,7 @@
 
     handle = {
       destroy: function () {
+        dead = true;
         off();
         if (ro) ro.disconnect();
         if (panel && panel.destroy) panel.destroy();

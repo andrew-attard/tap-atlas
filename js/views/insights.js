@@ -251,12 +251,14 @@
       if (back) back.focus();
     }
 
+    var dead = false;
     var off = TAP.store.on(function (state, changed) {
+      if (dead) return;   // destroyed; the store may still call this once from its listener copy
       if (!root.isConnected) { off(); return; }   // off the page (removed without destroy()): stop listening
       if (has(changed, 'cmp') || has(changed, 'hiddenInsights')) { ui.status = ''; draw(); }
     });
     draw();
-    return { destroy: function () { off(); TAP.dom.clear(root); } };
+    return { destroy: function () { dead = true; off(); TAP.dom.clear(root); } };
   }
 
   // The menu title comes from config/views.js
