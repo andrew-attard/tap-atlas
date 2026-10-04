@@ -1,19 +1,196 @@
 /*
  * File: tests/test-pages-p2.js
  * Purpose: Tests for Phase 2 glossary, guide, tips, tour and shortcuts.
- * Provides: test cases for the PAGES2 stream
+ * Provides: test cases for the PAGES2 stream: US-2.6.1 (TPV-TC-496 to 498), X-pages2-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: PAGES2 stream
  */
 (function (TAP) {
   'use strict';
+
+  var qsa = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var txt = function (el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; };
+  var P2_VIEWS = ['newBusiness', 'customers', 'partners', 'regions'];
+
+  // Every string under an object, with its key path.
+  function strings(obj, path, out) {
+    out = out || [];
+    if (typeof obj === 'string') out.push({ path: path, text: obj });
+    else if (obj && typeof obj === 'object') Object.keys(obj).forEach(function (k) { strings(obj[k], path ? path + '.' + k : k, out); });
+    return out;
+  }
+  function sentences(s) { return (String(s).match(/[.?!](\s|$)/g) || []).length; }
+
+  // Reports on the Phase 2 views (and on the profile), as defined so far.
+  function p2Reports() {
+    var all = window.TAP_REPORTS || {}, prof = ((window.TAP_PROFILE || {}).reports) || [];
+    return Object.keys(all).filter(function (id) {
+      return P2_VIEWS.indexOf(all[id].view) >= 0 || prof.indexOf(id) >= 0;
+    }).map(function (id) { return all[id]; });
+  }
+
+  // The wording people read on the Phase 2 screens: report titles, explanations and labels, the Phase 2 wording
+  // keys, list headings and the Phase 2 insight templates.
+  var P2_TEXT_KEYS = ['nbView', 'nbGrid', 'nbFactors', 'customerView', 'partnerView', 'cgGrowth', 'cgExposure',
+    'detailsRows', 'rows', 'breakdown', 'viewTips'];
+  var P2_FAMILIES = ['plan', 'shared', 'themes'];
+  function p2Text() {
+    var out = [], text = (window.TAP_CONTENT || {}).text || {};
+    p2Reports().forEach(function (d) {
+      out.push({ path: d.id + '.title', text: d.title });
+      strings(d.explain, d.id + '.explain', out);
+      (d.measures || []).forEach(function (m) { out.push({ path: d.id + '.measure ' + m.id, text: m.label }); });
+    });
+    P2_TEXT_KEYS.forEach(function (k) { strings(text[k], 'text.' + k, out); });
+    ['rc', 'nb', 'cg', 'pt', 'amb'].forEach(function (k) { strings((text.measures || {})[k], 'text.measures.' + k, out); });
+    ((window.TAP_RULES || {}).rules || []).filter(function (r) { return P2_FAMILIES.indexOf(r.family) >= 0; }).forEach(function (r) {
+      out.push({ path: 'rule ' + r.id + '.template', text: r.template || '' });
+      out.push({ path: 'rule ' + r.id + '.description', text: r.description || '' });
+    });
+    return out;
+  }
+
+  // The terms US-2.6.1 names, as words a reader sees on screen.
+  var STORY_TERMS = ['Strategic segment', 'Growth segment', 'Core segment', 'Scaled segment', 'risk level', 'multiplier',
+    'incremental ARR', 'order intake', 'Direct channel', 'Partner', 'Alliance A', 'Alliance B', 'motion', 'FTE',
+    'central support', 'partner maturity', 'expected wins', 'recurring theme', 'concentration'];
+
+  // Phase 2 business words that must resolve to an entry wherever they appear on the Phase 2 screens.
+  var WATCH_P2 = ['incremental ARR', 'multiplier', 'motion', 'full-time equivalent', 'FTE', 'central support',
+    'maturity', 'recurring theme', 'concentration', 'at-risk share', 'expected wins', 'order intake per head',
+    'risk level', 'sub-industry', 'success factors', 'segment', 'alliance', 'partner'];
+
+  // List headings that are everyday words, not business terms. "Risk" alone would mark every use of the word, so
+  // the risk column relies on the details panel and the "risk level" entry (the heading's wording is ENGINE2's).
+  var PLAIN_HEADINGS = ['region', 'name', 'country', 'market', 'alsoTargeted', 'alsoNamed', 'riskLevel'];
+
+  function withGuide(fn) {
+    var root = T.dom.mount(), handle = TAP.views.get('guide').mount(root);
+    try { return fn(root); } finally { handle.destroy(); }
+  }
+  function howToFor(view) {
+    return (TAP.content.guide().howTo.sections || []).filter(function (s) { return s.link && s.link.view === view; })[0];
+  }
+
   T.suite('pages-p2', function () {
+    /* ---------- US-2.6.1: glossary and guide cover Phase 2 (#224) ---------- */
+
     T.test('TPV-TC-496', 'FTE and its spellings on the partner reports find the FTE entry', function (a) {
       ['FTE', 'full-time equivalent', 'full-time equivalents', 'sales FTE', 'consultant FTE'].forEach(function (w) {
         var e = TAP.content.term(w);
         a.ok(e && e.id === 'fte', '"' + w + '" finds the FTE entry');
       });
+    });
+
+    T.test('TPV-TC-496', 'Every term the story names has a full glossary entry', function (a) {
+      STORY_TERMS.forEach(function (w) {
+        var e = TAP.content.term(w);
+        a.ok(e, '"' + w + '" has an entry');
+        if (!e) return;
+        a.ok(e.term && e.short && e.short.length > 20, w + ': term and plain definition');
+        a.ok(e.why && e.why.length > 20, w + ': why it matters');
+        a.ok(Array.isArray(e.related) && e.related.length > 0, w + ': related terms');
+      });
+    });
+
+    T.test('TPV-TC-496', 'The new entries keep the house style: no em dashes, related terms that exist', function (a) {
+      var g = window.TAP_CONTENT.glossary;
+      ['incrementalArr', 'multiplier', 'motion', 'recurringTheme', 'fte', 'oiPerFte', 'centralSupport', 'partnerMaturity',
+        'partnerExpertise'].forEach(function (id) {
+        a.ok(g[id], id + ' exists');
+        strings(g[id], id).forEach(function (s) { a.ok(s.text.indexOf('—') < 0, s.path + ' has no em dash'); });
+        ((g[id] || {}).related || []).forEach(function (r) { a.ok(g[r], id + ': related "' + r + '" exists'); });
+      });
+    });
+
+    T.test('TPV-TC-497', 'Every measure label on the Phase 2 reports is a glossary term or alias', function (a) {
+      var n = 0;
+      p2Reports().forEach(function (d) {
+        (d.measures || []).forEach(function (m) { n++; a.ok(TAP.content.term(m.label), d.id + ': "' + m.label + '" has an entry'); });
+      });
+      a.ok(n > 5, 'Phase 2 labels were scanned (' + n + ')');
+    });
+
+    T.test('TPV-TC-497', 'Every acronym and Phase 2 business word in Phase 2 labels, explanations and templates has an entry', function (a) {
+      var list = p2Text(), found = 0;
+      a.ok(list.length > 20, 'Phase 2 text was found');
+      list.forEach(function (s) {
+        (s.text.match(/\b[A-Z]{2,}\b/g) || []).forEach(function (w) { a.ok(TAP.content.term(w), s.path + ': "' + w + '" has an entry'); });
+      });
+      WATCH_P2.forEach(function (w) {
+        var re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 's?\\b', 'i');
+        var hit = list.filter(function (s) { return re.test(s.text); })[0];
+        if (!hit) return;
+        found++;
+        a.ok(TAP.content.term(w), '"' + w + '" (used in ' + hit.path + ') has an entry');
+      });
+      a.ok(found > 8, 'Phase 2 business words were found (' + found + ')');
+    });
+
+    T.test('TPV-TC-497', 'Every business heading of the account, partner and new business lists marks a glossary term', function (a) {
+      var n = 0;
+      ['newBusiness', 'accounts', 'partners'].forEach(function (src) {
+        TAP.rows.columns(src).forEach(function (c) {
+          if (PLAIN_HEADINGS.indexOf(c.key) >= 0) return;
+          n++;
+          a.ok(/data-term=/.test(TAP.content.mark(c.label, {})), src + '.' + c.key + ': "' + c.label + '" marks a term');
+        });
+      });
+      a.ok(n > 20, 'list headings were scanned (' + n + ')');
+    });
+
+    T.test('TPV-TC-498', 'The Guide explains each Phase 2 view in two or three sentences, with a link to it', function (a) {
+      P2_VIEWS.forEach(function (v) {
+        var s = howToFor(v);
+        a.ok(s, v + ' has a How to use section');
+        if (!s) return;
+        var n = sentences(s.paragraphs.join(' '));
+        a.ok(n >= 2 && n <= 3, v + ': ' + n + ' sentences');
+      });
+    });
+
+    T.test('TPV-TC-498', 'The Guide says how to open a region profile', function (a) {
+      var s = howToFor('regions'), all = s ? s.paragraphs.join(' ') : '';
+      a.ok(all.indexOf(TAP.views.title('regions')) >= 0, 'names the Regions menu entry');
+      a.ok(/Open profile/.test(all), 'names the "Open profile" link');
+    });
+
+    T.test('TPV-TC-498', 'Each view section on the Guide page opens its view', function (a) {
+      withGuide(function (root) {
+        P2_VIEWS.forEach(function (v) {
+          var s = howToFor(v), btn = s && root.querySelector('[data-guide="howTo"] [data-part="' + s.id + '"] .tap-guide__link');
+          a.ok(btn, v + ': an Open button');
+          if (!btn) return;
+          a.ok(txt(btn).indexOf(TAP.views.title(v)) >= 0, v + ': it names the view');
+          btn.click();
+          a.equal(TAP.store.get().view, v, v + ': it opens the view');
+        });
+      });
+    });
+
+    T.test('X-pages2-guide-planning', 'Planning sections link to the Phase 2 views and no longer promise a later phase', function (a) {
+      var secs = TAP.content.guide().planning.sections, by = {};
+      secs.forEach(function (s) { by[s.id] = s; });
+      a.equal(by.newBusiness.link.view, 'newBusiness', 'new business');
+      a.equal(by.customerGrowth.link.view, 'customers', 'customer growth');
+      a.equal(by.partners.link.view, 'partners', 'partners and recap');
+      a.equal(by.segments.link.view, 'customers', 'segments');
+      strings(TAP.content.guide(), 'guide').forEach(function (s) { a.ok(!/later phase/i.test(s.text), s.path + ' promises nothing for later'); });
+      var menu = TAP.content.guide().howTo.sections.filter(function (s) { return s.id === 'menu'; })[0];
+      a.ok(/New business, Customer growth, Partners, Regions/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
+    });
+
+    T.test('X-pages2-explain-ratio', 'Shares combined from parts say so, instead of calling themselves weighted', function (a) {
+      var cmp = { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average', second: null, set: [] };
+      var paras = TAP.explain.sections('cg-exposure', cmp).filter(function (s) { return s.key === 'combined'; })[0].paras;
+      ['cg.top3Share', 'cg.riskShare'].forEach(function (id) {
+        var want = TAP.content.text('explain.rateRatio', { measure: TAP.measures.meta(id).label });
+        a.ok(paras.indexOf(want) >= 0, id + ' is worked out from the combined totals');
+      });
+      a.ok(!paras.some(function (p) { return /weighted average/.test(p); }), 'no share is called a weighted average');
+      var levers = TAP.explain.sections('nb-levers', cmp).filter(function (s) { return s.key === 'combined'; })[0].paras;
+      a.ok(levers.some(function (p) { return /^Hit rate is a weighted average/.test(p); }), 'a weighted rate still says it is weighted');
     });
   });
 })(window.TAP);
