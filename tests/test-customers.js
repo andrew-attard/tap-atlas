@@ -407,6 +407,98 @@
       a.near(build('cg-growth', { mode: 'org' }, { breakdown: null, type: 'table' }).table.rows[0].cells['cg.growth.all'].v, 718 / 2830, 1e-9, 'org three years');
     });
 
+    /* ---------- US-2.2.5 concentration and exposure ---------- */
+
+    // Three-year incremental ARR per account, by hand from the mini data:
+    // alpha a1 50, a2 100 (high), a3 0, a4 150 (medium) = 300; bravo b1 120, b2 30 (high) = 150;
+    // delta d1 80 + 88 = 168, d2 100 (medium), d3 0 = 268.
+    var EXPOSE = {
+      'cg.top3Share': { alpha: 300 / 300, bravo: 150 / 150, delta: 268 / 268 },
+      'cg.riskShare': { alpha: 250 / 300, bravo: 30 / 150, delta: 100 / 268 }
+    };
+    function exposeRow(res, id) { return res.table.rows.filter(function (r) { return r.entityId === id; })[0]; }
+    function withRule(id, share, fn) {
+      var r = ((window.TAP_RULES || {}).rules || []).filter(function (x) { return x.id === id; })[0], keep = r.params.share;
+      r.params.share = share;
+      try { fn(); } finally { r.params.share = keep; }
+    }
+    // Numbers held by any markLine in the chart option (where the reference lines are drawn).
+    function markLineValues(option) {
+      var out = [];
+      ((option || {}).series || []).forEach(function (s) {
+        ((s.markLine || {}).data || []).forEach(function (d) {
+          [d, d && d[0]].forEach(function (x) { if (x) ['xAxis', 'yAxis', 'value'].forEach(function (k) { if (typeof x[k] === 'number') out.push(x[k]); }); });
+        });
+      });
+      return out;
+    }
+
+    when([196], 'TPV-TC-400', 'Measure switch: top 3 share and at-risk share of three-year incremental ARR, per the hand calculation', function (a) {
+      var def = TAP.reports.get('cg-exposure');
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['Share in top 3 accounts', 'Share in high or medium risk accounts']);
+      a.equal(TAP.prepare.selected(def, {}), 'cg.top3Share', 'top 3 first');
+      Object.keys(EXPOSE).forEach(function (m) {
+        var res = build('cg-exposure', { mode: 'all' }, { measureId: m, type: 'table' });
+        Object.keys(EXPOSE[m]).forEach(function (r) { a.near(exposeRow(res, r).cells[m].v, EXPOSE[m][r], 1e-9, r + ' ' + m); });
+        a.equal(exposeRow(res, 'charlie').cells[m].state, 'notProvided', 'charlie ' + m);
+      });
+    });
+
+    when([196], 'TPV-TC-401', 'Sample data: the planted concentration and at-risk regions show their planted shares', function (a) {
+      sample();
+      var E = window.SAMPLE_EXPECT;
+      a.near(TAP.measures.get('cg.top3Share')(E.p13.region, {}).v, E.p13.share, 1e-4, 'P13 top 3 share');
+      a.near(TAP.measures.get('cg.riskShare')(E.p14.region, {}).v, E.p14.share, 1e-4, 'P14 at-risk share');
+    });
+
+    T.test('TPV-TC-402', 'Chart types: bar by default, also dot plot and table', function (a) {
+      var def = TAP.reports.get('cg-exposure');
+      a.equal(def.defaultType, 'bar');
+      [3, 4, 7].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['bar', 'dot', 'table'], n + ' regions'); });
+    });
+
+    when([207], 'TPV-TC-403', 'Each measure has a labelled reference line at its rule threshold, which moves with the threshold', function (a) {
+      var def = TAP.reports.get('cg-exposure');
+      a.deepEqual(TAP.cgBuilders.refLines(def, { measureId: 'cg.top3Share' }).map(function (l) { return [l.value, l.label]; }), [[0.5, 'Insight threshold: 50%']], 'top 3 at 50%');
+      a.deepEqual(TAP.cgBuilders.refLines(def, { measureId: 'cg.riskShare' }).map(function (l) { return [l.value, l.label]; }), [[0.25, 'Insight threshold: 25%']], 'at risk at 25%');
+      withRule('concentration', 0.4, function () {
+        a.deepEqual(TAP.cgBuilders.refLines(def, { measureId: 'cg.top3Share' }).map(function (l) { return l.value; }), [0.4], 'moves with the setting');
+      });
+      if (!waiting([196]).length) {
+        a.ok(markLineValues(build('cg-exposure', { mode: 'all' }).option).indexOf(0.5) >= 0, 'the chart draws the 50% line');
+        withRule('atRisk', 0.3, function () {
+          a.ok(markLineValues(build('cg-exposure', { mode: 'all' }, { measureId: 'cg.riskShare' }).option).indexOf(0.3) >= 0, 'and redraws it at 30%');
+        });
+      }
+    });
+
+    when([196], 'TPV-TC-404', 'The rest and organization total come from the combined accounts, not averaged shares', function (a) {
+      // org: all nine accounts, total 718; top 3 = d1 168 + a4 150 + b1 120 = 438; at risk = a2 100 + a4 150 + b2 30 + d2 100 = 380
+      // rest of alpha: bravo and delta accounts, total 418; top 3 = 168 + 120 + 100 = 388; at risk = 30 + 100 = 130
+      var org = build('cg-exposure', { mode: 'org' }, { type: 'table' }), rest = build('cg-exposure',
+        { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }, { type: 'table' });
+      a.near(exposeRow(org, 'org').cells['cg.top3Share'].v, 438 / 718, 1e-9, 'org top 3 is the top 3 across the scope');
+      a.near(exposeRow(rest, 'rest').cells['cg.top3Share'].v, 388 / 418, 1e-9, 'rest top 3, not the average of 100% and 100%');
+      var orgRisk = build('cg-exposure', { mode: 'org' }, { measureId: 'cg.riskShare', type: 'table' });
+      var restRisk = build('cg-exposure', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }, { measureId: 'cg.riskShare', type: 'table' });
+      a.near(exposeRow(orgRisk, 'org').cells['cg.riskShare'].v, 380 / 718, 1e-9, 'org at risk');
+      a.near(exposeRow(restRisk, 'rest').cells['cg.riskShare'].v, 130 / 418, 1e-9, 'rest at risk');
+    });
+
+    when([196, 207], 'TPV-TC-405', 'A region’s bar opens its top 3 accounts, or its at-risk accounts, in details', function (a) {
+      var rows = function (tg) { return tg.items.map(function (i) { return [i.section, i.regionId, i.row]; }); };
+      var top = build('cg-exposure', { mode: 'all' }).target({ data: { entityId: 'alpha', key: 'cg.top3Share' } });
+      a.deepEqual(rows(top), [['customerGrowth', 'alpha', 13], ['customerGrowth', 'alpha', 11], ['customerGrowth', 'alpha', 10]], 'a4, a2, a1');
+      var risk = build('cg-exposure', { mode: 'all' }, { measureId: 'cg.riskShare' }).target({ data: { entityId: 'alpha', key: 'cg.riskShare' } });
+      a.deepEqual(rows(risk), [['customerGrowth', 'alpha', 13], ['customerGrowth', 'alpha', 11]], 'a4 (medium) and a2 (high)');
+      var org = build('cg-exposure', { mode: 'org' }).target({ data: { entityId: 'org', key: 'cg.top3Share' } });
+      a.deepEqual(rows(org), [['customerGrowth', 'delta', 10], ['customerGrowth', 'alpha', 13], ['customerGrowth', 'bravo', 10]], 'top 3 across the scope');
+      if (!waiting([194]).length) {
+        var d = TAP.details.build(top);
+        a.equal(d.groups.filter(function (g) { return /^Fictional Account A[124], Region A$/.test(g.title); }).length, 3, 'details name the three accounts');
+      }
+    });
+
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.partners.reports), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
