@@ -167,7 +167,9 @@
       var i = d.industryId || null, c = cols.filter(function (x) { return x.id === (d.regionId || d.entityId); })[0];
       var regs = c ? c.e.regionIds.slice() : d.regionId && TAP.data.region(d.regionId) ? [d.regionId] : [];
       if (!regs.length && !i) return null;
-      return { reportId: def.id, regionIds: regs, industryIds: i ? [i] : [], accountIds: [], mark: regs.length && i ? 'cell' : 'industryRow' };
+      // label names the drill level in the panel's breadcrumb (17.6): the industry, and the region when there is one
+      var ind = i ? TAP.data.industry(i) : null, label = ind ? (c && c.region ? t('drillLabel', { industry: ind.name, region: c.label }) : ind.name) : null;
+      return { reportId: def.id, regionIds: regs, industryIds: i ? [i] : [], accountIds: [], mark: regs.length && i ? 'cell' : 'industryRow', label: label };
     };
   }
 

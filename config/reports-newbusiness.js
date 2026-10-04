@@ -28,6 +28,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['heatmap', 'stackedBar', 'table'],
     breakdowns: ['year'],
     sources: ['DER', 'IN'],
+    // A cell opens that region's rows for the industry in the same panel (US-2.7.1); without drill-down, its details
+    drill: { next: 'nb-rows', label: 'Sub-industries and markets' },
     options: {}
   };
 
