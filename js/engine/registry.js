@@ -1,7 +1,7 @@
 /*
  * File: js/engine/registry.js
  * Purpose: Keeps the lists of reports, chart builders and views, and checks report definitions before use.
- * Provides: TAP.reports (get, list, all, validate, measureIds, SHAPES, TYPES, SHAPE_TYPES), TAP.builders (register, get, names), TAP.views (register, get, order, list)
+ * Provides: TAP.reports (get, list, all, validate, measureIds, SHAPES, TYPES, SHAPE_TYPES, BREAKDOWNS), TAP.builders (register, get, names), TAP.views (register, get, order, list)
  * Depends on: js/core/namespace.js, config/reports-*.js (window.TAP_REPORTS), config/views.js (window.TAP_VIEWS),
  *             js/engine/measures.js (validate, at call time)
  * Used by: js/panel/panel.js, js/ui/app.js, js/ui/shell.js, js/ui/explain.js, js/engine/prepare.js,
@@ -10,6 +10,8 @@
 (function (TAP) {
   'use strict';
 
+  // The breakdown dimensions a report may allow (ARCHITECTURE 17.3, US-2.7.5)
+  var BREAKDOWNS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk'];
   var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread', 'list'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',
     'heatmap', 'bubbleGrid', 'line', 'table', 'list'];
@@ -65,6 +67,9 @@
       if (!Array.isArray(def.columns) || !def.columns.length) e.push('A list needs "columns".');
     }
     if (def.builder && !TAP.builders.get(def.builder)) e.push('No chart builder called "' + def.builder + '".');
+    (Array.isArray(def.breakdowns) ? def.breakdowns : []).forEach(function (b) {
+      if (typeof b === 'string' && BREAKDOWNS.indexOf(b) < 0) e.push('Unknown breakdown "' + b + '".');
+    });
     if (def.defaultBreakdown && (def.breakdowns || []).indexOf(def.defaultBreakdown) < 0) {
       e.push('"defaultBreakdown" must be one of "breakdowns".');
     }
@@ -127,7 +132,7 @@
   };
 
   TAP.reports = { get: get, list: list, all: all, validate: validate, measureIds: measureIds,
-    SHAPES: SHAPES, TYPES: TYPES, SHAPE_TYPES: SHAPE_TYPES };
+    SHAPES: SHAPES, TYPES: TYPES, SHAPE_TYPES: SHAPE_TYPES, BREAKDOWNS: BREAKDOWNS };
   TAP.builders = builderApi;
   TAP.views = viewApi;
 })(window.TAP);

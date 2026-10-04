@@ -39,8 +39,9 @@
  *   defaultType  The chart type shown first. Must be one of "types".
  *   types        The chart types offered. Must include 'table'. The panel also hides types the current
  *                comparison can't use (radar beyond 3 regions; bubble without a size).
- *   breakdowns   Allowed "break down by" options, at most one active: 'year', 'industry', 'productLine',
- *                'channel', 'segment'. Empty list for none.
+ *   breakdowns   Allowed "break down by" options, at most one active: 'year', 'industry', 'channel', 'motion',
+ *                'segment', 'risk' (TAP.reports.BREAKDOWNS). The panel offers only those the selected measure supports.
+ *                Empty list for none.
  *   defaultBreakdown  Optional. The breakdown the panel starts with, e.g. 'year'. Must be one of "breakdowns".
  *   rows, columns, sort, filter   For 'list' reports and row bubbles (docs/ARCHITECTURE.md 17.4 and 17.7).
  *   drill        Optional. { next: '<reportId>', label } opens that report a level down on click (17.6).
