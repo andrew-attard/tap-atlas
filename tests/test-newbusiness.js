@@ -666,6 +666,110 @@
     });
   });
 
+  /* ---------- US-2.1.5 where exactly each region is looking ---------- */
+
+  var ROWS = 'nb-rows';
+  // Hand-copied from tests/fixtures/mini-data.js: region, industry, tier, sub-industry, market, target accounts,
+  // three-year ARR potential (sum of arrPotential; Region C row 20 has none).
+  var MINI_ROWS = {
+    'alpha:20': ['Region A', 'Healthcare', 1, 'Clinics', 'North', 20, 1655],
+    'alpha:21': ['Region A', 'Utilities', 2, 'Grid operators', 'North', 10, 600],
+    'bravo:20': ['Region B', 'Healthcare', 1, 'Hospitals', 'South', 40, 3400],
+    'bravo:21': ['Region B', 'Education', 2, 'Universities', 'South', 10, 600],
+    'charlie:20': ['Region C', 'Healthcare', 1, 'Labs', 'East', 10, null],
+    'charlie:21': ['Region C', 'Utilities', 2, 'Water', 'East', 5, 300],
+    'delta:20': ['Region D', 'Retail', 2, 'Stores', 'West', 100, 2850]
+  };
+  var ROW_KEYS = ['region', 'industry', 'tier', 'subVertical', 'market', 'targetAccounts', 'arr3'];
+  function list(c, opts) { return build(ROWS, c, { type: 'list', opts: opts || {} }); }
+  function rowIds(res) { return res.table.rows.map(function (r) { return r.id; }); }
+  function rowById(res, id) { return res.table.rows.filter(function (r) { return r.id === id; })[0]; }
+
+  T.suite('newbusiness-rows', function () {
+    T.test('TPV-TC-356', 'Mini data: one row per new business row, with the hand-copied figures', function (a) {
+      var def = TAP.reports.get(ROWS), res = list({ mode: 'all' });
+      a.equal(def.shape, 'list', 'a list report');
+      a.equal(def.title, 'Where exactly is each region looking?', 'the question');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }).slice(0, ROW_KEYS.length), ROW_KEYS, 'the columns, in order');
+      a.equal(res.table.rows.length, 7, 'seven rows');
+      Object.keys(MINI_ROWS).forEach(function (id) {
+        var r = rowById(res, id);
+        a.ok(r, id + ': listed');
+        ROW_KEYS.forEach(function (k, i) {
+          var want = MINI_ROWS[id][i], c = r.cells[k];
+          if (want == null) a.equal(c.state, 'notProvided', id + ' ' + k + ' not provided');
+          else if (typeof want === 'number') a.near(c.v, want, 1e-9, id + ' ' + k);
+          else a.equal(TAP.format.cell(c, { unit: 'text' }), want, id + ' ' + k);
+        });
+      });
+    });
+
+    T.test('TPV-TC-357', 'Sorted by industry, then ARR potential highest first; the industry filter keeps one industry', function (a) {
+      var res = list({ mode: 'all' });
+      // Education; Healthcare 3400, 1655, blank last; Retail; Utilities 600, 300
+      a.deepEqual(rowIds(res), ['bravo:21', 'bravo:20', 'alpha:20', 'charlie:20', 'delta:20', 'alpha:21', 'charlie:21'], 'default order');
+      var f = res.controls.filter(function (c) { return c.key === 'filter:industry'; })[0];
+      a.ok(f, 'an industry filter');
+      a.equal(f.value, 'all', 'showing every industry at first');
+      var hc = list({ mode: 'all' }, { 'filter:industry': 'Healthcare' });
+      a.deepEqual(rowIds(hc), ['bravo:20', 'alpha:20', 'charlie:20'], 'only Healthcare, still sorted');
+    });
+
+    T.test('TPV-TC-358', 'Two regions naming the same sub-industry (any case and spacing) are each "also targeted by" the other', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[2].newBusiness[1].subVertical = '  grid   OPERATORS ';
+      TAP.data.load(plan);
+      var res = list({ mode: 'all' });
+      a.equal(rowById(res, 'alpha:21').cells.alsoTargeted.v, 'Region C', 'Region A’s row names Region C');
+      a.equal(rowById(res, 'charlie:21').cells.alsoTargeted.v, 'Region A', 'Region C’s row names Region A');
+      a.ok(rowById(res, 'bravo:20').cells.alsoTargeted.state !== 'value', 'a sub-industry nobody else names shows nothing');
+      a.ok(res.table.columns.some(function (c) { return c.key === 'alsoTargeted'; }), 'the column is shown');
+    });
+
+    T.test('TPV-TC-359', 'Near-duplicates such as "Universities" and "University campuses" are not matched', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[2].newBusiness[1].subVertical = 'University campuses';
+      TAP.data.load(plan);
+      var res = list({ mode: 'all' });
+      a.ok(rowById(res, 'bravo:21').cells.alsoTargeted.state !== 'value', 'Universities: no match');
+      a.ok(rowById(res, 'charlie:21').cells.alsoTargeted.state !== 'value', 'University campuses: no match');
+    });
+
+    T.test('TPV-TC-360', 'Rows follow the comparison scope as list reports do', function (a) {
+      a.equal(list({ mode: 'all' }).table.rows.length, 7, 'all regions: every row');
+      a.equal(list({ mode: 'org' }).table.rows.length, 7, 'organization total: every row');
+      var set = list({ mode: 'set', set: ['bravo', 'delta'] });
+      a.deepEqual(set.table.rows.map(function (r) { return r.regionId; }).sort(), ['bravo', 'bravo', 'delta'], 'a chosen set: only its regions');
+      var one = list({ mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'average' });
+      a.deepEqual(rowIds(one).slice(0, 2), ['charlie:20', 'charlie:21'], 'one against the rest: the focus region’s rows first');
+      a.equal(one.table.rows.length, 7, 'and every other row after them');
+      var pair = list({ mode: 'pair', focus: 'delta', second: 'alpha' });
+      a.deepEqual(rowIds(pair), ['delta:20', 'alpha:20', 'alpha:21'], 'a pair: the focus first, then the second region');
+    });
+
+    T.test('TPV-TC-361', 'Every row names the region file and the new business row it came from', function (a) {
+      var res = list({ mode: 'all' }), box = document.createElement('div');
+      res.table.rows.forEach(function (r) {
+        var where = TAP.sources.address(r.src).text, reg = TAP.data.region(r.regionId);
+        a.ok(where.indexOf(reg.source.fileName) === 0, r.id + ': the region file');
+        a.ok(where.indexOf('2. New Business') >= 0, r.id + ': the New Business sheet');
+        a.ok(new RegExp('[A-Z]' + r.sourceRow + '$').test(where), r.id + ': row ' + r.sourceRow);
+      });
+      TAP.dom.html(box, res.html);
+      var src = box.querySelector('tr[data-tap-row="newBusiness:delta:20"] [data-tap-col="source"]');
+      a.ok(src && src.textContent.indexOf('Region D plan.xlsx') >= 0 && /20/.test(src.textContent), 'the list shows the source row');
+    });
+
+    T.test('X-nb-rows-view', 'The list sits next to the success factors panel', function (a) {
+      withView(function (root) {
+        var pair = root.querySelector('[data-slot="nb-rows"]').parentNode;
+        a.ok(/tap-vh-pair/.test(pair.className), 'a two-panel row');
+        a.ok(pair.querySelector('.tap-nbf'), 'with the success factors');
+        a.ok(pair.querySelector('.tap-panel[data-report="nb-rows"] table.tap-list'), 'the list draws');
+      });
+    });
+  });
+
   /* ---------- US-2.1.6 what leaders say they need to win ---------- */
 
   function entries(root) { return Array.prototype.slice.call(root.querySelectorAll('.tap-nbf__entry')); }
@@ -752,7 +856,7 @@
       withView(function (root) {
         var sel = root.querySelector('[data-slot="nb-rows"] select[data-control="filter:industry"]');
         a.ok(sel, 'the list offers an industry filter');
-        sel.value = 'ind1';
+        sel.value = 'Healthcare';   // the filter offers industries by name
         sel.dispatchEvent(new Event('change', { bubbles: true }));
         a.equal(TAP.store.get().industry, 'ind1', 'the filter selects the industry');
         a.deepEqual(entryRegions(root), ['alpha', 'bravo'], 'and the panel follows');
