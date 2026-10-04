@@ -273,6 +273,59 @@
       s.report(cmpDef({ id: 'x-bd2', defaultBreakdown: 'industry' }));
       a.match(txt(qs('.tap-panel__error', s.panel('x-bd2').el)), /defaultBreakdown/);
     }));
+
+    // US-2.7.5 (#229): the breakdowns on offer follow the selected measure, through TAP.prepare.breakdowns.
+    TAP.builders.register('x-fake-bd', function (ctx) {
+      calls.push(ctx);
+      return { option: { xAxis: { type: 'value' }, yAxis: { type: 'category', data: ['A'] }, series: [{ type: 'bar', data: [1] }] },
+        table: { columns: [], rows: [] }, legend: [], notes: [], missing: [], empty: false, error: null, target: function () { return null; } };
+    });
+    function offered(p) { return qsa('[data-control="breakdown"] [data-value]', p.el).map(function (b) { return b.getAttribute('data-value'); }); }
+    function withDims(fn) {
+      return function (a, s) {
+        var saved = TAP.prepare.breakdowns, asked = [];
+        // A stand-in for ENGINE2's TAP.prepare.breakdowns: cg.arr lists only year in its dims
+        TAP.prepare.breakdowns = function (def, o) {
+          asked.push(o.measureId);
+          var m = o.measureId || def.measures[0].id;
+          return def.breakdowns.filter(function (x) { return m === 'nb.arr' || x === 'year'; });
+        };
+        try { return fn(a, s, asked); } finally { TAP.prepare.breakdowns = saved; }
+      };
+    }
+
+    T.test('TPV-TC-311', 'Break down by offers only what the selected measure lists, and follows a measure switch', scene(withDims(function (a, s, asked) {
+      s.report(cmpDef({ id: 'x-bd4', builder: 'x-fake-bd', breakdowns: ['year', 'industry'], defaultBreakdown: undefined,
+        measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
+      var p = s.panel('x-bd4');
+      a.deepEqual(offered(p), ['none', 'year', 'industry'], 'the first measure lists both');
+      click(qs('[data-control="breakdown"] [data-value="industry"]', p.el));
+      a.equal(last().breakdown, 'industry');
+      click(qs('[data-control="measure"] [data-value="cg.arr"]', p.el));
+      a.deepEqual(offered(p), ['none', 'year'], 'the second lists only year');
+      a.equal(asked[asked.length - 1], 'cg.arr', 'asked for the selected measure');
+      a.equal(pressed(p), 'none', 'a breakdown no longer offered is dropped');
+      a.equal(last().breakdown, null, 'and the builder is not asked for it');
+      click(qs('[data-control="measure"] [data-value="nb.arr"]', p.el));
+      a.deepEqual(offered(p), ['none', 'year', 'industry'], 'options follow the measure back');
+      a.equal(pressed(p), 'none', 'the dropped breakdown does not come back by itself');
+    })));
+
+    T.test('TPV-TC-311', 'A breakdown both measures list is kept across a measure switch', scene(withDims(function (a, s) {
+      s.report(cmpDef({ id: 'x-bd5', builder: 'x-fake-bd', breakdowns: ['year', 'industry'], defaultBreakdown: undefined,
+        measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
+      var p = s.panel('x-bd5');
+      click(qs('[data-control="breakdown"] [data-value="year"]', p.el));
+      click(qs('[data-control="measure"] [data-value="cg.arr"]', p.el));
+      a.equal(pressed(p), 'year');
+      a.equal(last().breakdown, 'year');
+    })));
+
+    T.test('X-panel-breakdown-labels', 'Every Phase 2 breakdown dimension has a label', function (a) {
+      ['year', 'industry', 'channel', 'motion', 'segment', 'risk'].forEach(function (d) {
+        a.ok(!/^\[/.test(TAP.content.text('panel.breakdowns.' + d)), d);
+      });
+    });
   });
 
   /* ---------- US-2.6.4: value kinds on every list and table (#227) ---------- */
