@@ -43,8 +43,8 @@
         var s = row[f.field];
         if (typeof s !== 'string' || !s.trim()) return;
         var k = f.field + '|' + s.trim();
-        if (byText[k]) { byText[k].rows++; return; }
-        byText[k] = { text: s.trim(), field: f.field, industryId: row.industryId || null, rows: 1,
+        if (byText[k]) { byText[k].rows++; if (row.industryId && byText[k].industryIds.indexOf(row.industryId) < 0) byText[k].industryIds.push(row.industryId); return; }
+        byText[k] = { text: s.trim(), field: f.field, industryIds: row.industryId ? [row.industryId] : [], rows: 1,
           src: { regionId: r.id, section: f.section, field: f.field, row: row.sourceRow, year: null, cell: null, kind: 'IN' } };
         out.push(byText[k]);
       });
@@ -68,7 +68,7 @@
   /* ---------- the report ---------- */
 
   function rname(id) { return TAP.content.regionName(TAP.data.region(id)); }
-  function industry(id) { var d = id && TAP.data.industry(id); return d ? d.name : ''; }
+  function industries(ids) { return TAP.format.list(ids.map(function (id) { var d = TAP.data.industry(id); return d ? d.name : id; })); }
   function address(src) { try { return TAP.sources.address(src).text || ''; } catch (e) { return ''; } }
   function focusOf(cmp) { return cmp && (cmp.mode === 'one' || cmp.mode === 'pair') ? cmp.focus : null; }
 
@@ -100,7 +100,7 @@
     return '<section class="tap-themes__quotes">' + head + regions.map(function (g) {
       return '<div class="tap-themes__region' + (g.regionId === focus ? ' is-focus' : '') + '" data-region="' + esc(g.regionId) + '">' +
         '<h4 class="tap-themes__name">' + esc(rname(g.regionId)) + '</h4><ul class="tap-themes__list">' + g.quotes.map(function (q) {
-          var from = t('from.' + q.field, { industry: industry(q.industryId) }) + (q.rows > 1 ? ' (' + t('rows', { n: q.rows }) + ')' : '');
+          var from = t('from.' + q.field, { industry: industries(q.industryIds) }) + (q.rows > 1 ? ' (' + t('rows', { n: q.rows }) + ')' : '');
           return '<li class="tap-themes__quote"><q>' + esc(q.text) + '</q> <span class="tap-themes__src">' + esc(from) + ' · ' +
             esc(address(q.src)) + '</span></li>';
         }).join('') + '</ul></div>';
