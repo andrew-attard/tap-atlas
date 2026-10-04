@@ -478,4 +478,214 @@
       } finally { TAP.store.set({ highlight: null }); }
     }));
   });
+
+  /* ---------- US-2.7.1: multi-level drill-down (#75) ---------- */
+
+  // A chart builder for every drill level. A click's data becomes the target; `label` names a level below
+  // industry (a sub-industry), as a builder may do.
+  TAP.builders.register('x-fake-drill', function (ctx) {
+    calls.push(ctx);
+    return { option: { xAxis: { type: 'value' }, yAxis: { type: 'category', data: ['A'] },
+      series: [{ type: 'bar', tapRole: 'value', data: [{ value: 5, raw: 5, key: 'nb.arr', entityId: 'alpha' }] }] },
+      table: { columns: [{ key: 'entity', label: 'Region', unit: 'text', align: 'left' }], rows: [] },
+      legend: [], notes: [], missing: [], empty: false, error: null,
+      target: function (prm) {
+        var d = (prm && prm.data) || {};
+        return { reportId: ctx.def.id, regionIds: d.regionId ? [d.regionId] : [], industryIds: d.industryId ? [d.industryId] : [],
+          label: d.label || undefined, mark: 'cell' };
+      } };
+  });
+
+  function drillDef(id, extra) {
+    return Object.assign({ id: id, view: 'newBusiness', title: 'Level ' + id + ': where does it come from?',
+      explain: { shows: 'S.', read: 'R.', lookFor: 'L.' }, shape: 'compare', builder: 'x-fake-drill', dimension: 'entity',
+      measures: [{ id: 'nb.arr', label: 'ARR' }], defaultType: 'bar', types: ['bar', 'dot', 'table'], breakdowns: [],
+      sources: ['DER'], options: {} }, extra || {});
+  }
+  // Three levels: region and industry, then sub-industry, then rows.
+  function levels(s) {
+    s.report(drillDef('x-d1', { drill: { next: 'x-d2', label: 'Industry' } }));
+    s.report(drillDef('x-d2', { drill: { next: 'x-d3', label: 'Sub-industry' } }));
+    s.report(drillDef('x-d3'));
+  }
+  function chartOf(p) { var c = qs('.tap-panel__chart', p.el); return c ? window.echarts.getInstanceByDom(c) : null; }
+  function hit(p, data) { chartOf(p).trigger('click', { data: data }); }
+  function down2(p) {
+    hit(p, { regionId: 'alpha', industryId: 'ind2' });
+    hit(p, { regionId: 'alpha', industryId: 'ind2', label: 'Hospitals' });
+  }
+  function crumbs(p) { return qsa('.tap-panel__crumbs .tap-panel__crumb', p.el).map(txt); }
+  function key(name, target, alt) {
+    var e = new KeyboardEvent('keydown', { key: name, altKey: !!alt, bubbles: true, cancelable: true });
+    (target || document.body).dispatchEvent(e);
+    return e;
+  }
+
+  T.suite('drill', function () {
+    T.test('X-drill-api', 'TAP.panelDrill.create returns the promised handle', function (a) {
+      a.ok(!TAP.panelDrill.__stub, 'built');
+      var d = TAP.panelDrill.create({ id: 'x', root: document.createElement('section'), render: function () {}, st: {} });
+      ['push', 'up', 'top', 'path', 'destroy'].forEach(function (f) { a.equal(typeof d[f], 'function', f); });
+      d.destroy();
+    });
+
+    T.test('TPV-TC-271', 'Drill levels are read in their set order; an unknown level is an error in its own panel only', scene(function (a, s) {
+      levels(s);
+      a.deepEqual(TAP.panelDrill.levels(TAP.reports.get('x-d1')).ids, ['x-d1', 'x-d2', 'x-d3'], 'in order');
+      a.deepEqual(TAP.panelDrill.levels(TAP.reports.get('x-d3')).ids, ['x-d3'], 'no drill: one level');
+      s.report(drillDef('x-bad', { drill: { next: 'x-nope', label: 'Missing' } }));
+      var bad = s.panel('x-bad'), good = s.panel('x-d1');
+      a.match(txt(qs('.tap-panel__error', bad.el)), /x-nope/, 'names the unknown level');
+      a.equal(qs('.tap-panel__error', good.el), null, 'the other panel is fine');
+      s.report(drillDef('x-loop', { drill: { next: 'x-loop', label: 'Again' } }));
+      a.ok(TAP.panelDrill.levels(TAP.reports.get('x-loop')).errors.length > 0, 'a level that leads back to itself is an error');
+    }));
+
+    T.test('TPV-TC-272', 'A click on a mark opens the next level for that item in the same panel, with ctx.drill', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1'), target = { reportId: 'x-d1', regionIds: ['alpha'], industryIds: ['ind2'], label: undefined, mark: 'cell' };
+      hit(p, { regionId: 'alpha', industryId: 'ind2' });
+      a.equal(last().def.id, 'x-d2', 'the next level is built');
+      a.deepEqual(last().drill, target, 'with the clicked target as ctx.drill');
+      a.equal(TAP.layers.top(), null, 'no details panel');
+      a.equal(txt(qs('.tap-panel__title', p.el)), 'Level x-d2: where does it come from?', 'its own title');
+      a.equal(p.el.getAttribute('data-report'), 'x-d1', 'still the same panel');
+      a.ok(chartOf(p), 'drawn as a chart');
+    }));
+
+    T.test('TPV-TC-274', 'Two levels down the breadcrumb reads All regions › industry › sub-industry, each step a level', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      a.equal(qs('.tap-panel__crumbs', p.el), null, 'no breadcrumb at the top level');
+      down2(p);
+      a.deepEqual(crumbs(p), ['All regions', 'Education', 'Hospitals']);
+      var steps = qsa('.tap-panel__crumbs button', p.el);
+      a.deepEqual(steps.map(function (b) { return b.getAttribute('data-drill-level'); }), ['0', '1'], 'buttons back to levels 0 and 1');
+      a.equal(qs('.tap-panel__crumbs [aria-current]', p.el) && txt(qs('.tap-panel__crumbs [aria-current]', p.el)), 'Hospitals', 'the current level is marked, not a button');
+      a.ok(qs('.tap-panel__crumbs', p.el).closest('.tap-panel__head'), 'in the panel header');
+    }));
+
+    T.test('TPV-TC-275', 'Each breadcrumb step returns the panel to that level', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      click(qs('[data-drill-level="1"]', p.el));
+      a.equal(last().def.id, 'x-d2', 'back to level 1');
+      a.deepEqual(crumbs(p), ['All regions', 'Education']);
+      a.deepEqual(last().drill.industryIds, ['ind2'], 'still for the item chosen there');
+      click(qs('[data-drill-level="0"]', p.el));
+      a.equal(last().def.id, 'x-d1', 'back to the top');
+      a.equal(last().drill, null, 'no drill context at the top');
+      a.equal(qs('.tap-panel__crumbs', p.el), null, 'breadcrumb gone');
+    }));
+
+    T.test('TPV-TC-276', 'Backspace and Alt + Left go up one level while the panel has focus, not otherwise', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      document.body.focus();
+      key('Backspace');
+      a.equal(last().def.id, 'x-d3', 'focus outside the panel: unchanged');
+      qs('[data-action="about"]', p.el).focus();
+      var e = key('Backspace', document.activeElement);
+      a.equal(last().def.id, 'x-d2', 'Backspace: up one');
+      a.ok(e.defaultPrevented, 'handled');
+      a.ok(p.el.contains(document.activeElement), 'focus stays in the panel');
+      e = key('ArrowLeft', document.activeElement, true);
+      a.equal(last().def.id, 'x-d1', 'Alt + Left: up one');
+      a.ok(e.defaultPrevented, 'the browser does not go back a page');
+      e = key('Backspace', document.activeElement);
+      a.equal(last().def.id, 'x-d1', 'at the top nothing happens');
+      a.ok(!e.defaultPrevented, 'and the key is left alone');
+    }));
+
+    T.test('TPV-TC-276', 'Clicking a mark puts focus in the panel, so Backspace works after a mouse drill', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      document.body.focus();
+      qs('.tap-panel__chart', p.el).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      hit(p, { regionId: 'alpha', industryId: 'ind2' });
+      a.ok(p.el.contains(document.activeElement), 'the panel has focus');
+      key('Backspace', document.activeElement);
+      a.equal(last().def.id, 'x-d1');
+    }));
+
+    T.test('TPV-TC-277', 'Each level keeps the chart type menu and the table view, with its own choice', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      click(qs('[data-action="type"]', p.el));
+      click(qs('[data-type="dot"]', p.el));
+      hit(p, { regionId: 'alpha', industryId: 'ind2' });
+      a.ok(qs('[data-action="type"]', p.el), 'type menu at level 1');
+      a.ok(qs('[data-action="table"]', p.el), 'table at level 1');
+      a.deepEqual(TAP.panelMenus.types(TAP.reports.get('x-d2'), 4, {}).list, ['bar', 'dot'], 'the child\'s own types');
+      a.equal(last().type, 'bar', 'the level opens on its own default');
+      click(qs('[data-action="table"]', p.el));
+      a.ok(qs('.tap-panel__table', p.el), 'table view at level 1');
+      click(qs('[data-drill-level="0"]', p.el));
+      a.equal(last().type, 'dot', 'the top level keeps its own type');
+      a.equal(qs('.tap-panel__table', p.el), null, 'and its own chart view');
+    }));
+
+    T.test('TPV-TC-278', 'The comparison still applies one level down', scene(function (a, s) {
+      levels(s);
+      TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
+      var p = s.panel('x-d1');
+      hit(p, { regionId: 'charlie', industryId: 'ind1' });
+      a.equal(last().def.id, 'x-d2');
+      a.equal(last().cmp.mode, 'one');
+      a.equal(last().cmp.focus, 'charlie');
+      a.deepEqual(last().entities.map(function (e) { return e.id; }), TAP.scope.entities(TAP.store.get().cmp).map(function (e) { return e.id; }));
+      a.deepEqual(last().entities.map(function (e) { return e.id; }), ['charlie', 'rest'], 'focus then the rest');
+    }));
+
+    T.test('TPV-TC-279', 'A change of comparison or view returns the panel to its top level', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      TAP.store.set({ cmp: { mode: 'org' } });
+      a.equal(last().def.id, 'x-d1', 'comparison changed: top');
+      a.equal(qs('.tap-panel__crumbs', p.el), null);
+      down2(p);
+      TAP.store.set({ view: 'industry' });
+      TAP.store.set({ view: 'overview' });
+      a.equal(last().def.id, 'x-d1', 'view left and back: top');
+    }));
+
+    T.test('X-drill-custom', 'A change of the panel\'s own comparison also returns it to the top level', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      click(qs('[data-action="more"]', p.el));
+      click(qs('[data-action="compare"]', p.el));
+      var sel = qs('select[data-control="cmp-mode"]', p.el);
+      sel.value = 'org';
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      a.equal(last().def.id, 'x-d1');
+      a.equal(last().cmp.mode, 'org', 'with the panel\'s own comparison');
+    }));
+
+    T.test('TPV-TC-280', 'Without drill levels a click opens details, as in Phase 1', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d3');
+      hit(p, { regionId: 'alpha', industryId: 'ind2' });
+      a.equal(TAP.layers.top(), 'details', 'details opened');
+      a.equal(last().def.id, 'x-d3', 'no level change');
+      TAP.layers.close();
+      var q = s.panel('x-d1'), seen = [], off = TAP.bus.on('industry:select', function (x) { seen.push(x); });
+      hit(q, { industryId: 'ind4' });
+      off();
+      a.equal(last().def.id, 'x-d1', 'a target naming no region does not drill');
+      a.deepEqual(seen, [{ industryId: 'ind4' }], 'it follows the Phase 1 rule instead');
+    }));
+
+    T.test('X-drill-showme', '"Show me" for the panel\'s report returns it to the top level first', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      TAP.store.set({ highlight: { reportId: 'x-d1', regionIds: ['alpha'], mark: 'bar' } });
+      a.equal(last().def.id, 'x-d1');
+      a.deepEqual(last().highlight.regionIds, ['alpha'], 'with the highlight');
+    }));
+  });
 })(window.TAP);
