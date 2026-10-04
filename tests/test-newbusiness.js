@@ -79,7 +79,7 @@
         a.ok(best, 'the sample data has an insight for this view');
         var got = TAP.viewHead.headline(VIEW, cmp());
         a.equal(got && got.id, best.id, 'the most significant one');
-        a.ok(got.highlight && got.highlight.reportId && reports.indexOf(got.highlight.reportId) >= 0 || got.attach.length > 0, 'it carries a target on this view');
+        a.ok(!!got && (got.highlight && got.highlight.reportId && reports.indexOf(got.highlight.reportId) >= 0 || got.attach.length > 0), 'it carries a target on this view');
         withView(function (root) {
           var line = root.querySelector('[data-part="headline"]');
           a.ok(!line.hidden, 'headline shown');
@@ -152,7 +152,7 @@
     });
 
     when(((TAP.content.guide() || {}).planning || { sections: [] }).sections.concat(((TAP.content.guide() || {}).howTo || { sections: [] }).sections)
-      .some(function (s) { return s.link && s.link.view === VIEW; }), 'waits for the Guide to list the view (PAGES2)')('TPV-TC-326',
+      .some(function (s) { return s.link && s.link.view === VIEW; }), 'waits for the Guide to list the view (PAGES2)')('X-nb-tc326-guide',
       'The Guide lists the New business view', function (a) {
         var g = TAP.content.guide(), all = g.planning.sections.concat(g.howTo.sections);
         a.ok(all.some(function (s) { return s.link && s.link.view === VIEW; }), 'a Guide section opens the view');
