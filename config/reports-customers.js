@@ -54,10 +54,10 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     dimension: 'entity',
     measures: [
       { id: 'cg.growth.all', label: 'All accounts' },
-      { id: 'cg.growth.strategic', label: 'Strategic' },
-      { id: 'cg.growth.growth', label: 'Growth' },
-      { id: 'cg.growth.core', label: 'Core' },
-      { id: 'cg.growth.scaled', label: 'Scaled' }
+      { id: 'cg.growth.strategic', label: 'Strategic accounts' },
+      { id: 'cg.growth.growth', label: 'Growth accounts' },
+      { id: 'cg.growth.core', label: 'Core accounts' },
+      { id: 'cg.growth.scaled', label: 'Scaled accounts' }
     ],
     defaultType: 'groupedBar',
     types: ['groupedBar', 'dot', 'table'],
