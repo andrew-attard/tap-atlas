@@ -20,7 +20,7 @@ const APP = [
   'config/settings.js',
   'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-data.js', 'content/text-panel.js',
   'content/text-overview.js', 'content/text-industry.js', 'content/text-pages.js', 'content/text-engine2.js',
-  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/glossary.js', 'content/guide.js',
+  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/glossary.js', 'content/guide.js',
   'ORG',
   'js/core/content.js',
   'DATA',
@@ -49,7 +49,7 @@ const APP = [
 
 const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.css', 'css/panel.css',
   'css/overview.css', 'css/industry.css', 'css/pages.css', 'css/view-head.css', 'css/newbusiness.css', 'css/customers.css',
-  'css/profile.css'];
+  'css/profile.css', 'css/themes.css'];
 
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [

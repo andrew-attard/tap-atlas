@@ -1,0 +1,8 @@
+/*
+ * File: css/themes.css
+ * Purpose: Styles for the recurring themes report: theme bars and the selected theme's quotes (US-2.5.1).
+ * Provides: styles for this area only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: INSIGHTS2 stream. Colours and font sizes come from theme variables only.
+ */
