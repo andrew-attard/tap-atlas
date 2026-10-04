@@ -388,7 +388,7 @@
     T.test('TPV-TC-508', 'List headings carry the glyph and word from the builder\'s table columns', scene(function (a, s) {
       s.report(listDef());
       var p = s.panel('x-list');
-      a.deepEqual(kindsIn(qs('th[data-tap-col="name"]', p.el)), [K('IN').text], 'leader input');
+      a.deepEqual(kindsIn(qs('th[data-tap-col="name"]', p.el)), [], 'a name column carries no kind, even with one set');
       a.deepEqual(kindsIn(qs('th[data-tap-col="incr3"]', p.el)), [K('DER').text], 'calculated in the workbook');
       a.deepEqual(kindsIn(qs('th[data-tap-col="region"]', p.el)), [], 'names carry no kind');
       a.equal(txt(qs('th[data-tap-col="name"] [data-tap-opt]', p.el)), 'Account', 'the sort button keeps its own name');
@@ -397,7 +397,7 @@
       var th = qs('[data-tap-opt="sort"][data-tap-value^="incr3:"]', p.el).closest('th');
       a.deepEqual(kindsIn(th), [K('DER').text], 'found by the sort button when headings carry no data-tap-col');
       p.refresh();
-      a.equal(qsa('.tap-kind', th.closest('table')).length, 2, 'drawn once per heading, never twice');
+      a.equal(qsa('.tap-kind', th.closest('table')).length, 1, 'drawn once per heading, never twice');
     }));
 
     T.test('TPV-TC-510', 'A one-line key to the glyphs sits under each list and table', scene(function (a, s) {
@@ -406,7 +406,7 @@
       a.ok(key, 'key drawn');
       a.ok(list.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING, 'under the list');
       a.ok(!list.contains(key), 'outside the scrolling box, so it stays in view');
-      a.deepEqual(kindsIn(key), [K('IN').text, K('DER').text], 'the kinds the list shows, each once');
+      a.deepEqual(kindsIn(key), [K('DER').text], 'the kinds the list shows, each once');
       a.ok(key.offsetHeight > 0 && key.offsetHeight < 60, 'visible, on one line');
       s.report(kindDef());
       var q = s.panel('x-kinds'), tbl = showTable(q), tkey = qs('.tap-panel__kind-key', q.el);
@@ -416,7 +416,7 @@
 
     T.test('TPV-TC-509', 'Kinds in headings are plain text: visible without hovering, at a readable size', scene(function (a, s) {
       s.report(listDef());
-      var p = s.panel('x-list'), tag = qs('th[data-tap-col="name"] .tap-kind', p.el);
+      var p = s.panel('x-list'), tag = qs('th[data-tap-col="incr3"] .tap-kind', p.el);
       a.ok(tag.offsetHeight > 0, 'shown');
       a.equal(tag.getAttribute('title'), null, 'not a tooltip');
       a.ok(parseFloat(getComputedStyle(tag).fontSize) >= 14, 'label size or larger');
@@ -809,5 +809,22 @@
         a.equal(box.scrollTop, 0, 'the third row is in view: no scroll');
       } finally { TAP.store.set({ highlight: null }); }
     }));
+  });
+
+  /* ---------- identity columns carry no kind (#227) ---------- */
+
+  T.suite('kinds-identity', function () {
+    T.test('X-kinds-identity', 'Region, name, industry, sub-industry, market and channel columns show no kind, even when set', function (a) {
+      var ids = ['region', 'name', 'industry', 'subVertical', 'market', 'channel'];
+      var cols = ids.map(function (k) { return { key: k, label: k, unit: 'text', align: 'left', kind: 'PRE' }; })
+        .concat([{ key: 'currentArr', label: 'Current ARR', unit: 'money', align: 'right', kind: 'PRE' }]);
+      var cells = {};
+      ids.forEach(function (k) { cells[k] = { v: 'x', state: 'value', kind: 'PRE' }; });
+      cells.currentArr = { v: 10, state: 'value', kind: 'PRE' };
+      var box = T.dom.mount();
+      TAP.panelTable.render(box, { columns: cols, rows: [{ entityId: 'alpha:1', src: null, cells: cells }] }, {});
+      ids.forEach(function (k) { a.equal(qsa('.tap-kind', qs('[data-sort="' + k + '"]', box).closest('th')).length, 0, k); });
+      a.equal(qsa('.tap-kind', qs('[data-sort="currentArr"]', box).closest('th')).length, 1, 'a figure column keeps its kind');
+    });
   });
 })(window.TAP);
