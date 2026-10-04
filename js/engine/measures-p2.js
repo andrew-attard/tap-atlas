@@ -45,15 +45,17 @@
   // Sums the recap items that match. Recap years are calendar years; ctx.year is the plan year 1 to 3.
   function recap(r, ctx, motions, types, channel) {
     var years = (TAP.data.meta() || {}).years || [], want = ctx.year ? [years[ctx.year - 1]] : years;
-    var hit = (region(r).recap || []).filter(function (it) {
+    var match = (region(r).recap || []).filter(function (it) {
       return motions.indexOf(it.motion) >= 0 && types.indexOf(it.type) >= 0 && (!channel || it.channel === channel) &&
-        want.indexOf(it.year) >= 0 && k.isNum(it.value);
+        want.indexOf(it.year) >= 0;
     });
+    var hit = match.filter(function (it) { return k.isNum(it.value); });
     var s = k.src(r, 'recap', 'value', [], ctx.year, 'DER');
     s.cells = hit.map(function (it) { return it.sourceCell; });
     s.cell = s.cells.length === 1 ? s.cells[0] : null;
     if (!hit.length) return k.blank('DER', s);
-    var gap = want.some(function (y) { return !hit.some(function (it) { return it.year === y; }); });
+    // Partly provided: a matching item left blank, or a plan year with nothing at all
+    var gap = hit.length < match.length || want.some(function (y) { return !hit.some(function (it) { return it.year === y; }); });
     return k.cell(sum(hit.map(function (it) { return it.value; })), 'DER', s, gap ? partialYears() : null);
   }
   ['nb', 'cg', 'all'].forEach(function (m) {
@@ -84,25 +86,32 @@
 
   M.derive('nb.oi', ['nb.arr', 'nb.services'], k.amount('APP', ['year', 'industry']));
 
-  // New business in the region's Tier 1 or Tier 2 rows. A filled section with no row in the tier is zero.
-  function nbTier(r, ctx, tier, field) {
-    var all = region(r).newBusiness || [], mine = all.filter(function (row) { return row.tier === tier; });
-    if (!all.length) return k.blank('DER', k.src(r, 'newBusiness', field, [], ctx.year, 'DER'));
-    if (!mine.length) return k.cell(0, 'DER', k.src(r, 'newBusiness', field, [], ctx.year, 'DER'));
-    var used = [], partial = false, tot = 0;
-    mine.forEach(function (row) {
-      var b = k.byYear(row[field], ctx.year);
-      if (!k.isNum(b.v)) return;
-      tot += b.v;
-      partial = partial || !!b.partial;
-      used.push(row.sourceRow);
+  // New business in the region's Tier 1 or Tier 2 industries, as Market Coverage sets them: the sum of each
+  // industry's figure, read as nb.arr or nb.services for that industry, so a tier industry with no row is not
+  // provided (D48), never zero. No industry in the tier: not applicable.
+  function nbTier(r, ctx, tier, id) {
+    var field = id === 'nb.arr' ? 'arrPotential' : 'servicesPotential';
+    var cells = (region(r).marketCoverage || []).filter(function (row) { return row.tier === tier; }).map(function (row) {
+      return { ind: row.industryId, cell: M.get(id)(r, Object.assign({}, ctx, { industryId: row.industryId })) };
     });
-    var s = k.src(r, 'newBusiness', field, used.length ? used : rows(mine), ctx.year, 'DER');
-    return used.length ? k.cell(tot, 'DER', s, partial ? partialYears() : null) : k.blank('DER', s);
+    var have = cells.filter(function (x) { return x.cell.state === 'value'; });
+    var lost = cells.filter(function (x) { return x.cell.state === 'notProvided'; }), used = [];
+    have.forEach(function (x) { used = used.concat(x.cell.src.rows || []); });
+    var s = k.src(r, 'newBusiness', field, used, ctx.year, 'DER');
+    if (!have.length) return lost.length ? k.blank('DER', s) : k.notApplicable('DER', s);
+    var out = k.cell(sum(have.map(function (x) { return x.cell.v; })), 'DER', s);
+    var part = have.filter(function (x) { return x.cell.partial; })[0];
+    if (lost.length) {
+      out.partial = true;
+      out.note = TAP.content.text('measures.partNotProvided', { parts: TAP.format.list(lost.map(function (x) {
+        return (TAP.data.industry(x.ind) || {}).name || x.ind;
+      })) });
+    } else if (part) { out.partial = true; out.note = part.cell.note; }
+    return out;
   }
   [1, 2].forEach(function (tier) {
-    M.define('nb.arr.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'arrPotential'); });
-    M.define('nb.services.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'servicesPotential'); });
+    M.define('nb.arr.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.arr'); });
+    M.define('nb.services.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.services'); });
     M.derive('nb.oi.tier' + tier, ['nb.arr.tier' + tier, 'nb.services.tier' + tier], k.amount('APP', ['year']));
   });
 
@@ -125,7 +134,13 @@
       return (!seg || a.segment === seg) && (!ctx.risk || riskOf(a) === ctx.risk) && (!ctx.industryId || a.industryId === ctx.industryId);
     }) };
   }
+  // An account's three-year incremental ARR, and whether a year of it was left blank
   function incr3(a) { var b = k.byYear(a.incrementalArr, null); return k.isNum(b.v) ? b.v : null; }
+  function incr3Partial(a) { return !!k.byYear(a.incrementalArr, null).partial; }
+  function markPartial(out, partial) {
+    if (partial && out.state === 'value') { out.partial = true; out.note = out.note || TAP.content.text('measures.partialYears'); }
+    return out;
+  }
 
   // Sums (or counts, with pick returning 1) over the accounts in context. An empty list is not provided;
   // a filled list with no account in context is zero.
@@ -165,13 +180,14 @@
   ['all'].concat(SEGS).forEach(function (seg) {
     M.define('cg.growth.' + seg, rate('APP', 'cg.currentArr', ['year']), function (r, ctx) {
       ctx = ctx || {};
-      var acc = accounts(r, ctx, seg === 'all' ? null : seg), used = [], inc = 0, base = 0;
+      var acc = accounts(r, ctx, seg === 'all' ? null : seg), used = [], inc = 0, base = 0, blankYear = false;
       acc.rows.forEach(function (a) {
         var v = ctx.year ? (Array.isArray(a.incrementalArr) ? a.incrementalArr[ctx.year - 1] : null) : incr3(a);
         if (!k.isNum(v) || !k.isNum(a.currentArr)) return;
         used.push(a.sourceRow);
         inc += v;
         base += a.currentArr;
+        blankYear = blankYear || (!ctx.year && incr3Partial(a));
       });
       var s = k.src(r, 'customerGrowth', 'incrementalArr', used.length ? used : rows(acc.rows), ctx.year, 'APP');
       if (!acc.all.length || (acc.rows.length && !used.length)) return k.blank('APP', s);
@@ -180,7 +196,7 @@
         out.partial = true;
         out.note = TAP.content.text('measures.partialAccounts');
       }
-      return out;
+      return markPartial(out, blankYear);
     });
   });
 
@@ -191,15 +207,15 @@
     var list = all.map(function (a) { return { a: a, v: incr3(a) }; }).filter(function (x) { return x.v != null; });
     var s = k.src(r, 'customerGrowth', 'incrementalArr', rows(all), null, 'APP');
     if (!list.length) return k.blank('APP', s);
-    var den = sum(list.map(function (x) { return x.v; }));
+    var den = sum(list.map(function (x) { return x.v; })), blank = list.some(function (x) { return incr3Partial(x.a); });
     if (which === 'top3') {
       var top = list.slice().sort(function (x, y) { return y.v - x.v; }).slice(0, 3);
       s = k.src(r, 'customerGrowth', 'incrementalArr', top.map(function (x) { return x.a.sourceRow; }), null, 'APP');
-      return ratioCell(sum(top.map(function (x) { return x.v; })), den, s, { items: list.map(function (x) { return x.v; }), top: 3 });
+      return markPartial(ratioCell(sum(top.map(function (x) { return x.v; })), den, s, { items: list.map(function (x) { return x.v; }), top: 3 }), blank);
     }
     var risky = list.filter(function (x) { return riskOf(x.a) !== 'none'; });
     if (risky.length) s = k.src(r, 'customerGrowth', 'incrementalArr', risky.map(function (x) { return x.a.sourceRow; }), null, 'APP');
-    return ratioCell(sum(risky.map(function (x) { return x.v; })), den, s);
+    return markPartial(ratioCell(sum(risky.map(function (x) { return x.v; })), den, s), blank);
   }
   M.define('cg.top3Share', rate('APP', 'cg.arr', []), function (r) { return exposure(r, 'top3'); });
   M.define('cg.riskShare', rate('APP', 'cg.arr', []), function (r) { return exposure(r, 'risk'); });
@@ -230,6 +246,11 @@
     var a = k.byYear(p.arr, null).v, b = k.byYear(p.services, null).v;
     return k.isNum(a) || k.isNum(b) ? (a || 0) + (b || 0) : null;
   }
+  // A partner's order intake is partly provided when a year of ARR or services, or one of the two, is blank
+  function oiPartial(p) {
+    var a = k.byYear(p.arr, null), b = k.byYear(p.services, null);
+    return !!(a.partial || b.partial || !k.isNum(a.v) || !k.isNum(b.v));
+  }
   M.define('pt.count', k.count('IN', []), ptSum('name', 'IN', one));
   M.define('pt.fteSales', k.count('IN', []), ptSum('fteSales', 'IN', function (p) { return p.fteSales; }));
   M.define('pt.fteConsultants', k.count('IN', []), ptSum('fteConsultants', 'IN', function (p) { return p.fteConsultants; }));
@@ -241,7 +262,7 @@
     var list = region(r).partners || [], staffed = list.filter(function (p) { return fte(p) > 0 && oi(p) != null; });
     var s = k.src(r, 'partners', 'arr', rows(staffed.length ? staffed : list), null, 'APP');
     if (!staffed.length) return k.blank('APP', s);
-    return ratioCell(sum(staffed.map(oi)), sum(staffed.map(fte)), s);
+    return markPartial(ratioCell(sum(staffed.map(oi)), sum(staffed.map(fte)), s), staffed.some(oiPartial));
   });
 
   /* ---------- plan make-up ---------- */
