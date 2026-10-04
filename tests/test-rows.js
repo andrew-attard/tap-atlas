@@ -44,7 +44,7 @@
       a.equal(res.table.columns[3].kind, 'DER', 'every column carries its kind');
       a.equal(html(res).querySelectorAll('tbody tr').length, 9);
       a.deepEqual([].map.call(html(res).querySelectorAll('thead th'), function (th) { return th.getAttribute('data-tap-col'); }),
-        ['region', 'name', 'segment', 'incr3']);
+        ['region', 'name', 'segment', 'incr3', 'source'], 'the same headings on screen, then the row source (the panel adds it to copies itself)');
       a.equal(TAP.rows.list('newBusiness').length, 7, 'seven new business rows');
       a.deepEqual(TAP.rows.list('partners').map(function (r) { return r.id; }), ['alpha:10', 'bravo:10', 'delta:10']);
     });
