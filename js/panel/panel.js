@@ -95,13 +95,6 @@
 
   /* ---------- drawing ---------- */
 
-  function source(def) {
-    var kinds = ((def && def.sources) || []).map(function (k) { return TAP.format.kind(k); });
-    return el('footer', { class: 'tap-panel__source' }, kinds.map(function (k) {
-      return el('span', { class: 'tap-kind' }, [el('span', { class: 'tap-kind__glyph', 'aria-hidden': 'true' }, k.glyph), ' ', k.label]);
-    }).concat([el('span', { class: 'tap-panel__date' }, t('dataDate', { date: TAP.format.date(TAP.sources.dataDate()) }))]));
-  }
-
   // Fills the body once it is on the page, so the chart measures its real size on the first draw.
   function body(p, b, s, box) {
     var C = TAP.panelChart, res = b.res;
@@ -140,23 +133,9 @@
     if (!p.measuring) { p.measuring = true; try { render(p); } finally { p.measuring = false; } }
   }
 
-  // Keeps keyboard focus on the same control across a redraw.
-  function focusKey(p) {
-    var a = document.activeElement;
-    if (!a || !p.root.contains(a)) return null;
-    var k = ['data-action', 'data-control', 'data-value', 'data-type', 'data-sort'].filter(function (n) { return a.hasAttribute(n); })
-      .map(function (n) { return '[' + n + '="' + a.getAttribute(n) + '"]'; }).join('');
-    // A builder option (a list's sort heading): the same option and column, whatever direction it now offers
-    var v = a.getAttribute('data-tap-value') || '', cut = v.lastIndexOf(':');
-    if (a.hasAttribute('data-tap-opt')) {
-      k += '[data-tap-opt="' + CSS.escape(a.getAttribute('data-tap-opt')) + '"][data-tap-value^="' + CSS.escape(cut > 0 ? v.slice(0, cut + 1) : v) + '"]';
-    }
-    return k || null;
-  }
-
   function render(p) {
     if (!p.live) return;
-    var s = TAP.store.get(), keep = focusKey(p), I = TAP.panelInsights;
+    var s = TAP.store.get(), keep = TAP.panelChart.focusKey(p.root), I = TAP.panelInsights;
     p.seen = {};   // glossary terms are marked once per panel
     var b = build(p, s), info = I.get(p.st.custom || s.cmp, p.id), ok = !b.errors.length && b.res && !b.res.empty;
     p.drewHl = !!(b.ctx && b.ctx.highlight);
@@ -184,7 +163,7 @@
       bodyBox,
       ok && !tabled(p, b) ? TAP.panelChart.legend(b.res) : null,
       ok ? TAP.panelChart.notes(b.res) : null,
-      source(b.def),
+      TAP.panelChart.source(b.def),
       p.statusEl
     ]);
     X().syncScroll();   // before the chart is drawn: locking the page scroll changes the width the chart gets
