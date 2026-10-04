@@ -20,7 +20,7 @@
     parts: ['stackedBar', 'stacked100', 'groupedBar', 'treemap', 'bubble', 'table'],
     xy: ['scatter', 'table'],
     xyz: ['bubble', 'scatter', 'table'],
-    grid: ['heatmap', 'bubbleGrid', 'table'],
+    grid: ['heatmap', 'bubbleGrid', 'stackedBar', 'table'],   // stackedBar: nb-industries by tier (US-2.1.2)
     years: ['line', 'groupedBar', 'table'],
     spread: ['dot', 'table'],
     list: ['list']              // a list of rows is its own table (US-2.7.2): no chart types, no table switch
@@ -65,6 +65,9 @@
       if (!Array.isArray(def.columns) || !def.columns.length) e.push('A list needs "columns".');
     }
     if (def.builder && !TAP.builders.get(def.builder)) e.push('No chart builder called "' + def.builder + '".');
+    if (def.defaultBreakdown && (def.breakdowns || []).indexOf(def.defaultBreakdown) < 0) {
+      e.push('"defaultBreakdown" must be one of "breakdowns".');
+    }
     if (Array.isArray(def.breakdowns) && def.breakdowns.length > 0 && typeof def.breakdowns[0] !== 'string') {
       e.push('"breakdowns" must be a list of names.');
     }
@@ -86,9 +89,12 @@
   function measureIds(def) {
     var ids = (def.measures || []).map(function (m) { return m.id; });
     Object.keys(def.parts || {}).forEach(function (k) { ids = ids.concat(def.parts[k]); });
-    if (def.x) ids.push(def.x);
-    if (def.y) ids.push(def.y);
-    if (def.size && def.size.options) ids = ids.concat(def.size.options);
+    // Row reports (def.rows) name TAP.rows column keys in x, y and size, not measures (ARCHITECTURE 17.7)
+    if (!def.rows) {
+      if (def.x) ids.push(def.x);
+      if (def.y) ids.push(def.y);
+      if (def.size && def.size.options) ids = ids.concat(def.size.options);
+    }
     return ids.filter(function (id, i) { return ids.indexOf(id) === i; });
   }
 

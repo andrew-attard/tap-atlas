@@ -531,6 +531,14 @@ TAP_REPORTS['cg-accounts'] = {
 - **Scope:** rows come from `TAP.scope.regionIds(cmp)`. In `one` and `pair` modes the focus region's rows come first. `set` shows only the chosen regions; `all` and `org` show every row.
 - **Drill context:** with `ctx.drill` (a Target from the level above, 17.6), rows are filtered to its `regionIds` and `industryIds`.
 
+**Agreed details (PANEL2 and ENGINE2):**
+- Row clicks: the panel calls `result.target({data: {regionId, industryId, row}})`, where `row` is the clicked row's `data-tap-row` string, then `TAP.layers.openDetails(target)`. Source `accounts` maps to section `customerGrowth` in `items`.
+- Sorting: a click on `[data-tap-opt]` sets `ctx.opts[key]` to the `data-tap-value` string (`"incr3:desc"`); the builder writes the next direction on each header.
+- Value kinds (US-2.6.4): the panel adds the kind glyph and word to list headings from `result.table.columns[i].kind`; the builder puts `data-tap-col="<key>"` on each `th` and never draws kinds itself. Builder HTML is the table only; the panel draws the copy button, row count and glyph key around it.
+- `defaultBreakdown` in a definition is the breakdown the panel starts with (and returns to when `scopeEpoch` changes).
+- Row bubbles (`rowBubble`) name `TAP.rows` column keys in `x`, `y` and `size`; `TAP.reports.measureIds` skips them when `def.rows` is set. `TAP_SETTINGS.rowBubble.labelMax` (10) sets how many carry a label.
+- CGP's wrappers `cgSegments`, `cgGrowth`, `cgExposure` live in `js/reports/cg-builders.js`.
+
 **Panel** (PANEL2): `type: 'list'` hides the chart type menu and the table switch. Clicks on any `[data-tap-opt]` element in builder HTML set `ctx.opts[key] = value` and rebuild (generic, not list-specific). Clicks on `[data-tap-row]` open details with the builder's target. The list header row is sticky and the body scrolls inside the panel.
 
 **Details for rows:** `TAP.detailsRows.build(target)` (`js/reports/details-rows.js`, CGP) is called by `TAP.details.build` when `target.items` is set. It lists every field of the item with its source, using `TAP.rows.cell`.
