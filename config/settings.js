@@ -29,6 +29,9 @@ window.TAP_SETTINGS = {
     midpoint: 2.0
   },
 
+  // Row bubbles (US-2.2.4, US-2.3.3): how many of the largest bubbles carry a label.
+  rowBubble: { labelMax: 10 },
+
   // Ranking insights (US-1.7.2). Significance = family weight x (strength, money and breadth combined).
   insights: {
     weights: { strength: 0.5, money: 0.3, breadth: 0.2 },
