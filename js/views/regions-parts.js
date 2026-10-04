@@ -2,10 +2,10 @@
  * File: js/views/regions-parts.js
  * Purpose: The parts of a region profile besides its reports: the plan at a glance against the rest (the four card
  *          lines of US-1.5.1, US-2.4.2), the region's insights, and everything its leader wrote (US-2.4.4).
- * Provides: TAP.profileParts (glance, compare, drawGlance, insights, words)
+ * Provides: TAP.profileParts (glance, compare, drawGlance, insights, drawInsights, words, drawWords)
  * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js, js/engine/measures.js,
  *             js/engine/scope.js, js/ui/layers.js, js/views/overview-cards.js (openSource), js/views/regions.js
- *             (TAP.profile.cmp), js/insights/engine.js (all at call time)
+ *             (TAP.profile.cmp), js/insights/engine.js, js/core/data.js, js/core/store.js (all at call time)
  * Used by: js/views/regions.js
  * Owner: PROFILE stream (#215, #217)
  */
@@ -107,7 +107,94 @@
     return box;
   }
 
-  function notYet(fn) { return function () { throw new Error('Not built yet (#' + 217 + '): TAP.profileParts.' + fn); }; }
+  /* ---------- this region's insights (US-2.4.4) ---------- */
 
-  TAP.profileParts = { glance: glance, compare: compare, drawGlance: drawGlance, insights: notYet('insights'), words: notYet('words') };
+  // Every insight naming the region, hidden ones left out, most significant first.
+  function insights(regionId) {
+    var I = TAP.insights;
+    if (!I || I.__stub) return [];
+    return (I.ranked(TAP.profile.cmp(regionId), { regionId: regionId }) || []).slice().sort(function (x, y) {
+      return y.significance - x.significance || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0);
+    });
+  }
+
+  function drawInsights(host, regionId) {
+    var list = insights(regionId), name = TAP.content.regionName(TAP.data.region(regionId));
+    var box = el('section', { class: 'tap-pf-insights tap-pf-card', 'aria-label': t('insights.title', { name: name }) }, [
+      el('h2', { class: 'tap-pf-card__title' }, t('insights.title', { name: name })),
+      el('p', { class: 'tap-pf-card__intro' }, list.length ? t(list.length === 1 ? 'insights.introOne' : 'insights.intro', { n: list.length }) : t('insights.none', { name: name }))
+    ]);
+    var ol = el('ol', { class: 'tap-pf-card__list' });
+    list.forEach(function (x) {
+      ol.appendChild(el('li', { class: 'tap-pf-insight', 'data-insight': x.id }, [
+        el('span', { class: 'tap-pf-insight__label' }, x.label || t('insights.label')),
+        el('p', { class: 'tap-pf-insight__text' }, x.sentence),
+        el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-pf-insight__showme', 'data-action': 'showme',
+          onclick: function () { TAP.bus.emit('showme', { insightId: x.id, target: x.highlight }); } }, t('insights.showMe'))
+      ]));
+    });
+    if (list.length) box.appendChild(ol);
+    host.appendChild(box);
+    return box;
+  }
+
+  /* ---------- everything the region's leader wrote (US-2.4.4) ---------- */
+
+  function blank(v) { return v == null || String(v).trim() === ''; }
+
+  function entry(kind, industryId, text, src, extra) {
+    var w = where({ src: src });
+    return Object.assign({ kind: kind, industryId: industryId, text: String(text).trim(), src: src, where: w }, extra || {});
+  }
+
+  // [{industryId, name, entries: [{kind: 'commentary'|'successFactors', text, src, where, subVertical, market}]}],
+  // in the industry order of the data. Blank cells are simply not listed.
+  function words(regionId) {
+    var reg = TAP.data.region(regionId) || {}, by = {};
+    function add(e) { (by[e.industryId] = by[e.industryId] || []).push(e); }
+    (reg.marketCoverage || []).forEach(function (r) {
+      if (blank(r.commentary)) return;
+      add(entry('commentary', r.industryId, r.commentary,
+        { regionId: regionId, section: 'marketCoverage', field: 'commentary', row: r.sourceRow, year: null, cell: null, kind: 'IN' }));
+    });
+    (reg.newBusiness || []).forEach(function (r) {
+      if (blank(r.successFactors)) return;
+      add(entry('successFactors', r.industryId, r.successFactors,
+        { regionId: regionId, section: 'newBusiness', field: 'successFactors', row: r.sourceRow, year: null, cell: null, kind: 'IN' },
+        { subVertical: r.subVertical || null, market: r.market || null }));
+    });
+    var order = TAP.data.industries({}).map(function (d) { return d.id; });
+    Object.keys(by).forEach(function (id) { if (order.indexOf(id) < 0) order.push(id); });
+    return order.filter(function (id) { return by[id]; }).map(function (id) {
+      var ind = TAP.data.industry(id);
+      return { industryId: id, name: ind ? ind.name : id, entries: by[id] };
+    });
+  }
+
+  function drawWords(host, regionId) {
+    var groups = words(regionId), name = TAP.content.regionName(TAP.data.region(regionId));
+    if (!groups.length) return null;   // nothing written: no panel, and no "no comment" label
+    var box = el('section', { class: 'tap-pf-words tap-pf-card', 'aria-label': t('words.title', { name: name }) }, [
+      el('h2', { class: 'tap-pf-card__title' }, t('words.title', { name: name })),
+      el('p', { class: 'tap-pf-card__intro' }, t('words.intro'))
+    ]);
+    var body = el('div', { class: 'tap-pf-card__list', tabindex: '0', 'aria-label': t('words.title', { name: name }) });
+    groups.forEach(function (g) {
+      body.appendChild(el('section', { class: 'tap-pf-words__group', 'data-industry': g.industryId }, [el('h3', null, g.name)]
+        .concat(g.entries.map(function (e) {
+          var label = e.kind === 'commentary' ? t('words.commentary') : [t('words.successFactors'), e.subVertical, e.market].filter(Boolean).join(' · ');
+          return el('div', { class: 'tap-pf-word', 'data-word': e.kind }, [
+            el('span', { class: 'tap-pf-word__kind' }, label),
+            el('p', { class: 'tap-pf-word__text' }, e.text),
+            el('span', { class: 'tap-pf-word__src' }, TAP.format.kind('IN').text + (e.where ? ' · ' + e.where : ''))
+          ]);
+        }))));
+    });
+    box.appendChild(body);
+    host.appendChild(box);
+    return box;
+  }
+
+  TAP.profileParts = { glance: glance, compare: compare, drawGlance: drawGlance, insights: insights, drawInsights: drawInsights,
+    words: words, drawWords: drawWords };
 })(window.TAP);
