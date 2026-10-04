@@ -2,7 +2,8 @@
  * File: js/reports/row-bubble.js
  * Purpose: A bubble chart with one bubble per row (account or partner) in its region's colour, the largest labelled
  *          (US-2.2.4, US-2.3.3). The definition's x, y and size name TAP.rows column keys; options.label is 'all'
- *          (every bubble named) or 'top' (the largest by options.labelBy, up to TAP_SETTINGS.rowBubble.labelMax).
+ *          (names where they fit, up to TAP_SETTINGS.rowBubble.labelMax more numbered in the key, a note for the rest)
+ *          or 'top' (the largest by options.labelBy, up to labelMax).
  * Provides: builder 'rowBubble'
  * Depends on: js/engine/rows.js, js/engine/shapes.js (drawing kit), js/engine/scope.js, js/core/data.js,
  *             js/core/content.js, js/core/format.js, config/settings.js (all at call time)
@@ -131,7 +132,7 @@
       });
     });
 
-    // Which bubbles carry a name, biggest first: every one ('all'), or the largest by labelBy up to the limit in
+    // Which bubbles carry a name, largest by labelBy (default the y value) first: every one ('all'), or up to the limit in
     // settings ('top'). The same limit caps the numbers, so the key stays short on a shared screen.
     var by = opts.labelBy || def.y, max0 = ((window.TAP_SETTINGS || {}).rowBubble || {}).labelMax;
     var labelMax = typeof max0 === 'number' ? max0 : 10, limit = opts.label === 'all' ? pts.length : labelMax;

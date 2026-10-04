@@ -28,7 +28,8 @@
     // Optional links under the title, e.g. "Open profile" (US-2.4.1): [{id, label, href}]
     if ((built.actions || []).length) {
       body.appendChild(el('p', { class: 'tap-details__actions' }, built.actions.map(function (a) {
-        return el('a', { class: 'tap-btn', href: a.href, 'data-action': a.id }, a.label);
+        // The link changes the view, so the details panel closes with it
+        return el('a', { class: 'tap-btn', href: a.href, 'data-action': a.id, onclick: function () { close(); } }, a.label);
       })));
     }
     (built.groups || []).forEach(function (g) {

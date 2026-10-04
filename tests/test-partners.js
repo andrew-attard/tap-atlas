@@ -112,6 +112,7 @@
       keys.forEach(function (l) { a.ok(l.color, l.label + ': the number sits on a coloured key, readable'); });
       var shown = seen.filter(function (b) { return b.labelled; }).length, rest = seen.length - shown;
       a.ok(shown > 0, shown + ' partners named or numbered');
+      a.ok(rest > 0, 'the sample leaves some partners unnamed in All regions');
       if (rest) a.ok(res.notes.some(function (n) { return n.indexOf(rest + ' more partners') === 0; }), 'a note says how many are not named');
       a.equal(res.table.rows.length, seen.length, 'the table lists every one');
     });

@@ -56,7 +56,8 @@
     TAP.views.order().forEach(function (id) {
       nav.appendChild(el('button', {
         type: 'button', class: 'tap-menu__item', 'data-view': id,
-        onclick: function () { TAP.store.set({ view: id }); }
+        // The Regions entry opens the region picker, not the last profile shown (US-2.4.1)
+        onclick: function () { TAP.store.set(id === 'regions' ? { view: id, region: null } : { view: id }); }
       }, TAP.views.title(id)));
     });
     return nav;
