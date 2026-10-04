@@ -1,10 +1,11 @@
 /*
  * File: js/panel/panel-chart.js
  * Purpose: Draws a builder's result inside a panel: the ECharts chart or HTML grid, the error and no-data
- *          states, the legend, the size legend and the notes under the chart.
- * Provides: TAP.panelChart (render, resize, dispose, html, error, empty, legend, notes)
+ *          states, the legend, the size legend, the notes under the chart and the source line. Also keeps focus
+ *          on the same control across a redraw (focusKey).
+ * Provides: TAP.panelChart (render, resize, dispose, html, error, empty, legend, notes, source, focusKey)
  * Depends on: vendor/echarts.min.js, js/theme.js (the 'tap' chart theme), js/core/dom.js, js/core/icons.js,
- *             js/core/content.js, js/core/format.js
+ *             js/core/content.js, js/core/format.js, js/core/sources.js
  * Used by: js/panel/panel.js
  */
 (function (TAP) {
@@ -146,6 +147,28 @@
     return el('ul', { class: 'tap-panel__notes' }, list.map(function (n) { return el('li', null, n); }));
   }
 
+  // The source line: the kind glyph and word for each kind of data the report names, then the data date.
+  function source(def) {
+    var kinds = ((def && def.sources) || []).map(function (k) { return TAP.format.kind(k); });
+    return el('footer', { class: 'tap-panel__source' }, kinds.map(function (k) {
+      return el('span', { class: 'tap-kind' }, [el('span', { class: 'tap-kind__glyph', 'aria-hidden': 'true' }, k.glyph), ' ', k.label]);
+    }).concat([el('span', { class: 'tap-panel__date' }, t('dataDate', { date: TAP.format.date(TAP.sources.dataDate()) }))]));
+  }
+
+  // A selector for the focused control inside root, so a redraw can put keyboard focus back on it. Null if none.
+  function focusKey(root) {
+    var a = document.activeElement;
+    if (!a || !root.contains(a)) return null;
+    var k = ['data-action', 'data-control', 'data-value', 'data-type', 'data-sort'].filter(function (n) { return a.hasAttribute(n); })
+      .map(function (n) { return '[' + n + '="' + a.getAttribute(n) + '"]'; }).join('');
+    // A builder option (a list's sort heading): the same option and column, whatever direction it now offers
+    var v = a.getAttribute('data-tap-value') || '', cut = v.lastIndexOf(':');
+    if (a.hasAttribute('data-tap-opt')) {
+      k += '[data-tap-opt="' + CSS.escape(a.getAttribute('data-tap-opt')) + '"][data-tap-value^="' + CSS.escape(cut > 0 ? v.slice(0, cut + 1) : v) + '"]';
+    }
+    return k || null;
+  }
+
   TAP.panelChart = { render: render, resize: resize, dispose: dispose, html: html, error: error, empty: empty,
-    legend: legend, notes: notes };
+    legend: legend, notes: notes, source: source, focusKey: focusKey };
 })(window.TAP);
