@@ -6,7 +6,8 @@
  *          The address bar names the region (#regions/<id>); js/ui/app.js keeps it and state.region in step.
  * Provides: view 'regions' (registered with TAP.views), TAP.profile (cmp, rows, href, link)
  * Depends on: js/ui/view-head.js, js/panel/panel.js, config/profile.js, js/engine/registry.js, js/engine/scope.js,
- *             js/core/dom.js, icons.js, content.js, store.js, data.js, format.js, sources.js, js/ui/layers.js (all at call time)
+ *             js/core/dom.js, icons.js, content.js, store.js, data.js, format.js, sources.js, js/ui/layers.js,
+ *             js/ui/shell.js (label), css/profile.css (print) (all at call time)
  * Used by: js/ui/app.js, js/ui/shell.js (menu), js/views/overview-cards.js (link)
  * Owner: PROFILE stream (#214)
  */
@@ -78,11 +79,24 @@
     } }, [TAP.icons.svg('data'), el('span', null, TAP.content.text('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) }))]);
   }
 
+  // The data status label and date for every printed page (US-2.4.5): the print stylesheet shows this variable in
+  // the page margin. It is a CSS string, so quotes and backslashes in the label are escaped.
+  function printLabel(on) {
+    var root = document.documentElement;
+    if (!on) { root.style.removeProperty('--tap-pf-print'); return; }
+    var label = TAP.shell.label(), date = TAP.content.text('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) });
+    var text = [label && label.text, date].filter(Boolean).join(' · ').replace(/["\\]/g, '\\$&').replace(/[\r\n]+/g, ' ');
+    root.style.setProperty('--tap-pf-print', '"' + text + '"');
+  }
+
   function profile(page, id) {
     var c = cmp(id), panels = [];
     page.classList.add('tap-pf');
     page.setAttribute('data-region', id);
-    var top = el('div', { class: 'tap-pf__top' }, [regionSelect(id), dataButton()]);
+    var top = el('div', { class: 'tap-pf__top' }, [regionSelect(id),
+      el('button', { type: 'button', class: 'tap-btn tap-pf__print', 'data-action': 'print', onclick: function () { window.print(); } }, t('print')),
+      dataButton()]);
+    printLabel(true);
     var title = el('div', { class: 'tap-pf__head' }, [
       el('span', { class: 'tap-pf__bar', style: 'background:' + TAP.scope.colorOf(id), 'aria-hidden': 'true' })
     ]);
@@ -105,6 +119,7 @@
     var off = TAP.store.on(function (s, changed) { if (changed.indexOf('hiddenInsights') >= 0) drawIns(); });
     return { destroy: function () {
       off();
+      printLabel(false);
       panels.forEach(function (p) { if (p && p.destroy) p.destroy(); });
       head.destroy();
     } };
