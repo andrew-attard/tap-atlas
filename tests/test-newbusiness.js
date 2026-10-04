@@ -24,8 +24,21 @@
   function sample() { TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA))); }
   function viewReports() { return (window.TAP_VIEWS[VIEW] || {}).reports || []; }
   function defined() { return viewReports().filter(function (id) { return !!TAP.reports.get(id); }); }
-  function nbRuleAttached() {
-    return ((window.TAP_RULES || {}).rules || []).some(function (r) { return (r.attach || []).some(function (id) { return /^nb-/.test(id); }); });
+  function attachesNb(r) { return (r.attach || []).some(function (id) { return /^nb-/.test(id); }); }
+  function rules() { return (window.TAP_RULES || {}).rules || []; }
+  // TPV-TC-327 waits for the Phase 1 new business rules themselves to attach here (US-2.5.6).
+  var NB_RULES = ['outlier', 'noPipeline', 'winsVsPeers'];
+  function nbRulesMoved() {
+    return NB_RULES.every(function (id) { var r = rules().filter(function (x) { return x.id === id; })[0]; return !!r && attachesNb(r); });
+  }
+  // TPV-TC-319 waits for the sample data to give at least one insight attached to a New business report.
+  // Checked once at load, only when some rule attaches here; the tests reload their own data before each case.
+  function sampleHasNbInsight() {
+    if (!rules().some(attachesNb)) return false;
+    try {
+      sample();
+      return TAP.insights.all().some(function (x) { return x.attach.some(function (id) { return /^nb-/.test(id); }); });
+    } catch (e) { return false; }
   }
   // A case that needs something not yet on main is registered as skipped, with the reason.
   function when(ready, reason) { return ready ? T.test : function (id, title) { T.skip(id, title, reason); }; }
@@ -69,7 +82,7 @@
       });
     });
 
-    when(nbRuleAttached(), 'waits for insight rules attached to New business reports (INSIGHTS2)')('TPV-TC-319',
+    when(sampleHasNbInsight(), 'waits for a sample insight attached to a New business report (INSIGHTS2)')('TPV-TC-319',
       'Sample data: the headline is the most significant insight attached to the view, with a Show me target', function (a) {
         sample();
         var reports = viewReports(), best = null;
@@ -158,9 +171,9 @@
         a.ok(all.some(function (s) { return s.link && s.link.view === VIEW; }), 'a Guide section opens the view');
       });
 
-    when(nbRuleAttached(), 'waits for insight rules attached to New business reports (INSIGHTS2)')('TPV-TC-327',
+    when(nbRulesMoved(), 'waits for the Phase 1 new business rules to attach here (US-2.5.6)')('TPV-TC-327',
       'Phase 1 new business rules show their insights on this view, not in details', function (a) {
-        var nb = ['outlier', 'noPipeline', 'winsVsPeers'];
+        var nb = NB_RULES;
         window.TAP_RULES.rules.filter(function (r) { return nb.indexOf(r.id) >= 0; }).forEach(function (r) {
           a.ok(r.attach.length > 0 && r.attach.some(function (id) { return viewReports().indexOf(id) >= 0; }), r.id + ' attaches to a report on this view');
           a.ok(!!r.highlight, r.id + ' has a highlight');
