@@ -102,7 +102,9 @@
         // Phase 2 rule families add their own insights; the Phase 1 families give 37
         var phase1 = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
         a.equal(all.filter(function (x) { return phase1.indexOf(x.family) >= 0; }).length, 37, 'the sample data has 37 Phase 1 insights');
-        a.ok(all.some(function (x) { return !x.reportId; }) && all.some(function (x) { return x.reportId; }), 'both kinds are covered');
+        a.ok(all.some(function (x) { return x.reportId; }), 'insights with a chart are covered');
+        // Every Phase 2 rule now has a report; the details-only path is checked with a synthetic target (X-int-showme-details)
+        if (all.some(function (x) { return !x.reportId; })) a.ok(true, 'details-only insights are covered too');
         a.deepEqual(everyInsight(root, {}), [], 'All regions');
       });
     });
@@ -163,9 +165,11 @@
 
     T.test('X-int-showme-details', 'An insight with no chart opens the details side panel', function (a) {
       withApp(function () {
-        var x = TAP.insights.all().filter(function (i) { return !i.reportId; })[0];
+        // A target with no report, as an insight with no chart carries (fallback 'details'); built here, since every
+        // sample insight may have a report by now
+        var target = { reportId: null, regionIds: [TAP.data.regions()[0].id], industryIds: [], accountIds: [], mark: null };
         reset(null, 'insights');
-        var r = TAP.showme.go({ insightId: x.id, target: x.highlight });
+        var r = TAP.showme.go({ target: target });
         a.equal(r.to, 'details', 'lands on details');
         a.equal(TAP.layers.top(), 'details', 'the details panel is open');
         a.equal(TAP.store.get().view, 'insights', 'the view stays');
