@@ -321,7 +321,7 @@
       ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) { a.equal(marks(r).length, 1, r + ' has one mark'); });
       a.match(marks('alpha')[0].text, /Education$/, 'A: ind2 is Tier 2 with no row (ind3 is not applicable, so not named)');
       a.match(marks('bravo')[0].text, /Utilities$/);
-      a.match(marks('charlie')[0].text, /Healthcare, Education/, 'C: ind1 blank row, ind2 blank tier');
+      a.match(marks('charlie')[0].text, /Healthcare and Education$/, 'C: ind1 blank row, ind2 blank tier');
       var all = build(def('compare', ['rc.nb.arr']), { type: 'groupedBar', breakdown: 'channel', cmp: cmp({ mode: 'all' }),
         entities: TAP.scope.entities(cmp({ mode: 'all' })) }).option;
       var c = all.series.filter(function (s) { return s.tapRole === 'notProvided'; })[0].data;
