@@ -21,14 +21,14 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Pages | `index.html` (internal edition: real data and organization layer), `index-sample.html` (sample data), `tests.html` (test page) |
 | Data | `data/plan-data.js` (real, from the import; internal copy only), `data/sample-plan-data.js` (fictional, made by `tools/generate-sample-data.js`) |
 | Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` (the contract check), `content/text-data.js` (its messages), `js/core/sources.js` (file › sheet › cell) |
-| Look | `js/theme.js` (every colour, font, size and the logo), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/glossary.css`) |
+| Look | `js/theme.js` (every colour, font, size and the logo), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/glossary.css`, `css/view-head.css`, `css/newbusiness.css`, `css/customers.css`, `css/profile.css`, `css/themes.css`) |
 | Settings | `config/settings.js` (weights, thresholds, limits) |
-| Reports | `config/reports.js` (the schema), `config/reports-overview.js`, `config/reports-industry.js`, `config/views.js` |
-| Measures | `js/engine/measures.js`, `js/engine/scores.js` (per-industry measures and the two scores) |
-| Charts | `js/engine/build-compare.js`, `js/engine/build-parts.js`, `js/engine/build-xy.js`, `js/reports/tier-grid.js`, `js/reports/quadrant.js` |
-| Insights | `config/insight-rules.js` (rules, thresholds, wording), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
-| Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/views/*.js` (the four views), `js/panel/*.js` (the report panel) |
-| Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area: `content/text-shell.js`, `content/text-engine.js`, `content/text-data.js`, `content/text-panel.js`, `content/text-overview.js`, `content/text-industry.js`, `content/text-pages.js` |
+| Reports | `config/reports.js` (the schema), one definitions file per view (`config/reports-overview.js`, `config/reports-industry.js`, `config/reports-newbusiness.js`, `config/reports-customers.js`, `config/reports-partners.js`, `config/reports-themes.js`), `config/views.js`, `config/profile.js` (the reports on a region profile) |
+| Measures | `js/engine/measures.js`, `js/engine/measures-p2.js` (the Phase 2 measures), `js/engine/scores.js` (per-industry measures and the two scores), `js/engine/rows.js` (figures for single rows on lists) |
+| Charts and lists | `js/engine/build-compare.js`, `js/engine/build-parts.js`, `js/engine/build-xy.js`, `js/engine/build-list.js` (lists), `js/reports/*.js` (the dedicated charts) |
+| Insights | `config/insight-rules.js` (rules, thresholds, wording), `config/comment-themes.js` (recurring theme keywords), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
+| Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/ui/view-head.js` (the newer views' header and tips), `js/views/*.js` (the eight views), `js/panel/*.js` (the report panel, drill-down, expanded charts) |
+| Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages) |
 | Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, internal copy only, never committed) |
 | Tests | `tests.html`, `tests/test-*.js`, `tests/fixtures/mini-data.js` (a small valid data file) |
 | Handover | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md` |
@@ -139,13 +139,58 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 Use to add a chart for a question the current views don't answer.
 
-**Attach:** `config/reports.js` (the schema), the view's definitions file (`config/reports-overview.js` or `config/reports-industry.js`), `config/views.js`, `js/engine/measures.js` and `js/engine/scores.js` (the measures that exist).
+**Attach:** `config/reports.js` (the schema), the view's definitions file (`config/reports-overview.js`, `config/reports-industry.js`, `config/reports-newbusiness.js`, `config/reports-customers.js` or `config/reports-partners.js`), `config/views.js`, and the measures that exist: `js/engine/measures.js`, `js/engine/measures-p2.js` and `js/engine/scores.js`.
 
 ```
-Add a report to this app. The question it should answer: "<question>". It belongs on the <overview | industry> view. Reports are definitions that follow the schema documented in config/reports.js; no chart code is needed for an existing data shape.
-Write one new definition in the view's file: an id, the title phrased as the question, the three explanation texts, the shape, the measures, the default and allowed chart types, the breakdowns and the source kinds. Add its id to the view's list in config/views.js. Use only measures that exist in js/engine/measures.js or js/engine/scores.js. If one is missing, say so and propose it separately; don't invent an id.
+Add a report to this app. The question it should answer: "<question>". It belongs on the <overview | industry | newBusiness | customers | partners> view. Reports are definitions that follow the schema documented in config/reports.js; no chart code is needed for an existing data shape.
+Write one new definition in the view's file: an id, the title phrased as the question, the three explanation texts, the shape, the measures, the default and allowed chart types, the breakdowns and the source kinds. Add its id to the view's list in config/views.js. Use only measures that exist in js/engine/measures.js, js/engine/measures-p2.js or js/engine/scores.js. If one is missing, say so and propose it separately; don't invent an id.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
 **Expect:** one definition and a one-line change to `config/views.js`, plus a separate proposal if a measure is missing. Check: open `tests.html?suite=report%20definitions` (the new definition validates), then `index.html`; an invalid definition shows its error inside its own panel only, so the rest of the view still works.
+
+## 8. Add a keyword to a recurring theme
+
+Use when leaders write about a topic in words the themes don't catch yet, or to add a theme.
+
+**Attach:** `config/comment-themes.js` (the themes and their keywords), `docs/PLANTED-CASES.md` (the sample cases the themes must still find). In the chat, give the theme and the word or phrase, with one or two comments that use it.
+
+```
+In this app, recurring themes are found with plain keyword lists in the attached config/comment-themes.js: a comment counts for a theme when it holds one of the theme's keywords as a whole word or phrase, in any case. A theme found in at least minRegions regions becomes an insight. Add the keyword "<word or phrase>" to the theme "<theme label>" (or add a new theme with an id, a label, plural true or false, and its keywords).
+Add each other form (a plural, a verb form) as its own keyword. Check the keyword can't match words that mean something else, and say which. Don't change any code file. Return only the changed theme entries.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** the changed theme entries only. Check: open `tests.html`. If a themes test fails, the new keyword changes the sample data's planted theme counts (`docs/PLANTED-CASES.md`). Then run `node tools/generate-sample-data.js` to refresh `tests/fixtures/sample-expected.js` and re-run the tests. Then open the themes report on the New business view: its explanation lists every keyword.
+
+## 9. Add a report to the region profile
+
+Use to show one more existing report on every region profile, for that region against the average of the rest.
+
+**Attach:** `config/profile.js` (the profile's report list), `config/views.js`, and the file that defines the report (for example `config/reports-customers.js`).
+
+```
+In this app, a region profile shows a list of existing reports for one region against the average of the other regions. The list is configuration: TAP_PROFILE.reports in the attached config/profile.js, in the order shown. Add the report "<report id or title>" to the profile, after "<report id>".
+Use only a report id that exists in the attached definitions file; don't write a new definition here (prompt 7 does that). Keep the order sensible: at most two panels sit side by side, and a list report takes the full width. Return the changed config/profile.js.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** one id added to `config/profile.js`. Check: open `tests.html`, then `index-sample.html#regions/<region id>`; the report shows for that region against the rest, with chart switching, table and sources as everywhere else. An unknown id shows its error in its own panel only.
+
+## 10. Add a column to a list
+
+Use to show one more field on a list report: the new business rows (`nb-rows`), the accounts (`cg-accounts`) or the partners (`pt-list`).
+
+**Attach:** the list's definitions file (`config/reports-newbusiness.js`, `config/reports-customers.js` or `config/reports-partners.js`), `js/engine/rows.js` (the columns each list can show), `content/text-engine2.js` (column headings), `docs/DATA-CONTRACT.md` (the fields in the data file).
+
+```
+In this app, a list report shows one row per new business row, account or partner. Its definition names its columns by key, from the keys js/engine/rows.js offers for that row source (TAP.rows.columns). Add the column "<field>" to the list "<report id>", after "<column key>".
+If rows.js already offers the key, change only the definition's columns list. If it doesn't, say so: name the data contract field it would read, its unit (money, pct, count or text) and its kind (leader input, system figure or calculated), and propose the rows.js entry and the heading for content/text-engine2.js separately. Never read a field the data contract doesn't list.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** a changed `columns` list in the definition, or a separate proposal for `js/engine/rows.js` and `content/text-engine2.js`. Check: open `tests.html`, then the list. The new heading carries its value kind and sorts like the others, and selecting a row still opens its details.
