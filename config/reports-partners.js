@@ -63,4 +63,32 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     sources: ['IN', 'APP'],
     options: { label: 'all' }
   };
+
+  // US-2.3.4: every named partner, as a sortable list.
+  window.TAP_REPORTS['pt-list'] = {
+    id: 'pt-list',
+    view: 'partners',
+    title: 'Which partners does each region name?',
+    explain: {
+      shows: 'Every partner the regions name, with its channel, maturity, expertise, people, central support and planned contribution.',
+      read: 'One row per partner, sorted by three-year ARR. Filter by channel, sort by any column and click a row for the partner’s details and source row. "Also named by" lists the other regions that name a partner with the same name, ignoring case and spacing.',
+      lookFor: 'Partners several regions work with, and partners carrying a large plan with few people.'
+    },
+    shape: 'list',
+    builder: 'list',
+    dimension: 'entity',
+    rows: 'partners',
+    columns: [
+      { key: 'region' }, { key: 'name' }, { key: 'channel' }, { key: 'maturity' }, { key: 'expertiseGeo' }, { key: 'expertiseProduct' },
+      { key: 'fteSales' }, { key: 'fteConsultants' }, { key: 'centralSupportPct' }, { key: 'arr3' }, { key: 'services3' },
+      { key: 'oiPerFte' }, { key: 'alsoNamed' }
+    ],
+    sort: { key: 'arr3', dir: 'desc' },
+    filter: [{ key: 'channel' }],
+    defaultType: 'list',
+    types: ['list'],
+    breakdowns: [],
+    sources: ['IN', 'APP'],
+    options: {}
+  };
 })();
