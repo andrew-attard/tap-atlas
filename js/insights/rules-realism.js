@@ -33,7 +33,7 @@
         var nb = u.m('ind.nb.arr', r, { industryId: id }), pipe = u.m('ind.pipeline', r, { industryId: id });
         if (!(u.value(nb) > 0) || !u.provided(pipe) || pipe.v !== 0) return;
         var name = u.industry(id), share = total > 0 ? nb.v / total : 0;
-        out.push({ key: r + ':' + id, regionIds: [r], industryIds: [id],
+        out.push({ key: r + ':' + id, regionIds: [r], industryIds: [id], measureId: ctx.params.measure || null,
           vars: { region: u.name(r), industry: name, nb: u.money(nb.v) },
           figures: [u.fig('ind.nb.arr', name, nb), u.fig('ind.pipeline', name, pipe)],
           strength: 0.5 + 0.5 * u.clamp(share / 0.2), money: u.moneyShare(nb.v, 'arr') });
@@ -51,7 +51,7 @@
     return provided.map(function (r) {
       var avg = u.others('nb.wins', r), a = u.value(avg), v = cells[r].v;
       if (!(a > 0) || v / a < min) return null;
-      return { key: r, regionIds: [r], provided: provided.length,
+      return { key: r, regionIds: [r], provided: provided.length, measureId: ctx.params.measure || null,
         vars: { region: u.name(r), ratio: u.ratio(v / a), wins: u.num(v, 0), avg: u.num(a, 0) },
         figures: [u.fig('nb.wins', u.name(r), cells[r]),
           u.fig('nb.wins', u.phrase('othersAvg', { n: provided.length - 1 }), avg)],
