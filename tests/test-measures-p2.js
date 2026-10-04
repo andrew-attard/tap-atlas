@@ -312,6 +312,45 @@
       });
     });
 
+    T.test('X-breakdowns-np', 'Grouped bars give each row one not-provided mark naming the missing values', function (a) {
+      load();
+      var opt = build(def('compare', ['nb.arr']), { type: 'groupedBar', breakdown: 'industry', cmp: cmp({ mode: 'all' }),
+        entities: TAP.scope.entities(cmp({ mode: 'all' })) }).option;
+      var np = opt.series.filter(function (s) { return s.tapRole === 'notProvided'; })[0].data;
+      function marks(r) { return np.filter(function (d) { return d.entityId === r; }); }
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) { a.equal(marks(r).length, 1, r + ' has one mark'); });
+      a.match(marks('alpha')[0].text, /Education$/, 'A: ind2 is Tier 2 with no row (ind3 is not applicable, so not named)');
+      a.match(marks('bravo')[0].text, /Utilities$/);
+      a.match(marks('charlie')[0].text, /Healthcare, Education/, 'C: ind1 blank row, ind2 blank tier');
+      var all = build(def('compare', ['rc.nb.arr']), { type: 'groupedBar', breakdown: 'channel', cmp: cmp({ mode: 'all' }),
+        entities: TAP.scope.entities(cmp({ mode: 'all' })) }).option;
+      var c = all.series.filter(function (s) { return s.tapRole === 'notProvided'; })[0].data;
+      a.equal(c.length, 1, 'only Region C, with no recap');
+      a.equal(c[0].text, TAP.content.text('states.notProvided'), 'everything missing reads simply "not provided"');
+    });
+
+    T.test('X-breakdowns-parts', 'A broken-down parts table has unique columns, and not-applicable stacks are left out', function (a) {
+      load();
+      var p = def('parts', ['rc.all.oi'], DIMS, { 'rc.all.oi': ['rc.all.arr', 'rc.all.services'] });
+      var cols = build(p, { type: 'table', breakdown: 'channel' }).table.columns;
+      a.deepEqual(cols.map(function (c) { return c.key; }), ['entity', 'rc.all.arr', 'rc.all.services', 'rc.all.oi', 'rc.all.oi@channel:direct',
+        'rc.all.oi@channel:partner', 'rc.all.oi@channel:allianceA', 'rc.all.oi@channel:allianceB'], 'one column per value of the selected measure');
+      var labels = cols.map(function (c) { return c.label; });
+      a.equal(labels.filter(function (l, i) { return labels.indexOf(l) === i; }).length, labels.length, 'no repeated heading');
+      var nb = def('parts', ['nb.oi'], DIMS, { 'nb.oi': ['nb.arr', 'nb.services'] }), all = cmp({ mode: 'all' });
+      var y = build(nb, { type: 'stackedBar', breakdown: 'industry', cmp: all, entities: TAP.scope.entities(all) }).option.yAxis.data;
+      a.equal(y.length, 12, 'each region keeps 3 of its 4 industries: the Tier 3 one is not applicable');
+      a.ok(y.indexOf('Region A · Retail') < 0 && y.indexOf('Region D · Education') < 0, 'left out quietly');
+      a.ok(y.indexOf('Region A · Education') >= 0, 'a not-provided stack stays, as a gap');
+    });
+
+    T.test('X-breakdowns-dot', 'Until the dot plot takes breakdowns, a dot chart with a breakdown draws grouped bars', function (a) {
+      load();
+      var s = values(build(def('compare', ['rc.nb.arr']), { type: 'dot', breakdown: 'channel' }).option);
+      a.equal(s.length, 4);
+      a.ok(s.every(function (x) { return x.type === 'bar'; }));
+    });
+
     T.test('TPV-TC-316', 'Another breakdown replaces the first; removing it restores the original chart', function (a) {
       load();
       var d = def('compare', ['rc.all.arr']);
