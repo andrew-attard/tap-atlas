@@ -70,3 +70,25 @@
   align-self: flex-start; margin: auto var(--tap-sp-2) 0; padding: var(--tap-sp-1) 0;
   font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-ink); text-decoration: underline;
 }
+
+/* ---------- print (US-2.4.5): A4 landscape, no navigation, comparison bar or buttons ---------- */
+/* A named page, so only the profile prints landscape. The margin carries the data label and date on every page. */
+.tap-pf-page { page: profile; }
+@page profile {
+  size: A4 landscape;
+  margin: 12mm 10mm 14mm;
+  @bottom-left { content: var(--tap-pf-print, ""); font-family: var(--tap-font); font-size: var(--tap-fs-label); color: var(--tap-ink); }
+  @bottom-right { content: counter(page) " / " counter(pages); font-family: var(--tap-font); font-size: var(--tap-fs-label); color: var(--tap-ink); }
+}
+@media print {
+  .tap-app[data-view="regions"] .tap-stack, .tap-app[data-view="regions"] .tap-layers, .tap-tour-welcome { display: none !important; }
+  .tap-pf__top, .tap-pf-page .tap-vh__tip, .tap-pf-page .tap-btn, .tap-pf-page .tap-iconbtn, .tap-pf-page .tap-panel__tools,
+  .tap-pf-page .tap-panel__controls, .tap-pf-page .tap-panel__pop { display: none !important; }
+  .tap-pf-page { max-width: none; padding: 0; gap: var(--tap-sp-4); }
+  .tap-pf-page .tap-vh-pair, .tap-pf-glance__grid { grid-template-columns: 1fr 1fr; }
+  /* Each chart, list and glance line stays on one page where it fits */
+  .tap-pf-page .tap-panel, .tap-pf-glance__line, .tap-pf-insight, .tap-pf-words__group, .tap-pf__head { break-inside: avoid; }
+  .tap-pf-glance__title, .tap-pf-card__title { break-after: avoid; }
+  .tap-pf-card__list { max-height: none; overflow: visible; }
+  .tap-pf-page canvas { max-width: 100% !important; height: auto !important; }
+}

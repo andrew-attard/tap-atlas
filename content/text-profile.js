@@ -22,6 +22,7 @@ Object.assign(window.TAP_CONTENT.text, {
     kicker: 'Region profile',
     lead: '{sentence}, on this page only.',
     picker: 'Region',
+    print: 'Print',
     reports: 'Reports for {name} against the average of the other regions',
     // US-2.4.2: the plan at a glance. Neutral words only (D20): a difference is never good or bad.
     glance: {
