@@ -629,7 +629,11 @@
     function layoutOf(res, size) {
       var g = res.option.grid, w = size.w - g.left - g.right, h = size.h - g.top - g.bottom, fs = TH.type.chart, nfs = TH.type.chartMin;
       function at(v) { return { x: g.left + (v[0] - 1) / 2 * w, y: g.top + (3 - v[1]) / 2 * h }; }
-      var dots = points(res).map(function (d) { var c = at(d.value); c.r = d.symbolSize / 2; c.d = d; return c; }), boxes = [];
+      // Drawing order: series by z, then data order (later marks are drawn over earlier ones)
+      var dots = [], boxes = [];
+      valueSeries(res).slice().sort(function (p, q) { return p.z - q.z; }).forEach(function (s) {
+        s.data.forEach(function (d) { var c = at(d.value); c.r = d.symbolSize / 2; c.d = d; c.rank = dots.length; dots.push(c); });
+      });
       points(res).filter(function (d) { return d.label.show; }).forEach(function (d) {
         var lines = String(d.label.formatter).split('\n'), tw = Math.max.apply(null, lines.map(function (l) { return l.length; })) * fs * 0.5;
         var c = at(d.value), r = d.symbolSize / 2, gap = d.label.position[0] - (d.label.side === 'right' ? d.symbolSize : 0), bh = lines.length * fs;
@@ -638,7 +642,7 @@
       marks(res).filter(function (m) { return m.label && m.label.show; }).forEach(function (m) {
         var c = at(m.value), o = m.label.offset || [0, 0], tw = String(m.label.formatter).length * nfs * 0.55, own = dots.filter(function (x) {
           return x.d.entityId === m.entityId && x.d.industryId === m.industryId; })[0];
-        boxes.push({ name: '#' + m.label.formatter, x: c.x + o[0] - tw / 2, y: c.y + o[1] - nfs * 0.36, w: tw, h: nfs * 0.72, own: own });
+        boxes.push({ name: '#' + m.label.formatter, x: c.x + o[0] - tw / 2, y: c.y + o[1] - nfs * 0.36, w: tw, h: nfs * 0.72, own: own, inside: !o[0] && !o[1] });
       });
       return { dots: dots, boxes: boxes };
     }
@@ -649,7 +653,8 @@
       };
       L.boxes.forEach(function (p, i) {
         L.boxes.slice(i + 1).forEach(function (q) { if (p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h) out.push(p.name + ' / ' + q.name); });
-        L.dots.forEach(function (c) { if (c !== p.own && hit(p, c)) out.push(p.name + ' on the bubble of ' + c.d.name + ' · ' + c.d.entityId); });
+        // A number inside its bubble may sit over bubbles drawn underneath that bubble: they are hidden there
+        L.dots.forEach(function (c) { if (c !== p.own && !(p.inside && c.rank < p.own.rank) && hit(p, c)) out.push(p.name + ' on the bubble of ' + c.d.name + ' · ' + c.d.entityId); });
       });
       return out;
     }

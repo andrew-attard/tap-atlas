@@ -3,7 +3,8 @@
  * Purpose: Draws attractiveness against ability to win (US-1.5.5) with four neutral labelled areas split at the
  *          midpoint. By default one bubble per industry, its scores averaged over the regions in scope by the
  *          rating rule; "Show every region" or an industry filter shows one point per region and industry,
- *          nudged apart for display only. Tooltips and the table always read the exact cells.
+ *          nudged apart for display only. Each bubble carries its industry's number from the key (QA-3) and a name
+ *          where one fits cleanly. Tooltips and the table always read the exact cells.
  * Provides: chart builder 'quadrant' (registered with TAP.builders)
  * Depends on: js/engine/registry.js, scope.js, measures.js, scores.js, aggregate.js, shapes.js (drawing kit),
  *             js/core/format.js, content.js, data.js, config/settings.js (midpoint)
@@ -20,6 +21,9 @@
   function midpoint() { var m = settings().midpoint; return typeof m === 'number' ? m : 2; }
   function regionsWord(n) { return t(n === 1 ? 'combined.region' : 'combined.regions'); }
   function areaLabel(q) { return q ? t('quadrant.areas.' + q) : t('states.notProvided'); }
+  // An industry's number on the bubbles, the key and the table: its place in the lookup list, so it never changes (QA-3).
+  function industryNo(id) { return TAP.data.industries({ rated: true }).map(function (d) { return d.id; }).indexOf(id) + 1; }
+  function regionNo(g) { return TAP.data.regionIndex(g.regionIds[0]) + 1; }
 
   /* ---------- what is drawn ---------- */
 
@@ -133,11 +137,8 @@
     var lo = k().th().space[2], hi = k().th().space[6] + k().th().space[1];
     return function (v) { return lo + (hi - lo) * Math.sqrt(Math.max(v, 0) / (max || 1)); };
   }
-  /*
-   * Which points carry a label. Every region shown: the focus region's points only, when there is one. Two groups
-   * (one against the rest, or a pair): each industry is named once, at the first group's point, and a thin line joins
-   * its two bubbles. An industry filter labels each point with its region.
-   */
+  // Which points may carry a name: with every region shown, not the grey ones; with two groups (one against the rest,
+  // or a pair) the first group's point, a thin line joining the two; with an industry filter, each point (its region).
   function naming(pts, gs, perRegion, filtered) {
     var paired = !perRegion && !filtered && gs.length > 1, first = {};
     pts.forEach(function (p) {
@@ -161,6 +162,7 @@
     if (perRegion || gs.every(function (g) { return g.kind === 'region'; })) return t('quadrant.everyStatement');
     return gs[0] && gs[0].role === 'focus' ? t('quadrant.focusStatement', { focus: gs[0].label }) : t('quadrant.averageStatement');
   }
+  function zOf(g) { return g.role === 'focus' ? 8 : g.kind === 'combined' || g.role === 'muted' ? 6 : 7; }
   function chart(ctx, rows, gs, sizeCol, perRegion, filtered) {
     var K = k(), th = K.th(), def = ctx.def, mid = midpoint(), hit = marker(ctx.highlight), L = TAP.quadrantLabels, F;
     var pts = rows.filter(function (r) { return r.x.state === 'value' && r.y.state === 'value'; });
@@ -170,11 +172,16 @@
     var size = sizeCol ? sizer(max) : function () { return th.space[4]; }, ring = [];
     pts.forEach(function (p) { p.d = !sizeCol ? th.space[4] : p.s && p.s.state === 'value' ? size(p.s.v) : th.space[2]; });
     var paired = naming(pts, gs, perRegion, filtered);
-    F = L.place(pts, ctx, { scale: SCALE, near: perRegion || paired });   // many bubbles: near spots only, short leaders
+    // Every bubble carries a number (its region's, when one industry is filtered), so none is named by hover only.
+    // Smaller bubbles are drawn over bigger ones, so none is buried; rank is the drawing order.
+    pts.forEach(function (p) { p.num = filtered ? regionNo(p.g) : industryNo(p.ind.id); p.light = p.g.role === 'muted'; });
+    pts.forEach(function (p, i) { p.i = i; });
+    pts.sort(function (a, b) { return zOf(a.g) - zOf(b.g) || b.d - a.d || a.i - b.i; }).forEach(function (p, i) { p.rank = i; });
+    F = L.place(pts, ctx, { scale: SCALE, near: perRegion || paired });   // many bubbles: names right beside, else numbers
     var series = gs.map(function (g) {
       var mine = pts.filter(function (p) { return p.g === g; });
       if (!mine.length) return null;
-      return { type: 'scatter', tapRole: 'value', name: g.label, z: g.role === 'focus' ? 8 : g.kind === 'combined' || g.role === 'muted' ? 6 : 7,
+      return { type: 'scatter', tapRole: 'value', name: g.label, z: zOf(g),
         // Placement is done above; ECharts still hides any label that overlaps on the actual canvas, as a last resort.
         labelLayout: { hideOverlap: true }, clip: false,
         labelLine: { show: true, length2: th.space[1], lineStyle: { color: th.muted, width: th.border.control } },
@@ -184,7 +191,7 @@
           if (hit(p)) ring.push({ value: at, entityId: g.id, size: d });
           return { value: at.concat([sizeCol && hasSize ? p.s.v : 0]), raw: [p.x.v, p.y.v, sizeCol ? (hasSize ? p.s.v : null) : null],
             keys: [def.x, def.y, sizeCol ? sizeCol.key : null], entityId: g.id, industryId: p.ind.id, name: p.ind.name, symbolSize: d,
-            itemStyle: { color: g.color }, labelLine: { show: !!p.lab && (p.lab.gap > 6 || p.lab.dy !== 0) },
+            itemStyle: { color: g.color }, labelLine: { show: !!p.lab && (p.lab.gap > 6 || Math.abs(p.lab.dy) >= F.lh) },
             label: Object.assign({ show: !!p.lab }, L.at(p, d),
               { fontSize: th.type.chart, color: th.ink, backgroundColor: th.ground, padding: [1, 2], formatter: p.label || p.text }) };
         }),
@@ -196,6 +203,7 @@
       lineStyle: { color: th.echarts.tap.quadrant.line, width: th.echarts.tap.quadrant.lineWidth, type: 'solid' } };
     series[0].markArea = areas(mid, SCALE, SCALE, ctx.highlight);
     if (paired) series.push(links(pts));
+    series.push(L.numbers(pts));
     if (ring.length) series.push(K.ringSeries(ring));
     var mx = TAP.measures.meta(def.x), my = TAP.measures.meta(def.y), fs = th.type.chart;
     var option = { tooltip: { trigger: 'item' }, grid: { left: F.m.left, right: F.m.right, top: F.m.top, bottom: F.m.bottom, containLabel: false },
@@ -211,12 +219,12 @@
   }
   function table(def, rows, sizeCol) {
     var C = function (key, label, unit, align) { return { key: key, label: label, unit: unit, align: align }; };
-    var cols = [C('entity', t('chart.entityColumn'), 'text', 'left'), C('industry', t('chart.industryColumn'), 'text', 'left'),
+    var cols = [C('entity', t('chart.entityColumn'), 'text', 'left'), C('num', t('quadrant.numberColumn'), 'text', 'right'), C('industry', t('chart.industryColumn'), 'text', 'left'),
       C(def.y, TAP.measures.meta(def.y).label, 'score', 'right'), C(def.x, TAP.measures.meta(def.x).label, 'score', 'right')]
       .concat(sizeCol ? [C(sizeCol.key, sizeCol.label, sizeCol.unit, 'right')] : [], [C('quadrant', t('quadrant.area'), 'text', 'left')]);
     return { columns: cols, rows: rows.map(function (r) {
       var q = TAP.scores.quadrant(r.y, r.x), cells = { entity: { v: r.g.label, state: 'value', kind: null },
-        industry: { v: r.ind.name, state: 'value', kind: null },
+        industry: { v: r.ind.name, state: 'value', kind: null }, num: { v: String(industryNo(r.ind.id)), state: 'value', kind: null },
         quadrant: q ? { v: areaLabel(q), state: 'value', kind: 'APP' } : { v: null, state: 'notProvided', kind: 'APP' } };
       cells[def.y] = r.y; cells[def.x] = r.x;
       if (sizeCol) cells[sizeCol.key] = r.s;
@@ -253,6 +261,13 @@
     { key: 'industryFilter', label: t('quadrant.filter'), kind: 'select', value: opts.industryFilter || '',
       options: [{ value: '', label: t('quadrant.allIndustries') }].concat(inds.map(function (d) { return { value: d.id, label: d.name }; })) }]);
   }
+  // The region keys (numbered when one industry is filtered), then the numbered key of the industries drawn.
+  function legend(gs, all, pts, filtered) {
+    var shown = gs.filter(function (g) { return pts.some(function (p) { return p.g === g; }); });
+    return k().legendOf({ entities: shown }).map(function (l, i) { return filtered ? Object.assign(l, { mark: regionNo(shown[i]) }) : l; })
+      .concat(filtered ? [] : all.filter(function (d) { return pts.some(function (p) { return p.ind === d; }); })
+        .map(function (d) { return { label: d.name, color: null, mark: industryNo(d.id), role: 'industry' }; }));
+  }
   function missing(ctx, def) {
     var ids = TAP.scope.regionIds(ctx.cmp), inds = TAP.data.industries({ rated: true }), any = false, gone = [];
     ids.forEach(function (id) {
@@ -270,7 +285,7 @@
     var sm = sizeId && TAP.measures.meta(sizeId), sizeCol = sm ? { key: sizeId, label: sm.label, unit: sm.unit, kind: sm.kind } : null;
     var rows = collect(def, gs, filter ? [filter] : all, sizeId), drawn = chart(ctx, rows, gs, sizeCol, perRegion, !!filter), gap = missing(ctx, def);
     var res = K.result(def, null, { table: table(def, rows, sizeCol), notes: notes(def, rows, perRegion, gs, drawn.paired), missing: gap.names, empty: gap.empty,
-      legend: K.legendOf({ entities: gs.filter(function (g) { return drawn.pts.some(function (p) { return p.g === g; }); }) }),
+      legend: legend(gs, all, drawn.pts, !!filter),
       sizeLegend: drawn.sizeLegend, controls: controls(opts, all, gs, perRegion), takeaway: takeaway(gs, drawn.pts, perRegion),
       target: function (prm) {
         var d = prm && prm.data, g = d && gs.filter(function (x) { return x.id === d.entityId; })[0];
