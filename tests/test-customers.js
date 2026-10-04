@@ -321,6 +321,85 @@
       a.equal(TAP.details.build(tg).groups.length, 3, 'details show the three regions');
     });
 
+    /* ---------- US-2.2.3 growth assumptions ---------- */
+
+    // Growth % = incremental ARR / current ARR over the accounts (D60), by hand from the mini data:
+    // alpha: current ARR 500 + 200 + 30 + 150 = 880; increments y1 50 + 100 + 0 + 50 = 200, y2 50 (a4 only), y3 50 (a4)
+    // bravo: 600 + 100 = 700; y1 120 + 30 = 150, y2 0, y3 0. delta: 800 + 400 + 50 = 1250; y1 80 + 100 = 180, y2 88, y3 0
+    var GROWTH = {
+      alpha: [200 / 880, 50 / 880, 50 / 880, 300 / 880],
+      bravo: [150 / 700, 0, 0, 150 / 700],
+      delta: [180 / 1250, 88 / 1250, 0, 268 / 1250]
+    };
+    // One segment only (hand): alpha strategic a1 50 / 500 in y1; alpha growth a4 50 / 150 each year;
+    // delta strategic d1 80 / 800, 88 / 800, 0; delta core d2 100 / 400 in y1; bravo core b2 30 / 100 in y1
+    var GROWTH_SEG = {
+      strategic: { alpha: [0.1, 0, 0], delta: [0.1, 0.11, 0], bravo: [0.2, 0, 0] },
+      growth: { alpha: [1 / 3, 1 / 3, 1 / 3] },
+      core: { alpha: [0.5, 0, 0], bravo: [0.3, 0, 0], delta: [0.25, 0, 0] },
+      scaled: { alpha: [0, 0, 0], delta: [0, 0, 0] }
+    };
+    function growthRow(res, id) { return res.table.rows.filter(function (r) { return r.entityId === id; })[0]; }
+    function growthAt(m, c, extra) { return build('cg-growth', c, Object.assign({ measureId: m, breakdown: 'year', type: 'table' }, extra || {})); }
+
+    when([196], 'TPV-TC-387', 'Growth % per region for years 1 to 3 equals the hand calculation, weighted by current ARR', function (a) {
+      var res = growthAt('cg.growth.all', { mode: 'all' }), plain = build('cg-growth', { mode: 'all' }, { breakdown: null, type: 'table' });
+      Object.keys(GROWTH).forEach(function (r) {
+        [1, 2, 3].forEach(function (y) { a.near(growthRow(res, r).cells['cg.growth.all@y' + y].v, GROWTH[r][y - 1], 1e-9, r + ' year ' + y); });
+        a.near(growthRow(plain, r).cells['cg.growth.all'].v, GROWTH[r][3], 1e-9, r + ' three years');
+      });
+      a.equal(growthRow(res, 'charlie').cells['cg.growth.all@y1'].state, 'notProvided', 'charlie is not provided');
+    });
+
+    T.test('TPV-TC-389', 'Chart types: grouped bar by year by default, also dot plot and table', function (a) {
+      var def = TAP.reports.get('cg-growth');
+      a.equal(def.defaultType, 'groupedBar', 'grouped bar first');
+      a.equal(def.defaultBreakdown, 'year', 'by year');
+      a.deepEqual(TAP.shapes.types(def, 4, { breakdown: 'year' }), ['groupedBar', 'dot', 'table']);
+      a.deepEqual(TAP.shapes.types(def, 4), ['dot', 'table'], 'without the year breakdown, dot plot and table');
+    });
+
+    when([196], 'TPV-TC-390', 'Segment switch: All accounts, Strategic, Growth, Core, Scaled; one segment uses only its accounts', function (a) {
+      var def = TAP.reports.get('cg-growth');
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['All accounts', 'Strategic', 'Growth', 'Core', 'Scaled']);
+      a.equal(TAP.prepare.selected(def, {}), 'cg.growth.all', 'All accounts is the default');
+      Object.keys(GROWTH_SEG).forEach(function (s) {
+        var res = growthAt('cg.growth.' + s, { mode: 'all' });
+        Object.keys(GROWTH_SEG[s]).forEach(function (r) {
+          [1, 2, 3].forEach(function (y) {
+            a.near(growthRow(res, r).cells['cg.growth.' + s + '@y' + y].v, GROWTH_SEG[s][r][y - 1], 1e-9, s + ' ' + r + ' year ' + y);
+          });
+        });
+      });
+    });
+
+    when([196, 205], 'TPV-TC-391', 'Multiplier accounts count through their workbook increments, and a note names how many and where', function (a) {
+      // a4 (alpha) is the only multiplier account: alpha's year 2 growth is a4's 50 over alpha's 880, not left out
+      var res = growthAt('cg.growth.all', { mode: 'all' });
+      a.near(growthRow(res, 'alpha').cells['cg.growth.all@y2'].v, 50 / 880, 1e-9, 'a4 counts in year 2');
+      a.equal(TAP.measures.get('cg.multiplierAccounts')('alpha', {}).v, 1, 'one multiplier account in Region A');
+      var notes = build('cg-growth', { mode: 'all' }).notes;
+      a.ok(notes.indexOf('1 account in Region A uses a three-year multiplier; it counts through the incremental ARR the workbook calculated.') >= 0, 'the note: ' + notes.join(' | '));
+      a.ok(!notes.some(function (n) { return /Region [BCD]/.test(n) && /multiplier/.test(n); }), 'no note for regions without one');
+      var strategic = build('cg-growth', { mode: 'all' }, { measureId: 'cg.growth.strategic' }).notes;
+      a.ok(!strategic.some(function (n) { return /multiplier/.test(n); }), 'a4 is a Growth account, so no note on Strategic');
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[3].customerGrowth.accounts[0].multiplier3y = 1.5;   // d1 and d2 now both use one
+      plan.regions[3].customerGrowth.accounts[1].multiplier3y = 1.2;
+      TAP.data.load(plan);
+      a.ok(build('cg-growth', { mode: 'all' }).notes.indexOf('2 accounts in Region D use a three-year multiplier; they count through the incremental ARR the workbook calculated.') >= 0, 'plural');
+    });
+
+    when([196], 'TPV-TC-392', 'One vs the rest and organization total: weighted by current ARR', function (a) {
+      // rest of alpha (charlie has no accounts): y1 (150 + 180) / (700 + 1250); org: y1 (200 + 150 + 180) / 2830, 3 years 718 / 2830
+      var rest = growthAt('cg.growth.all', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' });
+      a.near(growthRow(rest, 'rest').cells['cg.growth.all@y1'].v, 330 / 1950, 1e-9, 'rest year 1');
+      a.near(growthRow(rest, 'rest').cells['cg.growth.all@y2'].v, 88 / 1950, 1e-9, 'rest year 2');
+      var org = growthAt('cg.growth.all', { mode: 'org' });
+      a.near(growthRow(org, 'org').cells['cg.growth.all@y1'].v, 530 / 2830, 1e-9, 'org year 1');
+      a.near(build('cg-growth', { mode: 'org' }, { breakdown: null, type: 'table' }).table.rows[0].cells['cg.growth.all'].v, 718 / 2830, 1e-9, 'org three years');
+    });
+
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.partners.reports), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
