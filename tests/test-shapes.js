@@ -69,6 +69,7 @@
         var def = all[id];
         [1, 3, 4, 7].forEach(function (n) {
           var t = TAP.shapes.types(def, n), label = id + ' with ' + n;
+          if (def.shape === 'list') { a.deepEqual(t, ['list'], label + ': a list is its own table'); return; }
           t.forEach(function (x) {
             a.ok(x === 'table' || (TAP.reports.SHAPE_TYPES[def.shape].indexOf(x) >= 0 && def.types.indexOf(x) >= 0), label + ': ' + x);
           });
