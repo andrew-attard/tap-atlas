@@ -47,8 +47,9 @@
         if (!(a > 0) || !(v > 0)) return;
         var k = kind(v, a, rest, p);
         if (!k) return;
-        var ratio = v / a, up = k === 'high' || k === 'above';
+        var ratio = v / a, up = k === 'high' || k === 'above', shown = (p.show || {})[id] || [];
         out.push({ key: id + ':' + r, regionIds: [r], provided: provided.length, variant: k === 'high' ? null : k,
+          attach: shown.slice(0, 1), measureId: shown[1] || null,
           vars: { region: u.name(r), what: u.phrase('measures.' + id, { value: show(u, id, v) }), times: times(u, ratio),
             avg: show(u, id, a) },
           figures: [u.fig(id, u.name(r), cells[r]), u.fig(id, u.phrase('othersAvg', { n: rest.length }), avg)],

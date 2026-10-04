@@ -125,12 +125,12 @@
     return GAP_WORDS.concat([missing]).filter(function (w) { return wordIn(text, w, ''); })[0] || null;
   }
 
-  // The "Show me" target. Phase 2 findings may also name list rows (items, 17.4) or a theme (the themes report).
+  // The "Show me" target. Phase 2 findings may also name list rows (items, 17.4), a theme (the themes report) or the
+  // measure the insight is about, which the report then shows (US-2.5.6).
   function target(f, reportId, regionIds, mark) {
     var hl = { reportId: reportId, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
       quadrant: f.quadrant || null, mark: mark };
-    if (Array.isArray(f.items)) hl.items = f.items;
-    if (f.theme) hl.theme = f.theme;
+    ['items', 'theme', 'measureId'].forEach(function (k) { if (f[k]) hl[k] = f[k]; });
     return hl;
   }
 
@@ -147,7 +147,8 @@
 
     var regionIds = f.regionIds, n = TAP.data.regions().length;
     // Only reports that exist count: while a view is being built, the next attached report that exists takes over
-    var attach = (rule.attach || []).filter(function (id) { return !!TAP.reports.get(id); });
+    // A finding may narrow the rule's reports to the ones that show its own figure (an outlier hit rate: the levers)
+    var attach = (Array.isArray(f.attach) ? f.attach : rule.attach || []).filter(function (id) { return !!TAP.reports.get(id); });
     var reportId = attach.length ? attach[0] : null;
     // A finding may say how many of its regions really count (a split counts the regions that depart from the rest).
     var strength = clamp(f.strength), money = clamp(f.money);

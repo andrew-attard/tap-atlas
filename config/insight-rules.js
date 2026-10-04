@@ -83,13 +83,18 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     description: 'A planning assumption at least twice, or at most half, the average of the other regions (weighted as on the charts), or outside every other region’s range by at least 15% of that average. For growth by year, only the year that stands out most is raised.',
     reads: ['newBusiness.hitRate', 'customerGrowth.accounts.incrementalArr'], compare: true,
     params: { measures: ['nb.hitRate', 'nb.avgDealSize', 'nb.growthY2', 'nb.growthY3', 'nb.servicesRatio', 'cg.growthY1', 'cg.growthY2', 'cg.growthY3'],
-      high: 2, low: 0.5, rangeGap: 0.15 },
+      high: 2, low: 0.5, rangeGap: 0.15,
+      // Where each assumption is shown, and the measure "Show me" selects there (US-2.5.6); none: the details panel
+      show: { 'nb.hitRate': ['nb-levers', 'nb.hitRate'], 'nb.avgDealSize': ['nb-levers', 'nb.avgDealSize'],
+        'nb.growthY2': ['nb-levers', 'nb.growthY2'], 'nb.growthY3': ['nb-levers', 'nb.growthY3'],
+        'cg.growthY1': ['cg-growth', 'cg.growth.all'], 'cg.growthY2': ['cg-growth', 'cg.growth.all'],
+        'cg.growthY3': ['cg-growth', 'cg.growth.all'] } },
     scoring: 'Strength: how far the ratio to the others’ average is past 1, against twice the 2× threshold. Money: the region’s planned ARR in that motion.',
     template: '{region} plans {what}, more than {times} the average of the other regions ({avg}).',
     templates: { low: '{region} plans {what}, less than half the average of the other regions ({avg}).',
       above: '{region} plans {what}, higher than any other region (the others average {avg}).',
       below: '{region} plans {what}, lower than any other region (the others average {avg}).' },
-    attach: [], highlight: null });
+    attach: ['nb-levers', 'cg-growth'], highlight: 'bar' });
 
   /* ---------- realism (US-1.7.7) ---------- */
   rule({ id: 'pipelineCover', family: 'realism',
@@ -101,16 +106,16 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     attach: ['ov-ambition'], highlight: 'bar' });
   rule({ id: 'noPipeline', family: 'realism',
     description: 'New business planned in an industry where the region has no pipeline at all.',
-    reads: ['newBusiness.arrPotential', 'marketCoverage.pipelineTotal'], params: {},
+    reads: ['newBusiness.arrPotential', 'marketCoverage.pipelineTotal'], params: { measure: 'ind.nb.arr' },
     scoring: 'Strength: grows with the industry’s share of the region’s new business. Money: the new business planned there.',
     template: '{region} plans new business in {industry} ({nb} over three years), where it has no pipeline yet.',
-    attach: [], highlight: null });
+    attach: ['nb-industries'], highlight: 'cell' });
   rule({ id: 'winsVsPeers', family: 'realism',
     description: 'Implied new customer wins (target accounts × hit rate) at least twice the simple average of the other regions.',
-    reads: ['newBusiness.targetAccounts', 'newBusiness.hitRate'], params: { ratio: 2 }, compare: true,
+    reads: ['newBusiness.targetAccounts', 'newBusiness.hitRate'], params: { ratio: 2, measure: 'nb.wins' }, compare: true,
     scoring: 'Strength: how far the ratio is past 1, against twice the threshold’s distance. Money: the region’s new business ambition.',
     template: '{region}’s plan needs about {ratio} as many new customer wins as the average of the other regions ({wins} against {avg}).',
-    attach: [], highlight: null });
+    attach: ['nb-levers'], highlight: 'bar' });
 
   /* ---------- exposure (US-1.7.8) ---------- */
   rule({ id: 'concentration', family: 'exposure',
