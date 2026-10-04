@@ -27,8 +27,9 @@
 .tap-panel__takeaway:empty { min-height: 0; }
 .tap-panel__hide { min-height: 32px; padding: 0 var(--tap-sp-2); font-weight: 600; vertical-align: middle; }
 
-/* The panel takes focus on a click (for the drill keys); only keyboard focus shows a ring */
-.tap-panel:focus:not(:focus-visible) { outline: none; }
+/* The panel takes focus on a click (for the drill keys), and the title after a drill step: neither draws a ring,
+   which would wrap the whole panel or read as a control (D24). Tab never lands on either. */
+.tap-panel:focus, .tap-panel__title:focus { outline: none; }
 
 /* Drill-down (US-2.7.1): the breadcrumb above the title, every earlier level a button, and the hint line */
 .tap-panel__crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1) var(--tap-sp-2); font-size: var(--tap-fs-body); }

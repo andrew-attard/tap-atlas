@@ -204,11 +204,12 @@
   }
 
   // "Show me" on a list: the first highlighted row is scrolled into view inside the list, under its sticky
-  // header, without moving the page.
+  // header, without moving the page. A row already in view stays where it is.
   function reveal(inner) {
     var tr = TAP.dom.qs('tr.is-highlight', inner), th = TAP.dom.qs('thead', inner);
     if (!tr || !inner.isConnected) return;
-    var gap = tr.getBoundingClientRect().top - inner.getBoundingClientRect().top - (th ? th.offsetHeight : 0);
+    var box = inner.getBoundingClientRect(), r = tr.getBoundingClientRect(), gap = r.top - box.top - (th ? th.offsetHeight : 0);
+    if (gap >= 0 && r.bottom <= box.bottom) return;
     inner.scrollTop = Math.max(0, inner.scrollTop + gap);
   }
 

@@ -94,7 +94,7 @@
   // A click: a report with drill levels opens the next level for a target naming a region (17.6); otherwise a
   // list row opens its details only, and anything else follows the usual rule.
   function go(p, b, target, row) {
-    if (b.def.drill && target && (target.regionIds || []).length && p.drill.push(target, b.def)) return;
+    if (b.def.drill && target && (p.drill.merge(target).regionIds || []).length && p.drill.push(target, b.def)) return;
     if (row) { if (target) TAP.layers.openDetails(target); } else follow(target);
   }
   function pick(p, b, d) { go(p, b, b.res.target ? b.res.target({ data: d }) : null, d.row); }
@@ -164,7 +164,7 @@
       el('header', { class: 'tap-panel__head' }, [
         el('div', { class: 'tap-panel__titles' }, [
           p.drill.crumbs(),
-          el('h2', { class: 'tap-panel__title', html: TAP.content.mark(b.title, p.seen) }),
+          el('h2', { class: 'tap-panel__title', tabindex: '-1', html: TAP.content.mark(b.title, p.seen) }),
           b.errors.length ? null : p.drill.hint(b.def),
           I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide),
           p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
@@ -230,7 +230,7 @@
       if (p.st.pop && !(box && box.contains(e.target))) p.toggle(null);
     }
     function key(e) {
-      if (e.key !== 'Escape' || e.defaultPrevented || !p.st.pop) return;
+      if (e.key !== 'Escape' || e.defaultPrevented || !p.st.pop || !TAP.panelKeys.enabled) return;
       e.preventDefault();
       p.toggle(null);
     }

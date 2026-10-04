@@ -3,9 +3,9 @@
  * Purpose: Multi-level drill-down inside one report panel: the level stack, the breadcrumb and stepping back up (US-2.7.1).
  *          A definition with drill: {next, label} opens `next` in the same panel when a mark naming a region is
  *          clicked; the clicked target becomes ctx.drill. Each level keeps its own chart type, table and options.
- * Provides: TAP.panelDrill (create, levels)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/data.js, js/core/content.js, js/core/format.js,
- *             js/core/store.js (all at call time)
+ * Provides: TAP.panelDrill (create, levels, keys), TAP.panelKeys ({enabled}: one switch for the panel's own keys)
+ * Depends on: js/engine/registry.js, js/engine/scope.js, js/core/dom.js, js/core/data.js, js/core/content.js,
+ *             js/core/format.js, js/core/store.js (all at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (p.id, p.root, p.st, p.render, p.fresh)
  * Owner: PANEL2 stream (#75)
  */
@@ -15,6 +15,14 @@
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   function t(key, vars) { return TAP.content.text('panel.' + key, vars); }
   var KEEP = ['type', 'measureId', 'sizeId', 'breakdown', 'table', 'sort'];   // choices each level keeps for itself
+
+  // The panel's own keys (drill steps, Esc for popovers and the expanded chart) can be switched off together, so a
+  // later presentation mode can own them (D70). Read at key time by panel.js and panel-expand.js too.
+  TAP.panelKeys = { enabled: true };
+  function keys(on) { if (typeof on === 'boolean') TAP.panelKeys.enabled = on; return TAP.panelKeys.enabled; }
+
+  // Typing in a field or editable text: the keys belong to the text.
+  function typing(a) { return !!a && (/^(input|select|textarea)$/i.test(a.tagName || '') || !!a.isContentEditable); }
 
   // The report ids a definition drills through, in order, and any problem: an unknown level or a loop.
   function levels(def) {
@@ -43,7 +51,8 @@
 
   /*
    * The drill state of panel p: {push(target, def), up(), top(opts), to(level, opts), path(), depth(), current(),
-   * target(), crumbs(), hint(def), destroy()}. opts.quiet: change the level without drawing (the caller draws).
+   * target(), merge(target), crumbs(), hint(def), destroy()}. opts.quiet: change the level without drawing (the caller
+   * draws); opts.keyed: a keyboard step, so focus moves to the breadcrumb.
    */
   function create(p) {
     var stack = [];   // the levels below the top: {reportId, target, label, saved (the level above's choices)}
@@ -53,17 +62,29 @@
       KEEP.forEach(function (k) { o[k] = p.st[k]; });
       return o;
     }
-    function draw(opts) { if (!(opts && opts.quiet)) { p.render(); keepFocus(); } }
-    // Focus stays in the panel after a step, so Backspace keeps working; the panel itself takes it if the
-    // control that had it is gone.
-    function keepFocus() {
+    function draw(opts) { if (!(opts && opts.quiet)) { p.render(); keepFocus(opts && opts.keyed); } }
+    // Focus stays in the panel after a step, so Backspace keeps working; after a keyboard step it always moves to
+    // the last breadcrumb button, else the title. Never the panel itself, whose ring would wrap the whole panel (D24).
+    function keepFocus(keyed) {
       var a = document.activeElement;
-      if (p.root && p.root.isConnected && !(a && p.root.contains(a)) && p.root.focus) p.root.focus({ preventScroll: true });
+      if (!p.root || !p.root.isConnected || (!keyed && a && a !== p.root && p.root.contains(a))) return;
+      var btns = TAP.dom.qsa('.tap-panel__crumbs button', p.root), to = btns[btns.length - 1] || TAP.dom.qs('.tap-panel__title', p.root);
+      if (to && to.focus) to.focus({ preventScroll: true });
+    }
+
+    // A deeper target keeps the regions and industries chosen above it when it names none itself.
+    function merge(target) {
+      var up = stack.length ? stack[stack.length - 1].target : null, out = Object.assign({}, target);
+      ['regionIds', 'industryIds'].forEach(function (k) {
+        if (!(out[k] || []).length && up && (up[k] || []).length) out[k] = up[k].slice();
+      });
+      return out;
     }
 
     function push(target, def) {
       var next = def && def.drill && def.drill.next;
       if (!next || !TAP.reports.get(next)) return false;
+      target = merge(target);
       stack.push({ reportId: next, target: target, label: nameOf(target, def), saved: save() });
       Object.assign(p.st, p.fresh ? p.fresh(next) : {}, { opts: {}, pop: null, highlight: null, selected: null, sentence: null });
       draw();
@@ -81,13 +102,13 @@
     function current() { return stack.length ? stack[stack.length - 1].reportId : p.id; }
 
     function path() {
-      var cmp = p.st.custom || TAP.store.get().cmp;
-      return [{ level: 0, reportId: p.id, label: TAP.content.text('compare.modes.' + cmp.mode), target: null }].concat(stack.map(function (e, i) {
+      var cmp = p.cmp ? p.cmp() : TAP.store.get().cmp;
+      return [{ level: 0, reportId: p.id, label: TAP.scope.sentence(cmp), target: null }].concat(stack.map(function (e, i) {
         return { level: i + 1, reportId: e.reportId, label: e.label, target: e.target };
       }));
     }
 
-    // The breadcrumb ("All regions › Healthcare › Hospitals"), each earlier step a button, and how to go back up.
+    // The breadcrumb ("Showing all 7 regions side by side › Healthcare › Hospitals"), each earlier step a button, and how to go back up.
     // Null at the top level.
     function crumbs() {
       if (!stack.length) return null;
@@ -104,18 +125,19 @@
     // Under the title of a level that drills further: a line saying a click steps down. Null otherwise.
     function hint(def) {
       var next = def && def.drill && TAP.reports.get(def.drill.next);
-      return next ? el('p', { class: 'tap-panel__drill-hint' }, t('drillHint', { level: lower(def.drill.label || next.title) })) : null;
+      var key = def.shape === 'list' ? 'drillHintList' : 'drillHint';
+      return next ? el('p', { class: 'tap-panel__drill-hint' }, t(key, { level: lower(def.drill.label || next.title) })) : null;
     }
 
     // Backspace or Alt + Left goes up one level while the panel has focus (not while typing in a field).
     function onKey(e) {
-      if (!stack.length || e.defaultPrevented || e.ctrlKey || e.metaKey) return;
-      var a = document.activeElement, tag = ((a && a.tagName) || '').toLowerCase();
-      if (!a || !p.root || !p.root.contains(a)) return;
-      var back = (e.key === 'Backspace' && !e.altKey && !/^(input|select|textarea)$/.test(tag)) || (e.key === 'ArrowLeft' && e.altKey);
+      if (!keys() || !stack.length || e.defaultPrevented || e.ctrlKey || e.metaKey) return;
+      var a = document.activeElement;
+      if (!a || !p.root || !p.root.contains(a) || typing(a)) return;
+      var back = (e.key === 'Backspace' && !e.altKey) || (e.key === 'ArrowLeft' && e.altKey);
       if (!back) return;
       e.preventDefault();
-      to(stack.length - 1);
+      to(stack.length - 1, { keyed: true });
     }
     document.addEventListener('keydown', onKey);
 
@@ -128,11 +150,12 @@
       depth: function () { return stack.length; },
       current: current,
       target: function () { return stack.length ? stack[stack.length - 1].target : null; },
+      merge: merge,
       crumbs: crumbs,
       hint: hint,
       destroy: function () { document.removeEventListener('keydown', onKey); stack = []; }
     };
   }
 
-  TAP.panelDrill = { create: create, levels: levels };
+  TAP.panelDrill = { create: create, levels: levels, keys: keys };
 })(window.TAP);

@@ -60,9 +60,12 @@
     return {
       selected: p.st.selected, seen: p.seen,
       onSelect: function (ins) {
-        var off = p.st.selected === ins.id, tg = target(ins, p.id), sm = TAP.showme;
-        // A region the chart can't show on its own: "Show me" widens the comparison first
-        if (!off && sm && !sm.__stub && sm.widen(tg, p.cmp(), ins.regionIds)) {
+        // While drilled, the insights and their highlight are the current level's, so selecting one stays there
+        var deep = !!(p.drill && p.drill.depth()), off = p.st.selected === ins.id, tg = target(ins, deep ? p.drill.current() : p.id);
+        var sm = TAP.showme;
+        // A region the chart can't show on its own: "Show me" widens the comparison first (top level only: a
+        // comparison change returns the panel to its top level)
+        if (!off && !deep && sm && !sm.__stub && sm.widen(tg, p.cmp(), ins.regionIds)) {
           p.st.pop = null;
           sm.go({ insightId: ins.id, target: tg });
           return;
