@@ -441,4 +441,126 @@
       a.ok(grid({ mode: 'all' }).empty, 'nothing to draw');
     });
   });
+
+  /* ---------- US-2.1.6 what leaders say they need to win ---------- */
+
+  function entries(root) { return Array.prototype.slice.call(root.querySelectorAll('.tap-nbf__entry')); }
+  function entryRegions(root) { return entries(root).map(function (e) { return e.getAttribute('data-region'); }); }
+
+  T.suite('newbusiness-factors', function () {
+    T.test('TPV-TC-362', 'Sample data: every success factor written for the industry, labelled with region and sub-industry', function (a) {
+      sample();
+      var ind = window.SAMPLE_EXPECT.p16.industry, want = [];
+      TAP.data.regions().forEach(function (r) {
+        (r.newBusiness || []).forEach(function (row) {
+          if (row.industryId === ind && row.successFactors && String(row.successFactors).trim()) want.push({ r: r, row: row });
+        });
+      });
+      a.ok(want.length >= 2, 'the planted industry has success factors in the data file');
+      withView(function (root) {
+        TAP.store.set({ industry: ind });
+        var got = entries(root);
+        a.equal(got.length, want.length, 'one entry per written success factor');
+        want.forEach(function (w, i) {
+          var e = got[i];
+          a.equal(e.getAttribute('data-region'), w.r.id, 'entry ' + i + ': region, in file order');
+          a.ok(e.textContent.indexOf(TAP.content.regionName(w.r)) >= 0, 'entry ' + i + ': labelled with the region');
+          a.ok(e.textContent.indexOf(w.row.subVertical) >= 0, 'entry ' + i + ': labelled with the sub-industry');
+          a.equal(e.querySelector('.tap-nbf__text').textContent, String(w.row.successFactors), 'entry ' + i + ': the words as written');
+        });
+      });
+    });
+
+    T.test('TPV-TC-364', 'With no industry selected the panel asks for one and lists nothing', function (a) {
+      withView(function (root) {
+        a.equal(TAP.store.get().industry, null, 'nothing selected');
+        a.ok(root.querySelector('.tap-nbf__ask'), 'asks for an industry');
+        a.equal(root.querySelector('.tap-nbf__ask').textContent, TAP.content.text('nbFactors.ask'), 'in its wording');
+        a.equal(entries(root).length, 0, 'no entries');
+      });
+    });
+
+    T.test('TPV-TC-365', 'With a focus region, its entries come first', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind4', cmp: { mode: 'one', focus: 'charlie' } });
+        // ind4: alpha row 21 "Specialist partner", charlie row 21 "Product gaps"
+        a.deepEqual(entryRegions(root), ['charlie', 'alpha'], 'focus first, then file order');
+        a.match(entries(root)[0].textContent, /Focus region/, 'marked as the focus');
+        TAP.store.set({ cmp: { mode: 'all' } });
+        a.deepEqual(entryRegions(root), ['alpha', 'charlie'], 'file order without a focus');
+        TAP.store.set({ cmp: { mode: 'set', set: ['bravo', 'charlie'] } });
+        a.deepEqual(entryRegions(root), ['charlie'], 'only regions in scope');
+      });
+    });
+
+    T.test('TPV-TC-366', 'Only entries that exist are listed, with no "no comment" label or count', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind1' });   // alpha and bravo wrote one each; charlie's row is blank
+        a.deepEqual(entryRegions(root), ['alpha', 'bravo'], 'the two written entries');
+        var text = root.querySelector('.tap-nbf').textContent;
+        a.ok(!/no comment|not provided|0 entries|no success factor/i.test(text), 'no label for the blank');
+        a.equal(text.indexOf('Region C'), -1, 'Region C is not named');
+      });
+    });
+
+    T.test('TPV-TC-367', 'Each entry names its source cell', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind1' });
+        var src = entries(root).map(function (e) { return e.querySelector('.tap-nbf__src').textContent; });
+        a.ok(src[0].indexOf('Region A plan.xlsx › 2. New Business › N20') >= 0, 'Region A row 20, column N');
+        a.ok(src[1].indexOf('Region B plan.xlsx › 2. New Business › N20') >= 0, 'Region B row 20, column N');
+        a.ok(src[0].indexOf(TAP.format.kind('IN').text) >= 0, 'with the kind of value');
+      });
+    });
+
+    T.test('X-nb-factors-select', 'A grid row, a grid cell or industry:select updates the panel', function (a) {
+      withView(function (root) {
+        root.querySelector('.tap-panel[data-report="nb-industries"] .tap-nbg__name[data-tap-industry="ind3"]').click();
+        a.equal(TAP.store.get().industry, 'ind3', 'the grid row selects the industry');
+        a.deepEqual(entryRegions(root), ['delta'], 'and the panel shows it');
+        a.match(root.querySelector('.tap-nbf__title').textContent, /Retail/, 'named in the title');
+        TAP.bus.emit('industry:select', { industryId: 'ind4' });
+        a.deepEqual(entryRegions(root), ['alpha', 'charlie'], 'industry:select');
+      });
+    });
+
+    when(!!TAP.reports.get('nb-rows'), 'waits for the sub-industry list (#201)')('X-nb-factors-filter', 'The list’s industry filter updates the panel', function (a) {
+      withView(function (root) {
+        var sel = root.querySelector('[data-slot="nb-rows"] select[data-control="filter:industry"]');
+        a.ok(sel, 'the list offers an industry filter');
+        sel.value = 'ind1';
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        a.equal(TAP.store.get().industry, 'ind1', 'the filter selects the industry');
+        a.deepEqual(entryRegions(root), ['alpha', 'bravo'], 'and the panel follows');
+      });
+    });
+
+    T.test('X-nb-factors-none', 'An industry nobody wrote about shows one plain line naming no region', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[3].newBusiness[0].successFactors = '  ';
+      TAP.data.load(plan);
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind3' });
+        a.equal(entries(root).length, 0, 'a blank of spaces is not an entry');
+        var none = root.querySelector('.tap-nbf__none');
+        a.equal(none && none.textContent, TAP.content.text('nbFactors.none', { industry: 'Retail' }), 'one plain line');
+        TAP.data.regions().forEach(function (r) { a.equal(none.textContent.indexOf(r.name), -1, 'does not name ' + r.name); });
+      });
+    });
+
+    T.test('X-nb-factors-long', 'A long entry is shown in full, as text, and the list scrolls', function (a) {
+      var plan = T_FIXTURE('mini'), long = new Array(120).join('A long planted success factor that keeps going. ') + 'The very end.';
+      plan.regions[0].newBusiness[0].successFactors = long;
+      plan.regions[1].newBusiness[0].successFactors = '<img src=x onerror=alert(1)>';
+      TAP.data.load(plan);
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind1' });
+        var text = root.querySelector('.tap-nbf__entry[data-region="alpha"] .tap-nbf__text');
+        a.equal(text.textContent, long, 'every word, nothing cut off');
+        a.equal(getComputedStyle(root.querySelector('.tap-nbf__list')).overflowY, 'auto', 'the list scrolls');
+        a.equal(getComputedStyle(text).overflow, 'visible', 'the text itself is never clipped');
+        a.equal(root.querySelector('.tap-nbf img'), null, 'shown as text');
+      });
+    });
+  });
 })(window.TAP);
