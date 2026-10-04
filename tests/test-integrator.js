@@ -99,7 +99,9 @@
     T.test('X-int-showme-sample', 'Every sample insight lands on a drawn highlight, or on details', function (a) {
       withApp(function (root) {
         var all = TAP.insights.all();
-        a.equal(all.length, 37, 'the sample data has 37 insights');
+        // Phase 2 rule families add their own insights; the Phase 1 families give 37
+        var phase1 = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
+        a.equal(all.filter(function (x) { return phase1.indexOf(x.family) >= 0; }).length, 37, 'the sample data has 37 Phase 1 insights');
         a.ok(all.some(function (x) { return !x.reportId; }) && all.some(function (x) { return x.reportId; }), 'both kinds are covered');
         a.deepEqual(everyInsight(root, {}), [], 'All regions');
       });
