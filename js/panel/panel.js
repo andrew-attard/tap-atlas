@@ -61,6 +61,7 @@
   function build(p, s) {
     var def = TAP.reports.get(p.id), errors = TAP.reports.validate(def), cmp = p.st.custom || s.cmp;
     var industryId = industryOf(p, def, s), entities = TAP.scope.entities(cmp);
+    if (def && !errors.length) TAP.panelMenus.fitBreakdown(def, p.st);   // a breakdown the measure doesn't list is dropped
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
     var ctx = def ? { def: def, type: types ? types.current : def.defaultType, measureId: p.st.measureId,
       sizeId: p.st.sizeId, breakdown: p.st.breakdown, cmp: cmp, entities: entities, year: null, industryId: industryId,

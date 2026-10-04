@@ -47,7 +47,8 @@ Object.assign(window.TAP_CONTENT.text, {
     // Break down by a second dimension (US-1.2.7)
     breakdown: 'Break down by',
     breakdownNone: 'None',
-    breakdowns: { year: 'Plan year', industry: 'Industry', productLine: 'Product line', channel: 'Channel', segment: 'Segment' },
+    breakdowns: { year: 'Plan year', industry: 'Industry', productLine: 'Product line', channel: 'Channel', segment: 'Segment',
+      motion: 'New business or customers', risk: 'Risk level' },
     industry: 'Industry',
     more: 'More',
 
