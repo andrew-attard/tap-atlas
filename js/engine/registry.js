@@ -18,7 +18,7 @@
 
   // The chart types each data shape allows (D18). 'groupedBar' appears once a breakdown is chosen.
   var SHAPE_TYPES = {
-    compare: ['bar', 'groupedBar', 'dot', 'radar', 'table'],
+    compare: ['bar', 'groupedBar', 'dot', 'radar', 'bubble', 'table'],   // bubble: needs x, y and size (nb-levers, US-2.1.4)
     parts: ['stackedBar', 'stacked100', 'groupedBar', 'treemap', 'bubble', 'table'],
     xy: ['scatter', 'table'],
     xyz: ['bubble', 'scatter', 'table'],
