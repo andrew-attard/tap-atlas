@@ -1,7 +1,7 @@
 /*
  * File: tests/test-customers.js
  * Purpose: Tests for the Customer growth view: the view itself (US-2.2.1) and its reports.
- * Provides: test cases TPV-TC-369 to TPV-TC-377 and X-cg-*; window.CGP_T (shared helpers for tests/test-partners.js)
+ * Provides: test cases TPV-TC-369 to TPV-TC-410 (automated ones) and X-cg-*; window.CGP_T (shared helpers for tests/test-partners.js)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: CGP stream
