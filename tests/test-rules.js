@@ -37,13 +37,13 @@
     { p: 'P03', id: 'groupPriority:datacenters:ability', regions: X.p03.lowAbility,
       sentence: 'Data Centers is a group priority, but 4 regions rate their ability to win there as low.' },
     { p: 'P04', id: 'strongRating:neu:pharma', regions: ['neu'],
-      sentence: 'Northern Europe rates its references in Pharma and Biotech as strong, with no current ARR or pipeline there. What does the rating draw on?' },
+      sentence: 'Northern Europe rates its references in Pharma and Biotech as strong, with no current ARR or pipeline there. Worth discussing what the rating draws on.' },
     { p: 'P05', id: 'weakRating:ceu:manufacturing', regions: ['ceu'],
       has: ['Central Europe rates its', 'expertise', 'Manufacturing holds its largest current ARR (' + F.money(X.p05.currentArr) + ')'] },
     { p: 'P06', id: 'tierVsPipeline:seu:retail', regions: ['seu'],
       has: ['Southern Europe placed Retail in Tier 3', F.pct(X.p06.share) + ' of the region', F.money(X.p06.pipelineTotal)] },
     { p: 'P07', id: 'priorityNoPipeline:mea:hospitality', regions: ['mea'],
-      sentence: 'Middle East & Africa placed Hospitality in Tier 2, with no pipeline there yet. How will that pipeline be built?' },
+      sentence: 'Middle East & Africa placed Hospitality in Tier 2, with no pipeline there yet. Worth discussing how that pipeline will be built.' },
     { p: 'P08', id: 'outlier:nb.hitRate:ceu', regions: ['ceu'],
       sentence: 'Central Europe plans a 35% hit rate, more than twice the average of the other regions (15%).' },
     { p: 'P09', id: 'outlier:nb.avgDealSize:latam', regions: ['latam'],
@@ -142,12 +142,12 @@
       a.ok(get('priorityNoPipeline:apac:transport'), 'P11 overlaps: Asia Pacific Transportation is Tier 2 with no pipeline');
     });
 
-    T.test('X-rules-judgement-questions', 'Judgement insights are framed as questions and point at the region and industry', function (a) {
+    T.test('X-rules-judgement-questions', 'Judgement insights end as an open point worth discussing (D51) and point at the region and industry', function (a) {
       sample();
       var list = TAP.insights.all().filter(function (x) { return x.family === 'judgement'; });
       a.ok(list.length >= 4);
       list.forEach(function (x) {
-        a.match(x.sentence, /\?$/, x.id + ' ends with a question');
+        a.match(x.sentence, /Worth discussing [^.?]+\.$/, x.id + ' ends with a point worth discussing, not a direct question');
         a.equal(x.regionIds.length, 1, x.id + ' names one region');
         a.equal(x.industryIds.length, 1, x.id + ' names one industry');
         a.ok(['ind-quad', 'ind-tiers'].indexOf(x.reportId) >= 0, x.id + ' attaches to the quadrant or tier grid');

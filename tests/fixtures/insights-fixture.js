@@ -70,7 +70,7 @@ window.TEST_FIXTURES.insights = (function () {
     }),
     insight({
       id: 'tierVsPipeline:seu:retail', ruleId: 'tierVsPipeline', family: 'judgement',
-      sentence: 'Southern Europe placed Retail in Tier 3, but it holds 18% of the region’s pipeline (€2.9M). What keeps it in Tier 3?',
+      sentence: 'Southern Europe placed Retail in Tier 3, but it holds 18% of the region’s pipeline (€2.9M). Worth discussing what keeps it in Tier 3.',
       description: 'A Tier 3 industry holding at least 15% of the region’s pipeline.',
       regionIds: ['seu'], industryIds: ['retail'],
       figures: [
@@ -83,7 +83,7 @@ window.TEST_FIXTURES.insights = (function () {
     }),
     insight({
       id: 'strongRating:neu:pharma', ruleId: 'strongRating', family: 'judgement',
-      sentence: 'Northern Europe rates its references in Pharma and Biotech as strong, with no current ARR or pipeline there. What does the rating draw on?',
+      sentence: 'Northern Europe rates its references in Pharma and Biotech as strong, with no current ARR or pipeline there. Worth discussing what the rating draws on.',
       description: 'References, expertise or product fit rated 3 where current ARR and pipeline for that industry are both zero.',
       regionIds: ['neu'], industryIds: ['pharma'],
       figures: [

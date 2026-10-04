@@ -56,26 +56,26 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     description: 'References, expertise or product fit rated 3 (the favourable end) where the industry’s current ARR and pipeline are both at or below the threshold (zero by default).',
     reads: ['marketCoverage.references', 'marketCoverage.currentArr'], params: { maxAmount: 0 },
     scoring: 'Strength: grows with the number of ratings at 3. Money: none, as nothing is in the system yet.',
-    template: '{region} rates its {ratings} in {industry} as strong, with no current ARR or pipeline there. What does the rating draw on?',
-    templates: { little: '{region} rates its {ratings} in {industry} as strong, with little current ARR or pipeline there ({arr} and {pipeline}). What does the rating draw on?' },
+    template: '{region} rates its {ratings} in {industry} as strong, with no current ARR or pipeline there. Worth discussing what the rating draws on.',
+    templates: { little: '{region} rates its {ratings} in {industry} as strong, with little current ARR or pipeline there ({arr} and {pipeline}). Worth discussing what the rating draws on.' },
     attach: QUAD, highlight: 'points' });
   rule({ id: 'weakRating', family: 'judgement',
     description: 'References, expertise or product fit rated 1 (the unfavourable end) where the industry holds one of the region’s three largest current ARR or pipeline figures.',
     reads: ['marketCoverage.expertise', 'marketCoverage.currentArr'], params: { rank: 1 },
     scoring: 'Strength: grows with the number of ratings at 1, and falls for the second or third largest figure. Money: the figure involved.',
-    template: '{region} rates its {ratings} in {industry} at 1 of 3, yet {industry} holds {rank} {what} ({amount}). What sits behind the rating?',
+    template: '{region} rates its {ratings} in {industry} at 1 of 3, yet {industry} holds {rank} {what} ({amount}). Worth discussing what sits behind the rating.',
     attach: QUAD, highlight: 'points' });
   rule({ id: 'tierVsPipeline', family: 'judgement',
     description: 'A Tier 3 industry holding at least 15% of the region’s pipeline (every industry row counted).',
     reads: ['marketCoverage.tier', 'marketCoverage.pipelineTotal'], params: { share: 0.15 },
     scoring: 'Strength: the pipeline share against twice the threshold. Money: its pipeline as a share of the organization’s.',
-    template: '{region} placed {industry} in Tier 3, but it holds {share} of the region’s pipeline ({amount}). What keeps it in Tier 3?',
+    template: '{region} placed {industry} in Tier 3, but it holds {share} of the region’s pipeline ({amount}). Worth discussing what keeps it in Tier 3.',
     attach: GRID, highlight: 'cell' });
   rule({ id: 'priorityNoPipeline', family: 'judgement',
     description: 'A Tier 1 or Tier 2 industry with no pipeline at all.',
     reads: ['marketCoverage.tier', 'marketCoverage.pipelineTotal'], params: {},
     scoring: 'Strength: fixed (higher for Tier 1). Money: any new business planned there.',
-    template: '{region} placed {industry} in Tier {tier}, with no pipeline there yet. How will that pipeline be built?',
+    template: '{region} placed {industry} in Tier {tier}, with no pipeline there yet. Worth discussing how that pipeline will be built.',
     attach: GRID, highlight: 'cell' });
 
   /* ---------- assumptions (US-1.7.6) ---------- */
