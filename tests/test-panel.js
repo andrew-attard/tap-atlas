@@ -512,7 +512,7 @@
         entities: TAP.scope.entities(c), year: null, industryId: null, highlight: null, expanded: false, theme: TH, opts: {} });
       a.equal(qsa('tbody tr', tbl).length, res.table.rows.length, 'same rows');
       res.table.columns.forEach(function (col, i) {
-        a.equal(txt(qsa('thead th', tbl)[i]).replace(/[▲▼]/g, '').trim(), col.label, 'header ' + col.label);
+        a.equal(txt(qs('.tap-panel__sort', qsa('thead th', tbl)[i])).replace(/[▲▼]/g, '').trim(), col.label, 'header ' + col.label);
         a.deepEqual(column(tbl, i), res.table.rows.map(function (r) {
           return TAP.format.cell(r.cells[col.key], { unit: col.unit, exact: true, field: col.field });
         }), 'column ' + col.label);

@@ -12,6 +12,7 @@
 
   var calls = [];     // every ctx the fake list builder was given
   var ROWS = 6;       // rows the fake list draws
+  var NOCOL = false;  // true: headings without data-tap-col, so the panel finds them by their sort button
 
   function qs(sel, root) { return TAP.dom.qs(sel, root); }
   function qsa(sel, root) { return TAP.dom.qsa(sel, root); }
@@ -44,7 +45,7 @@
     var sort = (ctx.opts && ctx.opts.sort) || 'incr3:desc', rows = rowsOf(ROWS);
     var head = COLS.map(function (c) {
       var next = sort === c.key + ':asc' ? 'desc' : 'asc';
-      return '<th data-tap-col="' + c.key + '"><button type="button" class="x-sort" data-tap-opt="sort" data-tap-value="' +
+      return '<th' + (NOCOL ? '' : ' data-tap-col="' + c.key + '"') + '><button type="button" class="x-sort" data-tap-opt="sort" data-tap-value="' +
         c.key + ':' + next + '">' + esc(c.label) + '</button></th>';
     }).join('');
     var body = rows.map(function (r) {
@@ -82,6 +83,7 @@
       var ids = [], panels = [];
       calls = [];
       ROWS = 6;
+      NOCOL = false;
       var api = {
         panel: function (id, opts) { var p = TAP.panel.create(T.dom.mount(), id, opts); panels.push(p); return p; },
         report: function (def) { window.TAP_REPORTS[def.id] = def; ids.push(def.id); return def; }
@@ -253,6 +255,96 @@
     T.test('X-panel-default-breakdown', 'A defaultBreakdown the report does not offer is an error in its own panel', scene(function (a, s) {
       s.report(cmpDef({ id: 'x-bd2', defaultBreakdown: 'industry' }));
       a.match(txt(qs('.tap-panel__error', s.panel('x-bd2').el)), /defaultBreakdown/);
+    }));
+  });
+
+  /* ---------- US-2.6.4: value kinds on every list and table (#227) ---------- */
+
+  // A chart whose table mixes kinds in one column: a region's own figure (DER) and a combined one (APP).
+  TAP.builders.register('x-fake-kinds', function (ctx) {
+    var cols = [{ key: 'entity', label: 'Region', unit: 'text', align: 'left' }, { key: 'nb.arr', label: 'ARR', unit: 'money', align: 'right' },
+      { key: 'acc', label: 'Target accounts', unit: 'count', align: 'right', kind: 'IN' }];
+    if (ctx.opts.pre) cols.push({ key: 'base', label: 'Current ARR', unit: 'money', align: 'right' });
+    function row(id, label, k) {
+      return { entityId: id, src: null, cells: { entity: { v: label, state: 'value', kind: null }, 'nb.arr': { v: 10, state: 'value', kind: k },
+        acc: { v: 3, state: 'value', kind: 'APP' }, base: { v: null, state: 'notProvided', kind: 'PRE' } } };
+    }
+    return { option: { xAxis: { type: 'value' }, yAxis: { type: 'category', data: ['A'] }, series: [{ type: 'bar', data: [1] }] },
+      table: { columns: cols, rows: [row('alpha', 'Region A', 'DER'), row('rest', 'The rest', 'APP')] },
+      legend: [], notes: [], missing: [], empty: false, error: null, target: function () { return null; } };
+  });
+
+  function kindDef(extra) {
+    return Object.assign({ id: 'x-kinds', view: 'overview', title: 'How big is the plan?', explain: { shows: 'S.', read: 'R.', lookFor: 'L.' },
+      shape: 'compare', builder: 'x-fake-kinds', dimension: 'entity', measures: [{ id: 'nb.arr', label: 'ARR' }],
+      defaultType: 'bar', types: ['bar', 'table'], breakdowns: [], sources: ['DER'], options: {} }, extra || {});
+  }
+  function K(k) { return TAP.format.kind(k); }
+  function headTo(root, key) { return qs('th[data-tap-col="' + key + '"]', root) || qs('[data-sort="' + key + '"]', root).closest('th'); }
+  function kindsIn(th) { return qsa('.tap-kind', th).map(txt); }
+  function showTable(p) { click(qs('[data-action="table"]', p.el)); return qs('.tap-panel__table', p.el); }
+
+  T.suite('kinds', function () {
+    T.test('TPV-TC-508', 'Table headings carry the glyph and word for the kinds of their cells', scene(function (a, s) {
+      s.report(kindDef());
+      var p = s.panel('x-kinds'), tbl = showTable(p);
+      a.deepEqual(kindsIn(headTo(tbl, 'nb.arr')), [K('DER').text, K('APP').text], 'both kinds in the column, in a fixed order');
+      a.deepEqual(kindsIn(headTo(tbl, 'acc')), [K('IN').text], 'a column that names its kind uses it');
+      a.deepEqual(kindsIn(headTo(tbl, 'entity')), [], 'names carry no kind');
+      a.deepEqual(kindsIn(headTo(tbl, '__source')), [], 'nor does the source column');
+      a.match(K('APP').text, /calculated by this app/i, 'the word, not only the glyph');
+    }));
+
+    T.test('TPV-TC-508', 'A blank cell still tells the kind of its column', scene(function (a, s) {
+      var box = T.dom.mount();
+      TAP.panelTable.render(box, TAP.builders.get('x-fake-kinds')({ opts: { pre: true } }).table, {});
+      a.deepEqual(kindsIn(headTo(box, 'base')), [K('PRE').text], 'system figure, though every value is not provided');
+    }));
+
+    T.test('TPV-TC-508', 'Every Phase 1 table carries kinds on its figure columns', scene(function (a, s) {
+      ['ov-ambition', 'ind-tiers', 'ind-quad', 'ind-ratings'].forEach(function (id) {
+        var p = s.panel(id), tbl = showTable(p);
+        var figures = qsa('thead th', tbl).filter(function (th) { return th.classList.contains('num'); });
+        a.ok(figures.length > 0, id + ': has figure columns');
+        figures.forEach(function (th) { a.ok(kindsIn(th).length > 0, id + ': ' + txt(qs('.tap-panel__sort', th)) + ' carries a kind'); });
+      });
+    }));
+
+    T.test('TPV-TC-508', 'List headings carry the glyph and word from the builder\'s table columns', scene(function (a, s) {
+      s.report(listDef());
+      var p = s.panel('x-list');
+      a.deepEqual(kindsIn(qs('th[data-tap-col="name"]', p.el)), [K('IN').text], 'leader input');
+      a.deepEqual(kindsIn(qs('th[data-tap-col="incr3"]', p.el)), [K('DER').text], 'calculated in the workbook');
+      a.deepEqual(kindsIn(qs('th[data-tap-col="region"]', p.el)), [], 'names carry no kind');
+      a.equal(txt(qs('th[data-tap-col="name"] [data-tap-opt]', p.el)), 'Account', 'the sort button keeps its own name');
+      NOCOL = true;
+      p.refresh();
+      var th = qs('[data-tap-opt="sort"][data-tap-value^="incr3:"]', p.el).closest('th');
+      a.deepEqual(kindsIn(th), [K('DER').text], 'found by the sort button when headings carry no data-tap-col');
+      p.refresh();
+      a.equal(qsa('.tap-kind', th.closest('table')).length, 2, 'drawn once per heading, never twice');
+    }));
+
+    T.test('TPV-TC-510', 'A one-line key to the glyphs sits under each list and table', scene(function (a, s) {
+      s.report(listDef());
+      var p = s.panel('x-list'), key = qs('.tap-panel__kind-key', p.el), list = qs('.tap-panel__html--list', p.el);
+      a.ok(key, 'key drawn');
+      a.ok(list.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING, 'under the list');
+      a.ok(!list.contains(key), 'outside the scrolling box, so it stays in view');
+      a.deepEqual(kindsIn(key), [K('IN').text, K('DER').text], 'the kinds the list shows, each once');
+      a.ok(key.offsetHeight > 0 && key.offsetHeight < 60, 'visible, on one line');
+      s.report(kindDef());
+      var q = s.panel('x-kinds'), tbl = showTable(q), tkey = qs('.tap-panel__kind-key', q.el);
+      a.ok(tkey && (tbl.compareDocumentPosition(tkey) & Node.DOCUMENT_POSITION_FOLLOWING), 'under the table too');
+      a.deepEqual(kindsIn(tkey), [K('IN').text, K('DER').text, K('APP').text]);
+    }));
+
+    T.test('TPV-TC-509', 'Kinds in headings are plain text: visible without hovering, at a readable size', scene(function (a, s) {
+      s.report(listDef());
+      var p = s.panel('x-list'), tag = qs('th[data-tap-col="name"] .tap-kind', p.el);
+      a.ok(tag.offsetHeight > 0, 'shown');
+      a.equal(tag.getAttribute('title'), null, 'not a tooltip');
+      a.ok(parseFloat(getComputedStyle(tag).fontSize) >= 14, 'label size or larger');
     }));
   });
 })(window.TAP);
