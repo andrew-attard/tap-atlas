@@ -378,4 +378,43 @@
       a.deepEqual(plain.table.columns.map(function (c) { return c.key; }), ['entity', 'rc.all.arr'], 'the table drops the value columns');
     });
   });
+
+  /* ---------- reference lines on compare charts (17.7, e.g. the exposure thresholds) ---------- */
+
+  T.suite('reflines', function () {
+    function refDef(lines) {
+      return { id: 'x-ref', view: 'customers', title: 'Test', explain: { shows: 's', read: 'r', lookFor: 'l' }, shape: 'compare',
+        defaultType: 'bar', types: ['bar', 'dot', 'table'], measures: [{ id: 'cg.top3Share' }], breakdowns: [], sources: ['APP'],
+        options: { refLines: lines } };
+    }
+    function chart(d, type) {
+      var c = Object.assign(TAP.store.defaults().cmp, { mode: 'all' });
+      return TAP.builders.get('compare')({ def: d, type: type, cmp: c, entities: TAP.scope.entities(c) }).option;
+    }
+
+    T.test('X-engine-reflines', 'A compare chart draws each reference line where it is set, with its label', function (a) {
+      load();
+      var lines = [{ value: 0.5, label: 'Concentration flag (50%)' }, { value: 0.25, label: 'At-risk flag (25%)' }];
+      ['bar', 'dot'].forEach(function (type) {
+        var opt = chart(refDef(lines), type);
+        var ml = opt.series.filter(function (s) { return s.markLine; })[0].markLine;
+        a.deepEqual(ml.data.map(function (d) { return d.xAxis; }), [0.5, 0.25], type + ': at 50% and 25%');
+        a.deepEqual(ml.data.map(function (d) { return ml.label.formatter({ data: d, name: d.name }); }),
+          ['Concentration flag (50%)', 'At-risk flag (25%)'], type + ': each line is labelled');
+        a.equal(ml.lineStyle.type, 'dashed', type + ': dashed, not told apart by colour alone');
+        a.ok(ml.silent, type + ': never in the way of a click');
+      });
+      var none = chart(refDef(undefined), 'bar');
+      a.equal(none.series.filter(function (s) { return s.markLine; }).length, 0, 'no lines unless asked');
+    });
+
+    T.test('X-engine-reflines', 'The axis reaches every line, even above the largest value', function (a) {
+      load();
+      var opt = chart(refDef([{ value: 2, label: 'Far line' }]), 'bar');
+      // top 3 shares on miniP2 are at most 1 (Regions B and D), so the axis must stretch to 2 for the line
+      a.equal(typeof opt.xAxis.max, 'function');
+      a.equal(opt.xAxis.max({ min: 0, max: 1 }), 2);
+      a.equal(opt.xAxis.max({ min: 0, max: 3 }), 3, 'a larger value keeps its own end');
+    });
+  });
 })(window.TAP);
