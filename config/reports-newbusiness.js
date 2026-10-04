@@ -2,7 +2,7 @@
  * File: config/reports-newbusiness.js
  * Purpose: Report definitions for the New business view (Epic 2.1). The recurring themes report (nb-themes) is
  *          defined in config/reports-themes.js.
- * Provides: adds to window.TAP_REPORTS (nb-industries, nb-levers)
+ * Provides: adds to window.TAP_REPORTS (nb-industries, nb-channels once the recap measures exist, nb-levers)
  * Depends on: config/reports.js (schema), js/engine/measures.js and measures-p2.js (loaded before, see below)
  * Used by: js/engine/registry.js, js/views/new-business.js
  * Owner: NB stream
@@ -36,6 +36,32 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     sources: ['DER', 'IN'],
     options: {}
   };
+
+  // US-2.1.3: new business order intake by channel, from the template's own recap (D55), never from the row splits.
+  var CH = ['direct', 'partner', 'allianceA', 'allianceB'];
+  function byChannel(id) { return CH.map(function (c) { return id + '.' + c; }); }
+  if (known('rc.nb.arr.direct')) {
+    window.TAP_REPORTS['nb-channels'] = {
+      id: 'nb-channels',
+      view: 'newBusiness',
+      title: 'Which channels carry each region’s new business?',
+      explain: {
+        shows: 'Each region’s new business order intake by channel (direct, partner and the two alliances), as the template’s recap adds it up. Customer growth is left out.',
+        read: 'One bar per region, its channels as shades of the region’s colour and named in the legend. The 100% view compares the mix. Services by channel can differ slightly from services potential elsewhere: the recap moves part of direct services to partners, by the template’s outsourcing percentage.',
+        lookFor: 'How much each plan relies on direct sales, partners and alliances, and regions whose mix sits apart from the others.'
+      },
+      shape: 'parts',
+      builder: null,
+      dimension: 'entity',
+      measures: [{ id: 'rc.nb.arr', label: 'ARR' }, { id: 'rc.nb.services', label: 'Services' }, { id: 'rc.nb.oi', label: 'Total order intake' }],
+      parts: { 'rc.nb.arr': byChannel('rc.nb.arr'), 'rc.nb.services': byChannel('rc.nb.services'), 'rc.nb.oi': byChannel('rc.nb.oi') },
+      defaultType: 'stackedBar',
+      types: ['stackedBar', 'stacked100', 'table'],
+      breakdowns: ['year'],
+      sources: ['DER'],
+      options: {}
+    };
+  }
 
   // US-2.1.4: the assumptions each region's new business number is built from. Rates combine with the catalogue
   // weights (config/settings.js), so the figures match the insights.
