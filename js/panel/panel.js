@@ -21,7 +21,13 @@
   // Choices that last only while the shared comparison stays the same (ARCHITECTURE section 5).
   function scoped() { return { opts: {}, highlight: null, selected: null, sentence: null, custom: null, editing: false }; }
   // Choices that last until "Reset all charts".
-  function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null, breakdown: null, table: false, sort: null }; }
+  function lasting(id) { return { type: remembered(id), measureId: null, sizeId: null, breakdown: firstBreakdown(id), table: false, sort: null }; }
+
+  // A report may open with a breakdown already chosen (defaultBreakdown), if it is one the report offers.
+  function firstBreakdown(id) {
+    var d = TAP.reports.get(id), bd = d && d.defaultBreakdown;
+    return bd && (d.breakdowns || []).indexOf(bd) >= 0 ? bd : null;
+  }
 
   // The browser may block storage, or the storage module may fail: the panel then simply uses defaults.
   function remembered(id) { try { return TAP.storage.get('chart:' + id, null); } catch (e) { return null; } }
