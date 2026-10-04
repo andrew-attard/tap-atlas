@@ -199,7 +199,17 @@
       var key = kindKey(res.table);
       if (key) box.appendChild(key);
     }
+    reveal(inner);
     return inner;
+  }
+
+  // "Show me" on a list: the first highlighted row is scrolled into view inside the list, under its sticky
+  // header, without moving the page.
+  function reveal(inner) {
+    var tr = TAP.dom.qs('tr.is-highlight', inner), th = TAP.dom.qs('thead', inner);
+    if (!tr || !inner.isConnected) return;
+    var gap = tr.getBoundingClientRect().top - inner.getBoundingClientRect().top - (th ? th.offsetHeight : 0);
+    inner.scrollTop = Math.max(0, inner.scrollTop + gap);
   }
 
   TAP.panelTable = { render: render, list: list, toText: toText, clipboard: clipboard };
