@@ -241,10 +241,15 @@
   T.suite('breakdowns', function () {
     T.test('TPV-TC-310', 'A report may allow all six breakdowns', function (a) {
       load();
-      a.deepEqual(TAP.prepare.BREAKDOWNS, DIMS);
+      a.deepEqual(TAP.reports.BREAKDOWNS, DIMS);
       a.deepEqual(TAP.reports.validate(def('compare', ['rc.all.arr'])), [], 'year, industry, channel, motion, segment and risk are accepted');
     });
-    T.skip('TPV-TC-310', 'An unknown breakdown fails validation', 'waits for the check in js/engine/registry.js (lead, contract change requested)');
+    T.test('TPV-TC-310', 'An unknown breakdown fails validation', function (a) {
+      load();
+      var errs = TAP.reports.validate(def('compare', ['rc.all.arr'], ['year', 'colour']));
+      a.equal(errs.length, 1, 'one error');
+      a.match(errs[0], /colour/, 'it names the unknown breakdown');
+    });
 
     T.test('TPV-TC-311', 'Only breakdowns the selected measure lists are offered, and they follow the measure switch', function (a) {
       load();
