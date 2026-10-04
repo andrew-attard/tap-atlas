@@ -2,6 +2,7 @@
  * File: js/ui/compare-bar.js
  * Purpose: The comparison bar: five modes, only the pickers a mode needs, the plain sentence, an explanation of
  *          combined figures and the data date (which opens the data sources panel). It writes only state.cmp.
+ *          Two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
  * Provides: TAP.compareBar (mount)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js,
  *             js/core/format.js, js/core/sources.js (dataDate), js/engine/scope.js (sentence, colorOf),
@@ -66,8 +67,12 @@
   }
 
   function field(name, labelEl, control) {
-    return el('div', { class: 'tap-cmp__picker', 'data-picker': name }, [labelEl, control]);
+    return el('div', { class: 'tap-cmp__picker', 'data-picker': name }, [labelEl].concat(control));
   }
+
+  // The others in one vs the rest, as one control (D50): one by one, or combined as their average or total.
+  function restValue(c) { return c.restAs === 'individual' ? 'individual' : c.restAgg; }
+  function restPatch(v) { return v === 'individual' ? { restAs: 'individual' } : { restAs: 'combined', restAgg: v }; }
 
   function build(root) {
     var ui = {};
@@ -80,10 +85,9 @@
     ui.focusLabel = el('span', { class: 'tap-cmp__label' });
     ui.focus = regionSelect(function (id) { say(); write(focusPatch(id)); });
     ui.second = regionSelect(function (id) { say(); write({ second: id }); });
-    ui.restAs = seg(t('compare.restAs'), [{ value: 'individual', label: t('compare.restAsIndividual') },
-      { value: 'combined', label: t('compare.restAsCombined') }], function (v) { say(); write({ restAs: v }); });
-    ui.restAgg = seg(t('compare.restAgg'), [{ value: 'average', label: t('compare.restAggAverage') },
-      { value: 'total', label: t('compare.restAggTotal') }], function (v) { say(); write({ restAgg: v }); });
+    ui.rest = seg(t('compare.rest'), [{ value: 'individual', label: t('compare.restIndividual') },
+      { value: 'average', label: t('compare.restAverage') }, { value: 'total', label: t('compare.restTotal') }],
+      function (v) { say(); write(restPatch(v)); });
 
     ui.chips = el('div', { class: 'tap-cmp__chips', role: 'group', 'aria-label': t('compare.setLabel') });
     TAP.data.regions().forEach(function (r) {
@@ -102,12 +106,27 @@
       write({ set: inFileOrder(set) });
     }
 
+    // A chosen set is one button with the count; the regions open below it by click (D50)
+    ui.setCount = el('span', { class: 'tap-cmp__setcount' });
+    ui.setPop = el('div', { class: 'tap-cmp__setpop', id: 'tap-cmp-setpop', hidden: true }, [
+      ui.chips, status,
+      el('button', { type: 'button', class: 'tap-btn tap-cmp__setdone', onclick: function () { showSet(false, true); } }, t('compare.setDone'))
+    ]);
+    ui.setBtn = el('button', { type: 'button', class: 'tap-btn tap-cmp__setbtn', 'aria-expanded': 'false', 'aria-controls': 'tap-cmp-setpop',
+      onclick: function () { showSet(ui.setPop.hidden); } }, [ui.setCount, TAP.icons.svg('down')]);
+    function showSet(on, refocus) {
+      ui.setPop.hidden = !on;
+      ui.setBtn.setAttribute('aria-expanded', String(!!on));
+      if (!on) say();
+      if (refocus) ui.setBtn.focus();
+    }
+    ui.showSet = showSet;
+
     ui.pickers = {
       focus: field('focus', ui.focusLabel, ui.focus),
       second: field('second', el('span', { class: 'tap-cmp__label' }, t('compare.second')), ui.second),
-      restAs: field('restAs', el('span', { class: 'tap-cmp__label' }, t('compare.restAs')), ui.restAs),
-      restAgg: field('restAgg', el('span', { class: 'tap-cmp__label' }, t('compare.restAgg')), ui.restAgg),
-      set: field('set', null, ui.chips)
+      rest: field('rest', el('span', { class: 'tap-cmp__label' }, t('compare.rest')), ui.rest),
+      set: field('set', null, [ui.setBtn, ui.setPop])
     };
 
     ui.sentence = el('span', { class: 'tap-cmp__sentence', 'aria-live': 'polite' });
@@ -126,12 +145,11 @@
     TAP.dom.append(root, [
       el('div', { class: 'tap-cmp__row tap-cmp__row--controls' }, [
         el('span', { class: 'tap-cmp__title' }, t('compare.label')), ui.modes,
-        ui.pickers.focus, ui.pickers.second, ui.pickers.restAs, ui.pickers.restAgg, ui.pickers.set
+        ui.pickers.focus, ui.pickers.second, ui.pickers.rest, ui.pickers.set
       ]),
       el('div', { class: 'tap-cmp__row tap-cmp__row--sentence' }, [
         el('p', { class: 'tap-cmp__say' }, [ui.sentence, ui.explain]), ui.date, ui.pop
-      ]),
-      status
+      ])
     ]);
     return ui;
   }
@@ -163,17 +181,15 @@
   function render(ui) {
     var c = cmp();
     press(ui.modes, c.mode);
-    var need = {
-      focus: c.mode === 'one' || c.mode === 'pair', second: c.mode === 'pair', restAs: c.mode === 'one',
-      restAgg: c.mode === 'one' && c.restAs === 'combined', set: c.mode === 'set'
-    };
+    var need = { focus: c.mode === 'one' || c.mode === 'pair', second: c.mode === 'pair', rest: c.mode === 'one', set: c.mode === 'set' };
     Object.keys(need).forEach(function (k) { ui.pickers[k].hidden = !need[k]; });
+    if (!need.set) ui.showSet(false);
     TAP.dom.text(ui.focusLabel, t(c.mode === 'one' ? 'compare.focus' : 'compare.region'));
     if (c.focus) ui.focus.value = c.focus;
     TAP.dom.qsa('option', ui.second).forEach(function (o) { o.disabled = o.value === c.focus; });
     if (c.second) ui.second.value = c.second;
-    press(ui.restAs, c.restAs);
-    press(ui.restAgg, c.restAgg);
+    press(ui.rest, restValue(c));
+    TAP.dom.text(ui.setCount, t('compare.setButton', { n: (c.set || []).length, total: ids().length }));
     TAP.dom.qsa('.tap-cmp__chip', ui.chips).forEach(function (b) {
       var on = (c.set || []).indexOf(b.getAttribute('data-region')) >= 0;
       b.setAttribute('aria-pressed', String(on));
@@ -212,15 +228,16 @@
       if (changed.indexOf('cmp') >= 0) render(ui);
       if (changed.indexOf('view') >= 0) quiet();
     });
-    // Esc closes the explanation before any side panel (layers skip an Esc that was already handled).
+    // Esc closes the explanation or the set's regions before any side panel (layers skip an Esc already handled).
     function onKey(e) {
-      if (e.key !== 'Escape' || ui.pop.hidden || e.defaultPrevented) return;
-      ui.showPop(false);
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (!ui.pop.hidden) { ui.showPop(false); ui.explain.focus(); } else if (!ui.setPop.hidden) ui.showSet(false, true);
+      else return;
       e.preventDefault();
-      ui.explain.focus();
     }
     function onDown(e) {
       if (!ui.pop.hidden && !ui.pop.contains(e.target) && !ui.explain.contains(e.target)) ui.showPop(false);
+      if (!ui.setPop.hidden && !ui.pickers.set.contains(e.target)) ui.showSet(false);
     }
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
