@@ -760,12 +760,13 @@
       a.ok(src && src.textContent.indexOf('Region D plan.xlsx') >= 0 && /20/.test(src.textContent), 'the list shows the source row');
     });
 
-    T.test('X-nb-rows-view', 'The list sits next to the success factors panel', function (a) {
+    T.test('X-nb-rows-view', 'The list takes the full width, with the success factors straight below it', function (a) {
       withView(function (root) {
-        var pair = root.querySelector('[data-slot="nb-rows"]').parentNode;
-        a.ok(/tap-vh-pair/.test(pair.className), 'a two-panel row');
-        a.ok(pair.querySelector('.tap-nbf'), 'with the success factors');
-        a.ok(pair.querySelector('.tap-panel[data-report="nb-rows"] table.tap-list'), 'the list draws');
+        var row = root.querySelector('[data-slot="nb-rows"]').parentNode;
+        a.ok(/tap-nb__wide/.test(row.className), 'a full-width row');
+        a.ok(row.querySelector('.tap-panel[data-report="nb-rows"] table.tap-list'), 'the list draws');
+        var next = row.nextElementSibling;
+        a.ok(next && next.querySelector('.tap-nbf'), 'the success factors come next');
       });
     });
   });
