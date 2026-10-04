@@ -157,8 +157,77 @@
     } else T.skip(o.ids.guide, 'The Guide lists the view', 'pending: waits for the Guide content (PAGES2, wave B)');
   }
 
+  /*
+   * A stand-in for TAP.rows (ENGINE2, #194) with the contract's shape (ARCHITECTURE 17.4), used only while the real
+   * one is a stub, so the row bubble and row details can be tested now. Figures are read straight from the fixture.
+   */
+  var ROW_SECTION = { accounts: 'customerGrowth', partners: 'partners', newBusiness: 'newBusiness' };
+  var ROW_COLS = {
+    accounts: [['region', 'text', null], ['name', 'text', 'PRE'], ['industry', 'text', 'PRE'], ['country', 'text', 'PRE'],
+      ['productLine', 'text', 'PRE'], ['segment', 'segment', 'DER'], ['riskLevel', 'text', 'PRE'], ['currentArr', 'money', 'PRE'],
+      ['growthY1', 'pct', 'IN'], ['growthY2', 'pct', 'IN'], ['growthY3', 'pct', 'IN'], ['multiplier3y', 'count', 'IN'],
+      ['incr3', 'money', 'DER'], ['oi3', 'money', 'DER'], ['servicesRatio', 'pct', 'IN']],
+    partners: [['region', 'text', null], ['name', 'text', 'IN'], ['channel', 'text', 'IN'], ['maturity', 'text', 'IN'],
+      ['expertiseGeo', 'text', 'IN'], ['expertiseProduct', 'text', 'IN'], ['fteSales', 'count', 'IN'], ['fteConsultants', 'count', 'IN'],
+      ['fte', 'count', 'IN'], ['centralSupportPct', 'pct', 'IN'], ['arr3', 'money', 'IN'], ['services3', 'money', 'IN'],
+      ['oiPerFte', 'money', 'APP'], ['alsoNamed', 'text', 'APP']]
+  };
+  function sum3(list) {
+    var n = (list || []).filter(function (v) { return typeof v === 'number'; });
+    return n.length ? n.reduce(function (s, v) { return s + v; }, 0) : null;
+  }
+  var fakeRows = {
+    list: function (source, regionIds) {
+      var out = [];
+      TAP.data.regions().forEach(function (r) {
+        if (regionIds && regionIds.indexOf(r.id) < 0) return;
+        var items = source === 'accounts' ? (r.customerGrowth || {}).accounts : r[source];
+        (items || []).forEach(function (it) { out.push({ id: r.id + ':' + it.sourceRow, regionId: r.id, source: source, sourceRow: it.sourceRow, item: it }); });
+      });
+      return out;
+    },
+    cell: function (source, key, row) {
+      var it = row.item, v;
+      if (key === 'region') v = TAP.content.regionName(TAP.data.region(row.regionId));
+      else if (key === 'incr3') v = sum3(it.incrementalArr);
+      else if (key === 'oi3') v = it.cumulativeOrderIntake;
+      else if (key === 'arr3') v = sum3(it.arr);
+      else if (key === 'services3') v = sum3(it.services);
+      else if (key === 'fte') v = it.fteSales == null && it.fteConsultants == null ? null : (it.fteSales || 0) + (it.fteConsultants || 0);
+      else if (/^growthY\d$/.test(key)) v = (it.growthPct || [])[+key.slice(-1) - 1];
+      else v = it[key];
+      var col = ROW_COLS[source].filter(function (c) { return c[0] === key; })[0] || [key, 'text', 'IN'];
+      var blank = v == null || v === '';
+      return { v: blank ? null : v, state: blank ? 'notProvided' : 'value', kind: col[2],
+        src: { regionId: row.regionId, section: ROW_SECTION[source], field: key, row: row.sourceRow, kind: col[2] } };
+    },
+    columns: function (source) {
+      return ROW_COLS[source].map(function (c) { return { key: c[0], unit: c[1], kind: c[2], label: c[0] === 'name' ? 'Name' : c[0] }; });
+    },
+    matchKey: function (s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  };
+  // Runs fn with TAP.rows built, or with the stand-in while it is a stub.
+  function withRows(fn) {
+    if (!TAP.rows.__stub) return fn();
+    var keep = TAP.rows;
+    TAP.rows = fakeRows;
+    try { return fn(); } finally { TAP.rows = keep; }
+  }
+  // Every drawn bubble: {name, regionId, row, x, y, size, labelled}.
+  function bubbles(res) {
+    var out = [];
+    ((res.option || {}).series || []).forEach(function (s) {
+      if (s.tapRole !== 'value') return;
+      (s.data || []).forEach(function (d) {
+        out.push({ name: d.name, regionId: d.regionId, row: d.row, rowId: d.rowId, x: d.raw[0], y: d.raw[1], size: d.raw[2],
+          labelled: !!(d.label && d.label.show), color: d.itemStyle.color, series: s });
+      });
+    });
+    return out;
+  }
+
   window.CGP_T = { MODES: MODES, cmp: cmp, ctxFor: ctxFor, build: build, sample: sample, waiting: waiting, when: when,
-    cellsHaveSources: cellsHaveSources, viewChecks: viewChecks };
+    cellsHaveSources: cellsHaveSources, viewChecks: viewChecks, withRows: withRows, bubbles: bubbles };
 
   T.suite('customers', function () {
     /* ---------- US-2.2.1 the view ---------- */
@@ -518,6 +587,126 @@
         a.equal(rows('cg.top3Share').length, 3, 'always the top 3, as the share');
         a.deepEqual(rows('cg.riskShare'), [13, 11], 'always high and medium, as the share');
       } finally { conc.params.top = keep[0]; risk.params.levels = keep[1]; }
+    });
+
+    /* ---------- US-2.2.4 the accounts bubble (rowBubble) ---------- */
+
+    // Per account, from the mini data: [current ARR, three-year incremental ARR, cumulative order intake]
+    var ACCOUNTS = {
+      'alpha:10': [500, 50, 60], 'alpha:11': [200, 100, 110], 'alpha:12': [30, 0, 0], 'alpha:13': [150, 150, 180],
+      'bravo:10': [600, 120, 132], 'bravo:11': [100, 30, 30],
+      'delta:10': [800, 168, 210], 'delta:11': [400, 100, 150], 'delta:12': [50, 0, 0]
+    };
+    function withLabelMax(n, fn) {
+      var s = window.TAP_SETTINGS.rowBubble, keep = s.labelMax;
+      s.labelMax = n;
+      try { return fn(); } finally { s.labelMax = keep; }
+    }
+
+    T.test('TPV-TC-393', 'One bubble per account: current ARR across, incremental ARR up, order intake as size', function (a) {
+      withRows(function () {
+        var res = build('cg-bubble', { mode: 'all' }), seen = bubbles(res);
+        a.equal(res.error, null, 'draws');
+        a.deepEqual(seen.map(function (b) { return b.rowId; }).sort(), Object.keys(ACCOUNTS).sort(), 'every account once');
+        seen.forEach(function (b) { a.deepEqual([b.x, b.y, b.size], ACCOUNTS[b.rowId], b.rowId); });
+        a.deepEqual(res.missing, ['Region C'], 'the region with no accounts is named, not drawn at zero');
+        a.ok(res.sizeLegend && /order intake/i.test(res.sizeLegend.label), 'the size key names the order intake');
+      });
+    });
+
+    T.test('TPV-TC-395', 'The largest accounts by incremental ARR carry their data name, up to the limit in settings', function (a) {
+      withRows(function () {
+        a.equal(window.TAP_SETTINGS.rowBubble.labelMax, 10, 'default limit');
+        var all = bubbles(build('cg-bubble', { mode: 'all' }));
+        a.equal(all.filter(function (b) { return b.labelled; }).length, 9, 'nine accounts, all within the limit of 10');
+        withLabelMax(3, function () {
+          var three = bubbles(build('cg-bubble', { mode: 'all' })).filter(function (b) { return b.labelled; });
+          // the three largest increments: d1 168, a4 150, b1 120
+          a.deepEqual(three.map(function (b) { return b.rowId; }).sort(), ['alpha:13', 'bravo:10', 'delta:10'], 'exactly the top 3');
+          three.forEach(function (b) {
+            var held = TAP.data.region(b.regionId).customerGrowth.accounts.filter(function (x) { return x.sourceRow === b.row; })[0].name;
+            a.equal(b.name, held, b.rowId + ' shows the name the data holds');
+            var d = b.series.data.filter(function (x) { return x.rowId === b.rowId; })[0];
+            a.equal(d.label.formatter(), held, b.rowId + ' label text');
+          });
+        });
+      });
+    });
+
+    T.test('TPV-TC-396', 'One account’s details: region, segment, risk, growth per year and source row', function (a) {
+      withRows(function () {
+        var d = TAP.details.build({ reportId: 'cg-bubble', regionIds: ['alpha'], items: [{ section: 'customerGrowth', regionId: 'alpha', row: 11 }] });
+        a.equal(d.title, 'Fictional Account A2, Region A', 'title names the account and its region');
+        var rows = [];
+        d.groups.forEach(function (g) { rows = rows.concat(g.rows); });
+        var find = function (re) { return rows.filter(function (r) { return re.test(r.label); })[0]; };
+        a.equal(find(/^segment$/i).cell.v, 'core', 'segment');
+        a.equal(find(/^riskLevel$|risk/i).cell.v, 'high', 'risk');
+        a.equal(find(/^Growth %, 2027$/).cell.v, 0.5, 'growth year 1');
+        a.equal(find(/^Growth %, 2029$/).cell.v, 0, 'growth year 3');
+        a.match(find(/^Source row$/).text, /Region A plan\.xlsx › 3\. Customer Growth › row 11$/, 'source row');
+        rows.filter(function (r) { return r.cell && r.cell.kind; }).forEach(function (r) { a.ok(r.cell.src, r.label + ' has a source'); });
+        var multi = TAP.details.build({ items: [{ section: 'customerGrowth', regionId: 'alpha', row: 13 }] }), mrows = [];
+        multi.groups.forEach(function (g) { mrows = mrows.concat(g.rows); });
+        a.ok(!mrows.some(function (r) { return /^Growth %/.test(r.label); }), 'a multiplier account has no growth % by year');
+        a.equal(mrows.filter(function (r) { return /multiplier/i.test(r.label); })[0].cell.v, 2, 'it shows its multiplier');
+      });
+    });
+
+    T.test('TPV-TC-398', 'Table view: its rows match the bubbles', function (a) {
+      withRows(function () {
+        a.deepEqual(TAP.shapes.types(TAP.reports.get('cg-bubble'), 7), ['bubble', 'table'], 'bubble and table');
+        MODES.forEach(function (m) {
+          var res = build('cg-bubble', m), seen = bubbles(res);
+          a.equal(res.table.rows.length, seen.length, m.mode + ': one table row per bubble');
+          seen.forEach(function (b) {
+            var r = res.table.rows.filter(function (x) { return x.rowId === b.rowId; })[0];
+            a.deepEqual([r.cells.currentArr.v, r.cells.incr3.v, r.cells.oi3.v], [b.x, b.y, b.size], m.mode + ' ' + b.rowId);
+          });
+        });
+      });
+    });
+
+    T.test('X-cg-bubble-scope', 'Rows follow the comparison: focus first in its colour, the rest in grey underneath', function (a) {
+      withRows(function () {
+        var th = window.TAP_THEME;
+        var pair = bubbles(build('cg-bubble', { mode: 'pair', focus: 'delta', second: 'alpha' }));
+        a.deepEqual(pair.map(function (b) { return b.regionId; }).filter(function (r, i, l) { return l.indexOf(r) === i; }), ['delta', 'alpha'], 'focus first, then the second');
+        var one = bubbles(build('cg-bubble', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }));
+        one.forEach(function (b) {
+          a.equal(b.color, b.regionId === 'alpha' ? TAP.scope.colorOf('alpha') : th.combined, b.rowId + ' colour');
+        });
+        var top = one.filter(function (b) { return b.regionId === 'alpha'; })[0].series.z, under = one.filter(function (b) { return b.regionId !== 'alpha'; })[0].series.z;
+        a.ok(top > under, 'the focus region is drawn on top');
+        var org = build('cg-bubble', { mode: 'org' });
+        a.deepEqual(org.legend.map(function (l) { return l.label; }), ['Region A', 'Region B', 'Region D'], 'organization total: each account keeps its region colour, named in the key');
+        var set = bubbles(build('cg-bubble', { mode: 'set', set: ['bravo'] }));
+        a.ok(set.length === 2 && set.every(function (b) { return b.regionId === 'bravo'; }), 'a chosen set shows only its regions');
+      });
+    });
+
+    T.test('X-cg-bubble-target', 'A bubble click opens that account’s details', function (a) {
+      withRows(function () {
+        var res = build('cg-bubble', { mode: 'all' }), b = bubbles(res).filter(function (x) { return x.rowId === 'delta:11'; })[0];
+        var d = b.series.data.filter(function (x) { return x.rowId === 'delta:11'; })[0];
+        a.deepEqual(res.target({ data: d }), { reportId: 'cg-bubble', regionIds: ['delta'], industryIds: [], accountIds: [], mark: 'points',
+          items: [{ section: 'customerGrowth', regionId: 'delta', row: 11 }] });
+      });
+    });
+
+    T.test('X-cg-bubble-left', 'An account with no current ARR is left off and named in a note; names are escaped', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[1].customerGrowth.accounts[1].currentArr = null;
+      plan.regions[1].customerGrowth.accounts[0].name = '<b>Fictional & Co</b>';
+      TAP.data.load(plan);
+      withRows(function () {
+        var res = build('cg-bubble', { mode: 'all' });
+        a.ok(!bubbles(res).some(function (b) { return b.rowId === 'bravo:11'; }), 'not drawn');
+        a.ok(res.notes.some(function (n) { return /^Fictional Account B2 \(Region B\) is not on the chart/.test(n); }), 'named in a note: ' + res.notes.join(' | '));
+        var b1 = bubbles(res).filter(function (b) { return b.rowId === 'bravo:10'; })[0], d = b1.series.data.filter(function (x) { return x.rowId === 'bravo:10'; })[0];
+        var html = b1.series.tooltip.formatter({ data: d });
+        a.ok(html.indexOf('<b>Fictional') < 0 && html.indexOf('&lt;b&gt;Fictional &amp; Co') >= 0, 'tooltip escapes the name');
+      });
     });
 
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
