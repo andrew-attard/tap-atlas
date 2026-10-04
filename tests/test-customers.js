@@ -339,8 +339,12 @@
       core: { alpha: [0.5, 0, 0], bravo: [0.3, 0, 0], delta: [0.25, 0, 0] },
       scaled: { alpha: [0, 0, 0], delta: [0, 0, 0] }
     };
-    function growthRow(res, id) { return res.table.rows.filter(function (r) { return r.entityId === id; })[0]; }
-    function growthAt(m, c, extra) { return build('cg-growth', c, Object.assign({ measureId: m, breakdown: 'year', type: 'table' }, extra || {})); }
+    // Rows of a table or of a prepared dataset; the year columns are read from the dataset, as the chart is drawn from it
+    function growthRow(res, id) { return ((res.table || res).rows).filter(function (r) { return (r.entityId || r.id) === id; })[0]; }
+    function growthAt(m, c) {
+      var ctx = ctxFor('cg-growth', c, { measureId: m, breakdown: 'year' });
+      return TAP.prepare.run(ctx.def, ctx);
+    }
 
     when([196], 'TPV-TC-387', 'Growth % per region for years 1 to 3 equals the hand calculation, weighted by current ARR', function (a) {
       var res = growthAt('cg.growth.all', { mode: 'all' }), plain = build('cg-growth', { mode: 'all' }, { breakdown: null, type: 'table' });
