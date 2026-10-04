@@ -869,7 +869,8 @@
   T.suite('panel-breakdown', function () {
     T.test('TPV-TC-241', '"Break down by" lists exactly the definition\'s breakdowns, plus none', scene(function (a, s) {
       a.deepEqual(breakdownOpts(s.panel('ov-ambition')), ['none', 'year'], 'ambition: by plan year');
-      s.report(fakeDef({ breakdowns: ['year', 'channel'] }));
+      // The recap measure lists both year and channel in its dims, so both are offered (17.3 narrows by measure)
+      s.report(fakeDef({ breakdowns: ['year', 'channel'], measures: [{ id: 'rc.nb.arr', label: 'ARR' }] }));
       a.deepEqual(breakdownOpts(s.panel('x-fake')), ['none', 'year', 'channel']);
       a.equal(qs('[data-control="breakdown"]', s.panel('ind-ratings').el), null, 'none offered when the definition has none');
     }));
@@ -909,7 +910,7 @@
     }));
 
     T.test('TPV-TC-244', 'Choosing another breakdown replaces the first; never two at once', scene(function (a, s) {
-      s.report(fakeDef({ breakdowns: ['year', 'channel'] }));
+      s.report(fakeDef({ breakdowns: ['year', 'channel'], measures: [{ id: 'rc.nb.arr', label: 'ARR' }] }));
       var p = s.panel('x-fake');
       breakDown(p, 'year');
       a.equal(last().breakdown, 'year');
