@@ -71,12 +71,9 @@
 
   /* ---------- chart types (US-1.2.3) ---------- */
 
-  // The breakdowns on offer: the report's, narrowed to the dimensions the selected measure lists (17.3), once the
-  // engine can say so. fitBreakdown drops a chosen one that is no longer offered, for example after a measure switch.
-  function breakdowns(def, st) {
-    var P = TAP.prepare;
-    return (P.breakdowns && !P.breakdowns.__stub ? P.breakdowns(def, { measureId: st.measureId }) : def.breakdowns) || [];
-  }
+  // The breakdowns on offer: the report's, narrowed to the dimensions the selected measure lists (17.3).
+  // fitBreakdown drops a chosen one that is no longer offered, for example after a measure switch.
+  function breakdowns(def, st) { return TAP.prepare.breakdowns(def, { measureId: st.measureId }) || []; }
   function fitBreakdown(def, st) { if (st.breakdown && breakdowns(def, st).indexOf(st.breakdown) < 0) st.breakdown = null; }
 
   // The types the menu offers (the table has its own button), and the one to draw: the chosen type while the
