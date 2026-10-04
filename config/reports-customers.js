@@ -67,6 +67,31 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     options: {}
   };
 
+  // US-2.2.4: which accounts carry the planned growth, one bubble per account.
+  window.TAP_REPORTS['cg-bubble'] = {
+    id: 'cg-bubble',
+    view: 'customers',
+    title: 'Which accounts carry each region’s planned growth?',
+    explain: {
+      shows: 'Every account in the plans: its current ARR across, the incremental ARR planned over three years up, and its three-year order intake as the bubble size.',
+      read: 'Each bubble is one account in its region’s colour. The accounts with the largest planned growth are named with the name the data holds. Click a bubble for the account’s details and source row.',
+      lookFor: 'Growth that rests on a few large accounts growing a little, or on small accounts growing a lot.'
+    },
+    shape: 'xyz',
+    builder: 'rowBubble',
+    dimension: 'entity',
+    rows: 'accounts',
+    measures: [],
+    x: 'currentArr',
+    y: 'incr3',
+    size: { options: ['oi3'], default: 'oi3' },
+    defaultType: 'bubble',
+    types: ['bubble', 'table'],
+    breakdowns: [],
+    sources: ['PRE', 'DER'],
+    options: { label: 'top', labelBy: 'incr3' }
+  };
+
   // US-2.2.5: how much of the planned growth sits in a few accounts, or in accounts flagged at risk.
   window.TAP_REPORTS['cg-exposure'] = {
     id: 'cg-exposure',

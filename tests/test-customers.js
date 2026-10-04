@@ -202,7 +202,7 @@
         src: { regionId: row.regionId, section: ROW_SECTION[source], field: key, row: row.sourceRow, kind: col[2] } };
     },
     columns: function (source) {
-      return ROW_COLS[source].map(function (c) { return { key: c[0], unit: c[1], kind: c[2], label: c[0] === 'name' ? 'Name' : c[0] }; });
+      return ROW_COLS[source].map(function (c) { return { key: c[0], unit: c[1], kind: c[2], label: ({ name: 'Name', oi3: 'Three-year order intake', fte: 'Sales plus consultant FTE' })[c[0]] || c[0] }; });
     },
     matchKey: function (s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
   };
