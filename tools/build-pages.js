@@ -28,7 +28,7 @@ const APP = [
   'js/engine/shapes.js', 'js/engine/prepare.js',
   'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js',
   'config/reports.js', 'config/reports-overview.js', 'config/reports-industry.js', 'config/views.js', 'config/insight-rules.js',
-  'js/reports/tier-grid.js', 'js/reports/quadrant.js', 'js/reports/details.js',
+  'js/reports/tier-grid.js', 'js/reports/quadrant-labels.js', 'js/reports/quadrant.js', 'js/reports/details.js',
   'js/insights/engine.js', 'js/insights/rules-priorities.js', 'js/insights/rules-judgement.js', 'js/insights/rules-assumptions.js',
   'js/insights/rules-realism.js', 'js/insights/rules-exposure.js', 'js/insights/rules-capability.js',
   'js/panel/panel-chart.js', 'js/panel/panel-table.js', 'js/panel/panel-menus.js', 'js/panel/panel-export.js',
