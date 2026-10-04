@@ -83,8 +83,61 @@
     return res;
   }
 
+  /* ---------- US-2.2.5: exposure, with the insight thresholds as reference lines ---------- */
+
+  function ruleParams(id) {
+    var r = ((window.TAP_RULES || {}).rules || []).filter(function (x) { return x.id === id; })[0];
+    return (r && r.params) || {};
+  }
+
+  // The reference line for the selected measure, read from its insight rule when the chart is built, so a changed
+  // threshold moves the line. options.thresholds maps a measure id to {rule, param}.
+  function refLines(def, ctx) {
+    var spec = ((def.options || {}).thresholds || {})[TAP.prepare.selected(def, ctx || {})];
+    var v = spec ? ruleParams(spec.rule)[spec.param] : null;
+    if (typeof v !== 'number') return [];
+    return [{ value: v, label: TAP.content.text('cgExposure.refLine', { value: TAP.format.pct(v) }) }];
+  }
+
+  // Three-year incremental ARR of an account: the sum of its yearly increments.
+  function incr3(acc) {
+    return (acc.incrementalArr || []).reduce(function (t, v) { return t + (typeof v === 'number' && isFinite(v) ? v : 0); }, 0);
+  }
+
+  // The accounts behind a bar: the top N by three-year incremental ARR across the bar's regions, or the accounts
+  // flagged at the at-risk rule's levels, largest first. Each becomes a row item for the details panel.
+  function accountItems(regionIds, measureId) {
+    var all = [];
+    regionIds.forEach(function (r) {
+      (((TAP.data.region(r) || {}).customerGrowth || {}).accounts || []).forEach(function (acc) {
+        all.push({ regionId: r, row: acc.sourceRow, acc: acc, incr: incr3(acc) });
+      });
+    });
+    all.sort(function (x, y) { return y.incr - x.incr; });
+    var picked;
+    if (measureId === 'cg.riskShare') {
+      var levels = ruleParams('atRisk').levels || ['high', 'medium'];
+      picked = all.filter(function (x) { return levels.indexOf(x.acc.riskLevel) >= 0; });
+    } else picked = all.slice(0, ruleParams('concentration').top || 3);
+    return picked.map(function (x) { return { section: 'customerGrowth', regionId: x.regionId, row: x.row }; });
+  }
+
+  function exposure(ctx) {
+    var def = Object.assign({}, ctx.def);
+    def.options = Object.assign({}, def.options, { refLines: refLines(ctx.def, ctx) });
+    var res = TAP.builders.get('compare')(Object.assign({}, ctx, { def: def })), target = res.target;
+    if (res.error) return res;
+    res.target = function (params) {
+      var tg = target ? target(params) : null;
+      if (!tg || !(tg.regionIds || []).length) return tg;
+      var items = accountItems(tg.regionIds, TAP.prepare.selected(ctx.def, ctx));
+      return items.length ? Object.assign({}, tg, { reportId: ctx.def.id, items: items }) : tg;
+    };
+    return res;
+  }
+
   TAP.builders.register('cgSegments', TAP.shapes.kit.safely(segments));
   TAP.builders.register('cgGrowth', TAP.shapes.kit.safely(growth));
-  TAP.stub.builder('cgExposure', 207);
-  TAP.cgBuilders = { SEGMENTS: SEGMENTS, segmentOf: segmentOf };
+  TAP.builders.register('cgExposure', TAP.shapes.kit.safely(exposure));
+  TAP.cgBuilders = { SEGMENTS: SEGMENTS, segmentOf: segmentOf, refLines: refLines, accountItems: accountItems };
 })(window.TAP);
