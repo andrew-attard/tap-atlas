@@ -159,7 +159,7 @@
     /* ---------- US-2.2.1 the view ---------- */
 
     viewChecks({ view: 'customers', menu: 'Customer growth', title: 'How will existing customers grow?',
-      after: 'New business', afterId: 'newBusiness', emptyRegion: 'charlie', needs: [194, 196, 206, 208],
+      after: 'New business', afterId: 'newBusiness', emptyRegion: 'charlie', needs: [194, 196, 204, 205, 206, 207, 208],
       reports: ['cg-segments', 'cg-growth', 'cg-exposure', 'cg-bubble', 'cg-accounts'],
       ids: { menu: 'TPV-TC-369', headline: 'TPV-TC-371', layout: 'TPV-TC-372', modes: 'TPV-TC-373', empty: 'TPV-TC-375', explain: 'TPV-TC-376' } });
 
