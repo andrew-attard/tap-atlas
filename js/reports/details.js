@@ -148,18 +148,28 @@
     ]);
   }
 
+  /* ---------- "Open profile" for details about one region (US-2.4.1, PROFILE stream) ---------- */
+
+  function withProfile(res, regionId) {
+    if (!TAP.data.region(regionId)) return res;
+    res.actions = [{ id: 'openProfile', label: TAP.content.text('profile.openProfile'), href: '#regions/' + encodeURIComponent(regionId),
+      view: 'regions', region: regionId }];
+    return res;
+  }
+
   /* ---------- entry ---------- */
 
-  // {title, groups: [{title, rows: [{label, cell, unit, field}]}]} for a Target (ARCHITECTURE section 11).
+  // {title, groups: [{title, rows: [{label, cell, unit, field}]}], actions?} for a Target (ARCHITECTURE section 11).
+  // actions: [{id, label, href, view, region}], links the side panel offers under the title.
   function build(target) {
     target = target || {};
     var regs = target.regionIds || [], inds = target.industryIds || [], accs = target.accountIds || [];
     // Row targets (new business rows, partners) are drawn by js/reports/details-rows.js (US-2.7.2)
     if ((target.items || []).length && TAP.detailsRows && !TAP.detailsRows.__stub) return TAP.detailsRows.build(target);
     if (accs.length) return account(accs[0]);
-    if (inds.length && regs.length === 1) return regionIndustry(regs[0], inds[0]);
+    if (inds.length && regs.length === 1) return withProfile(regionIndustry(regs[0], inds[0]), regs[0]);
     if (inds.length) return severalRegions(regs.length ? regs : TAP.scope.regionIds(TAP.store.get().cmp), inds[0]);
-    if (regs.length === 1) return regionSummary(regs[0]);
+    if (regs.length === 1) return withProfile(regionSummary(regs[0]), regs[0]);
     if (regs.length) {
       var many = regs.map(regionSummary);
       return result(TAP.format.list(regs.map(rname)), many.map(function (m) { return group(m.title, (m.groups[3] || m.groups[0] || { rows: [] }).rows); }));

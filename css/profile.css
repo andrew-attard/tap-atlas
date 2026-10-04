@@ -1,8 +1,40 @@
 /*
  * File: css/profile.css
- * Purpose: Styles for the Regions view (region profile).
+ * Purpose: Styles for the Regions view (region picker and region profile), and the "Open profile" link on the
+ *          Overview cards.
  * Provides: styles for this area only
  * Depends on: css/base.css, css/view-head.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: PROFILE stream. Colours and font sizes come from theme variables only.
  */
+
+/* The profile has its own comparison (D62), so the shared comparison bar is hidden on the Regions view */
+.tap-app[data-view="regions"] .tap-cmp { display: none; }
+
+/* ---------- the list of regions (US-2.4.1) ---------- */
+.tap-pf-pick { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: var(--tap-sp-3); max-width: 75rem; }
+.tap-pf-pick__item {
+  display: flex; align-items: center; gap: var(--tap-sp-3); min-height: 56px; padding: var(--tap-sp-2) var(--tap-sp-4) var(--tap-sp-2) 0;
+  background: var(--tap-paper); border: var(--tap-control-w) solid var(--tap-ink); color: var(--tap-ink); text-decoration: none;
+  font-size: var(--tap-fs-body);
+}
+.tap-pf-pick__item:hover { background: var(--tap-surface); }
+.tap-pf-pick__bar { align-self: stretch; width: 10px; flex: none; }
+.tap-pf-pick__name { flex: 1; font-weight: 800; }
+.tap-pf-pick__go { font-size: var(--tap-fs-label); font-weight: 600; text-decoration: underline; }
+
+/* ---------- the profile header (US-2.4.1) ---------- */
+.tap-pf__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-6); }
+.tap-pf__picker { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-pf__picker .tap-field { font-size: var(--tap-fs-body); min-width: 14rem; }
+.tap-pf__date { margin-left: auto; }
+.tap-pf__head { display: flex; gap: var(--tap-sp-4); align-items: stretch; }
+.tap-pf__bar { width: 10px; flex: none; }
+.tap-pf__reports { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
+.tap-pf__wide { min-width: 0; }
+
+/* ---------- "Open profile" on an Overview card ---------- */
+.tap-ov-card__profile {
+  align-self: flex-start; margin: auto var(--tap-sp-2) 0; padding: var(--tap-sp-1) 0;
+  font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-ink); text-decoration: underline;
+}
