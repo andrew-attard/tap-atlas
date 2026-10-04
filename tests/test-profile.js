@@ -309,5 +309,59 @@
         a.equal(qsa('[data-part="compare"]', el).filter(function (x) { return txt(x); }).length, 0, 'no comparison where nothing is provided');
       } finally { m.handle.destroy(); }
     });
+
+    /* ---------- US-2.4.3: reports on the profile (#216) ---------- */
+
+    var STORY_REPORTS = ['ov-ambition', 'ind-tiers', 'ind-quad', 'nb-industries', 'nb-channels', 'nb-levers', 'cg-segments', 'pt-reliance'];
+    function flat(rows) { return [].concat.apply([], rows.map(function (r) { return [].concat(r); })); }
+    // Runs fn with a different profile configuration, then puts the real one back.
+    function withConfig(reports, fn) {
+      var saved = window.TAP_PROFILE.reports;
+      window.TAP_PROFILE.reports = reports;
+      try { return fn(); } finally { window.TAP_PROFILE.reports = saved; }
+    }
+
+    T.test('TPV-TC-449', 'The profile lists exactly the story\'s reports, each prepared for the region and the average of the rest', function (a) {
+      var ids = flat(window.TAP_PROFILE.reports);
+      a.deepEqual(ids.slice().sort(), STORY_REPORTS.slice().sort(), 'the configured reports are the story\'s');
+      a.equal(ids.length, STORY_REPORTS.length, 'each once');
+      ids.forEach(function (id) {
+        var def = TAP.reports.get(id);
+        a.ok(def, id + ' is defined');
+        if (!def) return;
+        var ds = TAP.prepare.run(def, { cmp: TAP.profile.cmp('alpha') });
+        a.deepEqual(ds.entities.map(function (e) { return e.id; }), ['alpha', 'rest'], id + ': Region A, then the rest');
+        a.equal(ds.entities[1].how, 'average', id + ': the rest as an average');
+      });
+    });
+
+    T.test('TPV-TC-451', 'A report removed from the configuration is gone from the profile', function (a) {
+      var rows = window.TAP_PROFILE.reports.map(function (r) { return r.filter(function (id) { return id !== 'nb-channels'; }); });
+      var shown = withConfig(rows, function () {
+        var m = mountFor('alpha');
+        try { return qsa('.tap-panel[data-report]', m.root).map(function (p) { return p.getAttribute('data-report'); }); } finally { m.handle.destroy(); }
+      });
+      a.ok(shown.indexOf('nb-channels') < 0, 'nb-channels is not on the profile');
+      a.deepEqual(shown.slice().sort(), STORY_REPORTS.filter(function (id) { return id !== 'nb-channels'; }).sort(), 'every other report still is');
+      var all = spyPanels(function () { mountFor('alpha').handle.destroy(); }).map(function (p) { return p.id; });
+      a.ok(all.indexOf('nb-channels') >= 0, 'with the real configuration it is back');
+    });
+
+    T.test('X-profile-missing-report', 'A configured report not defined yet takes no slot', function (a) {
+      var rows = withConfig([['ov-ambition', 'not-built-yet'], ['not-built-either']], function () { return TAP.profile.rows(); });
+      a.deepEqual(rows, [['ov-ambition']], 'only the defined report is left');
+    });
+
+    T.test('TPV-TC-453', 'No row of the profile has more than two panels', function (a) {
+      window.TAP_PROFILE.reports.forEach(function (r, i) {
+        a.ok([].concat(r).length >= 1 && [].concat(r).length <= 2, 'row ' + (i + 1) + ' has ' + [].concat(r).length + ' panels');
+      });
+      var m = mountFor('alpha');
+      try {
+        qsa('.tap-pf__reports > *', m.root).forEach(function (row, i) {
+          a.ok(qsa('.tap-panel', row).length <= 2, 'drawn row ' + (i + 1) + ' has at most two panels');
+        });
+      } finally { m.handle.destroy(); }
+    });
   });
 })(window.TAP);
