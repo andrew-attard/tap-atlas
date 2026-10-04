@@ -947,10 +947,23 @@
       R.forEach(function (id, i) { a.equal(n[id], String(i + 1), id + ' is number ' + (i + 1)); });
       a.deepEqual(all.legend.map(function (l) { return l.mark; }), R.map(function (id, i) { return i + 1; }), 'the legend carries the same numbers');
       valueSeries2(all).forEach(function (s) { a.ok(s.symbolSize >= 18, s.name + ': dots big enough for a number'); });
-      // The groups spread over 0.84 of a row, so dots that share a rating sit a dot apart
-      var ys = valueSeries2(all).map(function (s) { return s.data[0].value[1]; }).sort(function (p, q) { return p - q; });
-      a.ok(Math.abs((ys[ys.length - 1] - ys[0]) - 0.84) < 1e-9, 'spread over 0.84 of the row');
-      a.ok(all.height >= RATINGS.length * R.length * 19, 'asks for a chart tall enough to keep them apart (' + all.height + ')');
+      // QA-4b: rows stay compact. Every dot sits on its row's line at its exact value; dots that share a rating are
+      // spread as a swarm by a pixel offset of the drawn symbol, so no two overlap and the chart keeps its normal height.
+      var pts = [];
+      valueSeries2(all).forEach(function (s) { s.data.forEach(function (d) { pts.push({ d: d, size: s.symbolSize }); }); });
+      a.ok(pts.every(function (p) { return p.d.value[1] === RATINGS.indexOf(p.d.key.replace('ind.', '')); }), 'every dot on its row line');
+      a.ok(pts.every(function (p) { return p.d.value[0] === p.d.raw; }), 'and at its exact value');
+      var clash = [];
+      pts.forEach(function (p, i) {
+        pts.slice(i + 1).forEach(function (q) {
+          if (p.d.key !== q.d.key || p.d.value[0] !== q.d.value[0]) return;
+          var o1 = p.d.symbolOffset || [0, 0], o2 = q.d.symbolOffset || [0, 0];
+          if (Math.max(Math.abs(o1[0] - o2[0]), Math.abs(o1[1] - o2[1])) < p.size) clash.push(p.d.entityId + '/' + q.d.entityId + ' ' + p.d.key);
+        });
+      });
+      a.deepEqual(clash, [], 'dots that share a rating sit at least a dot apart');
+      a.ok(pts.every(function (p) { var o = p.d.symbolOffset || [0, 0]; return Math.abs(o[1]) <= p.size; }), 'a swarm is at most two lines, so a row stays compact');
+      a.equal(all.height, undefined, 'no height hint: the chart keeps its normal height');
       // Stable across modes: a set keeps each region's own number
       var set = numbers(ratingsRes('dot', { mode: 'set', set: [R[1], R[3], R[5], R[6]] }, ind));
       a.deepEqual([set[R[1]], set[R[3]], set[R[5]], set[R[6]]], ['2', '4', '6', '7'], 'a set of four keeps the file numbers');
@@ -960,7 +973,7 @@
       var pair = ratingsRes('dot', { mode: 'pair', focus: R[0], second: R[1] }, ind);
       a.ok(valueSeries2(pair).every(function (s) { return !(s.label && s.label.show); }), 'a pair has no numbers');
       a.ok(pair.legend.every(function (l) { return l.mark == null; }), 'and no legend numbers');
-      a.equal(pair.height, undefined, 'and no height hint');
+      a.ok(series(pair).every(function (x) { return (x.data || []).every(function (d) { return !d.symbolOffset; }); }), 'and no swarm');
     });
 
     T.test('X-industry-ratings-values', 'QA-4: numbering never changes a value, tooltip or table cell', function (a) {

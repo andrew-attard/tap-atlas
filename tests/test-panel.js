@@ -1010,5 +1010,13 @@
       a.ok(qs('.tap-panel__key--num', items[2]), 'drawn as a numbered disc');
       a.ok(qs('.tap-panel__key--light', items[3]), 'dark number on a light grey key');
     }));
+    T.test('X-panel-ratings-height', 'QA-4b: the ratings dot plot in All regions keeps the normal chart height', scene(function (a, s) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      try {
+        var p = s.panel('ind-ratings', { industryId: TAP.data.industries({ rated: true })[0].id }), chart = qs('.tap-panel__chart', p.el);
+        a.equal(chart.style.minHeight, '', 'no minimum height from the builder');
+        a.ok(chart.clientHeight <= TH.chartHeight.tall, 'at most the tall chart height (' + chart.clientHeight + ' px)');
+      } finally { TAP.data.load(T_FIXTURE('mini')); }
+    }));
   });
 })(window.TAP);
