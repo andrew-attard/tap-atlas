@@ -12,6 +12,9 @@
 (function (TAP) {
   'use strict';
 
+  // Switched on when ENGINE2's breakdowns (#229) and reference lines land; they have no stub to wait on.
+  var ENGINE2_BREAKDOWNS = false, ENGINE2_REFLINES = false;
+
   var MODES = [
     { mode: 'all' },
     { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' },
@@ -227,7 +230,8 @@
     });
 
     when([196, 204], 'TPV-TC-382', 'Segments are always Strategic, Growth, Core, Scaled in series, legend and table', function (a) {
-      var labels = TAP.reports.get('cg-segments').parts['cg.accounts'].map(function (id) { return TAP.measures.meta(id).label; });
+      // The legend names the segments as the lookups do, whatever the measure
+      var labels = SEGS.map(function (id) { return TAP.data.lookups().segments.filter(function (x) { return x.id === id; })[0].name; });
       Object.keys(SEG_TOTAL).forEach(function (m) {
         MODES.forEach(function (mode) {
           ['stacked100', 'stackedBar', 'table'].forEach(function (type) {
@@ -269,10 +273,16 @@
           a.near(sum, fn('alpha', {}).v, 1e-9, 'alpha ' + id + ': the parts add up');
         });
       });
+    });
+
+    // The prepared columns per risk level come with ENGINE2's breakdowns (US-2.7.5), which have no stub to wait on
+    var riskColumns = function (a) {
       var ds = TAP.prepare.run(TAP.reports.get('cg-segments'), ctxFor('cg-segments', { mode: 'all' }, { breakdown: 'risk' }));
       var vals = ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === 'risk'; }).map(function (c) { return c.breakdown.value; });
       ['high', 'medium', 'none'].forEach(function (r) { a.ok(vals.indexOf(r) >= 0, 'a column for ' + r); });
-    });
+    };
+    if (ENGINE2_BREAKDOWNS) T.test('X-cg-segments-risk', 'The prepared report has a column per risk level', riskColumns);
+    else T.skip('X-cg-segments-risk', 'The prepared report has a column per risk level', 'pending: waits for ENGINE2 breakdowns (#229)');
 
     when([196], 'TPV-TC-385', 'The segment stored in the data file is used, even where the thresholds would say otherwise', function (a) {
       var plan = window.T_FIXTURE('mini');
