@@ -116,7 +116,8 @@
       TAP.data.load(T_FIXTURE('mini'));
     }
   }
-  var STEPS = ['purpose', 'menu', 'compare', 'panel', 'freshness', 'glossary', 'guide'];
+  // US-2.6.3 added the Phase 2 views and the region profile after the menu step (at most 10 steps, TPV-TC-507)
+  var STEPS = ['purpose', 'menu', 'views', 'profile', 'compare', 'panel', 'freshness', 'glossary', 'guide'];
 
   /* ---------- US-1.6.5: an explanation for every report (#41) ---------- */
   T.suite('pages', function () {
@@ -310,7 +311,8 @@
         while ((n = walker.nextNode())) {
           if (gloss && gloss.contains(n)) continue;   // the glossary list is CONTENT's, checked in its own tests
           var s = n.nodeValue.replace(/\s+/g, ' ').trim();
-          if (s && all.indexOf(s) < 0 && !isViewLink(s)) stray.push(s);
+          // Key numbers in the shortcut list (US-2.6.3) are numbers, not wording
+          if (s && all.indexOf(s) < 0 && !isViewLink(s) && !/^\d$/.test(s)) stray.push(s);
         }
         a.deepEqual(stray, [], 'no text written into the page code');
         a.ok(gloss, 'the glossary list is drawn by TAP.glossary.render');
@@ -583,10 +585,10 @@
       });
     });
 
-    T.test('TPV-TC-234', 'At most 7 steps of one or two sentences, in the order of the story', function (a) {
+    T.test('TPV-TC-234', 'Steps of one or two sentences, in the order of the stories', function (a) {
       var ids = TAP.tour.steps().map(function (s) { return s.id; });
-      a.deepEqual(ids, STEPS, 'purpose, menu, comparison bar, report panel, data freshness, glossary, then the Guide');
-      a.ok(ids.length <= 7, 'no more than 7 steps');
+      a.deepEqual(ids, STEPS, 'purpose, menu, the Phase 2 views, the profile, comparison bar, report panel, data freshness, glossary, then the Guide');
+      a.ok(ids.length <= 10, 'no more than 10 steps (US-2.6.3)');
       ids.forEach(function (id) {
         var s = TAP.content.text('tour.' + id, { app: 'X' });
         var n = (s.match(/[.?!](\s|$)/g) || []).length;
@@ -597,8 +599,8 @@
     T.test('TPV-TC-235', 'The last step points to the Guide page, with a button that opens it', function (a) {
       withTour(function () {
         TAP.tour.start();
-        for (var i = 0; i < 6; i++) press('ArrowRight');
-        a.equal(stepNo(), 7, 'on the last step');
+        for (var i = 0; i < STEPS.length - 1; i++) press('ArrowRight');
+        a.equal(stepNo(), STEPS.length, 'on the last step');
         a.ok(txt(callout()).indexOf(TAP.views.title('guide')) >= 0, 'names the Guide');
         var open = callout().querySelector('.tap-tour__guide');
         a.ok(open, 'an Open the Guide button');
@@ -612,7 +614,7 @@
       withTour(function () {
         TAP.tour.start();
         a.equal(stepNo(), 1, 'starts at step 1');
-        a.ok(txt(callout()).indexOf(TAP.content.text('tourUi.step', { n: 1, total: 7 })) >= 0, '"Step 1 of 7"');
+        a.ok(txt(callout()).indexOf(TAP.content.text('tourUi.step', { n: 1, total: STEPS.length })) >= 0, '"Step 1 of ' + STEPS.length + '"');
         press('ArrowRight');
         press('ArrowRight');
         a.equal(stepNo(), 3, 'right arrow moves forward');
@@ -642,7 +644,7 @@
     T.test('TPV-TC-236', 'Next walks every step and Finish ends the tour', function (a) {
       withTour(function () {
         TAP.tour.start();
-        for (var i = 1; i < 7; i++) callout().querySelector('.tap-tour__next').click();
+        for (var i = 1; i < STEPS.length; i++) callout().querySelector('.tap-tour__next').click();
         var next = callout().querySelector('.tap-tour__next');
         a.equal(txt(next), TAP.content.text('tourUi.finish'), 'the last Next reads Finish');
         next.click();
@@ -739,8 +741,8 @@
           var term = TAP.dom.el('button', { type: 'button', class: 'tap-term', 'data-term': 'arr' }, 'ARR');
           TAP.shell.viewEl().insertBefore(term, TAP.shell.viewEl().firstChild);
           TAP.tour.start();
-          for (var i = 0; i < 5; i++) press('ArrowRight');
-          a.equal(stepNo(), 6, 'on the glossary step');
+          for (var i = 0; i < STEPS.indexOf('glossary'); i++) press('ArrowRight');
+          a.equal(stepNo(), STEPS.indexOf('glossary') + 1, 'on the glossary step');
           var hole = document.querySelector('.tap-tour__hole').getBoundingClientRect(), r = term.getBoundingClientRect();
           a.ok(Math.abs(hole.left - (r.left - 6)) < 2 && Math.abs(hole.width - (r.width + 12)) < 2, 'the spotlight is round the term');
         });

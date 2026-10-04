@@ -2,7 +2,7 @@
  * File: tests/test-pages-p2.js
  * Purpose: Tests for Phase 2 glossary, guide, tips, tour and shortcuts.
  * Provides: test cases for the PAGES2 stream: US-2.6.1 (TPV-TC-496 to 498), US-2.6.2 (TPV-TC-500, 501),
- *           X-pages2-*
+ *           US-2.6.3 (TPV-TC-503, 504, 506, 507), X-pages2-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: PAGES2 stream
@@ -255,6 +255,71 @@
           a.ok(getComputedStyle(n).visibility === 'visible' && shows(n), n.className + ' shows without hover');
         });
       });
+    });
+
+    /* ---------- US-2.6.3: tour and shortcuts cover the new views (#226) ---------- */
+
+    T.test('TPV-TC-503', 'Number keys 1 to 8 open the views in menu order, one key per view', function (a) {
+      var order = TAP.views.order();
+      a.equal(order.length, 8, 'eight views in the menu');
+      order.forEach(function (id, i) { a.equal(TAP.keys.viewFor(String(i + 1)), id, 'key ' + (i + 1) + ' opens ' + id); });
+      a.equal(TAP.keys.viewFor('9'), null, 'key 9 opens nothing while there are eight views');
+      a.equal(TAP.keys.viewFor('0'), null, 'key 0 opens nothing');
+    });
+
+    T.test('TPV-TC-503', 'Pressing a number key switches the view', function (a) {
+      TAP.keys.bind();
+      try {
+        [4, 6, 1].forEach(function (n) {
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: String(n), bubbles: true, cancelable: true }));
+          a.equal(TAP.store.get().view, TAP.views.order()[n - 1], 'key ' + n);
+        });
+      } finally { TAP.keys.unbind(); }
+    });
+
+    T.test('TPV-TC-504', 'The Guide lists all eight number-key shortcuts, built from the menu order', function (a) {
+      withGuide(function (root) {
+        var items = qsa('[data-guide="howTo"] .tap-guide__key', root), order = TAP.views.order();
+        a.equal(items.length, order.length, 'one line per view');
+        items.forEach(function (li, i) {
+          a.equal(txt(li.querySelector('kbd')), String(i + 1), 'key ' + (i + 1));
+          a.equal(txt(li.querySelector('span')), TAP.views.title(order[i]), 'names ' + order[i]);
+          a.equal(li.getAttribute('data-view'), TAP.keys.viewFor(String(i + 1)), 'the same view the key opens');
+        });
+      });
+    });
+
+    T.test('TPV-TC-504', 'A view added to the menu is listed without a content change', function (a) {
+      var order = window.TAP_VIEWS.order, saved = order.slice();
+      order.splice(5, 0, 'insights');   // a stand-in ninth entry, removed again below
+      try {
+        withGuide(function (root) {
+          a.equal(qsa('.tap-guide__key', root).length, 9, 'nine keys');
+          a.equal(TAP.keys.viewFor('9'), 'guide', 'the last view moves to key 9');
+        });
+      } finally { order.length = 0; Array.prototype.push.apply(order, saved); }
+    });
+
+    T.test('TPV-TC-506', 'The tour has one step for the Phase 2 views and one for the region profile', function (a) {
+      var steps = TAP.tour.steps(), ids = steps.map(function (s) { return s.id; });
+      a.ok(ids.indexOf('views') === ids.indexOf('menu') + 1, 'the views step follows the menu step');
+      a.ok(ids.indexOf('profile') === ids.indexOf('views') + 1, 'then the profile step');
+      var views = steps[ids.indexOf('views')], prof = steps[ids.indexOf('profile')];
+      ['newBusiness', 'customers', 'partners'].forEach(function (v) {
+        a.ok(views.text.indexOf(TAP.views.title(v)) >= 0, 'the views step names ' + TAP.views.title(v));
+      });
+      a.ok(prof.text.indexOf(TAP.views.title('regions')) >= 0, 'the profile step names the Regions view');
+      [views, prof].forEach(function (s) {
+        a.ok(s.title && s.title.indexOf('[') !== 0, s.id + ' has a title from the content file');
+        var n = sentences(s.text);
+        a.ok(n >= 1 && n <= 2, s.id + ': ' + n + ' sentence(s)');
+      });
+    });
+
+    T.test('TPV-TC-507', 'The tour still has 10 steps or fewer', function (a) {
+      var n = TAP.tour.steps().length;
+      a.ok(n <= 10, n + ' steps');
+      a.ok(n >= 9, 'and keeps the Phase 1 steps');
     });
   });
 })(window.TAP);
