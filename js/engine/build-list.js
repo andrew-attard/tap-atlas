@@ -130,7 +130,7 @@
     var body = rows.map(function (r) {
       var e = r.entry, hl = items.some(function (x) { return x.section === section && x.regionId === e.regionId && +x.row === e.sourceRow; });
       return '<tr data-tap-region="' + esc(e.regionId) + '" data-tap-row="' + esc(e.source + ':' + e.regionId + ':' + e.sourceRow) + '"' +
-        (hl ? ' class="is-highlight"' : '') + '>' + cols.map(function (c) {
+        (hl ? ' class="is-highlight is-hl"' : '') + '>' + cols.map(function (c) {
           return '<td data-tap-col="' + esc(c.key) + '"' + (c.align === 'right' ? ' class="tap-list__num"' : '') + '>' +
             esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, decimals: c.decimals })) + '</td>';
         }).join('') + '<td data-tap-col="source" class="tap-list__src">' + esc(sourceText(e)) + '</td></tr>';
