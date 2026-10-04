@@ -147,6 +147,20 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     templates: { one: '{region} sees {industries} as attractive but rates its ability to win there as low.' },
     attach: ['ind-quad'], highlight: 'points' });
 
+  /* ---------- plan (US-2.5.2, US-2.5.5) ---------- */
+  rule({ id: 'channelReliance', family: 'plan',
+    description: 'A region whose share of total order intake (both motions, ARR and services, from the recap) through one channel is at least 20 points above or below the other regions’ combined share. Only the channel furthest from the others is raised.',
+    reads: ['recap.value'], params: { gap: 0.2 }, compare: true,
+    scoring: 'Strength: the gap against twice the threshold. Money: the region’s order intake through that channel.',
+    template: '{region} plans {share} of its order intake through {channel}, against {avg} on average elsewhere. Worth discussing.',
+    attach: ['pt-reliance', 'nb-channels'], highlight: 'bar' });
+  rule({ id: 'planMakeup', family: 'plan',
+    description: 'A region whose share of three-year ARR ambition from new business is at least 20 points above or below the other regions’ combined share. Regions without both new business and customer growth are left out.',
+    reads: ['newBusiness.arrPotential', 'customerGrowth.accounts.incrementalArr'], params: { gap: 0.2 }, compare: true,
+    scoring: 'Strength: the gap against twice the threshold. Money: the region’s three-year ARR ambition.',
+    template: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average elsewhere.',
+    attach: ['ov-ambition'], highlight: 'bar' });
+
   /* ---------- wording guide (US-1.7.10) ---------- */
   R.wording = {
     guide: [
@@ -178,6 +192,8 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       year1: 'year 1', figure: '{what}, {where}', othersAvg: 'average of the other {n} regions', successFactors: 'What {region} says is needed',
       allAccounts: 'Planned customer growth, all accounts', allIndustries: 'all industries', highRisk: '{name} (high risk)',
       mediumRisk: '{name} (medium risk)',
+      // Channel words in a sentence; any other channel uses its name from the data
+      channel: { direct: 'direct sales', partner: 'partners' },
       failed: 'The insight rule "{rule}" was skipped: {reason}', noData: 'the data has none of the fields it reads ({fields}).',
       noCode: 'it has no rule code.', banned: 'its sentence used the word "{word}", which the wording guide avoids.',
       unfilled: 'its sentence had a gap ({gap}).', notList: 'it did not return a list of findings.',
