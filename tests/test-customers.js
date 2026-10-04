@@ -620,7 +620,7 @@
       var top = one.filter(function (b) { return b.regionId === 'alpha'; })[0].series.z, under = one.filter(function (b) { return b.regionId !== 'alpha'; })[0].series.z;
       a.ok(top > under, 'the focus region is drawn on top');
       var org = build('cg-bubble', { mode: 'org' });
-      a.deepEqual(org.legend.filter(function (l) { return l.role !== 'key'; }).map(function (l) { return l.label; }), ['Region A', 'Region B', 'Region D'], 'organization total: each account keeps its region colour, named in the key');
+      a.deepEqual(org.legend.filter(function (l) { return l.mark == null; }).map(function (l) { return l.label; }), ['Region A', 'Region B', 'Region D'], 'organization total: each account keeps its region colour, named in the key');
       var set = bubbles(build('cg-bubble', { mode: 'set', set: ['bravo'] }));
       a.ok(set.length === 2 && set.every(function (b) { return b.regionId === 'bravo'; }), 'a chosen set shows only its regions');
     });
@@ -643,7 +643,7 @@
           });
         });
         a.equal(named + numbered, Math.min(10, bubbles(res).length), z.w + ': the 10 largest are named or numbered');
-        a.equal(res.legend.filter(function (l) { return l.role === 'key'; }).length, numbered, z.w + ': one key line per number');
+        a.equal(res.legend.filter(function (l) { return l.mark != null; }).length, numbered, z.w + ': one key line per number');
       });
     });
 

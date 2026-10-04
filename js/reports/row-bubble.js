@@ -94,7 +94,7 @@
   // Each named point (in priority order) gets p.lab, the name's offset from its symbol's corner, at the first spot
   // (right, left, above, below) that is inside the plot, clear of names already placed and of other bubbles' centres.
   // A point with no clean spot gets p.num instead: a number on the bubble, with the name in the key.
-  function place(named, all, F, fs) {
+  function place(named, all, F, fs, maxNums) {
     var boxes = [], n = 0;
     named.forEach(function (p) {
       var w = Math.ceil(p.label.length * fs * 0.56) + 4, h = fs + 4, r = p.d / 2, g = 4;
@@ -104,7 +104,7 @@
           !all.some(function (q) { return q !== p && q.px > b.x && q.px < b.x + b.w && q.py > b.y && q.py < b.y + b.h; });
       })[0];
       if (hit) { boxes.push(hit); p.lab = [Math.round(hit.x - (p.px - r)), Math.round(hit.y - (p.py - r))]; }
-      else p.num = ++n;
+      else if (n < maxNums) p.num = ++n;   // past the limit the name stays in the tooltip and the table
     });
   }
 
@@ -131,9 +131,10 @@
       });
     });
 
-    // Which bubbles carry a name: every one, or the largest by labelBy up to the limit in settings; biggest first.
-    var by = opts.label === 'all' ? sizeKey : (opts.labelBy || def.y), limit = ((window.TAP_SETTINGS || {}).rowBubble || {}).labelMax;
-    limit = opts.label === 'all' ? pts.length : typeof limit === 'number' ? limit : 10;
+    // Which bubbles carry a name, biggest first: every one ('all'), or the largest by labelBy up to the limit in
+    // settings ('top'). The same limit caps the numbers, so the key stays short on a shared screen.
+    var by = opts.labelBy || def.y, max0 = ((window.TAP_SETTINGS || {}).rowBubble || {}).labelMax;
+    var labelMax = typeof max0 === 'number' ? max0 : 10, limit = opts.label === 'all' ? pts.length : labelMax;
     var named = pts.map(function (p) { var c = by ? TAP.rows.cell(source, by, p.row) : {}; return { p: p, v: c.state === 'value' ? c.v : -Infinity }; })
       .sort(function (a, b) { return b.v - a.v; }).slice(0, limit).map(function (x) { return x.p; });
 
@@ -147,7 +148,9 @@
       p.px = F.x0 + (p.x.v - rx.min) / (rx.max - rx.min) * F.w;
       p.py = F.y0 + F.h - (p.y.v - ry.min) / (ry.max - ry.min) * F.h;
     });
-    place(named, pts, F, th.type.chart);
+    place(named, pts, F, th.type.chart, labelMax);
+    var unnamed = named.filter(function (p) { return !p.lab && !p.num; }).length;
+    if (unnamed) notes.push(TAP.content.text('rowBubble.unnamed.' + source, { n: unnamed }));
     var order = { muted: 0, combined: 1, region: 2, second: 3, focus: 4 };
     var groups = entities.filter(function (e) { return pts.some(function (p) { return p.e === e; }); });
     var series = groups.map(function (e) {
@@ -181,8 +184,10 @@
     }) };
 
     var res = k.result(def, null, { table: table, notes: notes, missing: missing, empty: !pts.length,
+      // A numbered key in the bubble's own colour, so its number reads as it does on the chart
       legend: groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; }).concat(named.filter(function (p) { return p.num; })
-        .map(function (p) { return { label: TAP.content.text('rowBubble.key', { name: p.label, region: rname(p.regionId) }), color: null, mark: p.num, role: 'key' }; })),
+        .map(function (p) { return { label: TAP.content.text('rowBubble.key', { name: p.label, region: rname(p.regionId) }), color: p.noSize ? null : p.e.color,
+          mark: p.num, role: p.e.role === 'muted' ? 'muted' : 'key' }; })),
       sizeLegend: cs && max > 0 ? k.sizeLegend(max, cs) : null });
     res.target = function (params) {
       var d = params && params.data;
