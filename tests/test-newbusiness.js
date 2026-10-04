@@ -147,7 +147,8 @@
       plan.regions[2].newBusiness = [];
       plan.regions[2].recap = [];
       TAP.data.load(plan);
-      defined().forEach(function (id) {
+      // Only reports that read new business figures: the themes also read Market Coverage commentary (INSIGHTS2)
+      defined().filter(function (id) { return TAP.reports.get(id).builder !== 'themes'; }).forEach(function (id) {
         // The tier is the region's Market Coverage choice, not a new business figure
         var res = build(id, { mode: 'all' }), cells = figureCells(res, 'charlie').filter(function (x) { return x.key !== 'tier'; });
         a.ok(cells.every(function (x) { return x.cell.state !== 'value'; }), id + ': no value for Region C');
