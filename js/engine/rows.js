@@ -32,6 +32,7 @@
   function list(source, regionIds) {
     source = SOURCE[source];
     var out = [];
+    if (!source) return out;
     TAP.data.regions().forEach(function (reg) {
       if (regionIds && regionIds.indexOf(reg.id) < 0) return;
       itemsOf(reg.id, source).forEach(function (it) {
@@ -110,17 +111,24 @@
       // Three-year order intake per head (D61): only for partners with staff figures
       ['oiPerFte', 'money', 'APP', 'arr', function (p) {
         var f = fte(p), a = years3(p.arr), s = years3(p.services);
-        if (!(f > 0) || (!a && !s)) return null;
+        if (f === 0) return NA;
+        if (f == null || (!a && !s)) return null;
         return { v: ((a ? a.v : 0) + (s ? s.v : 0)) / f, partial: !a || !s || a.partial || s.partial };
       }],
       ['alsoNamed', 'text', 'APP', 'name', others('partners', 'name')]
     ]
   };
+  // Multipliers such as 2.25 need two decimals to read as entered
+  var DECIMALS = { multiplier3y: 2 };
   function spec(source, key) { return (COLS[source] || []).filter(function (c) { return c[0] === key; })[0] || null; }
 
   function columns(source) {
     source = SOURCE[source];
-    return (COLS[source] || []).map(function (c) { return { key: c[0], unit: c[1], kind: c[2], label: t('rows.' + source + '.' + c[0]) }; });
+    return (COLS[source] || []).map(function (c) {
+      var out = { key: c[0], unit: c[1], kind: c[2], label: t('rows.' + source + '.' + c[0]) };
+      if (DECIMALS[c[0]]) out.decimals = DECIMALS[c[0]];
+      return out;
+    });
   }
 
   // The item a row reference names: a list entry, or {regionId, sourceRow} / {regionId, row} (a details item).
@@ -141,7 +149,8 @@
   function cell(source, key, row) {
     source = SOURCE[source];
     var c = spec(source, key), it = find(source, row), n = it ? it.sourceRow : (row && (row.sourceRow != null ? row.sourceRow : row.row));
-    var s = src(source, row && row.regionId, c ? c[3] : key, n, c ? c[2] : 'IN');
+    var s = src(source, row && row.regionId, c ? c[3] : key, n, c ? c[2] : 'IN'), y = /^growthY(\d)$/.exec(key);
+    if (y) s.year = +y[1];   // one plan year of a field held by year: its own cell (section 7)
     if (!c || !it) return { v: null, state: 'notProvided', kind: s.kind, src: s };
     var v = c[4](it, row.regionId);
     if (v === NA) return { v: null, state: 'notApplicable', kind: c[2], src: s };
