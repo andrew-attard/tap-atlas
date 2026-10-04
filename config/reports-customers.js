@@ -92,6 +92,34 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     options: { label: 'top', labelBy: 'incr3' }
   };
 
+  // US-2.2.6: every account in the plans, as a sortable list.
+  window.TAP_REPORTS['cg-accounts'] = {
+    id: 'cg-accounts',
+    view: 'customers',
+    title: 'Which accounts are in each region’s plan?',
+    explain: {
+      shows: 'Every account in the customer growth plans, with its segment, risk flag, current ARR, planned growth and order intake.',
+      read: 'One row per account, with the name the data holds. Sort by any column, filter by segment or risk level, and click a row for the account’s details and source row. Accounts planned with a three-year multiplier show it in place of growth per year.',
+      lookFor: 'The accounts behind a chart: the largest planned increments, flagged accounts and multiplier accounts.'
+    },
+    shape: 'list',
+    builder: 'list',
+    dimension: 'entity',
+    rows: 'accounts',
+    columns: [
+      { key: 'region' }, { key: 'name' }, { key: 'industry' }, { key: 'country' }, { key: 'productLine' }, { key: 'segment' },
+      { key: 'riskLevel' }, { key: 'currentArr' }, { key: 'growthY1' }, { key: 'growthY2' }, { key: 'growthY3' },
+      { key: 'multiplier3y' }, { key: 'incr3' }, { key: 'oi3' }
+    ],
+    sort: { key: 'incr3', dir: 'desc' },
+    filter: [{ key: 'segment' }, { key: 'riskLevel' }],
+    defaultType: 'list',
+    types: ['list'],
+    breakdowns: [],
+    sources: ['IN', 'PRE', 'DER'],
+    options: {}
+  };
+
   // US-2.2.5: how much of the planned growth sits in a few accounts, or in accounts flagged at risk.
   window.TAP_REPORTS['cg-exposure'] = {
     id: 'cg-exposure',
