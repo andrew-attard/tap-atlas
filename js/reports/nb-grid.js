@@ -73,7 +73,10 @@
     var mark = hl && hl.mark || (regs.length && inds.length ? 'cell' : inds.length ? 'industryRow' : null);
     return {
       row: function (i) { return mark === 'industryRow' && has(inds, i); },
-      cell: function (c, i) { return mark !== 'industryRow' && has(inds, i) && (has(regs, c.id) || (!!c.region && has(regs, c.region))); }
+      // A combined column (organization total, the rest) is marked when it stands for a highlighted region
+      cell: function (c, i) {
+        return mark !== 'industryRow' && has(inds, i) && (has(regs, c.id) || c.e.regionIds.some(function (r) { return has(regs, r); }));
+      }
     };
   }
 
