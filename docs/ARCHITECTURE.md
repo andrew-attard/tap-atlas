@@ -465,3 +465,141 @@ js/ui/app.js
 | everything else | the stream named in the build plan |
 
 A stream that needs a change in a lead-owned file asks for it in its PR description under "Contract changes". It does not make the change itself.
+
+## 17. Phase 2 additions
+
+Phase 2 adds three report views, a region profile, list reports, more breakdowns, drill-down and new insight rules. Everything above still holds; this section adds to it. The Data Contract is unchanged except for additions (D57).
+
+### 17.1 Views and routing
+
+| View id | Menu title | Question (title) | Reports, in order | Owner |
+|---|---|---|---|---|
+| `newBusiness` | New business | Where will new business come from? | `nb-industries`, `nb-channels`, `nb-levers`, `nb-rows`, `nb-themes` | NB (`nb-themes`: INSIGHTS2) |
+| `customers` | Customer growth | How will existing customers grow? | `cg-segments`, `cg-growth`, `cg-exposure`, `cg-bubble`, `cg-accounts` | CGP |
+| `partners` | Partners | Which partners carry each plan? | `pt-reliance`, `pt-capacity`, `pt-list` | CGP |
+| `regions` | Regions | the region's name | from `config/profile.js` (`TAP_PROFILE.reports`) | PROFILE |
+
+- Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `regions`, `insights`, `guide`. Number keys 1 to 8 follow it.
+- **State:** `state.region` is the region shown on the Regions view, or null (list of regions to pick from). Setting it does not raise `scopeEpoch`.
+- **Address bar:** `#regions/<id>` opens a profile; `#regions` the picker. `js/ui/app.js` keeps the address bar and `{view, region}` in step, so the back button works.
+- A view still being built may list report ids that don't exist yet; `X-contract-reports` allows that only while stubs remain.
+
+### 17.2 The view header: `TAP.viewHead` (`js/ui/view-head.js`, lead)
+
+- `render(el, {viewId, kicker, title, lead})` draws the header and returns `{el, tipEl, refresh(), destroy()}`. It shows the kicker, the question as `h1`, the lead line, an empty tip slot (`tipEl`, filled by PAGES2 for US-2.6.2) and the **headline**.
+- **Headline:** `headline(viewId, cmp)` returns the most significant insight attached to any report in `TAP_VIEWS[viewId].reports`, in scope, not hidden. The header shows its sentence and a "Show me" button that emits `showme`. With no insight, the headline line is hidden.
+- `mountPanel(slot, reportId, opts)` mounts a panel and shows the error in the slot if it can't. `pair([slotA, slotB])` is the two-panel row (D24). Page column class: `tap-vh-page`; slot class: `tap-vh-slot`.
+- Views put their wording in their own `content/text-*.js` and their layout in their own CSS; `css/view-head.css` holds only the shared parts.
+
+### 17.3 Breakdowns (US-2.7.5, ENGINE2)
+
+- Dimensions: `year`, `industry`, `channel`, `motion`, `segment`, `risk`. A measure lists the ones it supports in `meta.dims`; the panel offers only breakdowns that are both in the report's `breakdowns` and in the selected measure's `dims`.
+- Measure context keys: `{year, industryId, channel, motion, segment, risk}`. `channel` is a `lookups.channels` id; `motion` is `'nb'` or `'cg'`; `segment` is a `lookups.segments` id; `risk` is `'high'`, `'medium'` or `'none'`.
+- `TAP.prepare.run` adds one column per breakdown value. Year columns keep the key `<id>@y1..3`; the others use `<id>@<dim>:<value>`, with `column.breakdown = {dim, value, label}`. Industry values are the industries with a value for some entity in scope; the others are fixed lists.
+- `compare` draws grouped bars; `parts` draws one stack per entity and breakdown value. Every group is labelled.
+
+### 17.4 List reports (US-2.7.2; engine ENGINE2, panel PANEL2)
+
+**Definition** (`shape: 'list'`, builder `list` by default, `types: ['list']`, `defaultType: 'list'`, no `measures`):
+
+```js
+TAP_REPORTS['cg-accounts'] = {
+  id: 'cg-accounts', view: 'customers', title: '...', explain: {...},
+  shape: 'list', defaultType: 'list', types: ['list'],
+  rows: 'accounts',                       // 'newBusiness' | 'accounts' | 'partners'
+  columns: [{ key: 'region' }, { key: 'name' }, { key: 'segment' }, { key: 'incr3', label: '3-year incremental ARR' }],
+  sort: { key: 'incr3', dir: 'desc' },    // default sort; a list of these sorts by each in turn
+  filter: [{ key: 'segment' }, { key: 'riskLevel' }],   // optional select controls
+  sources: ['IN', 'PRE', 'DER'], breakdowns: [], options: {}
+};
+```
+
+**Row figures: `TAP.rows`** (`js/engine/rows.js`, ENGINE2)
+- `list(source, regionIds)` returns `[{id, regionId, source, sourceRow, item}]` in region file order, then source row order. `id` is `<regionId>:<sourceRow>`.
+- `cell(source, key, row)` returns a full cell (section 7) with `src: {regionId, section, field, row, kind}`. Text, money, percentages and counts all come back as cells, so the list, details and bubbles format them the same way.
+- `columns(source)` returns `[{key, unit, kind, label}]` for every key a list can show:
+  - `newBusiness`: `region`, `industry`, `tier`, `subVertical`, `market`, `targetAccounts`, `hitRate`, `avgDealSize`, `wins`, `arr3`, `services3`, `successFactors`, `alsoTargeted` (APP: the other regions naming the same sub-industry).
+  - `accounts`: `region`, `name`, `industry`, `country`, `productLine`, `segment`, `riskLevel`, `currentArr`, `growthY1`, `growthY2`, `growthY3`, `multiplier3y`, `incr3`, `oi3`, `servicesRatio`.
+  - `partners`: `region`, `name`, `channel`, `maturity`, `expertiseGeo`, `expertiseProduct`, `fteSales`, `fteConsultants`, `fte`, `centralSupportPct`, `arr3`, `services3`, `oiPerFte` (APP), `alsoNamed` (APP).
+- `matchKey(text)` gives the key two names are matched on: trimmed, lower case, inner spaces collapsed (US-2.1.5, US-2.3.4, US-2.5.3).
+
+**The `list` builder** (`js/engine/build-list.js`, ENGINE2) returns the usual result plus:
+- `html`: a `table.tap-list` with a header button per column (`data-tap-opt="sort" data-tap-value="<key>:<asc|desc>"`) and one `tr` per row carrying `data-tap-region` and `data-tap-row="<source>:<regionId>:<sourceRow>"`. Every value passes through `TAP.dom.esc`. Highlighted rows (`ctx.highlight.items`) carry `is-highlight`.
+- `table`: the same rows and columns, for the table export and copy.
+- `controls`: one `select` per filter (`key: 'filter:<key>'`), with "All" first.
+- `target(params)` maps a row click to `{reportId, regionIds: [r], items: [{section, regionId, row}]}`.
+- **Scope:** rows come from `TAP.scope.regionIds(cmp)`. In `one` and `pair` modes the focus region's rows come first. `set` shows only the chosen regions; `all` and `org` show every row.
+- **Drill context:** with `ctx.drill` (a Target from the level above, 17.6), rows are filtered to its `regionIds` and `industryIds`.
+
+**Panel** (PANEL2): `type: 'list'` hides the chart type menu and the table switch. Clicks on any `[data-tap-opt]` element in builder HTML set `ctx.opts[key] = value` and rebuild (generic, not list-specific). Clicks on `[data-tap-row]` open details with the builder's target. The list header row is sticky and the body scrolls inside the panel.
+
+**Details for rows:** `TAP.detailsRows.build(target)` (`js/reports/details-rows.js`, CGP) is called by `TAP.details.build` when `target.items` is set. It lists every field of the item with its source, using `TAP.rows.cell`.
+
+**Target** gains `items: [{section, regionId, row}]` (`section`: `newBusiness`, `customerGrowth` or `partners`; `row`: the `sourceRow`).
+
+### 17.5 Phase 2 measures (`js/engine/measures-p2.js`, ENGINE2)
+
+All return cells as in section 9; ids other streams may rely on:
+
+| Id | Meaning | valueKind / kind | dims |
+|---|---|---|---|
+| `rc.<m>.<t>` (`m`: `nb`, `cg`, `all`; `t`: `arr`, `services`, `oi`) | Recap order intake for a motion and type, all channels | amount / DER | year, channel (+ motion for `all`) |
+| `rc.<m>.<t>.<channel>` (`direct`, `partner`, `allianceA`, `allianceB`) | The same for one channel: the stacked parts | amount / DER | year |
+| `rc.share.<channel>` | Share of total order intake (both motions) through that channel; combined from summed parts | rate / APP | year |
+| `nb.oi` | New business ARR plus services potential | amount / APP | year, industry |
+| `nb.<t>.tier1`, `nb.<t>.tier2` (`t`: `arr`, `services`, `oi`) | New business in the region's Tier 1 or Tier 2 industries | amount / DER | year |
+| `ind.nb.services`, `ind.nb.oi` | New business services, and order intake, in one industry (`ctx.industryId`); `ind.nb.arr` exists | amount / DER | year |
+| `cg.accounts` | Accounts in the plan | count / PRE | segment, risk |
+| `cg.currentArr` | Current ARR of the accounts (same figure as `cg.baseArr`) | amount / PRE | segment, risk |
+| `cg.oi3` | Three-year order intake (`cumulativeOrderIntake`) | amount / DER | segment, risk |
+| `cg.seg.<s>.<v>` (`s`: segment id; `v`: `accounts`, `arr`, `oi`) | The parts for the segment mix | count or amount | risk |
+| `cg.growth.<s>` (`s`: `all` or a segment id) | Growth % for plan year `ctx.year` = incremental ARR ÷ current ARR over the accounts (the `cg.growthY*` rule); year null = three-year incremental ARR ÷ current ARR | rate / APP | year |
+| `cg.multiplierAccounts` | Accounts planned with a three-year multiplier | count / IN | segment |
+| `cg.top3Share`, `cg.riskShare` | Share of three-year incremental ARR in the top 3 accounts, and in high or medium risk accounts. **Combined over the combined accounts**, never by averaging shares (D60) | rate / APP | — |
+| `pt.count`, `pt.fte`, `pt.arr`, `pt.services`, `pt.oiPerFte` | Partners named, sales plus consultant FTE, three-year ARR and services, order intake per FTE (partners with FTE only) | count, count, amount, amount, rate / IN or APP | year (`pt.arr`, `pt.services`) |
+| `amb.nbShare` | Share of three-year ARR ambition from new business; combined from summed parts | rate / APP | — |
+
+`TAP.measures.combined` keeps working for every id; shares and ratios that must be combined from parts say so in their meta (`combine: 'ratioOfSums'`) and `combined` honours it.
+
+### 17.6 Drill-down (US-2.7.1, PANEL2)
+
+- A definition may carry `drill: { next: '<reportId>', label: '<level name>' }`. Clicking a mark whose target names at least one region opens `next` in the same panel, with `ctx.drill` set to that target. The child report may itself have `drill`.
+- The panel keeps the level stack and draws a breadcrumb of buttons in its header ("All regions › Healthcare › Hospitals"); Backspace or Alt + Left goes up one level while the panel has focus. A change of comparison or view returns to the top level.
+- Reports without `drill` keep the Phase 1 click (details). `TAP.panelDrill.create(panel)` returns `{push(target, def), up(), top(), path(), destroy()}`.
+
+### 17.7 Phase 2 builders and rules
+
+| Builder | File | Owner | Used by |
+|---|---|---|---|
+| `list` | `js/engine/build-list.js` | ENGINE2 | every list report |
+| `nbGrid` | `js/reports/nb-grid.js` | NB | `nb-industries` (grid by tier, tier shown in each cell) |
+| `rowBubble` | `js/reports/row-bubble.js` | CGP | `cg-bubble`, `pt-capacity`: one bubble per row; definition fields `rows`, `x`, `y`, `size` name `TAP.rows` column keys |
+| `themes` | `js/reports/themes.js` | INSIGHTS2 | `nb-themes` |
+
+`compare` reports may set `options.refLines: [{value, label}]` (ENGINE2 draws them as labelled lines, e.g. the exposure thresholds).
+
+**Insight rules (INSIGHTS2):** new families `plan`, `shared`, `themes` (weights in `TAP_SETTINGS.insights.familyWeights`).
+
+| Rule id | Family | File | Attach |
+|---|---|---|---|
+| `channelReliance` | plan | `rules-plan.js` | `pt-reliance`, `nb-channels` |
+| `planMakeup` | plan | `rules-plan.js` | `ov-ambition` |
+| `sharedSubIndustry` | shared | `rules-shared.js` | `nb-rows` |
+| `sharedPartner` | shared | `rules-shared.js` | `pt-list` |
+| `partnerCapacity` | shared | `rules-shared.js` | `pt-capacity` |
+| `recurringTheme` | themes | `rules-themes.js` | `nb-themes` |
+
+**Recurring themes:** `window.TAP_COMMENT_THEMES = {minRegions, themes: [{id, label, keywords: []}]}` (`config/comment-themes.js`). `TAP.themes.all()` returns `[{id, label, keywords, regions: [{regionId, quotes: [{text, src}]}]}]` ranked by number of regions; `match(text)` returns the theme ids a text mentions (whole words, any case).
+
+### 17.8 Phase 2 ownership
+
+| Stream | Owns |
+|---|---|
+| ENGINE2 | `js/engine/*` except `registry.js`; `content/text-engine2.js`; `tests/test-measures-p2.js`, `tests/test-rows.js`, `tests/fixtures/mini-p2*.js` |
+| PANEL2 | `js/panel/*`, `css/panel.css`, `content/text-panel.js`, `tests/test-list.js`, `tests/test-panel.js` |
+| NB | `js/views/new-business.js`, `js/reports/nb-grid.js`, `config/reports-newbusiness.js`, `content/text-newbusiness.js`, `css/newbusiness.css`, `tests/test-newbusiness.js` |
+| CGP | `js/views/customers.js`, `js/views/partners.js`, `js/reports/row-bubble.js`, `js/reports/details-rows.js`, `config/reports-customers.js`, `config/reports-partners.js`, `content/text-customers.js`, `css/customers.css`, `tests/test-customers.js`, `tests/test-partners.js` |
+| INSIGHTS2 | `js/insights/*`, `config/insight-rules.js`, `config/comment-themes.js`, `config/reports-themes.js`, `js/reports/themes.js`, the sample data generator (`tools/sample-*.js`, `tools/generate-sample-data.js`), `data/sample-plan-data.js`, `docs/PLANTED-CASES.md`, `tests/fixtures/sample-expected.js`, `tests/test-insights-p2.js` |
+| PROFILE (wave B) | `js/views/regions.js`, `config/profile.js`, `content/text-profile.js`, `css/profile.css`, `tests/test-profile.js`; also the "Open profile" links in `js/views/overview-cards.js` and `js/reports/details.js` |
+| PAGES2 (wave B) | `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, `content/text-pages.js`, `js/ui/tour.js`, `js/ui/keys.js`, `js/views/guide.js`, the tip line in `js/ui/view-head.js` (by request), `README.md`, `docs/*` except ARCHITECTURE and AGENT-BRIEF, `tests/test-pages-p2.js` |
+| lead | as section 16, plus `js/ui/view-head.js`, `css/view-head.css` |

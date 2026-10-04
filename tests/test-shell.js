@@ -61,7 +61,8 @@
         var ids = menuItems(root).map(function (b) { return b.getAttribute('data-view'); });
         a.deepEqual(ids, TAP.views.order(), 'menu order is TAP.views.order()');
         a.deepEqual(menuItems(root).map(txt), TAP.views.order().map(TAP.views.title), 'titles from TAP.views.title');
-        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Industry priorities', 'Insights', 'Guide'], 'Phase 1 views');
+        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Industry priorities', 'New business', 'Customer growth', 'Partners', 'Regions',
+          'Insights', 'Guide'], 'Phase 1 and Phase 2 views');
       });
     });
 

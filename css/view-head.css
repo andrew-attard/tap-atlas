@@ -1,0 +1,24 @@
+/*
+ * File: css/view-head.css
+ * Purpose: The shared header of the Phase 2 views (kicker, question, lead, tip, headline) and their page layout.
+ * Provides: styles for .tap-vh, .tap-vh-page and .tap-vh-pair only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: lead. Colours and font sizes come from theme variables only.
+ */
+
+/* The page column every Phase 2 view uses, matching the Industry view */
+.tap-vh-page { display: flex; flex-direction: column; gap: var(--tap-sp-6); padding: 0 var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
+
+.tap-vh { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 75rem; }
+.tap-vh__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-vh__title { margin: 0; font-size: var(--tap-fs-h1); }
+.tap-vh__lead { margin: 0; font-size: var(--tap-fs-lead); }
+.tap-vh__tip { margin: 0; font-size: var(--tap-fs-body); }
+.tap-vh__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-2) var(--tap-sp-4); }
+.tap-vh__headline[hidden] { display: none; }
+.tap-vh__headline-text { margin: 0; font-size: var(--tap-fs-h3); font-weight: 600; line-height: 1.4; }
+
+/* At most two panels side by side (D24); one column on narrow screens */
+.tap-vh-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-6); align-items: start; }
+.tap-vh-slot { min-width: 0; }

@@ -275,16 +275,16 @@
       });
     }
 
-    T.test('X-int-keys-views', '1 to 4 switch views in menu order; other digits and modifier keys do nothing', function (a) {
+    T.test('X-int-keys-views', 'Number keys switch views in menu order; other digits and modifier keys do nothing', function (a) {
       withKeys(function () {
         var order = TAP.views.order();
-        a.equal(order.length, 4, 'four views');
+        a.equal(order.length, 8, 'eight views (Phase 2)');
         order.slice().reverse().forEach(function (id, i) {
           press(String(order.length - i));
           a.equal(TAP.store.get().view, id, String(order.length - i) + ' opens ' + id);
         });
-        press('5');
-        a.equal(TAP.store.get().view, order[0], '5 does nothing');
+        press('9');
+        a.equal(TAP.store.get().view, order[0], '9 does nothing');
         press('2', null, { ctrlKey: true });
         a.equal(TAP.store.get().view, order[0], 'Ctrl+2 is left to the browser');
       });

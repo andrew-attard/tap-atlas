@@ -154,6 +154,8 @@
   function build(target) {
     target = target || {};
     var regs = target.regionIds || [], inds = target.industryIds || [], accs = target.accountIds || [];
+    // Row targets (new business rows, partners) are drawn by js/reports/details-rows.js (US-2.7.2)
+    if ((target.items || []).length && TAP.detailsRows && !TAP.detailsRows.__stub) return TAP.detailsRows.build(target);
     if (accs.length) return account(accs[0]);
     if (inds.length && regs.length === 1) return regionIndustry(regs[0], inds[0]);
     if (inds.length) return severalRegions(regs.length ? regs : TAP.scope.regionIds(TAP.store.get().cmp), inds[0]);

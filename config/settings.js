@@ -32,7 +32,8 @@ window.TAP_SETTINGS = {
   // Ranking insights (US-1.7.2). Significance = family weight x (strength, money and breadth combined).
   insights: {
     weights: { strength: 0.5, money: 0.3, breadth: 0.2 },
-    familyWeights: { priorities: 1, judgement: 1, assumptions: 1, realism: 1, exposure: 1, capability: 1 },
+    familyWeights: { priorities: 1, judgement: 1, assumptions: 1, realism: 1, exposure: 1, capability: 1,
+      plan: 1, shared: 1, themes: 1 },
     minRegions: 3,       // no comparison insight with fewer regions providing the value (US-1.7.10)
     panelMax: 3,         // insights listed in a panel (US-1.2.2)
     overviewMax: 3       // insights on the Overview (US-1.5.3)

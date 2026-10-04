@@ -14,6 +14,7 @@
       view: 'overview',
       cmp: { mode: 'all', focus: null, second: null, set: [], restAs: 'combined', restAgg: 'average' },
       industry: null,
+      region: null,                 // region shown on the Regions view (profile, US-2.4.1), or null
       expanded: null,
       layer: null,
       highlight: null,
