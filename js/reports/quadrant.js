@@ -112,14 +112,14 @@
   function frame(ctx) {
     var th = k().th(), f = ctx.expanded ? 1.3 : 1, fs = th.type.chart * f, lh = Math.round(fs + 6);
     var size = ctx.size && ctx.size.w > 200 ? ctx.size : { w: 520, h: th.chartHeight.tall };
-    var m = { top: Math.round(28 * f) + lh + 18, right: 16, bottom: Math.round(36 * f) + lh * 2 + 8, left: Math.round(40 * f) + lh };
+    var m = { top: Math.round(28 * f) + lh + 22, right: 16, bottom: Math.round(36 * f) + lh * 2 + 8, left: Math.round(40 * f) + lh };
     return { f: f, fs: fs, lh: lh, m: m, x0: m.left, y0: m.top, w: Math.max(120, size.w - m.left - m.right), h: Math.max(120, size.h - m.top - m.bottom) };
   }
   function px(F, x, y) { return { x: F.x0 + (x - SCALE.min) / 2 * F.w, y: F.y0 + (SCALE.max - y) / 2 * F.h }; }
 
   // The four area names, outside the plot: the upper two above it, the lower two under the axis numbers.
   function areaNames(F, hl) {
-    var th = k().th(), Q = th.echarts.tap.quadrant, top = F.y0 - 16, low = F.y0 + F.h + Math.round(30 * F.f), x1 = F.x0 + F.w;
+    var th = k().th(), Q = th.echarts.tap.quadrant, top = F.y0 - 20, low = F.y0 + F.h + Math.round(30 * F.f), x1 = F.x0 + F.w;
     var at = { attractiveNotYet: [F.x0, top, 'left', 'bottom'], attractiveAble: [x1, top, 'right', 'bottom'],
       lessBoth: [F.x0, low, 'left', 'top'], lessAttractiveAble: [x1, low, 'right', 'top'] };
     return AREAS.map(function (q) {
