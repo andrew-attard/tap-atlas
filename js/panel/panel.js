@@ -183,7 +183,8 @@
   function onStore(p, s, changed) {
     if (!p.live) return;
     if (p.wasConnected && !p.root.isConnected) { destroy(p); return; }   // removed without destroy()
-    if (changed.indexOf('scopeEpoch') >= 0) Object.assign(p.st, scoped());
+    // A report with a default breakdown returns to it too (17.4); otherwise a chosen breakdown stays, as in Phase 1
+    if (changed.indexOf('scopeEpoch') >= 0) Object.assign(p.st, scoped(), firstBreakdown(p.id) ? { breakdown: firstBreakdown(p.id) } : {});
     if (changed.indexOf('industry') >= 0) p.opts.industryId = null;
     var shown = changed.indexOf('highlight') >= 0 && s.highlight && s.highlight.reportId === p.id;   // "Show me" wins over the list
     if (shown) Object.assign(p.st, { highlight: null, selected: null, sentence: null });
