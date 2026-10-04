@@ -180,7 +180,10 @@
       a.ok(box.classList.contains('tap-panel__html--list'), 'marked as a list');
       a.ok(box.scrollHeight > box.clientHeight, 'scrolls inside its box');
       a.equal(getComputedStyle(box).overflowY, 'auto');
-      a.ok(box.clientHeight <= window.TAP_THEME.chartHeight.normal + 4, 'no taller than a chart');
+      // Nearly a screen tall (about 8 rows at 1280 x 800, #194), never less than 360 px or more than 1200 px
+      var want = Math.min(1200, Math.max(360, window.innerHeight - 64));
+      a.ok(Math.abs(parseFloat(getComputedStyle(box).maxHeight) - want) < 2, 'box height follows the window: ' + want);
+      a.ok(box.clientHeight <= window.innerHeight, 'never taller than the window');
       a.equal(getComputedStyle(qs('.tap-list thead th', p.el)).position, 'sticky', 'header row stays put');
       a.equal(getComputedStyle(qs('.tap-list tbody td', p.el)).fontSize, '16px', 'body text 16 px');
       a.equal(getComputedStyle(qs('.tap-list thead [data-tap-opt]', p.el)).fontSize, '16px', 'headings 16 px');
@@ -826,5 +829,22 @@
       ids.forEach(function (k) { a.equal(qsa('.tap-kind', qs('[data-sort="' + k + '"]', box).closest('th')).length, 0, k); });
       a.equal(qsa('.tap-kind', qs('[data-sort="currentArr"]', box).closest('th')).length, 1, 'a figure column keeps its kind');
     });
+  });
+
+  /* ---------- list height on a shared screen (#194) ---------- */
+
+  T.suite('list-height', function () {
+    T.test('X-list-height', 'List rows are compact and an expanded list fills the window under its strip', scene(function (a, s) {
+      ROWS = 120;
+      s.report(listDef());
+      var p = s.panel('x-list'), td = qs('.tap-list tbody td', p.el);
+      a.ok(parseFloat(getComputedStyle(td).paddingTop) <= 6, 'compact cell padding');
+      a.equal(getComputedStyle(td).fontSize, '16px', 'still 16 px text');
+      try {
+        p.expand(true);
+        var box = qs('.tap-panel__html--list', p.el), want = Math.max(260, window.innerHeight - 120);
+        a.ok(Math.abs(parseFloat(getComputedStyle(box).maxHeight) - want) < 2, 'expanded: the window less the strip');
+      } finally { TAP.store.set({ expanded: null }); }
+    }));
   });
 })(window.TAP);
