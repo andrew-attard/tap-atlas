@@ -108,8 +108,8 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
         fteConsultants: 'Consultants (full-time equivalent)', fte: 'Staff (full-time equivalent)', centralSupportPct: 'Central support %',
         arr3: 'ARR, 3 years', services3: 'Services, 3 years', oiPerFte: 'Order intake per head', alsoNamed: 'Also named by' }
     },
-    // A row of grouped bars with some values left blank
-    chart: { npSome: 'not provided: {names}' },
+    // A row of grouped bars with some values left blank, and a plan year on a dot (US-2.7.3)
+    chart: { npSome: 'not provided: {names}', yearShort: 'Y{n}' },
     // Breakdown values that are not lookups (US-2.7.5), and a stack's name once broken down
     breakdown: {
       motion: { nb: 'New business', cg: 'Customer growth' },

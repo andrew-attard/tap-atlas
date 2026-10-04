@@ -25,8 +25,8 @@
     if (type === 'table') return res;
     if (type === 'radar' && (!cats || rows.length > 3)) type = cats ? 'dot' : 'bar';   // a stale choice falls back
     var draw = { cats: cats, keys: keys, bd: bd, rows: rows, ds: ds, ctx: ctx, k: k, res: res };
-    // A dot plot with a breakdown draws grouped bars until the dot plot takes breakdowns (#195)
-    res.option = type === 'radar' ? radar(draw) : type === 'dot' && !bd.length ? dot(draw) : bd.length ? grouped(draw) : bars(draw);
+    // A dot plot draws its own dots per breakdown value (US-2.7.3)
+    res.option = type === 'radar' ? radar(draw) : type === 'dot' ? dot(draw) : bd.length ? grouped(draw) : bars(draw);
     if (type !== 'radar') k.refLines(res.option, ctx.refLines || (def.options || {}).refLines);   // labelled lines (17.7)
     return res;
   }
@@ -124,6 +124,7 @@
   // never the value, and tooltips read the cell itself. With more than 3 groups each dot carries its region's number,
   // matching the legend, so dots that share a rating are told apart without colour.
   function dot(draw) {
+    if (!draw.cats && !isRating(draw.k.colOf(draw.ds, draw.keys[0]))) return rowDots(draw);
     var k = draw.k, th = k.th(), col = k.colOf(draw.ds, draw.keys[0]), rating = isRating(col);
     var G = draw.cats ? draw.rows.length : 1, np = [], ring = [], many = draw.cats && G > 3;
     var off = function (gi) { return G < 2 || many ? 0 : (gi - (G - 1) / 2) * Math.min(0.12, 0.72 / G); };
@@ -156,6 +157,51 @@
       axisLabel: { fontSize: th.type.chart, formatter: function (v) { return v % 1 === 0 ? String(v) : ''; } } }) : k.valueAxis(col);
     return { grid: k.grid(), tooltip: { trigger: 'item' }, xAxis: xAxis,
       yAxis: { type: 'value', inverse: true, min: -0.5, max: labels.length - 0.5, interval: 1, splitLine: { show: many, lineStyle: { color: th.grid } },
+        axisLine: { show: true }, axisTick: { show: false },
+        axisLabel: { fontSize: th.type.chart, customValues: labels.map(function (l, i) { return i; }),
+          formatter: function (v) { return labels[Math.round(v)] || ''; } } },
+      series: series.concat(np.length ? [k.npSeries(np)] : [], ring.length ? [k.ringSeries(ring)] : []) };
+  }
+
+  /*
+   * Dot plot of one value (US-2.7.3): one row per region or combined figure, a dot at its value with the value
+   * written beside it. With a breakdown, one dot per value on the row, each labelled ("Y1") rather than told apart by
+   * colour. Amounts and counts start at zero; a rate may start at the smallest value shown, and that start is labelled.
+   */
+  function rowDots(draw) {
+    var k = draw.k, th = k.th(), col = k.colOf(draw.ds, draw.keys[0]), keys = draw.bd.length ? draw.bd : draw.keys;
+    var np = [], ring = [], shown = [], size = th.space[4];
+    var series = keys.map(function (key, i) {
+      var kc = k.colOf(draw.ds, key), bd = draw.bd.length ? kc.breakdown : null;
+      var tag = !bd ? null : bd.dim === 'year' ? k.t('chart.yearShort', { n: bd.value }) : kc.label, data = [];
+      draw.rows.forEach(function (row, ri) {
+        var c = row.cells[key];
+        if (c.state === 'value') {
+          shown.push(c.v);
+          data.push(item(row, key, c, { value: [c.v, ri], itemStyle: { color: tag ? th.shade(row.entity.color, i) : row.entity.color,
+            borderColor: row.entity.color, borderWidth: th.border.control } }));
+          if (k.highlighted(row.entity, draw.ctx.highlight)) ring.push({ value: [c.v, ri], entityId: row.entityId, size: size });
+        } else if (c.state === 'notProvided') {
+          np.push({ value: [0, ri], entityId: row.entityId, text: tag ? k.t('chart.npFor', { name: tag }) : k.t('states.notProvided'),
+            title: row.label, what: kc.label });
+        }
+      });
+      return { type: 'scatter', tapRole: 'value', name: tag || col.label, symbolSize: size, z: 3, itemStyle: { color: th.ink, opacity: 1 },
+        data: data, tooltip: tooltip(draw), label: { show: true, position: tag ? 'top' : 'right', fontSize: th.type.chart, color: th.ink,
+          formatter: function (p) {
+            if (tag) return tag;
+            return p.data && p.data.raw != null ? TAP.format.cell({ v: p.data.raw, state: 'value' }, { unit: col.unit }) : '';
+          } } };
+    });
+    if (draw.bd.length) {
+      draw.res.legend = draw.res.legend.concat(series.map(function (s, i) { return { label: s.name, color: th.shade(th.ink, i), role: 'part' }; }));
+    }
+    var low = shown.length ? Math.min.apply(null, shown) : 0;
+    var min = col.unit === 'pct' && low > 0 ? Math.floor(low * 100) / 100 : Math.min(0, low);
+    var labels = draw.rows.map(function (r) { return r.label; });
+    return { grid: k.grid({ right: th.space[12] * 2 }), tooltip: { trigger: 'item' },
+      xAxis: k.valueAxis(col, { min: min, axisLabel: { formatter: k.axisFormatter(col.unit), fontSize: th.type.chart, showMinLabel: true } }),
+      yAxis: { type: 'value', inverse: true, min: -0.5, max: labels.length - 0.5, interval: 1, splitLine: { show: true, lineStyle: { color: th.grid } },
         axisLine: { show: true }, axisTick: { show: false },
         axisLabel: { fontSize: th.type.chart, customValues: labels.map(function (l, i) { return i; }),
           formatter: function (v) { return labels[Math.round(v)] || ''; } } },
