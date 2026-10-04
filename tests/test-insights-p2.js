@@ -1,7 +1,8 @@
 /*
  * File: tests/test-insights-p2.js
  * Purpose: Tests for the Phase 2 planted cases in the sample data, the Phase 2 insight rules and recurring themes.
- * Provides: test cases for the INSIGHTS2 stream: TPV-TC-304, 307, 308 (US-2.7.4, sample data), X-insights2-*
+ * Provides: test cases for the INSIGHTS2 stream: TPV-TC-304, 307, 308 (US-2.7.4, sample data), 471 to 475 (US-2.5.2),
+ *           486 to 490 (US-2.5.5), X-insights2-*
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (T_INSIGHTS), the app scripts,
  *             data/sample-plan-data.js (window.PLAN_DATA), tests/fixtures/sample-expected.js (window.SAMPLE_EXPECT)
  * Used by: tests.html
@@ -47,10 +48,15 @@
     return p;
   }
   function rg(p, id) { return p.regions.filter(function (r) { return r.id === id; })[0]; }
-  // A recap of one year's new business ARR, with the given amount per channel (direct, partner, Alliance A, B).
+  // A recap of new business ARR with the given amount per channel (direct, partner, Alliance A, B) in year 1 and
+  // zero in years 2 and 3, so every plan year is provided.
   function recap(p, r, vals) {
-    r.recap = CH.map(function (c, i) {
-      return { year: p.meta.years[0], sourceCell: String.fromCharCode(69 + i) + 5, channel: c, motion: 'newBusiness', type: 'arr', value: vals[i] };
+    r.recap = [];
+    p.meta.years.forEach(function (y, k) {
+      CH.forEach(function (c, i) {
+        r.recap.push({ year: y, sourceCell: String.fromCharCode(69 + i) + (5 + 4 * k), channel: c, motion: 'newBusiness', type: 'arr',
+          value: k ? 0 : vals[i] });
+      });
     });
   }
   // Three-year ARR ambition of exactly nb from new business and cg from customer growth (cg null: an empty section).
@@ -197,6 +203,23 @@
       });
       a.equal(I().ofRule('channelReliance').length, 0, 'not computed');
       a.ok(!TAP.insights.failures().some(function (f) { return f.ruleId === 'channelReliance'; }), 'and not a failure');
+    });
+
+    when(PLAN, 'X-insights2-recap-blank', 'A region with a blank recap item is left out of channel reliance on both sides', function (a) {
+      var p = JSON.parse(JSON.stringify(P));
+      var latam = p.regions.filter(function (r) { return r.id === 'latam'; })[0];
+      latam.recap.filter(function (x) { return x.channel === 'partner'; })[0].value = null;
+      TAP.data.load(p);
+      TAP.insights.reset();
+      var list = I().ofRule('channelReliance');
+      a.ok(list.every(function (x) { return x.regionIds[0] !== 'latam'; }), 'Latin America is not named on partial shares');
+      a.equal(list.length, 1, 'Southern Europe only');
+      // Southern Europe against the five other regions with whole recaps, worked out from the raw rows
+      var rest = p.regions.filter(function (r) { return r.id !== 'seu' && r.id !== 'latam'; });
+      var amt = function (r, ch) { return sum(r.recap.filter(function (x) { return !ch || x.channel === ch; }).map(function (x) { return x.value; })); };
+      var others = sum(rest.map(function (r) { return amt(r, 'partner'); })) / sum(rest.map(function (r) { return amt(r); }));
+      a.near(list[0].figures[1].cell.v, others, 1e-9, 'the others leave Latin America out');
+      a.match(list[0].figures[1].label, /other 5 regions/, 'and say how many regions they are');
     });
 
     when(PLAN, 'TPV-TC-474', 'The channel reliance sentence follows the story’s pattern, with no banned word', function (a) {
