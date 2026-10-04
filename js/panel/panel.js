@@ -3,11 +3,13 @@
  * Purpose: The report panel every chart sits in: title, takeaway, chart or table, legend, source line, controls.
  *          It builds the report for the current comparison and redraws on store changes. It keeps the chart
  *          type and measure for the session (the type is also remembered in the browser), and a few choices
- *          (builder options, the selected insight) only until the shared comparison changes.
+ *          (builder options, the selected insight) only until the shared comparison changes. List reports and
+ *          builder option clicks: ARCHITECTURE 17.4.
  * Provides: TAP.panel (create)
  * Depends on: js/panel/panel-expand.js, js/panel/panel-*.js, js/engine/registry.js, scope.js, js/core/store.js, storage.js, content.js, format.js,
  *             sources.js, dom.js, icons.js, data.js, js/ui/layers.js, shell.js (label), js/theme.js (all at call time)
- * Used by: js/views/overview.js, js/views/industry.js
+ * Used by: js/views/overview.js, js/views/industry.js, js/ui/view-head.js (mountPanel), and through it the Phase 2
+ *          views: new-business.js, customers.js, partners.js, regions.js
  */
 (function (TAP) {
   'use strict';
