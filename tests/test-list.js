@@ -515,6 +515,7 @@
     hit(p, { regionId: 'alpha', industryId: 'ind2', label: 'Hospitals' });
   }
   function crumbs(p) { return qsa('.tap-panel__crumbs .tap-panel__crumb', p.el).map(txt); }
+  function root() { return TAP.scope.sentence(TAP.store.get().cmp); }   // the top crumb says what is compared
   function key(name, target, alt) {
     var e = new KeyboardEvent('keydown', { key: name, altKey: !!alt, bubbles: true, cancelable: true });
     (target || document.body).dispatchEvent(e);
@@ -541,7 +542,8 @@
       a.ok(TAP.panelDrill.levels(TAP.reports.get('x-loop')).errors.length > 0, 'a level that leads back to itself is an error');
     }));
 
-    T.test('TPV-TC-272', 'A click on a mark opens the next level for that item in the same panel, with ctx.drill', scene(function (a, s) {
+    // TC-272's figures come with NB's drill report; this is the panel part
+    T.test('X-drill-next', 'A click on a mark opens the next level for that item in the same panel, with ctx.drill', scene(function (a, s) {
       levels(s);
       var p = s.panel('x-d1'), target = { reportId: 'x-d1', regionIds: ['alpha'], industryIds: ['ind2'], label: undefined, mark: 'cell' };
       hit(p, { regionId: 'alpha', industryId: 'ind2' });
@@ -553,12 +555,12 @@
       a.ok(chartOf(p), 'drawn as a chart');
     }));
 
-    T.test('TPV-TC-274', 'Two levels down the breadcrumb reads All regions › industry › sub-industry, each step a level', scene(function (a, s) {
+    T.test('TPV-TC-274', 'Two levels down the breadcrumb reads the comparison › industry › sub-industry, each step a level', scene(function (a, s) {
       levels(s);
       var p = s.panel('x-d1');
       a.equal(qs('.tap-panel__crumbs', p.el), null, 'no breadcrumb at the top level');
       down2(p);
-      a.deepEqual(crumbs(p), ['All regions', 'Education', 'Hospitals']);
+      a.deepEqual(crumbs(p), [root(), 'Education', 'Hospitals']);
       var steps = qsa('.tap-panel__crumbs button', p.el);
       a.deepEqual(steps.map(function (b) { return b.getAttribute('data-drill-level'); }), ['0', '1'], 'buttons back to levels 0 and 1');
       a.equal(qs('.tap-panel__crumbs [aria-current]', p.el) && txt(qs('.tap-panel__crumbs [aria-current]', p.el)), 'Hospitals', 'the current level is marked, not a button');
@@ -581,7 +583,7 @@
       down2(p);
       click(qs('[data-drill-level="1"]', p.el));
       a.equal(last().def.id, 'x-d2', 'back to level 1');
-      a.deepEqual(crumbs(p), ['All regions', 'Education']);
+      a.deepEqual(crumbs(p), [root(), 'Education']);
       a.deepEqual(last().drill.industryIds, ['ind2'], 'still for the item chosen there');
       click(qs('[data-drill-level="0"]', p.el));
       a.equal(last().def.id, 'x-d1', 'back to the top');
@@ -637,7 +639,8 @@
       a.equal(qs('.tap-panel__table', p.el), null, 'and its own chart view');
     }));
 
-    T.test('TPV-TC-278', 'The comparison still applies one level down', scene(function (a, s) {
+    // TC-278's figures come with NB's drill report; this is the panel part
+    T.test('X-drill-cmp', 'The comparison still applies one level down', scene(function (a, s) {
       levels(s);
       TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
       var p = s.panel('x-d1');
@@ -696,6 +699,115 @@
       TAP.store.set({ highlight: { reportId: 'x-d1', regionIds: ['alpha'], mark: 'bar' } });
       a.equal(last().def.id, 'x-d1');
       a.deepEqual(last().highlight.regionIds, ['alpha'], 'with the highlight');
+    }));
+
+    T.test('X-drill-focus', 'After a keyboard step the focus is on the last breadcrumb button, or the title at the top', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      qs('[data-action="about"]', p.el).focus();
+      key('Backspace', document.activeElement);
+      a.equal(document.activeElement, qs('.tap-panel__crumbs [data-drill-level="0"]', p.el), 'the last crumb button');
+      key('ArrowLeft', document.activeElement, true);
+      a.equal(last().def.id, 'x-d1');
+      a.equal(document.activeElement, qs('.tap-panel__title', p.el), 'the title at the top level');
+      a.equal(getComputedStyle(qs('.tap-panel__title', p.el)).outlineStyle, 'none', 'the title draws no ring');
+      a.ok(document.activeElement !== p.el, 'never the whole panel, so no ring wraps it');
+    }));
+
+    T.test('X-drill-typing', 'Backspace and Alt + Left are left alone while typing, in a field or editable text', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      var ed = document.createElement('div');
+      ed.contentEditable = 'true';
+      p.el.appendChild(ed);
+      ed.focus();
+      var e = key('Backspace', ed);
+      a.ok(!e.defaultPrevented && last().def.id === 'x-d3', 'Backspace in editable text');
+      e = key('ArrowLeft', ed, true);
+      a.ok(!e.defaultPrevented && last().def.id === 'x-d3', 'Alt + Left in editable text');
+      var inp = document.createElement('input');
+      p.el.appendChild(inp);
+      inp.focus();
+      e = key('ArrowLeft', inp, true);
+      a.ok(!e.defaultPrevented && last().def.id === 'x-d3', 'Alt + Left in a field');
+    }));
+
+    T.test('X-drill-keys-off', 'TAP.panelDrill.keys(false) turns off the drill keys and the panel\'s own Esc (D70)', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      down2(p);
+      try {
+        TAP.panelDrill.keys(false);
+        a.equal(TAP.panelKeys.enabled, false, 'one shared switch');
+        qs('[data-action="about"]', p.el).focus();
+        var e = key('Backspace', document.activeElement);
+        a.ok(!e.defaultPrevented && last().def.id === 'x-d3', 'no drill step');
+        click(qs('[data-action="more"]', p.el));
+        a.ok(qs('.tap-panel__pop', p.el), 'a popover is open');
+        e = key('Escape');
+        a.ok(!e.defaultPrevented && qs('.tap-panel__pop', p.el), 'Esc leaves the popover to the new owner');
+        click(qs('[data-action="more"]', p.el));
+        p.expand(true);
+        e = key('Escape');
+        a.ok(!e.defaultPrevented && TAP.store.get().expanded === 'x-d1', 'Esc leaves the expanded chart open');
+        TAP.panelDrill.keys(true);
+        e = key('Escape');
+        a.equal(TAP.store.get().expanded, null, 'back on: Esc closes it');
+      } finally { TAP.panelDrill.keys(true); TAP.store.set({ expanded: null }); }
+    }));
+
+    T.test('X-drill-insights', 'While drilled the insights are the current level\'s, and selecting one stays on that level', scene(function (a, s) {
+      levels(s);
+      var saved = TAP.insights, asked = [];
+      var ins = { id: 'r:d3', ruleId: 'r', family: 'priorities', sentence: 'Level three observation.', figures: [], description: '',
+        regionIds: ['alpha'], industryIds: [], accountIds: [], significance: 1, reportId: 'x-d3', highlight: { mark: 'bar' }, label: 'L' };
+      TAP.insights = { ranked: function (cmp, o) { asked.push(o.reportId); return o.reportId === 'x-d3' ? [ins] : []; },
+        top: function (cmp, id) { asked.push(id); return id === 'x-d3' ? [ins] : []; }, hide: function () {} };
+      try {
+        var p = s.panel('x-d1');
+        down2(p);
+        a.equal(asked[asked.length - 1], 'x-d3', 'asked for the current level');
+        click(qs('[data-action="insights"]', p.el));
+        click(qs('[data-action="select-insight"]', p.el));
+        a.equal(last().def.id, 'x-d3', 'still on the same level');
+        a.equal(last().highlight && last().highlight.reportId, 'x-d3', 'the highlight names that level');
+      } finally { TAP.insights = saved; }
+    }));
+
+    T.test('X-drill-merge', 'A deeper level keeps the regions and industries chosen above it', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      hit(p, { regionId: 'alpha', industryId: 'ind2' });
+      hit(p, { label: 'Hospitals' });
+      a.equal(last().def.id, 'x-d3', 'a sub-industry click with no region still drills, inside the region above');
+      a.deepEqual(last().drill.regionIds, ['alpha'], 'region kept');
+      a.deepEqual(last().drill.industryIds, ['ind2'], 'industry kept');
+      a.equal(last().drill.label, 'Hospitals');
+    }));
+
+    T.test('X-drill-hint-list', 'The hint on a list level says to pick a row of the list', function (a) {
+      var d = TAP.panelDrill.create({ id: 'x', root: document.createElement('section'), render: function () {}, st: {} });
+      window.TAP_REPORTS['x-hl2'] = { id: 'x-hl2', title: 'Rows' };
+      try {
+        a.match(txt(d.hint({ shape: 'list', drill: { next: 'x-hl2', label: 'Accounts' } })), /list/, 'a list');
+        a.match(txt(d.hint({ shape: 'compare', drill: { next: 'x-hl2', label: 'Accounts' } })), /chart/, 'a chart');
+      } finally { delete window.TAP_REPORTS['x-hl2']; d.destroy(); }
+    });
+  });
+
+  T.suite('list-reveal', function () {
+    T.test('X-list-reveal-visible', 'A highlighted row already in view does not scroll the list', scene(function (a, s) {
+      ROWS = 120;
+      s.report(listDef());
+      var p = s.panel('x-list');
+      TAP.store.set({ highlight: { reportId: 'x-list', regionIds: ['charlie'], items: [{ section: 'customerGrowth', regionId: 'charlie', row: 12 }] } });
+      try {
+        var box = qs('.tap-panel__html--list', p.el);
+        a.ok(qs('tr.is-highlight', box), 'the builder marked the row');
+        a.equal(box.scrollTop, 0, 'the third row is in view: no scroll');
+      } finally { TAP.store.set({ highlight: null }); }
     }));
   });
 })(window.TAP);
