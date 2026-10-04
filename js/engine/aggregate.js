@@ -2,7 +2,7 @@
  * File: js/engine/aggregate.js
  * Purpose: Combines several regions' values into one figure (totals and averages), following the combining rules
  *          of US-1.2.5. This is the only place those rules are written down in code; insights reuse it.
- * Provides: TAP.agg (combine, weightBy, describe)
+ * Provides: TAP.agg (combine, ratio, weightBy, describe)
  * Depends on: js/core/namespace.js, js/core/store.js (TAP.notes), config/settings.js, js/core/content.js,
  *             js/core/format.js, js/core/data.js,
  *             js/engine/measures.js (only to look up rate weights and their labels, at call time)
@@ -155,6 +155,44 @@
       .sort(function (a, b) { return b.n - a.n || (a.value < b.value ? -1 : 1); });
   }
 
+  /*
+   * Shares and ratios combined from their parts (meta combine: 'ratioOfSums', ARCHITECTURE 17.5): each region's cell
+   * carries ratio {num, den}; the result is the summed numerators over the summed denominators. A cell whose ratio
+   * also lists items and top (e.g. the top 3 accounts) pools the items and takes the top ones across the regions.
+   * Total and average give the same figure, so one rule serves both. Blanks are left out and named, as in combine.
+   */
+  function ratio(items) {
+    var used = [], excluded = [], na = [];
+    items = items || [];
+    items.forEach(function (it) {
+      var c = it.cell || {};
+      if (c.state === 'value' && c.ratio) used.push({ regionId: it.regionId, cell: c });
+      else if (c.state === 'notApplicable') na.push(it.regionId);
+      else excluded.push(it.regionId);
+    });
+    var src = { combined: true, how: 'ratio', regionIds: items.map(function (it) { return it.regionId; }),
+      excluded: excluded, notApplicable: na, weightBy: null };
+    var den = total(used.map(function (u) { return u.cell.ratio.den; }));
+    if (!used.length || !(den > 0)) {
+      var allNa = items.length > 0 && na.length === items.length;
+      return { v: null, state: used.length || allNa ? 'notApplicable' : 'notProvided', kind: 'APP', src: src };
+    }
+    var top = used[0].cell.ratio.top, num;
+    if (top) {
+      var pool = [];
+      used.forEach(function (u) { pool = pool.concat(u.cell.ratio.items || []); });
+      num = total(pool.sort(function (x, y) { return y - x; }).slice(0, top));
+    } else num = total(used.map(function (u) { return u.cell.ratio.num; }));
+    var out = { v: num / den, state: 'value', kind: 'APP', src: src, ratio: { num: num, den: den } };
+    var partial = used.filter(function (u) { return u.cell.partial; }).map(function (u) { return u.regionId; });
+    if (partial.length) {
+      out.partial = true;
+      src.partial = partial;
+      out.note = TAP.content.text('combined.partialNote', { names: TAP.format.list(names(partial)) });
+    }
+    return out;
+  }
+
   function regionsWord(n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); }
 
   // A measure's label as it reads mid-sentence ("target accounts"), keeping acronyms such as ARR.
@@ -195,5 +233,5 @@
     return out.join('; ');
   }
 
-  TAP.agg = { combine: combine, weightBy: weightBy, describe: describe };
+  TAP.agg = { combine: combine, ratio: ratio, weightBy: weightBy, describe: describe };
 })(window.TAP);
