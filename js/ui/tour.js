@@ -1,7 +1,7 @@
 /*
  * File: js/ui/tour.js
- * Purpose: The optional guided welcome tour of the screen (US-1.1.11): a welcome card offered once, then at most
- *          seven short steps that spotlight each part of the screen in turn. A few lines of custom code, no library.
+ * Purpose: The optional guided welcome tour of the screen (US-1.1.11, US-2.6.3): a welcome card offered once, then
+ *          at most ten short steps that spotlight each part of the screen in turn. A few lines of custom code, no library.
  * Provides: TAP.tour (offer, start, stop, steps, fullscreen)
  * Depends on: js/core/storage.js, js/core/content.js, js/core/dom.js, js/core/icons.js, js/core/store.js,
  *             js/ui/shell.js (actionsEl), js/ui/layers.js (close)
@@ -15,10 +15,13 @@
   'use strict';
 
   var DONE = 'tour:done';
-  // Step ids (the wording keys) and the part of the screen each one spotlights, in the order of the story.
+  // Step ids (the wording keys) and the part of the screen each one spotlights, in the order of the stories.
+  // US-2.6.3 adds one step for the Phase 2 views and one for the region profile; keep the tour to 10 steps or fewer.
   var STEPS = [
     { id: 'purpose', sel: '[data-tour="brand"]' },
     { id: 'menu', sel: '[data-tour="menu"]' },
+    { id: 'views', sel: '.tap-menu__item[data-view="newBusiness"], [data-tour="menu"]' },
+    { id: 'profile', sel: '.tap-view a[href^="#regions/"], .tap-menu__item[data-view="regions"]' },
     { id: 'compare', sel: '[data-tour="compare"]' },
     { id: 'panel', sel: '[data-tour="panel"] .tap-panel__head, [data-tour="panel"]' },
     { id: 'freshness', sel: '[data-tour="datadate"]' },

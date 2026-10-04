@@ -10,7 +10,8 @@
  *
  *   contents   The short contents list at the top: [{ id, title }]. The ids are the page's three sections:
  *              'howTo', 'planning' and 'glossary' (the glossary list itself comes from TAP.glossary.render).
- *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'], link: { view: 'newBusiness' } (optional) }] }
+ *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'], link: { view: 'newBusiness' } (optional),
+ *              shortcuts: true (optional: the number keys are listed under it, built from the menu order) }] }
  *              "How to use this app", with one section per view that needs explaining (each linking to its view).
  *              The "Take the tour" and "Reset all charts to default" buttons belong here; their labels live in
  *              content/text-pages.js.
@@ -85,6 +86,10 @@ window.TAP_CONTENT.guide = {
         'Insights are short sentences the app writes when a figure stands out, such as regions that disagree on an industry. They are observations to discuss, not conclusions.',
         'Each insight shows the figures and the rule behind it. "Show me" highlights the data it refers to on its chart.',
         'The Insights page lists them all, ranked and grouped by family. Any insight can be hidden for the rest of the session.'
+      ] },
+      { id: 'keys', title: 'Keyboard shortcuts', shortcuts: true, paragraphs: [
+        'When presenting, a number key opens the view at that place in the menu, as listed below.',
+        'Esc closes one thing at a time: an open list or definition first, then a side panel, then an expanded chart. In an expanded chart the arrow keys move between the charts, and Backspace goes up a level after a drill-down.'
       ] }
     ]
   },
