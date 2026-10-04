@@ -6,3 +6,30 @@
  * Used by: index.html, index-sample.html, tests.html
  * Owner: INSIGHTS2 stream. Colours and font sizes come from theme variables only.
  */
+.tap-themes { display: flex; flex-direction: column; gap: var(--tap-sp-4); }
+
+/* One button per theme: label, a bar for the share of regions, and the count written out (never the bar alone) */
+.tap-themes__bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--tap-sp-1); }
+.tap-themes__bar {
+  display: grid; grid-template-columns: minmax(9em, 14em) 1fr auto; align-items: center; gap: var(--tap-sp-3);
+  width: 100%; padding: var(--tap-sp-1) var(--tap-sp-2); border: var(--tap-rule-w) solid transparent;
+  background: none; color: var(--tap-ink); font: inherit; font-size: var(--tap-fs-body); text-align: left; cursor: pointer;
+}
+.tap-themes__bar:hover, .tap-themes__bar:focus-visible { border-color: var(--tap-grid); }
+.tap-themes__bar.is-selected { border-color: var(--tap-ink); font-weight: 700; }
+.tap-themes__bar.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); }
+.tap-themes__track { display: block; height: 1.1em; background: var(--tap-surface); }
+.tap-themes__fill { display: block; height: 100%; background: var(--tap-accent); }
+.tap-themes__bar.is-selected .tap-themes__fill { background: var(--tap-accent-deep); }
+.tap-themes__n { font-size: var(--tap-fs-label); color: var(--tap-muted); white-space: nowrap; }
+
+/* The chosen theme's quotes, region by region */
+.tap-themes__quotes { border-top: var(--tap-rule-w) solid var(--tap-ink); padding-top: var(--tap-sp-3); }
+.tap-themes__title { margin: 0 0 var(--tap-sp-1); font-size: var(--tap-fs-h3); }
+.tap-themes__keywords { margin: 0 0 var(--tap-sp-3); color: var(--tap-muted); font-size: var(--tap-fs-body); }
+.tap-themes__region { margin-bottom: var(--tap-sp-3); }
+.tap-themes__region.is-focus .tap-themes__name { text-decoration: underline; }
+.tap-themes__name { margin: 0 0 var(--tap-sp-1); font-size: var(--tap-fs-body); font-weight: 700; }
+.tap-themes__list { margin: 0; padding-left: var(--tap-sp-4); }
+.tap-themes__quote { font-size: var(--tap-fs-body); margin-bottom: var(--tap-sp-1); }
+.tap-themes__src { display: block; color: var(--tap-muted); font-size: var(--tap-fs-body); }

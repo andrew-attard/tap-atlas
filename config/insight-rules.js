@@ -161,6 +161,14 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average elsewhere.',
     attach: ['ov-ambition'], highlight: 'bar' });
 
+  /* ---------- themes (US-2.5.1) ---------- */
+  rule({ id: 'recurringTheme', family: 'themes',
+    description: 'A theme from the keyword lists in config/comment-themes.js that comes up (whole words, any case) in the success factors or commentary of at least 3 regions (TAP_COMMENT_THEMES.minRegions). Counted by this app, not tagged in the workbooks.',
+    reads: ['newBusiness.successFactors', 'marketCoverage.commentary'], params: {},
+    scoring: 'Strength: grows from the threshold to every region, up to 0.4, so themes rank below the rules that compare figures. Money: none.',
+    template: '{theme} {verb} up in the {where} of {n} regions.',
+    attach: ['nb-themes'], highlight: 'bar' });
+
   /* ---------- wording guide (US-1.7.10) ---------- */
   R.wording = {
     guide: [
@@ -194,6 +202,9 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       mediumRisk: '{name} (medium risk)',
       // Channel words in a sentence; any other channel uses its name from the data
       channel: { direct: 'direct sales', partner: 'partners' },
+      themeVerb: { plural: 'come', one: 'comes' },
+      themeWhere: { successFactors: 'success factors', commentary: 'commentary', both: 'success factors and commentary' },
+      themeRegions: 'Regions mentioning {theme} (counted by this app)', themeQuote: 'What {region} wrote',
       failed: 'The insight rule "{rule}" was skipped: {reason}', noData: 'the data has none of the fields it reads ({fields}).',
       noCode: 'it has no rule code.', banned: 'its sentence used the word "{word}", which the wording guide avoids.',
       unfilled: 'its sentence had a gap ({gap}).', notList: 'it did not return a list of findings.',
