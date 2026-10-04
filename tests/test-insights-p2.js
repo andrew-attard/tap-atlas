@@ -213,10 +213,11 @@
       a.deepEqual(rule.attach, ['pt-reliance', 'nb-channels']);
       a.equal(rule.highlight, 'bar');
       a.deepEqual(x.highlight.regionIds, ['seu'], 'the region’s bar');
-      if (TAP.reports.get('pt-reliance')) {
-        a.deepEqual(x.attach, ['pt-reliance', 'nb-channels']);
-        a.equal(x.highlight.mark, 'bar');
-      } else a.equal(x.fallback, 'details', 'until the partner reliance report is built, Show me opens the details');
+      // While the views are being built, the insight attaches to the reports that exist
+      var built = rule.attach.filter(function (id) { return !!TAP.reports.get(id); });
+      a.deepEqual(x.attach, built, 'attached to ' + (built.join(', ') || 'no report yet'));
+      if (built.length) a.equal(x.highlight.mark, 'bar');
+      else a.equal(x.fallback, 'details', 'until a report is built, Show me opens the details');
     });
 
     /* ---------- US-2.5.5: plan make-up ---------- */
