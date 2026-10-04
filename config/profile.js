@@ -12,8 +12,9 @@
  */
 window.TAP_PROFILE = window.TAP_PROFILE || {};
 window.TAP_PROFILE.reports = [
-  ['ind-tiers', 'ind-quad'],              // how the region rates its industries: tiers, attractiveness vs ability
-  ['ov-ambition', 'cg-segments'],         // ambition by region, segment mix
-  ['nb-industries', 'nb-channels'],       // where new business comes from: industries and channels
-  ['nb-levers', 'pt-reliance']            // the new business levers, partner reliance
+  ['ind-tiers'],                          // how the region rates its industries: tiers (a wide grid, full width)
+  ['ind-quad', 'ov-ambition'],            // attractiveness vs ability; ambition by region
+  ['nb-industries'],                      // where new business comes from: industries (a wide grid, full width)
+  ['nb-channels', 'nb-levers'],           // new business channels and levers
+  ['cg-segments', 'pt-reliance']          // segment mix, partner reliance
 ];
