@@ -46,8 +46,13 @@
   // belong to several reports (attach), so the target names the panel's own report.
   function target(ins, reportId) {
     var hl = ins.highlight || {};   // the insight's own target (ARCHITECTURE section 12)
-    return { reportId: reportId, regionIds: (ins.regionIds || []).slice(), industryIds: (ins.industryIds || []).slice(),
+    var tg = { reportId: reportId, regionIds: (ins.regionIds || []).slice(), industryIds: (ins.industryIds || []).slice(),
       accountIds: (ins.accountIds || []).slice(), mark: hl.mark || null, quadrant: hl.quadrant || null };
+    // Phase 2 targets may also name list rows (17.4) and a comment theme; copied only when there are some
+    var items = hl.items || ins.items, theme = hl.theme || ins.theme;
+    if (items) tg.items = items.map(function (x) { return Object.assign({}, x); });
+    if (theme) tg.theme = theme;
+    return tg;
   }
 
   // What the takeaway and the list do, for panel p (see js/panel/panel.js).
