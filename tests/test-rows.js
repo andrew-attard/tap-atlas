@@ -201,6 +201,43 @@
       a.match(box.textContent, /<b>Bold<\/b>/);
     });
 
+    T.test('X-rows-miniP2', 'Partly provided, staff and order intake per head on miniP2 (hand figures)', function (a) {
+      TAP.data.load(window.T_FIXTURE('miniP2'));
+      function c(s, k, r, n) { return TAP.rows.cell(s, k, { regionId: r, sourceRow: n }); }
+      var a1 = c('accounts', 'incr3', 'alpha', 10);
+      a.equal(a1.v, 50, 'a1: 50 + 0, year 3 blank');
+      a.equal(a1.partial, true);
+      a.equal(a1.note, TAP.content.text('measures.partialYears'));
+      a.equal(c('partners', 'fte', 'alpha', 11).v, 1, 'A2: 1 sales, consultants blank');
+      a.equal(c('partners', 'oiPerFte', 'alpha', 11).v, 180, 'A2: (150 + 30) / 1');
+      a.equal(c('partners', 'oiPerFte', 'alpha', 12).state, 'notProvided', 'A3 has no staff figures');
+      var p = window.T_FIXTURE('miniP2');
+      p.regions[0].partners[2].fteSales = 0;
+      p.regions[0].partners[2].fteConsultants = 0;
+      TAP.data.load(p);
+      a.equal(c('partners', 'oiPerFte', 'alpha', 12).state, 'notApplicable', 'no staff at all: nothing per head');
+    });
+
+    T.test('X-rows-year', 'A growth % cell names its plan year, so the address is one cell', function (a) {
+      var g = TAP.rows.cell('accounts', 'growthY2', { regionId: 'alpha', sourceRow: 11 });
+      a.equal(g.src.year, 2);
+      a.equal(TAP.sources.address(g.src).text, 'Region A plan.xlsx › 3. Customer Growth › J11');
+    });
+
+    T.test('X-rows-guards', 'Industry drill, unknown sources, region ids with a colon and two-decimal multipliers', function (a) {
+      var p = window.T_FIXTURE('mini');
+      p.regions[0].customerGrowth.accounts[1].industryId = null;   // a2 with a blank industry
+      p.regions[0].customerGrowth.accounts[3].multiplier3y = 2.25;
+      p.regions[1].id = 'br:avo';
+      TAP.data.load(p);
+      a.deepEqual(ids(build(def(), { drill: { regionIds: ['alpha'], industryIds: ['ind2'] } })), [], 'a blank industry is not in ind2');
+      a.deepEqual(TAP.rows.list('nonsense'), [], 'an unknown source lists nothing');
+      var res = build(def({ columns: [{ key: 'name' }, { key: 'multiplier3y' }] }));
+      a.deepEqual(res.target({ data: { row: 'accounts:br:avo:11' } }).items, [{ section: 'customerGrowth', regionId: 'br:avo', row: 11 }]);
+      a.equal(html(res).querySelector('tr[data-tap-row="accounts:alpha:13"] td[data-tap-col="multiplier3y"]').textContent, '2.25');
+      a.equal(res.table.columns[1].decimals, 2, 'the table column says so too, for copies');
+    });
+
     T.test('X-rows-empty', 'A scope with no rows is empty and names the regions with none', function (a) {
       var res = build(def(), { cmp: cmp({ mode: 'set', set: ['charlie'] }) });
       a.equal(res.empty, true);
