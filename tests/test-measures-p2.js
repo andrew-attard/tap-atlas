@@ -209,6 +209,22 @@
       a.equal(TAP.measures.meta('rc.nb.arr.allianceB').label, 'New business ARR, alliance b');
     });
 
+    T.test('X-measures-p2-channel-motion', 'Both-motion channel parts split by motion and add up (hand figures)', function (a) {
+      load();
+      a.ok(TAP.measures.meta('rc.all.oi.direct').dims.indexOf('motion') >= 0, 'rc.all.<t>.<channel> lists motion');
+      a.ok(TAP.measures.meta('rc.nb.oi.direct').dims.indexOf('motion') < 0, 'a one-motion part does not');
+      var d = TAP.measures.get('rc.all.oi.direct');
+      // Region A direct: new business ARR 400 + 400 + 500, services 80 + 80 + 100; customer growth 100 + 50 + 50, 20 + 10 + 10
+      a.equal(d('alpha', { motion: 'nb' }).v, 1560);
+      a.equal(d('alpha', { motion: 'cg' }).v, 240);
+      a.equal(d('alpha', {}).v, 1800, '1560 + 240');
+      // Organization: new business A 1560 + B 2200 + D 1125; customer growth A 240 + B 110 + D 360
+      a.equal(TAP.measures.combined('rc.all.oi.direct', org(), { motion: 'nb' }).v, 4885);
+      a.equal(TAP.measures.combined('rc.all.oi.direct', org(), { motion: 'cg' }).v, 710);
+      a.equal(TAP.measures.combined('rc.all.oi.direct', org(), {}).v, 5595, '4885 + 710');
+      a.equal(TAP.measures.get('rc.nb.oi.direct')('alpha', { motion: 'cg' }).v, 1560, 'a one-motion part keeps its own motion');
+    });
+
     T.test('X-measures-p2-fixture', 'The miniP2 fixture passes the contract check, and mini is unchanged', function (a) {
       var res = TAP.data.load(window.T_FIXTURE('miniP2'));
       a.ok(res.ok, 'miniP2 loads');
