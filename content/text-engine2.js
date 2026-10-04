@@ -86,6 +86,27 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
       },
       amb: { nbShare: { label: 'Share of the 3-year ARR ambition from new business', short: 'New business share' } }
     },
+    // List reports (US-2.7.2): column headings per row source, the filter's first option and each row's source
+    rows: {
+      all: 'All',
+      source: '{file}, row {row}',
+      sourceHeading: 'Source',
+      unknownColumn: 'The column "{key}" is not available for this list.',
+      sorted: { asc: '▲', desc: '▼' },
+      risk: { high: 'High', medium: 'Medium', none: 'None' },
+      newBusiness: { region: 'Region', industry: 'Industry', tier: 'Tier', subVertical: 'Sub-industry', market: 'Market',
+        targetAccounts: 'Target accounts', hitRate: 'Hit rate', avgDealSize: 'Average deal size', wins: 'Implied wins',
+        arr3: 'ARR potential, 3 years', services3: 'Services potential, 3 years', successFactors: 'Success factors',
+        alsoTargeted: 'Also targeted by' },
+      accounts: { region: 'Region', name: 'Account', industry: 'Industry', country: 'Country', productLine: 'Product line',
+        segment: 'Segment', riskLevel: 'Risk', currentArr: 'Current ARR', growthY1: 'Growth, year 1', growthY2: 'Growth, year 2',
+        growthY3: 'Growth, year 3', multiplier3y: '3-year multiplier', incr3: 'Incremental ARR, 3 years',
+        oi3: 'Order intake, 3 years', servicesRatio: 'Services ratio' },
+      partners: { region: 'Region', name: 'Partner', channel: 'Channel', maturity: 'Maturity', expertiseGeo: 'Geographic expertise',
+        expertiseProduct: 'Product expertise', fteSales: 'Sales staff (full-time equivalent)',
+        fteConsultants: 'Consultants (full-time equivalent)', fte: 'Staff (full-time equivalent)', centralSupportPct: 'Central support %',
+        arr3: 'ARR, 3 years', services3: 'Services, 3 years', oiPerFte: 'Order intake per head', alsoNamed: 'Also named by' }
+    },
     // Shares and ratios combined from their summed parts (ARCHITECTURE 17.5)
     combined: { how: { ratio: 'Calculated from the combined figures of {n} {regions}' } },
     sources: { combined: { ratio: 'Combined by this app: calculated from the combined figures of {regions}' } },
