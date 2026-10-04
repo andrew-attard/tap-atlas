@@ -13,7 +13,7 @@
   'use strict';
 
   // Switched on when ENGINE2's breakdowns (#229) and reference lines land; they have no stub to wait on.
-  var ENGINE2_BREAKDOWNS = false, ENGINE2_REFLINES = false;
+  var ENGINE2_BREAKDOWNS = true, ENGINE2_REFLINES = false;
 
   var MODES = [
     { mode: 'all' },
@@ -581,13 +581,17 @@
       var find = function (re) { return rows.filter(function (r) { return re.test(r.label); })[0]; };
       a.equal(find(/^segment$/i).cell.v, 'core', 'segment');
       a.match(String(find(/risk/i).cell.v), /^high$/i, 'risk');
-      a.equal(find(/^Growth %, 2027$/).cell.v, 0.5, 'growth year 1');
-      a.equal(find(/^Growth %, 2029$/).cell.v, 0, 'growth year 3');
+      var g1 = rows.filter(function (r) { return r.cell && r.cell.src && r.cell.src.field === 'growthPct' && r.cell.src.year === 1; });
+      var g3 = rows.filter(function (r) { return r.cell && r.cell.src && r.cell.src.field === 'growthPct' && r.cell.src.year === 3; });
+      a.equal(g1.length, 1, 'growth for year 1 is shown once');
+      a.equal(g1[0].cell.v, 0.5, 'growth year 1');
+      a.equal(g3[0].cell.v, 0, 'growth year 3');
       a.match(find(/^Source row$/).text, /Region A plan\.xlsx › 3\. Customer Growth › row 11$/, 'source row');
       rows.filter(function (r) { return r.cell && r.cell.kind; }).forEach(function (r) { a.ok(r.cell.src, r.label + ' has a source'); });
       var multi = TAP.details.build({ items: [{ section: 'customerGrowth', regionId: 'alpha', row: 13 }] }), mrows = [];
       multi.groups.forEach(function (g) { mrows = mrows.concat(g.rows); });
-      a.ok(!mrows.some(function (r) { return /^Growth %/.test(r.label); }), 'a multiplier account has no growth % by year');
+      a.ok(mrows.filter(function (r) { return r.cell && r.cell.src && r.cell.src.field === 'growthPct'; }).every(function (r) { return r.cell.state === 'notApplicable'; }),
+        'a multiplier account has no growth % by year');
       a.equal(mrows.filter(function (r) { return /multiplier/i.test(r.label); })[0].cell.v, 2, 'it shows its multiplier');
     });
 

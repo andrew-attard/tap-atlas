@@ -45,12 +45,10 @@
       });
       if (first) s.itemStyle = Object.assign({}, s.itemStyle, { color: shade(first) });
     });
-    // The key names each segment as the lookups do, the same whichever figure is shown
+    // The key: the four segments in their fixed order and ink steps, named as the lookups do, whatever the figure
     var names = {};
     (((TAP.data.lookups() || {}).segments) || []).forEach(function (s) { names[s.id] = s.name; });
-    res.legend = (res.legend || []).filter(function (l) { return l.role === 'part'; }).map(function (l, i) {
-      return Object.assign({}, l, { label: names[SEGMENTS[i]] || l.label });
-    });
+    res.legend = SEGMENTS.map(function (seg, i) { return { label: names[seg] || seg, color: th.shade(th.ink, i), role: 'part' }; });
     var target = res.target;
     // A click lists the segment thresholds of each region behind the bar, since they differ by region
     res.target = function (params) {
