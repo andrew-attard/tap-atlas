@@ -75,6 +75,18 @@
     if ((target.regionIds || []).length) TAP.layers.openDetails(target);
   }
 
+  // A click in builder HTML: a list row opens its details only; anything else follows the usual rule.
+  function pick(res, d) {
+    var target = res.target ? res.target({ data: d }) : null;
+    if (d.row) { if (target) TAP.layers.openDetails(target); } else follow(target);
+  }
+
+  // A [data-tap-opt] click in builder HTML (a list's sort headings, for example): a builder option, like its controls.
+  function option(p) { return function (key, value) { p.st.opts[key] = value; render(p); }; }
+
+  // The table view, unless the report is a list: a list is its own table (US-2.7.2).
+  function tabled(p, b) { return !!(p.st.table && b.res && b.res.table && b.ctx.type !== 'list'); }
+
   /* ---------- drawing ---------- */
 
   function source(def) {
@@ -89,7 +101,12 @@
     var C = TAP.panelChart, res = b.res;
     if (b.errors.length || !res) { C.dispose(p.cs); C.error(box, b.errors); return box; }
     if (res.empty) { C.dispose(p.cs); C.empty(box, res.missing); return box; }
-    if (p.st.table && res.table) {
+    if (b.ctx.type === 'list' && res.html) {
+      C.dispose(p.cs);
+      TAP.panelTable.list(box, res, { label: TAP.shell.label(), onPick: function (d) { pick(res, d); }, onOpt: option(p) });
+      return box;
+    }
+    if (tabled(p, b)) {
       // The chart stays alive off the page, so going back to it is instant
       if (p.cs.el && p.cs.el.parentNode) p.cs.el.parentNode.removeChild(p.cs.el);
       TAP.panelTable.render(box, res.table, { sort: p.st.sort, label: TAP.shell.label(), onSort: function (key) {
@@ -100,7 +117,7 @@
     }
     if (res.html) {
       C.dispose(p.cs);
-      C.html(box, res.html, function (d) { follow(res.target ? res.target({ data: d }) : null); });
+      C.html(box, res.html, function (d) { pick(res, d); }, option(p));
     } else if (res.option) {
       C.render(p.cs, box, res.option, { label: b.title, tall: /bubble|scatter/.test(b.ctx.type || ''),
         scale: s.expanded === p.id ? 1.3 : 1, height: res.height || null, onClick: function (prm) { follow(res.target ? res.target(prm) : null); } });
@@ -123,6 +140,11 @@
     if (!a || !p.root.contains(a)) return null;
     var k = ['data-action', 'data-control', 'data-value', 'data-type', 'data-sort'].filter(function (n) { return a.hasAttribute(n); })
       .map(function (n) { return '[' + n + '="' + a.getAttribute(n) + '"]'; }).join('');
+    // A builder option (a list's sort heading): the same option and column, whatever direction it now offers
+    var v = a.getAttribute('data-tap-value') || '', cut = v.lastIndexOf(':');
+    if (a.hasAttribute('data-tap-opt')) {
+      k += '[data-tap-opt="' + CSS.escape(a.getAttribute('data-tap-opt')) + '"][data-tap-value^="' + CSS.escape(cut > 0 ? v.slice(0, cut + 1) : v) + '"]';
+    }
     return k || null;
   }
 
@@ -154,7 +176,7 @@
       b.def && !b.errors.length ? TAP.panelMenus.render(TAP.panelMenus.spec(p, b)) : null,
       ok ? I.strip(p, highlightOf(p, s)) : null,
       bodyBox,
-      ok && !(p.st.table && b.res.table) ? TAP.panelChart.legend(b.res) : null,
+      ok && !tabled(p, b) ? TAP.panelChart.legend(b.res) : null,
       ok ? TAP.panelChart.notes(b.res) : null,
       source(b.def),
       p.statusEl

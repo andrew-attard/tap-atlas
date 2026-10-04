@@ -158,6 +158,25 @@
 .tap-panel__sort { padding: 0; font: inherit; font-weight: 800; color: inherit; background: none; border: 0; cursor: pointer; text-align: inherit; }
 .tap-panel__focus-mark { font-weight: 800; color: var(--tap-accent-deep); }
 
+/* List reports (US-2.7.2): the builder's table.tap-list scrolls inside the panel under a sticky header row, all 16 px */
+.tap-panel__html--list { max-height: var(--tap-chart-h); overflow: auto; border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-panel__html--list .tap-list { width: 100%; border-collapse: collapse; font-size: var(--tap-fs-body); background: var(--tap-ground); }
+.tap-panel__html--list .tap-list th {
+  position: sticky; top: 0; z-index: 1; padding: 10px var(--tap-sp-2); text-align: left; vertical-align: bottom;
+  background: var(--tap-ground); border-bottom: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-body);
+}
+.tap-panel__html--list .tap-list td { padding: 9px var(--tap-sp-2); border-bottom: 1px solid var(--tap-grid); vertical-align: top; font-variant-numeric: tabular-nums; }
+.tap-panel__html--list .tap-list .num { text-align: right; }
+.tap-panel__html--list .tap-list [data-tap-opt] {
+  padding: 0; font: inherit; font-size: var(--tap-fs-body); font-weight: 800; color: inherit; text-align: inherit;
+  background: none; border: 0; cursor: pointer;
+}
+.tap-panel__html--list .tap-list tbody tr[data-tap-row] { cursor: pointer; }
+.tap-panel__html--list .tap-list tbody tr[data-tap-row]:hover td { background: var(--tap-surface); }
+/* A highlighted row: bold with a ring, never colour alone */
+.tap-panel__html--list .tap-list tr.is-highlight td { font-weight: 800; box-shadow: inset 0 var(--tap-highlight-w) 0 var(--tap-accent), inset 0 calc(-1 * var(--tap-highlight-w)) 0 var(--tap-accent); }
+.tap-panel--expanded .tap-panel__html--list { max-height: max(340px, calc(100vh - 380px)); }
+
 /* Legend and size legend: HTML under the chart, so they stay readable and selectable */
 .tap-panel__legend {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--tap-sp-6);
