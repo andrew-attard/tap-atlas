@@ -989,5 +989,16 @@
       });
       a.ok(n >= 40, 'every dot checked (' + n + ')');
     });
+    T.test('X-industry-ratings-radar-fit', 'Polish (a): radar names fit a half-width panel: smaller radius, long names on two lines', function (a) {
+      var res = ratingsRes('radar', { mode: 'pair', focus: 'alpha', second: 'bravo' }, 'ind1'), r = res.option.radar;
+      a.equal(r.radius, '58%', 'radius leaves room for the names');
+      var f = r.axisName.formatter;
+      a.equal(f('Competitive intensity'), 'Competitive\nintensity', 'a long name breaks at its middle space');
+      a.equal(f('Growth potential'), 'Growth\npotential', 'another long name');
+      a.equal(f('References'), 'References', 'a short name stays on one line');
+      a.deepEqual(r.indicator.map(function (i) { return i.name; }), ['Growth potential', 'Criticality', 'Competitive intensity', 'References', 'Expertise', 'Product fit'],
+        'the names themselves are unchanged');
+      a.ok(r.axisName.fontSize >= TH.type.chartMin, 'at 13 px or more');
+    });
   });
 })(window.TAP);
