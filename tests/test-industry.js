@@ -610,6 +610,115 @@
       a.ok(TAP.quadrantLabels.place([], {}, {}).w > 0, 'no points: still a frame');
     });
 
+    /* ---------- QA-3 (b): every bubble identifiable without hover ---------- */
+
+    // The six comparison settings of the QA matrix, picked by position like scripts/qa/lib-qa.sh does.
+    function settingsOf(R) {
+      return [['all', { mode: 'all' }], ['one-average', { mode: 'one', focus: R[4], restAgg: 'average' }],
+        ['one-total', { mode: 'one', focus: R[0], restAgg: 'total' }], ['pair', { mode: 'pair', focus: R[0], second: R[R.length - 1] }],
+        ['set', { mode: 'set', set: [R[0], R[3], R[R.length - 1]] }], ['org', { mode: 'org' }]];
+    }
+    // The chart sizes of a half-width panel at 1280 and a full-width one at 853 x 533 @150%, and a narrower one.
+    var QUAD_SIZES = [{ w: 540, h: 560 }, { w: 700, h: 560 }, { w: 440, h: 520 }];
+    function numberOf(industryId) {
+      return TAP.data.industries({ rated: true }).map(function (d) { return d.id; }).indexOf(industryId) + 1;
+    }
+    function marks(res) { return series(res).filter(function (s) { return s.tapRole === 'mark'; }).reduce(function (o, s) { return o.concat(s.data || []); }, []); }
+    function markOf(res, d) { return marks(res).filter(function (m) { return m.entityId === d.entityId && m.industryId === d.industryId; })[0]; }
+    // Every label and number on screen as a box, and every bubble as a circle, from the option's own plot margins.
+    function layoutOf(res, size) {
+      var g = res.option.grid, w = size.w - g.left - g.right, h = size.h - g.top - g.bottom, fs = TH.type.chart, nfs = TH.type.chartMin;
+      function at(v) { return { x: g.left + (v[0] - 1) / 2 * w, y: g.top + (3 - v[1]) / 2 * h }; }
+      var dots = points(res).map(function (d) { var c = at(d.value); c.r = d.symbolSize / 2; c.d = d; return c; }), boxes = [];
+      points(res).filter(function (d) { return d.label.show; }).forEach(function (d) {
+        var lines = String(d.label.formatter).split('\n'), tw = Math.max.apply(null, lines.map(function (l) { return l.length; })) * fs * 0.5;
+        var c = at(d.value), r = d.symbolSize / 2, gap = d.label.position[0] - (d.label.side === 'right' ? d.symbolSize : 0), bh = lines.length * fs;
+        boxes.push({ name: d.name, x: d.label.side === 'right' ? c.x + r + gap : c.x - r + gap - tw, y: c.y + d.label.dy - bh / 2, w: tw, h: bh, own: null });
+      });
+      marks(res).filter(function (m) { return m.label && m.label.show; }).forEach(function (m) {
+        var c = at(m.value), o = m.label.offset || [0, 0], tw = String(m.label.formatter).length * nfs * 0.55, own = dots.filter(function (x) {
+          return x.d.entityId === m.entityId && x.d.industryId === m.industryId; })[0];
+        boxes.push({ name: '#' + m.label.formatter, x: c.x + o[0] - tw / 2, y: c.y + o[1] - nfs * 0.36, w: tw, h: nfs * 0.72, own: own });
+      });
+      return { dots: dots, boxes: boxes };
+    }
+    function clashes(L) {
+      var out = [], hit = function (b, c) {
+        var nx = Math.max(b.x, Math.min(c.x, b.x + b.w)), ny = Math.max(b.y, Math.min(c.y, b.y + b.h));
+        return (c.x - nx) * (c.x - nx) + (c.y - ny) * (c.y - ny) < (c.r - 1) * (c.r - 1);
+      };
+      L.boxes.forEach(function (p, i) {
+        L.boxes.slice(i + 1).forEach(function (q) { if (p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h) out.push(p.name + ' / ' + q.name); });
+        L.dots.forEach(function (c) { if (c !== p.own && hit(p, c)) out.push(p.name + ' on the bubble of ' + c.d.name + ' · ' + c.d.entityId); });
+      });
+      return out;
+    }
+    // A bubble is identifiable when its name is beside it, or it carries a number the key names.
+    function unnamed(res) {
+      var key = {};
+      (res.legend || []).forEach(function (l) { if (l.mark != null && l.role === 'industry') key[l.mark] = l.label; });
+      return points(res).filter(function (d) {
+        if (d.label.show && String(d.label.formatter).replace(/\n/g, ' ') === d.name) return false;
+        var m = markOf(res, d);
+        return !(m && m.label.show && m.label.formatter === String(numberOf(d.industryId)) && key[m.label.formatter] === d.name);
+      }).map(function (d) { return d.name + ' · ' + d.entityId; });
+    }
+
+    T.test('X-industry-quad-identify', 'QA-3: in every comparison setting, every bubble is named or numbered, and nothing overlaps', function (a) {
+      sample();
+      settingsOf(sampleIds()).forEach(function (s) {
+        QUAD_SIZES.forEach(function (size) {
+          var res = quad('bubble', s[1], { size: size }), tag = s[0] + ' ' + size.w + ' px: ';
+          a.ok(points(res).length >= 18, tag + 'draws the bubbles (' + points(res).length + ')');
+          a.deepEqual(unnamed(res), [], tag + 'every bubble is named beside it or numbered with a key entry');
+          a.deepEqual(clashes(layoutOf(res, size)), [], tag + 'no label or number overlaps another, or another bubble');
+        });
+      });
+    });
+
+    T.test('X-industry-quad-numbers', 'QA-3: each industry keeps one number, in lookup order, in its bubbles, the key and the table', function (a) {
+      sample();
+      var R = sampleIds(), inds = TAP.data.industries({ rated: true });
+      settingsOf(R).forEach(function (s) {
+        var res = quad('bubble', s[1], { size: { w: 540, h: 560 } }), tag = s[0] + ': ';
+        var key = res.legend.filter(function (l) { return l.role === 'industry'; });
+        a.deepEqual(key.map(function (l) { return [l.mark, l.label]; }), inds.map(function (d, i) { return [i + 1, d.name]; }), tag + 'the key lists 1 to n in lookup order');
+        key.forEach(function (l) { a.equal(l.color, null, tag + l.label + ': a number, no colour swatch'); });
+        a.ok(res.legend.some(function (l) { return l.role !== 'industry' && l.color; }), tag + 'the region or average swatches stay');
+        marks(res).forEach(function (m) { a.equal(m.raw, undefined, tag + 'a number is not a value'); });
+        var s0 = series(res).filter(function (x) { return x.tapRole === 'mark'; })[0];
+        a.ok(s0 && s0.silent && s0.z > 8, tag + 'numbers sit over the bubbles and leave hover and clicks to them');
+        a.ok(res.table.columns.some(function (c) { return c.key === 'num'; }), tag + 'the table has a number column');
+        res.table.rows.forEach(function (r) { a.equal(r.cells.num.v, String(numberOf(r.industryId)), tag + 'table number for ' + r.industryId); });
+      });
+      var big = quad('bubble', { mode: 'all' }, { size: { w: 700, h: 560 } });
+      a.ok(marks(big).some(function (m) { return !m.label.offset || (!m.label.offset[0] && !m.label.offset[1]); }), 'numbers sit inside the bubbles where they fit');
+      a.ok(marks(big).filter(function (m) { return !m.label.backgroundColor; }).every(function (m) { return m.label.color === TH.onColour; }), 'in on-colour text');
+    });
+
+    T.test('X-industry-quad-no-web', 'QA-3: one against the rest and a pair use numbers instead of leader lines', function (a) {
+      sample();
+      settingsOf(sampleIds()).filter(function (s) { return /one|pair/.test(s[0]); }).forEach(function (s) {
+        QUAD_SIZES.forEach(function (size) {
+          var shown = points(quad('bubble', s[1], { size: size })).filter(function (d) { return d.label.show; });
+          a.deepEqual(shown.filter(function (d) { return d.labelLine && d.labelLine.show; }).map(function (d) { return d.name; }), [],
+            s[0] + ' ' + size.w + ' px: every name sits beside its bubble, no leader line');
+        });
+      });
+    });
+
+    T.test('X-industry-quad-filter-numbers', 'QA-3: with an industry filter each point carries its region number, matching the legend', function (a) {
+      sample();
+      var res = quad('bubble', { mode: 'all' }, { size: { w: 540, h: 560 }, opts: { industryFilter: TAP.data.industries({ rated: true })[0].id } });
+      var key = {};
+      res.legend.forEach(function (l) { if (l.mark != null) key[l.mark] = l.label; });
+      points(res).forEach(function (d) {
+        var m = markOf(res, d), n = TAP.data.regionIndex(d.entityId) + 1, name = TAP.content.regionName(TAP.data.region(d.entityId));
+        a.ok((d.label.show && d.label.formatter === name) || (m && m.label.formatter === String(n) && key[n] === name), name + ' is identifiable');
+      });
+      a.deepEqual(clashes(layoutOf(res, { w: 540, h: 560 })), [], 'nothing overlaps');
+    });
+
     T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {
       var all = quad('bubble', { mode: 'all' }).takeaway, one = quad('bubble', { mode: 'one', focus: 'delta' }).takeaway;
       a.ok(all && one && all !== one, 'differs by scope');
