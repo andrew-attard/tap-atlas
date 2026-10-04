@@ -657,11 +657,13 @@
       });
     });
 
-    T.test('X-nb-levers-view', 'The levers panel draws at full width on the view', function (a) {
+    T.test('X-nb-levers-view', 'The levers panel draws next to the channels; the grid takes the full width', function (a) {
       withView(function (root) {
-        var p = root.querySelector('.tap-nb__wide .tap-panel[data-report="nb-levers"]');
-        a.ok(p, 'a full-width panel');
+        var p = root.querySelector('.tap-vh-pair .tap-panel[data-report="nb-levers"]');
+        a.ok(p, 'in a two-panel row');
+        a.ok(p.parentNode.parentNode.querySelector('.tap-panel[data-report="nb-channels"]'), 'with the channels');
         a.equal(p.querySelector('.tap-panel__error'), null, 'with no error');
+        a.ok(root.querySelector('.tap-nb__wide .tap-panel[data-report="nb-industries"]'), 'the grid at full width');
       });
     });
   });
