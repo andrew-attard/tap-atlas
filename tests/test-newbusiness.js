@@ -443,6 +443,18 @@
         });
       });
 
+    T.test('X-nb-grid-highlight-combined', 'A cell highlight reaches the combined column that holds its region', function (a) {
+      var hl = { reportId: IND, regionIds: ['delta'], industryIds: ['ind3'], mark: 'cell' };
+      function marked(c) {
+        return Array.prototype.map.call(parse(grid(c, { highlight: hl }).html).querySelectorAll('.tap-nbg__cell.is-hl'), function (el) {
+          return el.getAttribute('data-tap-region') + ':' + el.getAttribute('data-tap-industry');
+        });
+      }
+      a.deepEqual(marked({ mode: 'org' }), ['org:ind3'], 'organization total');
+      a.deepEqual(marked({ mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }), ['rest:ind3'], 'the rest, holding Region D');
+      a.deepEqual(marked({ mode: 'one', focus: 'delta', restAs: 'combined', restAgg: 'total' }), ['delta:ind3'], 'the focus region itself, not the rest');
+    });
+
     T.test('X-nb-grid-highlight', 'A highlight marks the industry row or the cell', function (a) {
       var box = parse(grid({ mode: 'all' }, { highlight: { reportId: IND, regionIds: ['delta'], industryIds: ['ind3'], mark: 'cell' } }).html);
       var hl = box.querySelectorAll('.tap-nbg__cell.is-hl');
