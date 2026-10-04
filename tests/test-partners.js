@@ -1,7 +1,7 @@
 /*
  * File: tests/test-partners.js
  * Purpose: Tests for the Partners view: the view itself (US-2.3.1) and its reports.
- * Provides: test cases TPV-TC-411 to TPV-TC-417 and X-pt-*
+ * Provides: test cases TPV-TC-411 to TPV-TC-433 (automated ones) and X-pt-*
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-customers.js (window.CGP_T), the app scripts and fixtures
  * Used by: tests.html
  * Owner: CGP stream
