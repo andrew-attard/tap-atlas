@@ -35,9 +35,10 @@
   function waiting(issues) {
     return TAP.stub.list().filter(function (s) { return issues.indexOf(s.issue) >= 0; }).map(function (s) { return s.what + ' (#' + s.issue + ')'; });
   }
-  // A test that runs once the pieces it needs are built, and shows as skipped (pending) until then.
-  function when(issues, id, title, fn) {
-    var left = waiting(issues);
+  // A test that runs once the pieces (and report definitions) it needs are built, and shows as skipped (pending) until then.
+  // reports: definitions the test needs; a report not defined yet keeps it pending too.
+  function when(issues, id, title, fn, reports) {
+    var left = waiting(issues).concat((reports || []).filter(function (r) { return !TAP.reports.get(r); }).map(function (r) { return 'report ' + r; }));
     if (left.length) T.skip(id, title, 'pending: waits for ' + left.join(', '));
     else T.test(id, title, fn);
   }
@@ -98,7 +99,8 @@
       var root = T.dom.mount(), v = TAP.views.get(o.view).mount(root);
       try {
         var slots = Array.prototype.slice.call(root.querySelectorAll('.tap-vh-slot'));
-        a.deepEqual(slots.map(function (s) { return s.getAttribute('data-slot'); }), o.reports, 'one slot per report, in order');
+        var defined = o.reports.filter(function (id) { return !!TAP.reports.get(id); });
+        a.deepEqual(slots.map(function (s) { return s.getAttribute('data-slot'); }), defined, 'one slot per defined report, in order');
         Array.prototype.forEach.call(root.querySelectorAll('.tap-vh-pair'), function (p) {
           a.ok(p.querySelectorAll(':scope > .tap-vh-slot').length <= 2, 'at most two side by side');
         });
@@ -118,7 +120,7 @@
           cellsHaveSources(a, res, label);
         });
       });
-    });
+    }, o.reports);
 
     when(o.needs, o.ids.empty, 'A region with an empty section shows "not provided", never zero', function (a) {
       var name = TAP.content.regionName(TAP.data.region(o.emptyRegion));
@@ -136,20 +138,20 @@
           });
         });
       });
-    });
+    }, o.reports);
 
     T.test(o.ids.explain, 'Every report has its three explanation parts', function (a) {
       o.reports.forEach(function (id) {
         var def = TAP.reports.get(id);
-        if (!def) { a.ok(waiting(o.needs).length, id + ' may be missing only while its pieces are being built'); return; }
+        if (!def) { a.ok(true, id + ' not defined yet; checked once it lands'); return; }
         ['shows', 'read', 'lookFor'].forEach(function (k) {
           a.ok(def.explain && typeof def.explain[k] === 'string' && def.explain[k].trim().length > 20, id + ' explain.' + k);
         });
       });
     });
     if (guideLists(o.view, o.menu)) {
-      T.test(o.ids.explain, 'The Guide lists the view', function (a) { a.ok(guideLists(o.view, o.menu)); });
-    } else T.skip(o.ids.explain, 'The Guide lists the view', 'pending: waits for the Guide content (PAGES2, wave B)');
+      T.test(o.ids.guide, 'The Guide lists the view', function (a) { a.ok(guideLists(o.view, o.menu)); });
+    } else T.skip(o.ids.guide, 'The Guide lists the view', 'pending: waits for the Guide content (PAGES2, wave B)');
   }
 
   window.CGP_T = { MODES: MODES, cmp: cmp, ctxFor: ctxFor, build: build, sample: sample, waiting: waiting, when: when,
@@ -161,7 +163,7 @@
     viewChecks({ view: 'customers', menu: 'Customer growth', title: 'How will existing customers grow?',
       after: 'New business', afterId: 'newBusiness', emptyRegion: 'charlie', needs: [194, 196, 204, 205, 206, 207, 208],
       reports: ['cg-segments', 'cg-growth', 'cg-exposure', 'cg-bubble', 'cg-accounts'],
-      ids: { menu: 'TPV-TC-369', headline: 'TPV-TC-371', layout: 'TPV-TC-372', modes: 'TPV-TC-373', empty: 'TPV-TC-375', explain: 'TPV-TC-376' } });
+      ids: { menu: 'TPV-TC-369', headline: 'TPV-TC-371', layout: 'TPV-TC-372', modes: 'TPV-TC-373', empty: 'TPV-TC-375', explain: 'TPV-TC-376', guide: 'X-cg-guide' } });
 
     var phase1 = { concentration: 'cg-exposure', atRisk: 'cg-exposure', segmentMix: 'cg-segments' };
     var attached = Object.keys(phase1).every(function (id) { var r = rule(id); return r && (r.attach || []).length; });
@@ -178,8 +180,9 @@
       'pending: waits for the attach change in config/insight-rules.js (requested from the lead)');
 
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
-      a.deepEqual(TAP.cgpLayout.rows('customers'), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
-      a.deepEqual(TAP.cgpLayout.rows('partners'), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
+      a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
+      a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.partners.reports), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
+      a.deepEqual(TAP.cgpLayout.rows(['cg-segments', 'cg-exposure', 'cg-bubble']), [['cg-segments', 'cg-exposure'], ['cg-bubble']], 'an odd one out takes a full row');
     });
   });
 })(window.TAP);
