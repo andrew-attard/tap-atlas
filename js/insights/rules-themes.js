@@ -29,7 +29,7 @@
         })),
         sources: [count.src].concat(th.regions.map(function (g) { return g.quotes[0].src; })),
         // Strength grows from the threshold to every region, kept below the rules that compare figures
-        strength: 0.4 * (n - min + 1) / Math.max(1, total - min + 1), money: 0 };
+        strength: 0.2 * (n - min + 1) / Math.max(1, total - min + 1), money: 0 };
     });
   });
 })(window.TAP);
