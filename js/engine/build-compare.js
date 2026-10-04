@@ -27,6 +27,7 @@
     var draw = { cats: cats, keys: keys, bd: bd, rows: rows, ds: ds, ctx: ctx, k: k, res: res };
     // A dot plot with a breakdown draws grouped bars until the dot plot takes breakdowns (#195)
     res.option = type === 'radar' ? radar(draw) : type === 'dot' && !bd.length ? dot(draw) : bd.length ? grouped(draw) : bars(draw);
+    if (type !== 'radar') k.refLines(res.option, ctx.refLines || (def.options || {}).refLines);   // labelled lines (17.7)
     return res;
   }
 
