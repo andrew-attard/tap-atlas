@@ -3,7 +3,7 @@
  * Purpose: Decides which chart types suit a report's data shape and the current comparison (D18), and holds the
  *          small drawing kit the generic builders share: escaped tooltips, the not-provided mark, highlight rings,
  *          axes, bubble sizes, tables, notes and the builder result.
- * Provides: TAP.shapes (types, label, kit)
+ * Provides: TAP.shapes (types, label, kit, including refLines)
  * Depends on: js/engine/registry.js, js/theme.js, js/core/dom.js, js/core/format.js, js/core/content.js,
  *             js/engine/aggregate.js (combined-figure labels)
  * Used by: js/panel/panel-menus.js, js/engine/build-compare.js, build-parts.js, build-xy.js, js/reports/tier-grid.js,
@@ -182,6 +182,22 @@
     };
   }
 
+  // Labelled reference lines (17.7, e.g. the exposure thresholds) on a chart with a value x axis: dashed and named,
+  // so never told apart by colour alone, silent to clicks, and the axis stretched to reach each one.
+  function refLines(option, lines) {
+    lines = (lines || []).filter(function (l) { return l && typeof l.value === 'number' && isFinite(l.value); });
+    var ax = option && option.xAxis, host = ax && ax.type === 'value' && (option.series || []).filter(function (s) { return s.tapRole === 'value'; })[0];
+    if (!lines.length || !host) return option;
+    var vals = lines.map(function (l) { return l.value; }), hi = Math.max.apply(null, vals), lo = Math.min.apply(null, vals);
+    host.markLine = { silent: true, symbol: 'none', z: 5, lineStyle: { color: th().ink, width: th().border.rule, type: 'dashed' },
+      label: { show: true, position: 'insideEndTop', fontSize: th().type.chart, color: th().ink,
+        formatter: function (p) { return (p.data && p.data.name) || p.name || ''; } },
+      data: lines.map(function (l) { return { xAxis: l.value, name: String(l.label == null ? '' : l.label) }; }) };
+    ax.max = typeof ax.max === 'number' ? Math.max(ax.max, hi) : function (v) { return Math.max(v.max, hi); };
+    if (typeof ax.min === 'number' && lo < ax.min) ax.min = lo;
+    return option;
+  }
+
   function result(def, ds, extra) {
     return Object.assign({ option: null, html: null, table: null, legend: [], sizeLegend: null, notes: [],
       missing: ds ? ds.missing : [], empty: ds ? ds.empty : false, error: null,
@@ -201,6 +217,6 @@
     th: th, t: t, lower: lower, colOf: colOf, visibleRows: visibleRows, tip: tip, exact: exact, cellRows: cellRows,
     axisFormatter: axisFormatter, valueAxis: valueAxis, grid: grid, npSeries: npSeries, ringSeries: ringSeries,
     highlighted: highlighted, sizeScale: sizeScale, sizeLegend: sizeLegend, table: table, notes: notes, legendOf: legendOf,
-    result: result, safely: safely
+    result: result, safely: safely, refLines: refLines
   } };
 })(window.TAP);
