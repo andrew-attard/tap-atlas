@@ -6,3 +6,7 @@
  * Used by: index.html, index-sample.html, tests.html
  * Owner: CGP stream. Colours and font sizes come from theme variables only.
  */
+
+/* ---------- the Customer growth and Partners pages (US-2.2.1, US-2.3.1) ---------- */
+.tap-cgp__body { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
+.tap-cgp__wide { min-width: 0; }
