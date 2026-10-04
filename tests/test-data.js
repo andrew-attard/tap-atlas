@@ -97,6 +97,11 @@
         r.partners.forEach(function (x) { names.push(x.name); });
       });
       var seen = {};
+      // Q04 plants one partner named by two regions (shared targets, US-2.5.3); account names stay unique
+      var shared = [];
+      (X.q04 ? X.q04.shared : []).forEach(function (e) { shared = shared.concat(e.names); });
+      P.regions.forEach(function (r) { r.partners.forEach(function (x) { if (shared.indexOf(x.name) >= 0) names.splice(names.indexOf(x.name), 1); }); });
+      a.equal(shared.length, 1, 'one planted shared partner name');
       names.forEach(function (n) { a.ok(!seen[n], 'used once: ' + n); seen[n] = true; });
       a.ok(names.length > 100, 'plenty of names: ' + names.length);
     });
