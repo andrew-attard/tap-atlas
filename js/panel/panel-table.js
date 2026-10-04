@@ -3,6 +3,7 @@
  * Purpose: Draws the table view of any report (the builder's table, so it shows the same data as the chart),
  *          sortable, with exact figures, the focus row marked and a source column, and copies it as text that
  *          pastes into Excel as cells (US-1.2.4). A list report's HTML gets the same row count and copy button (US-2.7.2).
+ *          Headings of both carry the value kind glyph and word, with a one-line key underneath (US-2.6.4).
  * Provides: TAP.panelTable (render, list, toText, clipboard)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js, js/core/sources.js,
  *             js/panel/panel-chart.js (html, at call time)
@@ -84,12 +85,53 @@
     return Promise.resolve(fallback());
   }
 
-  function header(col, sort, onSort) {
+  /* ---------- value kinds (US-2.6.4) ---------- */
+
+  var KINDS = ['IN', 'PRE', 'DER', 'APP'];
+
+  // The kinds a column shows: the one it names, else those of its cells (blank cells count), in a fixed order.
+  function kindsOf(table, col) {
+    if (col.key === SRC) return [];
+    if (col.kind) return [col.kind];
+    var seen = {};
+    table.rows.forEach(function (r) { var c = r.cells[col.key]; if (c && c.kind) seen[c.kind] = true; });
+    return KINDS.filter(function (k) { return seen[k]; });
+  }
+
+  function kindTag(k) {
+    var f = TAP.format.kind(k);
+    return el('span', { class: 'tap-kind' }, [el('span', { class: 'tap-kind__glyph', 'aria-hidden': 'true' }, f.glyph), ' ', f.label]);
+  }
+
+  // The glyph and word under a heading's name; null for a column of names.
+  function kindLine(kinds) { return kinds.length ? el('span', { class: 'tap-panel__colkind' }, kinds.map(kindTag)) : null; }
+
+  // The one-line key under a list or table: every kind its columns show, each once. Null when there are none.
+  function kindKey(table) {
+    var all = {};
+    table.columns.forEach(function (c) { kindsOf(table, c).forEach(function (k) { all[k] = true; }); });
+    var list = KINDS.filter(function (k) { return all[k]; });
+    return list.length ? el('p', { class: 'tap-panel__kind-key' }, [el('span', { class: 'tap-panel__kind-key-label' }, t('kindKey'))].concat(list.map(kindTag))) : null;
+  }
+
+  // Adds the kinds to a list's headings, found by data-tap-col or else by the column's sort button (17.4).
+  function markHeadings(box, table) {
+    TAP.dom.qsa('th', box).forEach(function (th) {
+      var key = th.getAttribute('data-tap-col'), b = key ? null : TAP.dom.qs('[data-tap-opt="sort"]', th), v = b && b.getAttribute('data-tap-value');
+      if (!key && v) key = v.slice(0, v.lastIndexOf(':') > 0 ? v.lastIndexOf(':') : v.length);
+      var col = table.columns.filter(function (c) { return c.key === key; })[0], line = col && kindLine(kindsOf(table, col));
+      if (line) th.appendChild(line);
+    });
+  }
+
+  function header(table, col, sort, onSort) {
     var on = sort && sort.key === col.key;
     return el('th', { class: col.align === 'right' ? 'num' : null, scope: 'col',
-      'aria-sort': on ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none' },
+      'aria-sort': on ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none' }, [
       el('button', { type: 'button', class: 'tap-panel__sort', 'data-sort': col.key, onclick: function () { onSort(col.key); } },
-        [col.label, el('span', { class: 'tap-panel__arrow', 'aria-hidden': 'true' }, on ? (sort.dir > 0 ? ' ▲' : ' ▼') : '')]));
+        [col.label, el('span', { class: 'tap-panel__arrow', 'aria-hidden': 'true' }, on ? (sort.dir > 0 ? ' ▲' : ' ▼') : '')]),
+      kindLine(kindsOf(table, col))
+    ]);
   }
 
   // The row count and the copy button over a table or a list, and the status line for the copy message.
@@ -127,8 +169,10 @@
       })));
     });
     box.appendChild(el('div', { class: 'tap-panel__tablewrap' }, el('table', { class: 'tap-table tap-panel__table' }, [
-      el('thead', null, el('tr', null, cols.map(function (c) { return header(c, opts.sort, opts.onSort); }))), tbody
+      el('thead', null, el('tr', null, cols.map(function (c) { return header(table, c, opts.sort, opts.onSort); }))), tbody
     ])));
+    var key = kindKey(table);
+    if (key) box.appendChild(key);
     return box;
   }
 
@@ -150,6 +194,11 @@
     if (res.table) head(box, res.table, { label: opts.label }, 'listCount');
     var inner = TAP.panelChart.html(box, res.html, opts.onPick, opts.onOpt);
     inner.classList.add('tap-panel__html--list');
+    if (res.table) {
+      markHeadings(inner, res.table);
+      var key = kindKey(res.table);
+      if (key) box.appendChild(key);
+    }
     return inner;
   }
 
