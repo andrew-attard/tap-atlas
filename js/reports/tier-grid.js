@@ -3,9 +3,8 @@
  * Purpose: Draws the tier grid (US-1.5.4): industries against the regions in scope, the tier each leader chose,
  *          group priorities marked as set centrally, and a column counting regions per tier. Offers the four row
  *          sorts and a bubble grid where colour is the tier and size a system figure.
- * Provides: chart builder 'tierGrid' (registered with TAP.builders), TAP.tierStats (forIndustry, all, mostSplit,
- *           SORTS)
- * Depends on: js/engine/registry.js, js/engine/scope.js, js/engine/measures.js, js/engine/shapes.js (drawing kit),
+ * Provides: chart builder 'tierGrid' (registered with TAP.builders)
+ * Depends on: js/reports/tier-stats.js, js/engine/registry.js, js/engine/scope.js, js/engine/measures.js, js/engine/shapes.js (drawing kit),
  *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/data.js, js/core/store.js
  * Used by: config/reports-industry.js (ind-tiers), js/views/industry.js (default industry)
  */
@@ -19,45 +18,9 @@
   function tierCell(regionId, industryId) { return TAP.measures.get('ind.tier')(regionId, { industryId: industryId }); }
   function has(list, x) { return (list || []).indexOf(x) >= 0; }
 
-  /* ---------- tier statistics (also used by the view for its default industry) ---------- */
-
-  // How the given regions placed one industry: counts per tier, blanks, and how far they agree.
-  function forIndustry(industryId, regionIds) {
-    var n = { 1: 0, 2: 0, 3: 0 }, np = [], sum = 0;
-    regionIds.forEach(function (r) {
-      var c = tierCell(r, industryId);
-      if (c.state === 'value' && n[c.v] != null) { n[c.v]++; sum += c.v; } else if (c.state === 'notProvided') np.push(r);
-    });
-    var provided = n[1] + n[2] + n[3], top = Math.max(n[1], n[2], n[3]);
-    return { industryId: industryId, n: n, np: np, provided: provided, mean: provided ? sum / provided : null,
-      share: provided ? top / provided : 1, distinct: [1, 2, 3].filter(function (x) { return n[x] > 0; }).length };
-  }
-
-  function all(regionIds) {
-    return TAP.data.industries({ rated: true }).map(function (ind, i) { return Object.assign(forIndustry(ind.id, regionIds), { idx: i, ind: ind }); });
-  }
-
-  /* ---------- sorts ---------- */
-
-  function plIndex(id) {
-    var pls = (TAP.data.lookups().productLines || []).map(function (p) { return p.id; }), i = pls.indexOf(id);
-    return i < 0 ? pls.length : i;
-  }
-  function meanOf(s) { return s.mean == null ? 9 : s.mean; }
-  var SORTS = {
-    // Group priorities first, then the industries regions placed highest on average.
-    groupPriority: function (a, b) { return (b.ind.groupPriority ? 1 : 0) - (a.ind.groupPriority ? 1 : 0) || meanOf(a) - meanOf(b) || a.idx - b.idx; },
-    // Largest share of regions on one tier first.
-    agreement: function (a, b) {
-      return b.share - a.share || b.provided - a.provided || (b.ind.groupPriority ? 1 : 0) - (a.ind.groupPriority ? 1 : 0) || a.idx - b.idx;
-    },
-    // Smallest share on one tier first, then more distinct tiers.
-    disagreement: function (a, b) { return a.share - b.share || b.distinct - a.distinct || a.idx - b.idx; },
-    productLine: function (a, b) { return plIndex(a.ind.productLine) - plIndex(b.ind.productLine) || SORTS.groupPriority(a, b); }
-  };
-
-  // The industry regions disagree on most (the ratings panel's default, US-1.5.6).
-  function mostSplit(regionIds) { var list = all(regionIds).sort(SORTS.disagreement); return list.length ? list[0].industryId : null; }
+  // Tier statistics live in js/reports/tier-stats.js; read them at call time.
+  function all(regionIds) { return TAP.tierStats.all(regionIds); }
+  function sortFns() { return TAP.tierStats.SORTS; }
 
   /* ---------- columns, highlights ---------- */
 
@@ -89,9 +52,9 @@
 
   function model(ctx) {
     var def = ctx.def, cols = columns(ctx), ids = cols.map(function (c) { return c.id; });
-    var sorts = (def.options && def.options.sorts) || Object.keys(SORTS);
+    var sorts = (def.options && def.options.sorts) || Object.keys(sortFns());
     var sort = ctx.opts && has(sorts, ctx.opts.sort) ? ctx.opts.sort : sorts[0];
-    var rows = all(ids).sort(SORTS[sort] || SORTS.groupPriority);
+    var rows = all(ids).sort(sortFns()[sort] || sortFns().groupPriority);
     rows.forEach(function (r) { r.cells = ids.map(function (id) { return tierCell(id, r.industryId); }); });
     return { def: def, cols: cols, ids: ids, rows: rows, sort: sort, sorts: sorts, hl: marker(ctx.highlight),
       selected: ctx.industryId || TAP.store.get().industry };
@@ -251,7 +214,7 @@
       var apart = m.rows.filter(function (r) { var c = r.cells[0], o = othersMode(r); return c.state === 'value' && o != null && o !== c.v; });
       if (apart.length) return t('tierGrid.takeawayFocus', { region: focus.label, n: apart.length, total: m.rows.length, industry: apart[0].ind.name });
     }
-    var split = m.rows.slice().sort(SORTS.disagreement)[0];
+    var split = m.rows.slice().sort(sortFns().disagreement)[0];
     if (split.distinct <= 1) return t('tierGrid.takeawaySame');
     var same = m.rows.filter(function (r) { return r.distinct === 1; }).length;
     var counts = [1, 2, 3].filter(function (x) { return split.n[x]; }).map(function (x) { return t('tierGrid.countPart', { tier: x, n: split.n[x] }); });
@@ -304,6 +267,5 @@
     return [t(ents.some(function (e) { return e.role === 'focus'; }) ? 'tierGrid.notCombinedRest' : 'tierGrid.notCombinedAll')];
   }
 
-  TAP.tierStats = { forIndustry: forIndustry, all: all, mostSplit: mostSplit, SORTS: SORTS };
   TAP.builders.register('tierGrid', TAP.shapes.kit.safely(build));
 })(window.TAP);
