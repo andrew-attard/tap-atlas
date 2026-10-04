@@ -166,7 +166,8 @@
   background: var(--tap-ground); border-bottom: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-body);
 }
 .tap-panel__html--list .tap-list td { padding: 9px var(--tap-sp-2); border-bottom: 1px solid var(--tap-grid); vertical-align: top; font-variant-numeric: tabular-nums; }
-.tap-panel__html--list .tap-list .num { text-align: right; }
+.tap-panel__html--list .tap-list .num, .tap-panel__html--list .tap-list .tap-list__num { text-align: right; }
+.tap-panel__html--list .tap-list .tap-list__src { font-size: var(--tap-fs-label); color: var(--tap-muted); }
 .tap-panel__html--list .tap-list [data-tap-opt] {
   padding: 0; font: inherit; font-size: var(--tap-fs-body); font-weight: 800; color: inherit; text-align: inherit;
   background: none; border: 0; cursor: pointer;
