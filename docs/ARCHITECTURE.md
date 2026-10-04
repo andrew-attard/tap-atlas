@@ -429,19 +429,17 @@ vendor/echarts.min.js
 js/theme.js
 js/core/namespace.js  dom.js  icons.js  storage.js  store.js  format.js
 config/settings.js
-content/ui-text.js  glossary.js  guide.js
+content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  glossary.js  guide.js
    [index.html only: content/organization.js]
 js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
 js/core/sources.js  check.js  data.js
-js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  shapes.js  prepare.js
-js/engine/build-compare.js  build-parts.js  build-xy.js
+js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js
 config/reports.js  reports-overview.js  reports-industry.js  views.js  insight-rules.js
 js/reports/tier-grid.js  quadrant.js  details.js
-js/insights/engine.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js
-            rules-realism.js  rules-exposure.js  rules-capability.js
+js/insights/engine.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel.js
-js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js
+js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js
 js/views/overview-cards.js  overview.js  industry.js  insights.js  guide.js
 js/ui/app.js
 ```
