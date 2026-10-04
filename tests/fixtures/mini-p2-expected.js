@@ -144,7 +144,8 @@ window.TEST_EXPECT.miniP2 = {
     // not provided and a Tier 3 one not applicable (D48), so: ind1 A 1655 + B 3400; ind2 B 600; ind3 D 2850;
     // ind4 A 600 + C 300. "Other" has no value anywhere, so it gets no column.
     { dim: 'industry', id: 'nb.arr', entity: 'org', values: { ind1: 5055, ind2: 600, ind3: 2850, ind4: 900 }, total: 9405 },
-    { dim: 'industry', id: 'nb.arr', entity: 'alpha', values: { ind1: 1655, ind2: null, ind4: 600 }, total: 2255 },
+    // Region A alone: only industries with a value in scope get a column (ind2 is not provided, ind3 not applicable)
+    { dim: 'industry', id: 'nb.arr', entity: 'alpha', values: { ind1: 1655, ind4: 600 }, total: 2255 },
     // rc.nb.arr by channel: direct 1300 + 2000 + 900; partner 800 + 0 + 900; aA 0 + 1200 + 450; aB 0 + 0 + 450
     { dim: 'channel', id: 'rc.nb.arr', entity: 'org', values: { direct: 4200, partner: 1700, allianceA: 1650, allianceB: 450 }, total: 8000 },
     { dim: 'motion', id: 'rc.all.arr', entity: 'org', values: { nb: 8000, cg: 668 }, total: 8668 },     // cg 250 + 150 + 268
