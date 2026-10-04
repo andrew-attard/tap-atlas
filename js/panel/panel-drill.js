@@ -43,7 +43,7 @@
 
   /*
    * The drill state of panel p: {push(target, def), up(), top(opts), to(level, opts), path(), depth(), current(),
-   * target(), crumbs(def), destroy()}. opts.quiet: change the level without drawing (the caller draws).
+   * target(), crumbs(), hint(def), destroy()}. opts.quiet: change the level without drawing (the caller draws).
    */
   function create(p) {
     var stack = [];   // the levels below the top: {reportId, target, label, saved (the level above's choices)}
@@ -87,19 +87,24 @@
       }));
     }
 
-    // The breadcrumb ("All regions › Healthcare › Hospitals", each earlier step a button) and, where the level
-    // drills further, a line saying so. Null when there is neither.
-    function crumbs(def) {
-      var hint = def && def.drill && TAP.reports.get(def.drill.next) ?
-        el('p', { class: 'tap-panel__drill-hint' }, t('drillHint', { level: lower(def.drill.label || '') })) : null;
-      if (!stack.length) return hint;
+    // The breadcrumb ("All regions › Healthcare › Hospitals"), each earlier step a button, and how to go back up.
+    // Null at the top level.
+    function crumbs() {
+      if (!stack.length) return null;
       var nav = el('nav', { class: 'tap-panel__crumbs', 'aria-label': t('drillPath') }), list = path();
       list.forEach(function (l, i) {
         if (i) nav.appendChild(el('span', { class: 'tap-panel__crumb-sep', 'aria-hidden': 'true' }, '›'));
         nav.appendChild(i === list.length - 1 ? el('span', { class: 'tap-panel__crumb', 'aria-current': 'location' }, l.label) :
           el('button', { type: 'button', class: 'tap-panel__crumb', 'data-drill-level': String(i), onclick: function () { to(i); } }, l.label));
       });
-      return el('div', { class: 'tap-panel__drill' }, [nav, hint]);
+      nav.appendChild(el('span', { class: 'tap-panel__crumb-keys' }, t('drillKeys')));
+      return nav;
+    }
+
+    // Under the title of a level that drills further: a line saying a click steps down. Null otherwise.
+    function hint(def) {
+      var next = def && def.drill && TAP.reports.get(def.drill.next);
+      return next ? el('p', { class: 'tap-panel__drill-hint' }, t('drillHint', { level: lower(def.drill.label || next.title) })) : null;
     }
 
     // Backspace or Alt + Left goes up one level while the panel has focus (not while typing in a field).
@@ -124,6 +129,7 @@
       current: current,
       target: function () { return stack.length ? stack[stack.length - 1].target : null; },
       crumbs: crumbs,
+      hint: hint,
       destroy: function () { document.removeEventListener('keydown', onKey); stack = []; }
     };
   }
