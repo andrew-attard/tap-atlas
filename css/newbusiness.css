@@ -58,3 +58,20 @@
 .tap-nbg__tier--t1 { background: var(--tap-tier1); color: var(--tap-tier1-fg); }
 .tap-nbg__tier--t2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); }
 .tap-nbg__tier--t3 { background: var(--tap-tier3); color: var(--tap-tier3-fg); }
+
+/* ---------- success factors (US-2.1.6). Long entries are never cut: the list scrolls ---------- */
+.tap-nbf { display: flex; flex-direction: column; min-width: 0; background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-nbf__header { display: flex; flex-direction: column; gap: var(--tap-sp-2); padding: var(--tap-sp-4) var(--tap-sp-6); }
+.tap-nbf__title { margin: 0; font-size: var(--tap-fs-h2); }
+.tap-nbf__intro { margin: 0; color: var(--tap-muted); }
+.tap-nbf__list { display: flex; flex-direction: column; max-height: 36rem; overflow-y: auto; border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-nbf__entry { display: grid; grid-template-columns: var(--tap-sp-2) minmax(0, 1fr); gap: var(--tap-sp-4); padding: var(--tap-sp-4) var(--tap-sp-6); border-bottom: 1px solid var(--tap-grid); }
+.tap-nbf__body { display: flex; flex-direction: column; gap: var(--tap-sp-2); min-width: 0; }
+.tap-nbf__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-3); }
+.tap-nbf__name { font-size: var(--tap-fs-lead); font-weight: 800; }
+.tap-nbf__where { font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-muted); }
+.tap-nbf__focus { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
+.tap-nbf__text { margin: 0; max-width: 80ch; font-size: var(--tap-fs-body); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tap-nbf__src { font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-nbf__ask, .tap-nbf__none { margin: 0; padding: var(--tap-sp-4) var(--tap-sp-6); font-size: var(--tap-fs-body); color: var(--tap-muted); }
+.tap-nbf__foot { padding: var(--tap-sp-2) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-label); color: var(--tap-muted); }
