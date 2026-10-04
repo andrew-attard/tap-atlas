@@ -329,7 +329,7 @@ Display nudging (jitter, label placement) never changes the values shown in tool
 
 **Builder conventions for the panel:**
 - ECharts data items carry `entityId`, `key` (or `keys`) and `raw`; not-provided marks have `np: true`.
-- Series carry `tapRole`: `'value'`, `'total'`, `'notProvided'` or `'highlight'`.
+- Series carry `tapRole`: `'value'`, `'total'`, `'notProvided'`, `'highlight'` or `'mark'` (a silent series of numbers drawn over marks, keyed in the legend through items with `mark`; tooltips and clicks reach the marks underneath).
 - Tooltip HTML uses the classes `tap-tip`, `tap-tip-title` and `tap-tip-row`, styled in `css/panel.css`.
 - A radar leaves out any group with a blank rating; a bubble leaves out rows with a blank x or y. Both name the left-out items in `notes`.
 - The `ind.*` measures are defined in `scores.js`.
