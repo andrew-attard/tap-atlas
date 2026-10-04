@@ -51,6 +51,13 @@
 .tap-guide__link {
   align-self: flex-start; display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-size: var(--tap-fs-body);
 }
+/* The number keys (US-2.6.3), built from the menu order */
+.tap-guide__keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--tap-sp-2) var(--tap-sp-6); margin: 0; padding: 0; list-style: none; }
+.tap-guide__key { display: flex; align-items: center; gap: var(--tap-sp-3); }
+.tap-guide__key kbd {
+  min-width: 2rem; padding: var(--tap-sp-1) var(--tap-sp-2); border: var(--tap-rule-w) solid var(--tap-ink);
+  font: inherit; font-weight: 800; text-align: center; background: var(--tap-paper);
+}
 
 /* ---------- Insights page (US-1.7.3): filters, then one block per family ---------- */
 .tap-ins {

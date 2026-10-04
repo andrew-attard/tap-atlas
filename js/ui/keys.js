@@ -1,7 +1,8 @@
 /*
  * File: js/ui/keys.js
- * Purpose: Keyboard shortcuts for presenting: 1 to 4 for the views, and one Esc order across popovers,
- *          side panels and expanded charts.
+ * Purpose: Keyboard shortcuts for presenting: 1 to 9 open the views in menu order (TAP.views.order(), so a new
+ *          view needs no change here; the Guide lists the keys from the same order), and one Esc order across
+ *          popovers, side panels and expanded charts.
  * Provides: TAP.keys (bind, unbind, viewFor)
  * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js (all read at call time)
  * Used by: js/ui/app.js (bound at start-up)

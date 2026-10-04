@@ -40,6 +40,14 @@
     try { TAP.tour.start(); } catch (e) { if (!/Not built yet/.test(e.message)) throw e; }
   }
 
+  // The number keys, one per view in menu order (1 to 9), from the same list TAP.keys reads.
+  function shortcuts() {
+    var ids = TAP.views.order().slice(0, 9);
+    return el('ul', { class: 'tap-guide__keys', 'aria-label': t('keysLabel') }, ids.map(function (id, i) {
+      return el('li', { class: 'tap-guide__key', 'data-view': id }, [el('kbd', null, String(i + 1)), el('span', null, TAP.views.title(id))]);
+    }));
+  }
+
   function howTo(g) {
     var status = el('p', { class: 'tap-guide__status', role: 'status', 'aria-live': 'polite' });
     var actions = el('div', { class: 'tap-guide__actions' }, [
@@ -48,7 +56,7 @@
         [TAP.icons.svg('reset', { size: 18 }), t('reset')])
     ]);
     return [g.intro ? el('p', { class: 'tap-guide__lead' }, g.intro) : null, actions, status]
-      .concat((g.sections || []).map(function (s) { return part(s, link(s)); }));
+      .concat((g.sections || []).map(function (s) { return part(s, s.shortcuts ? shortcuts() : link(s)); }));
   }
 
   // "Open <view>" under a section that names a view; nothing when the view isn't in the menu.

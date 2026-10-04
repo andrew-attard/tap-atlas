@@ -55,6 +55,7 @@ Object.assign(window.TAP_CONTENT.text, {
     reset: 'Reset all charts to default',
     resetDone: 'Every chart is back to its default type.',
     openView: 'Open {view}',
+    keysLabel: 'Number keys and the views they open',
     orgBadge: 'Organization wording'
   },
 
@@ -63,6 +64,8 @@ Object.assign(window.TAP_CONTENT.text, {
   tour: {
     purpose: '{app} puts every region’s territory account plan side by side, so the plans can be compared and discussed.',
     menu: 'The menu switches between the views. Each view answers a few questions, one chart per question.',
+    views: 'New business, Customer growth and Partners each look at one part of the plan in more detail. Their lists show every row the leaders filled in.',
+    profile: 'Regions shows one region’s whole plan on a single page. Pick a region there, or select "Open profile" on a region card.',
     compare: 'This bar sets what every chart compares: all regions, one against the rest, two regions, a chosen set or the organization total. The sentence below it always says what is on screen.',
     panel: 'Every chart sits in a panel like this. Switch the chart type or show a table of exact figures, use the explanation icon to learn how to read it, and check the source line for where the figures come from.',
     freshness: 'This is the date of the data. Select it to see each region’s workbook and any notes from the import.',
@@ -87,6 +90,8 @@ Object.assign(window.TAP_CONTENT.text, {
     titles: {
       purpose: 'What this app is for',
       menu: 'Moving between views',
+      views: 'The plan in detail',
+      profile: 'One region’s whole plan',
       compare: 'Choosing what to compare',
       panel: 'Reading a chart',
       freshness: 'How fresh the data is',
