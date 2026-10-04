@@ -48,8 +48,10 @@
       return '<th' + (NOCOL ? '' : ' data-tap-col="' + c.key + '"') + '><button type="button" class="x-sort" data-tap-opt="sort" data-tap-value="' +
         c.key + ':' + next + '">' + esc(c.label) + '</button></th>';
     }).join('');
+    var items = (ctx.highlight && ctx.highlight.items) || [];
     var body = rows.map(function (r) {
-      return '<tr data-tap-region="' + r.regionId + '" data-tap-row="accounts:' + r.regionId + ':' + r.row + '">' + COLS.map(function (c) {
+      var on = items.some(function (x) { return x.regionId === r.regionId && x.row === r.row; });
+      return '<tr' + (on ? ' class="is-highlight"' : '') + ' data-tap-region="' + r.regionId + '" data-tap-row="accounts:' + r.regionId + ':' + r.row + '">' + COLS.map(function (c) {
         return '<td>' + esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, exact: true })) + '</td>';
       }).join('') + '</tr>';
     }).join('');
@@ -80,15 +82,17 @@
   // Runs a test body with a panel helper, and always tidies up.
   function scene(fn) {
     return function (a) {
-      var ids = [], panels = [];
+      var ids = [], panels = [], offs = [];
       calls = [];
       ROWS = 6;
       NOCOL = false;
       var api = {
         panel: function (id, opts) { var p = TAP.panel.create(T.dom.mount(), id, opts); panels.push(p); return p; },
-        report: function (def) { window.TAP_REPORTS[def.id] = def; ids.push(def.id); return def; }
+        report: function (def) { window.TAP_REPORTS[def.id] = def; ids.push(def.id); return def; },
+        on: function (name, fn) { offs.push(TAP.bus.on(name, fn)); }
       };
       function tidy() {
+        offs.forEach(function (off) { off(); });
         panels.forEach(function (p) { try { p.destroy(); } catch (e) { /* already gone */ } });
         ids.forEach(function (id) { delete window.TAP_REPORTS[id]; });
         if (TAP.layers.top()) TAP.layers.close();
@@ -158,7 +162,7 @@
     T.test('TPV-TC-288', 'A row click opens details for the builder\'s row target, not an industry selection', scene(function (a, s) {
       s.report(listDef());
       var p = s.panel('x-list'), seen = [];
-      TAP.bus.on('industry:select', function (x) { seen.push(x); });
+      s.on('industry:select', function (x) { seen.push(x); });
       var tr = qsa('.tap-list tbody tr', p.el)[2];
       click(tr.children[1]);
       a.equal(TAP.layers.top(), 'details', 'details opened');
@@ -200,6 +204,19 @@
         a.equal(got, want, 'the button copies the builder\'s table, in the order shown');
         a.match(txt(qs('.tap-panel__table-status', p.el)), /copied/i, 'says so');
       });
+    }));
+
+    T.test('X-list-highlight', '"Show me" on a list scrolls the first highlighted row into view inside the list', scene(function (a, s) {
+      ROWS = 120;
+      s.report(listDef());
+      var p = s.panel('x-list'), y = window.scrollY;
+      TAP.store.set({ highlight: { reportId: 'x-list', regionIds: ['alpha'], items: [{ section: 'customerGrowth', regionId: 'alpha', row: 110 }] } });
+      var box = qs('.tap-panel__html--list', p.el), tr = qs('tr.is-highlight', box);
+      a.ok(tr, 'the builder marked the row');
+      var top = box.getBoundingClientRect().top + qs('thead', box).offsetHeight, r = tr.getBoundingClientRect();
+      a.ok(box.scrollTop > 0, 'the list scrolled');
+      a.ok(r.top >= top - 1 && r.bottom <= box.getBoundingClientRect().bottom + 1, 'the row is in view, below the sticky header');
+      a.equal(window.scrollY, y, 'the page itself did not move');
     }));
 
     T.test('X-list-image', 'Image export is not offered for a list (a list is not a chart picture)', scene(function (a, s) {
