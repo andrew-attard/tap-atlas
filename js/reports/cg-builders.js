@@ -2,8 +2,9 @@
  * File: js/reports/cg-builders.js
  * Purpose: Thin wrappers round the generic builders for the Customer growth reports: segment shades, the multiplier
  *          note, exposure reference lines from the rule thresholds, and bar targets that list accounts.
- * Provides: builders 'cgSegments', 'cgGrowth', 'cgExposure'; TAP.cgBuilders (SEGMENTS, segmentOf)
- * Depends on: js/engine/build-parts.js, js/engine/build-compare.js, config/insight-rules.js, js/theme.js (all at call time)
+ * Provides: builders 'cgSegments', 'cgGrowth', 'cgExposure'; TAP.cgBuilders (SEGMENTS, segmentOf, refLines, accountItems)
+ * Depends on: js/engine/build-parts.js, js/engine/build-compare.js, js/engine/prepare.js, js/engine/scope.js,
+ *             js/core/data.js, js/core/content.js, js/core/format.js, config/insight-rules.js, js/theme.js (all at call time)
  * Used by: config/reports-customers.js
  * Owner: CGP stream (#204)
  */
@@ -99,26 +100,27 @@
     return [{ value: v, label: TAP.content.text('cgExposure.refLine', { value: TAP.format.pct(v) }) }];
   }
 
-  // Three-year incremental ARR of an account: the sum of its yearly increments.
+  // Three-year incremental ARR of an account: the sum of the years with a number, or null when none has one.
   function incr3(acc) {
-    return (acc.incrementalArr || []).reduce(function (t, v) { return t + (typeof v === 'number' && isFinite(v) ? v : 0); }, 0);
+    var nums = (acc.incrementalArr || []).filter(function (v) { return typeof v === 'number' && isFinite(v); });
+    return nums.length ? nums.reduce(function (t, v) { return t + v; }, 0) : null;
   }
 
-  // The accounts behind a bar: the top N by three-year incremental ARR across the bar's regions, or the accounts
-  // flagged at the at-risk rule's levels, largest first. Each becomes a row item for the details panel.
+  // The accounts behind a bar, exactly as cg.top3Share and cg.riskShare count them (js/engine/measures-p2.js): the
+  // 3 largest by three-year incremental ARR across the bar's regions, or every account flagged high or medium, largest
+  // first. Accounts with no incremental ARR count in neither. Each becomes a row item for the details panel.
   function accountItems(regionIds, measureId) {
     var all = [];
     regionIds.forEach(function (r) {
       (((TAP.data.region(r) || {}).customerGrowth || {}).accounts || []).forEach(function (acc) {
-        all.push({ regionId: r, row: acc.sourceRow, acc: acc, incr: incr3(acc) });
+        var v = incr3(acc);
+        if (v != null) all.push({ regionId: r, row: acc.sourceRow, acc: acc, incr: v });
       });
     });
     all.sort(function (x, y) { return y.incr - x.incr; });
-    var picked;
-    if (measureId === 'cg.riskShare') {
-      var levels = ruleParams('atRisk').levels || ['high', 'medium'];
-      picked = all.filter(function (x) { return levels.indexOf(x.acc.riskLevel) >= 0; });
-    } else picked = all.slice(0, ruleParams('concentration').top || 3);
+    var picked = measureId === 'cg.riskShare'
+      ? all.filter(function (x) { return x.acc.riskLevel === 'high' || x.acc.riskLevel === 'medium'; })
+      : all.slice(0, 3);
     return picked.map(function (x) { return { section: 'customerGrowth', regionId: x.regionId, row: x.row }; });
   }
 
