@@ -23,7 +23,8 @@
   function meta(id) {
     if (!reg[id]) return null;
     var t = 'measures.' + id;
-    return Object.assign({ id: id, label: TAP.content.text(t + '.label'), short: TAP.content.text(t + '.short') }, reg[id].meta);
+    var m = reg[id].meta, words = typeof m.words === 'function' ? m.words() : null;   // names that follow the data, e.g. channel names
+    return Object.assign({ id: id, label: TAP.content.text(t + '.label'), short: TAP.content.text(t + '.short') }, m, words);
   }
 
   /* ---------- cells ---------- */
