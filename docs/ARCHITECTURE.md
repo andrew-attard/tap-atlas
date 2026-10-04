@@ -580,6 +580,7 @@ All return cells as in section 9; ids other streams may rely on:
 | Builder | File | Owner | Used by |
 |---|---|---|---|
 | `list` | `js/engine/build-list.js` | ENGINE2 | every list report |
+| `nbLevers` | `js/reports/nb-levers.js` | NB | `nb-levers` (bars and dots through `compare`, plus the bubble) |
 | `nbGrid` | `js/reports/nb-grid.js` | NB | `nb-industries` (grid by tier, tier shown in each cell) |
 | `rowBubble` | `js/reports/row-bubble.js` | CGP | `cg-bubble`, `pt-capacity`: one bubble per row; definition fields `rows`, `x`, `y`, `size` name `TAP.rows` column keys |
 | `themes` | `js/reports/themes.js` | INSIGHTS2 | `nb-themes` |
@@ -605,7 +606,7 @@ All return cells as in section 9; ids other streams may rely on:
 |---|---|
 | ENGINE2 | `js/engine/*` except `registry.js`; `content/text-engine2.js`; `tests/test-measures-p2.js`, `tests/test-rows.js`, `tests/fixtures/mini-p2*.js` |
 | PANEL2 | `js/panel/*`, `css/panel.css`, `content/text-panel.js`, `tests/test-list.js`, `tests/test-panel.js` |
-| NB | `js/views/new-business.js`, `js/reports/nb-grid.js`, `config/reports-newbusiness.js`, `content/text-newbusiness.js`, `css/newbusiness.css`, `tests/test-newbusiness.js` |
+| NB | `js/views/new-business.js`, `js/reports/nb-grid.js`, `js/reports/nb-levers.js`, `config/reports-newbusiness.js`, `content/text-newbusiness.js`, `css/newbusiness.css`, `tests/test-newbusiness.js` |
 | CGP | `js/views/customers.js`, `js/views/partners.js`, `js/reports/row-bubble.js`, `js/reports/details-rows.js`, `config/reports-customers.js`, `config/reports-partners.js`, `content/text-customers.js`, `css/customers.css`, `tests/test-customers.js`, `tests/test-partners.js` |
 | INSIGHTS2 | `js/insights/*`, `config/insight-rules.js`, `content/text-themes.js`, `css/themes.css`, the Phase 1 insight tests (`tests/test-insights.js`, `test-rules.js`, `test-ranking.js`, `test-guardrails.js`), `config/comment-themes.js`, `config/reports-themes.js`, `js/reports/themes.js`, the sample data generator (`tools/sample-*.js`, `tools/generate-sample-data.js`), `data/sample-plan-data.js`, `docs/PLANTED-CASES.md`, `tests/fixtures/sample-expected.js`, `tests/test-insights-p2.js` |
 | PROFILE (wave B) | `js/views/regions.js`, `config/profile.js`, `content/text-profile.js`, `css/profile.css`, `tests/test-profile.js`; also the "Open profile" links in `js/views/overview-cards.js` and `js/reports/details.js` |
