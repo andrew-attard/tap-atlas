@@ -43,7 +43,7 @@ const APP = [
   'js/ui/glossary.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
-  'js/views/customers.js', 'js/views/partners.js', 'js/views/regions.js', 'js/views/insights.js', 'js/views/guide.js',
+  'js/views/customers.js', 'js/views/partners.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/views/guide.js',
   'js/ui/app.js'
 ];
 
