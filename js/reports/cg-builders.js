@@ -60,8 +60,27 @@
     return res;
   }
 
+  /* ---------- US-2.2.3: growth, with a note on accounts planned with a multiplier ---------- */
+
+  // Multiplier accounts count through the increments the workbook calculated (D60); the note says how many there
+  // are and where, for the segment chosen, so nobody wonders where those accounts went.
+  function growth(ctx) {
+    var res = TAP.builders.get('compare')(ctx);
+    if (res.error) return res;
+    var seg = /^cg\.growth\.([a-z]+)$/.exec(TAP.prepare.selected(ctx.def, ctx) || ''), mctx = {};
+    if (seg && seg[1] !== 'all') mctx.segment = seg[1];
+    var count = TAP.measures.get('cg.multiplierAccounts');
+    TAP.scope.regionIds(ctx.cmp).forEach(function (r) {
+      var c = count ? count(r, mctx) : null;
+      if (!c || c.state !== 'value' || !(c.v > 0)) return;
+      var name = TAP.content.regionName(TAP.data.region(r));
+      res.notes.push(TAP.content.text(c.v === 1 ? 'cgGrowth.multiplierOne' : 'cgGrowth.multiplierMany', { n: c.v, region: name }));
+    });
+    return res;
+  }
+
   TAP.builders.register('cgSegments', TAP.shapes.kit.safely(segments));
-  TAP.stub.builder('cgGrowth', 205);
+  TAP.builders.register('cgGrowth', TAP.shapes.kit.safely(growth));
   TAP.stub.builder('cgExposure', 207);
   TAP.cgBuilders = { SEGMENTS: SEGMENTS, segmentOf: segmentOf };
 })(window.TAP);

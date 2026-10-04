@@ -38,4 +38,32 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     sources: ['DER', 'PRE'],
     options: {}
   };
+
+  // US-2.2.3: the yearly growth each region assumes for its existing customers.
+  window.TAP_REPORTS['cg-growth'] = {
+    id: 'cg-growth',
+    view: 'customers',
+    title: 'What growth does each region assume for existing customers?',
+    explain: {
+      shows: 'The growth each region plans for its existing customers in each plan year: the incremental ARR the workbook calculated, divided by the accounts’ current ARR.',
+      read: 'One group of bars per region, one bar per plan year. Combined figures are weighted by current ARR, so larger customer bases count for more. Accounts planned with a three-year multiplier count through their yearly increments, and a note says how many there are.',
+      lookFor: 'Regions far above or below the others, years where growth steps up or down, and segments that carry most of a region’s growth.'
+    },
+    shape: 'compare',
+    builder: 'cgGrowth',
+    dimension: 'entity',
+    measures: [
+      { id: 'cg.growth.all', label: 'All accounts' },
+      { id: 'cg.growth.strategic', label: 'Strategic' },
+      { id: 'cg.growth.growth', label: 'Growth' },
+      { id: 'cg.growth.core', label: 'Core' },
+      { id: 'cg.growth.scaled', label: 'Scaled' }
+    ],
+    defaultType: 'groupedBar',
+    types: ['groupedBar', 'dot', 'table'],
+    breakdowns: ['year'],
+    defaultBreakdown: 'year',
+    sources: ['APP', 'DER', 'PRE'],
+    options: {}
+  };
 })();
