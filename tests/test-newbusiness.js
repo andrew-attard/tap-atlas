@@ -205,4 +205,238 @@
       } finally { window.TAP_VIEWS[VIEW].reports = keep; }
     });
   });
+
+  /* ---------- US-2.1.2 which industries carry each region's new business ---------- */
+
+  var IND = 'nb-industries';
+  var p2 = function (id) { return !!TAP.measures.meta(id); };
+  var withP2 = when(p2('ind.nb.oi') && p2('nb.arr.tier1'), 'waits for the Phase 2 measures (ENGINE2, #196)');
+  // Hand-calculated from tests/fixtures/mini-data.js: three-year sums of each row's arrPotential (and servicesPotential).
+  // np = not provided (Tier 1 or 2, or a blank tier, with no usable row), na = not applicable (Tier 3).
+  var MINI_ARR = {
+    alpha: { ind1: 1655, ind2: 'np', ind3: 'na', ind4: 600 },       // row 20: 500 + 550 + 605; row 21: 200 x 3
+    bravo: { ind1: 3400, ind2: 600, ind3: 'na', ind4: 'np' },       // row 20: 1000 + 1200 + 1200; row 21: 200 x 3
+    charlie: { ind1: 'np', ind2: 'np', ind3: 'na', ind4: 300 },     // row 20 has no hit rate, so no ARR; row 21: 100 x 3
+    delta: { ind1: 'np', ind2: 'na', ind3: 2850, ind4: 'np' }       // row 20: 600 + 900 + 1350
+  };
+  var MINI_SERVICES = { alpha: { ind1: 331, ind4: 120 }, bravo: { ind1: 340, ind2: 60 }, charlie: { ind4: 60 }, delta: { ind3: 712.5 } };
+  var MINI_TIER = { alpha: { ind1: 1, ind4: 2 }, bravo: { ind1: 1, ind2: 2 }, charlie: { ind4: 2 }, delta: { ind3: 2 } };
+
+  function grid(c, extra) { return build(IND, c, extra); }
+  function gcell(res, entityId, industryId, key) {
+    var row = res.table.rows.filter(function (r) { return r.entityId === entityId && r.industryId === industryId; })[0];
+    return row ? row.cells[key || 'ind.nb.arr'] : null;
+  }
+  function parse(html) { var box = document.createElement('div'); TAP.dom.html(box, html); return box; }
+  function gridCells(box) { return Array.prototype.slice.call(box.querySelectorAll('.tap-nbg__cell')); }
+  function industriesOf(res) {
+    var seen = [];
+    res.table.rows.forEach(function (r) { if (seen.indexOf(r.industryId) < 0) seen.push(r.industryId); });
+    return seen.sort();
+  }
+
+  T.suite('newbusiness-industries', function () {
+    T.test('TPV-TC-330', 'Mini data: each region and industry cell equals the hand-calculated ARR potential', function (a) {
+      var res = grid({ mode: 'all' }), n = 0;
+      a.equal(res.error, null, 'builds');
+      Object.keys(MINI_ARR).forEach(function (r) {
+        Object.keys(MINI_ARR[r]).forEach(function (i) {
+          var want = MINI_ARR[r][i], c = gcell(res, r, i);
+          a.ok(c, r + ' ' + i + ': a cell');
+          if (typeof want === 'number') { a.equal(c.state, 'value', r + ' ' + i); a.near(c.v, want, 1e-9, r + ' ' + i + ' value'); }
+          else a.equal(c.state, want === 'np' ? 'notProvided' : 'notApplicable', r + ' ' + i + ' state');
+          n++;
+        });
+      });
+      a.equal(n, 16, 'four regions by four industries');
+    });
+
+    T.test('TPV-TC-332', 'Sample data: each cell shows the region’s tier for that industry from the data file', function (a) {
+      sample();
+      var res = grid({ mode: 'all' }), box = parse(res.html), seen = 0;
+      gridCells(box).forEach(function (el) {
+        var r = el.getAttribute('data-tap-region'), i = el.getAttribute('data-tap-industry');
+        var mc = TAP.data.region(r).marketCoverage.filter(function (d) { return d.industryId === i; })[0];
+        var badge = el.querySelector('.tap-nbg__tier');
+        if (el.getAttribute('data-tap-value') === '' || !mc || mc.tier == null) return;
+        a.ok(badge, r + ' ' + i + ': shows a tier');
+        a.equal(badge.textContent, 'T' + mc.tier, r + ' ' + i + ': the data file’s tier');
+        a.equal(gcell(res, r, i, 'tier').v, mc.tier, r + ' ' + i + ': and the table holds it');
+        seen++;
+      });
+      a.ok(seen >= 7 * 3, 'checked ' + seen + ' cells');
+    });
+
+    T.test('TPV-TC-333', 'Grid by default; stacked bar by tier and table offered', function (a) {
+      var def = TAP.reports.get(IND), types = TAP.shapes.types(def, 7);
+      a.equal(def.defaultType, 'heatmap', 'grid is the default');
+      a.ok(types.indexOf('stackedBar') >= 0, 'stacked bar offered');
+      a.ok(types.indexOf('table') >= 0, 'table offered');
+      a.equal(def.builder, 'nbGrid', 'the dedicated builder');
+    });
+
+    withP2('TPV-TC-334', 'Mini data: Tier 1 and Tier 2 parts equal the hand sums and add up to each region’s total', function (a) {
+      var res = grid({ mode: 'all' }, { type: 'stackedBar' });
+      a.equal(res.error, null, 'builds');
+      a.ok(res.option, 'draws a chart');
+      // Tier 1: alpha ind1 1655, bravo ind1 3400; Tier 2: alpha ind4 600, bravo ind2 600, charlie ind4 300, delta ind3 2850
+      var want = { alpha: [1655, 600, 2255], bravo: [3400, 600, 4000], delta: [null, 2850, 2850] };
+      Object.keys(want).forEach(function (r) {
+        var row = res.table.rows.filter(function (x) { return x.entityId === r; })[0];
+        var t1 = row.cells['nb.arr.tier1'], t2 = row.cells['nb.arr.tier2'], tot = row.cells['nb.arr'];
+        if (want[r][0] == null) a.ok(t1.state !== 'value' || t1.v === 0, r + ': no Tier 1 new business');
+        else a.near(t1.v, want[r][0], 1e-9, r + ' Tier 1');
+        a.near(t2.v, want[r][1], 1e-9, r + ' Tier 2');
+        a.near(tot.v, want[r][2], 1e-9, r + ' total');
+        a.near((t1.state === 'value' ? t1.v : 0) + t2.v, tot.v, 1e-9, r + ': parts add up');
+      });
+    });
+
+    withP2('TPV-TC-335', 'Measure switch: ARR, Services, Total order intake (ARR default); order intake is ARR plus services', function (a) {
+      var def = TAP.reports.get(IND);
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['ARR', 'Services', 'Total order intake'], 'the three measures');
+      a.equal(TAP.prepare.selected(def, {}), 'ind.nb.arr', 'ARR by default');
+      var oi = grid({ mode: 'all' }, { measureId: 'ind.nb.oi' }), sv = grid({ mode: 'all' }, { measureId: 'ind.nb.services' });
+      Object.keys(MINI_SERVICES).forEach(function (r) {
+        Object.keys(MINI_SERVICES[r]).forEach(function (i) {
+          a.near(gcell(sv, r, i, 'ind.nb.services').v, MINI_SERVICES[r][i], 1e-9, r + ' ' + i + ' services');
+          a.near(gcell(oi, r, i, 'ind.nb.oi').v, MINI_ARR[r][i] + MINI_SERVICES[r][i], 1e-9, r + ' ' + i + ' ARR + services');
+        });
+      });
+    });
+
+    T.test('TPV-TC-336', 'Three-year totals by default; by year, the years add up to each total', function (a) {
+      var res = grid({ mode: 'all' });
+      a.near(gcell(res, 'alpha', 'ind1').v, 1655, 1e-9, 'three-year total by default');
+      var by = grid({ mode: 'all' }, { breakdown: 'year' }), n = 0;
+      a.near(gcell(by, 'alpha', 'ind1', 'ind.nb.arr@y1').v, 500, 1e-9, 'alpha ind1 year 1');
+      a.near(gcell(by, 'alpha', 'ind1', 'ind.nb.arr@y3').v, 605, 1e-9, 'alpha ind1 year 3');
+      by.table.rows.forEach(function (r) {
+        var tot = r.cells['ind.nb.arr'];
+        if (tot.state !== 'value') return;
+        var sum = [1, 2, 3].reduce(function (s, y) { var c = r.cells['ind.nb.arr@y' + y]; return s + (c.state === 'value' ? c.v : 0); }, 0);
+        a.near(sum, tot.v, 1e-9, r.entityId + ' ' + r.industryId + ': years add up');
+        n++;
+      });
+      a.ok(n >= 6, 'checked ' + n + ' cells');
+      a.equal(parse(by.html).querySelectorAll('.tap-nbg__cell[data-tap-year="3"]').length, 16, 'the grid shows a line per plan year');
+    });
+
+    T.test('TPV-TC-337', 'Only industries with new business in at least one region are listed', function (a) {
+      a.deepEqual(industriesOf(grid({ mode: 'all' })), ['ind1', 'ind2', 'ind3', 'ind4'], 'every rated industry has a row somewhere');
+      var plan = T_FIXTURE('mini');
+      plan.regions[3].newBusiness = [];     // delta's only row is the only Retail (ind3) row
+      TAP.data.load(plan);
+      var res = grid({ mode: 'all' });
+      a.deepEqual(industriesOf(res), ['ind1', 'ind2', 'ind4'], 'Retail drops out');
+      a.equal(parse(res.html).querySelector('[data-tap-industry="ind3"]'), null, 'and is not drawn');
+      a.equal(parse(res.html).querySelector('[data-tap-industry="other"]'), null, 'unrated rows never appear');
+    });
+
+    T.test('TPV-TC-338', 'A cell’s details hold exactly that region’s new business rows for that industry', function (a) {
+      var res = grid({ mode: 'all' });
+      [['alpha', 'ind1', ['New business: North · Clinics']], ['bravo', 'ind2', ['New business: South · Universities']],
+        ['delta', 'ind3', ['New business: West · Stores']]].forEach(function (x) {
+        var tg = res.target({ data: { regionId: x[0], industryId: x[1] } });
+        a.deepEqual([tg.regionIds, tg.industryIds], [[x[0]], [x[1]]], x[0] + ' ' + x[1] + ': target');
+        var groups = TAP.details.build(tg).groups.map(function (g) { return g.title; }).filter(function (s) { return /^New business:/.test(s); });
+        a.deepEqual(groups, x[2], x[0] + ' ' + x[1] + ': its rows, no others');
+      });
+    });
+
+    T.test('TPV-TC-339', 'Against the rest and as organization total, cells are the hand-calculated sum or simple average', function (a) {
+      // Rest of Region C: ind1 = alpha 1655 and bravo 3400 (delta not provided); ind4 = alpha 600 only
+      var avg = grid({ mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'average' });
+      a.near(gcell(avg, 'rest', 'ind1').v, 2527.5, 1e-9, 'average of the rest, ind1: (1655 + 3400) / 2');
+      a.deepEqual(gcell(avg, 'rest', 'ind1').src.excluded, ['delta'], 'Region D named as not provided');
+      a.near(gcell(avg, 'rest', 'ind4').v, 600, 1e-9, 'average of the rest, ind4');
+      var tot = grid({ mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'total' });
+      a.near(gcell(tot, 'rest', 'ind1').v, 5055, 1e-9, 'rest as total, ind1: 1655 + 3400');
+      var org = grid({ mode: 'org' });
+      a.near(gcell(org, 'org', 'ind1').v, 5055, 1e-9, 'organization ind1');
+      a.near(gcell(org, 'org', 'ind4').v, 900, 1e-9, 'organization ind4: 600 + 300');
+      a.near(gcell(org, 'org', 'ind3').v, 2850, 1e-9, 'organization ind3: Region D only, the others not applicable');
+      a.near(gcell(org, 'org', 'ind2').v, 600, 1e-9, 'organization ind2');
+      a.equal(gcell(org, 'org', 'ind1', 'tier'), undefined, 'a combined figure carries no tier');
+    });
+
+    T.test('X-nb-grid-tiers', 'Mini data: every cell with a value shows its tier; combined columns show none', function (a) {
+      var box = parse(grid({ mode: 'all' }).html);
+      Object.keys(MINI_TIER).forEach(function (r) {
+        Object.keys(MINI_TIER[r]).forEach(function (i) {
+          var el = box.querySelector('.tap-nbg__cell[data-tap-region="' + r + '"][data-tap-industry="' + i + '"]');
+          a.equal(el.querySelector('.tap-nbg__tier').textContent, 'T' + MINI_TIER[r][i], r + ' ' + i);
+        });
+      });
+      var np = box.querySelector('.tap-nbg__cell[data-tap-region="charlie"][data-tap-industry="ind1"]');
+      a.match(np.textContent, /not provided/, 'a blank shows "not provided"');
+      var rest = parse(grid({ mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }).html);
+      a.equal(rest.querySelectorAll('.tap-nbg__cell[data-tap-region="rest"] .tap-nbg__tier').length, 0, 'no tier on the rest');
+    });
+
+    T.test('X-nb-grid-same-as-table', 'Every grid value equals the table value, in every mode, on mini and sample data', function (a) {
+      [false, true].forEach(function (big) {
+        if (big) sample();
+        MODES.forEach(function (m) {
+          var S = window.SAMPLE_EXPECT.regions;
+          if (big && (m.focus || m.set)) m = Object.assign({}, m, { focus: S[2], second: S[3], set: [S[0], S[5]] });
+          var res = grid(m), n = 0;
+          gridCells(parse(res.html)).forEach(function (el) {
+            var c = gcell(res, el.getAttribute('data-tap-region'), el.getAttribute('data-tap-industry'));
+            a.equal(el.getAttribute('data-tap-value'), c.state === 'value' ? String(c.v) : '', m.mode + ' ' + el.getAttribute('aria-label'));
+            n++;
+          });
+          a.ok(n > 0, (big ? 'sample ' : 'mini ') + m.mode + ': compared ' + n);
+        });
+      });
+    });
+
+    T.test('X-nb-grid-shade', 'Larger values get a stronger shade; the value is always written in the cell', function (a) {
+      var box = parse(grid({ mode: 'all' }).html);
+      function cellOf(r, i) { return box.querySelector('.tap-nbg__cell[data-tap-region="' + r + '"][data-tap-industry="' + i + '"]'); }
+      var big = parseFloat(cellOf('bravo', 'ind1').style.getPropertyValue('--tap-nbg-shade'));
+      var small = parseFloat(cellOf('charlie', 'ind4').style.getPropertyValue('--tap-nbg-shade'));
+      a.ok(big > small, 'bravo ind1 (3400) is shaded stronger than charlie ind4 (300)');
+      a.match(cellOf('bravo', 'ind1').textContent, /3\.4M/, 'the value is written, not only shaded');
+      a.ok(box.querySelector('.tap-nbg__col'), 'columns carry their region name');
+    });
+
+    T.test('X-nb-grid-click', 'A row name selects its industry; a cell names its region and industry; the rest names its regions', function (a) {
+      var res = grid({ mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'total' });
+      var row = res.target({ data: { industryId: 'ind4' } });
+      a.deepEqual([row.regionIds, row.industryIds], [[], ['ind4']], 'row: the industry alone');
+      var rest = res.target({ data: { regionId: 'rest', industryId: 'ind1' } });
+      a.deepEqual([rest.regionIds, rest.industryIds], [['bravo', 'charlie', 'delta'], ['ind1']], 'the rest: its regions');
+      a.equal(res.target({ data: {} }), null, 'nothing named, nothing opened');
+    });
+
+    T.test('X-nb-grid-highlight', 'A highlight marks the industry row or the cell', function (a) {
+      var box = parse(grid({ mode: 'all' }, { highlight: { reportId: IND, regionIds: ['delta'], industryIds: ['ind3'], mark: 'cell' } }).html);
+      var hl = box.querySelectorAll('.tap-nbg__cell.is-hl');
+      a.equal(hl.length, 1, 'one cell');
+      a.equal(hl[0].getAttribute('data-tap-region'), 'delta', 'the right one');
+      box = parse(grid({ mode: 'all' }, { highlight: { reportId: IND, industryIds: ['ind1'], mark: 'industryRow' } }).html);
+      a.equal(box.querySelectorAll('.tap-nbg__row.is-hl').length, 1, 'one row');
+    });
+
+    T.test('X-nb-grid-escape', 'Names in the grid are escaped', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.lookups.industries[0].name = '<img src=x onerror=alert(1)>';
+      plan.regions[0].name = '<b>Region A</b>';
+      TAP.data.load(plan);
+      var box = parse(grid({ mode: 'all' }).html);
+      a.equal(box.querySelector('img, b'), null, 'no markup from the data');
+      a.ok(box.textContent.indexOf('<img src=x') >= 0, 'shown as text');
+    });
+
+    T.test('X-nb-grid-missing', 'A region with no value anywhere is named as missing; no value at all is empty', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[2].newBusiness.forEach(function (r) { r.arrPotential = [null, null, null]; });
+      TAP.data.load(plan);
+      a.deepEqual(grid({ mode: 'all' }).missing, ['Region C'], 'Region C missing');
+      plan.regions.forEach(function (reg) { reg.newBusiness = []; });
+      TAP.data.load(plan);
+      a.ok(grid({ mode: 'all' }).empty, 'nothing to draw');
+    });
+  });
 })(window.TAP);
