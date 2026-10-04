@@ -32,7 +32,7 @@
   padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
   font-size: var(--tap-fs-lead); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere;
 }
-.tap-ov-card__how { margin: 0; overflow-wrap: anywhere; }
+.tap-ov-card__how { margin: 0; overflow-wrap: anywhere; font-size: var(--tap-fs-body); line-height: 1.35; }
 
 .tap-ov-card__line + .tap-ov-card__line { padding-top: var(--tap-sp-2); }
 .tap-ov-card__focus { border-top: 1px solid var(--tap-grid); margin: 0 var(--tap-sp-2); padding: var(--tap-sp-2) 0 0; }
@@ -41,7 +41,7 @@
 .tap-ov-card.is-combined .tap-ov-card__label,
 .tap-ov-card.is-combined .tap-ov-card__row--minor { color: var(--tap-on-colour); }
 
-.tap-ov-card__partial { margin: 0; font-style: italic; }
+.tap-ov-card__partial { margin: 0; font-style: italic; font-size: var(--tap-fs-body); line-height: 1.35; }
 .tap-ov-card__split { display: flex; height: var(--tap-sp-2); margin: var(--tap-sp-1) 0 2px; border: 1px solid currentColor; }
 .tap-ov-card__split > span { display: block; }
 
