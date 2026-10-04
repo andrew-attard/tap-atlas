@@ -897,5 +897,47 @@
         });
       });
     });
+    T.test('X-industry-ratings-numbers', 'QA-4: with more than 3 regions each dot carries its region number, in file order, matching the legend', function (a) {
+      sample();
+      var R = sampleIds(), ind = TAP.data.industries({ rated: true })[0].id;
+      function valueSeries2(res) { return series(res).filter(function (s) { return s.tapRole === 'value'; }); }
+      function numbers(res) {
+        var out = {};
+        valueSeries2(res).forEach(function (s) { (s.data || []).forEach(function (d) { out[d.entityId] = s.label && s.label.show ? s.label.formatter : null; }); });
+        return out;
+      }
+      var all = ratingsRes('dot', { mode: 'all' }, ind), n = numbers(all);
+      R.forEach(function (id, i) { a.equal(n[id], String(i + 1), id + ' is number ' + (i + 1)); });
+      a.deepEqual(all.legend.map(function (l) { return l.mark; }), R.map(function (id, i) { return i + 1; }), 'the legend carries the same numbers');
+      valueSeries2(all).forEach(function (s) { a.ok(s.symbolSize >= 18, s.name + ': dots big enough for a number'); });
+      // The groups spread over 0.84 of a row, so dots that share a rating sit a dot apart
+      var ys = valueSeries2(all).map(function (s) { return s.data[0].value[1]; }).sort(function (p, q) { return p - q; });
+      a.ok(Math.abs((ys[ys.length - 1] - ys[0]) - 0.84) < 1e-9, 'spread over 0.84 of the row');
+      a.ok(all.height >= RATINGS.length * R.length * 19, 'asks for a chart tall enough to keep them apart (' + all.height + ')');
+      // Stable across modes: a set keeps each region's own number
+      var set = numbers(ratingsRes('dot', { mode: 'set', set: [R[1], R[3], R[5], R[6]] }, ind));
+      a.deepEqual([set[R[1]], set[R[3]], set[R[5]], set[R[6]]], ['2', '4', '6', '7'], 'a set of four keeps the file numbers');
+      var one = numbers(ratingsRes('dot', { mode: 'one', focus: R[4], restAs: 'individual' }, ind));
+      a.equal(one[R[4]], '5', 'one against the rest drawn one by one: the focus keeps its number');
+      // Three or fewer groups: the look is unchanged
+      var pair = ratingsRes('dot', { mode: 'pair', focus: R[0], second: R[1] }, ind);
+      a.ok(valueSeries2(pair).every(function (s) { return !(s.label && s.label.show); }), 'a pair has no numbers');
+      a.ok(pair.legend.every(function (l) { return l.mark == null; }), 'and no legend numbers');
+      a.equal(pair.height, undefined, 'and no height hint');
+    });
+
+    T.test('X-industry-ratings-values', 'QA-4: numbering never changes a value, tooltip or table cell', function (a) {
+      sample();
+      var ind = TAP.data.industries({ rated: true })[2].id, res = ratingsRes('dot', { mode: 'all' }, ind), n = 0;
+      series(res).filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) {
+        s.data.forEach(function (d) {
+          var row = res.table.rows.filter(function (r) { return r.entityId === d.entityId; })[0];
+          a.equal(d.value[0], row.cells[d.key].v, d.entityId + ' ' + d.key + ': chart value is the table value');
+          a.equal(d.raw, row.cells[d.key].v, d.entityId + ' ' + d.key + ': raw value');
+          n++;
+        });
+      });
+      a.ok(n >= 40, 'every dot checked (' + n + ')');
+    });
   });
 })(window.TAP);
