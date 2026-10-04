@@ -6,7 +6,7 @@ TAP Atlas is a small app that runs in the browser. Each regional leader fills in
 
 This README is for the maintainer working with a chat assistant such as Microsoft 365 Copilot. It says what every file does, and which files to share for each kind of change. Detail lives in `docs/`.
 
-> **Status:** Phase 1. The sample edition runs end to end. The internal edition needs the real data file from the import.
+> **Status:** Phase 1 is released as `v0.1.0`. Phase 2 adds the New business, Customer growth and Partners views, region profiles, list reports, drill-down and more insights, for `v0.2.0`. The sample edition runs end to end. The internal edition needs the real data file from the import.
 
 ## Open it
 
@@ -33,12 +33,12 @@ All three pages load the same app scripts in the same order. Only the data and o
 index.html, index-sample.html, tests.html   the three pages
 js/theme.js       every colour, font and size
 js/core/          shared basics: state, data loading, the contract check, sources, wording, formatting
-js/engine/        figures and charts: measures, combining regions, scope, the generic chart builders
-js/reports/       the two dedicated charts (tier grid, quadrant) and the details panel content
+js/engine/        figures and charts: measures, combining regions, scope, row figures, the generic chart and list builders
+js/reports/       the dedicated charts (tier grid, quadrant, industry grid, levers, row bubbles, themes) and the details content
 js/insights/      the insight engine and one rule file per family
 js/panel/         the report panel every chart sits in
 js/ui/            the page frame, comparison bar, side panels, start-up screens, tour
-js/views/         the four views: Overview, Industry priorities, Insights, Guide
+js/views/         the eight views: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights, Guide
 config/           settings, views, report definitions, insight rules (no code, only values)
 content/          every word on screen: glossary, Guide text, wording files, organization starter
 css/              one base stylesheet and one per area
@@ -90,6 +90,9 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/build-compare.js` | Generic builder: one value per region (bar, dot, radar) |
 | `js/engine/build-parts.js` | Generic builder: parts of a whole (stacked bars, treemap, bubble) |
 | `js/engine/build-xy.js` | Generic builder: two measures against each other (scatter, bubble) |
+| `js/engine/measures-p2.js` | The Phase 2 measures: recap by channel and motion, new business by tier, customer growth by segment, exposure, partners |
+| `js/engine/rows.js` | Figures for single rows (a new business row, an account, a partner), each with its source, for lists, bubbles and details |
+| `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and a filter |
 
 ### `js/reports/`, `js/insights/`, `js/panel/`
 
@@ -98,6 +101,14 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/tier-grid.js` | The tier grid: industries against regions, coloured by tier |
 | `js/reports/quadrant.js` | Attractiveness against ability to win, in four labelled areas |
 | `js/reports/details.js` | Collects everything about one clicked item for the details panel |
+| `js/reports/details-rows.js` | Details for one list row (a new business row, an account or a partner): every field with its source |
+| `js/reports/tier-stats.js` | How much regions agree on each industry's tier, shared by the tier grid and the views |
+| `js/reports/quadrant-labels.js` | Places the quadrant chart's names and numbers so none overlap |
+| `js/reports/nb-grid.js` | New business by region and industry, with each region's tier in the cell |
+| `js/reports/nb-levers.js` | The new business levers: bars and dots per lever, plus the bubble of targets against hit rate |
+| `js/reports/cg-builders.js` | Small additions to the generic builders for the Customer growth charts (segment shades, notes, reference lines) |
+| `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled |
+| `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |
 | `js/insights/rules-*.js` | One file per rule family: priorities, judgement, assumptions, realism, exposure, capability |
 | `js/panel/panel.js` | The report panel: title, takeaway, chart or table, legend, source line, controls |
@@ -106,6 +117,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/panel/panel-menus.js` | The panel's toolbar, menus and controls |
 | `js/panel/panel-export.js` | Saves or copies a chart as an image |
 | `js/panel/panel-insights.js` | The takeaway line and the panel's short insight list |
+| `js/panel/panel-drill.js` | Drill-down inside a panel: the levels, the trail of names, and going back up |
+| `js/panel/panel-expand.js` | Expanded and full-screen charts: the slim strip, arrow-key stepping |
 
 ### `js/ui/` and `js/views/`
 
@@ -119,12 +132,18 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/system-screens.js` | Full-page messages when the app can't start, with a copyable problem list |
 | `js/ui/glossary.js` | Term popovers and the searchable glossary list |
 | `js/ui/explain.js` | The plain-English explanation of a report |
+| `js/ui/view-head.js` | The header the newer views share: question, lead line, tip line with "Hide tips", headline insight |
 | `js/ui/tour.js` | The optional welcome tour |
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
 | `js/views/overview.js` | The Overview: headline, top insights, region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards |
 | `js/views/industry.js` | Industry priorities: tier grid, quadrant, ratings, commentary |
+| `js/views/new-business.js` | New business: industries, channels, levers, the sub-industry list, success factors, themes |
+| `js/views/customers.js` | Customer growth: segments, growth, exposure, the account bubble and list; also the layout Partners uses |
+| `js/views/partners.js` | Partners: reliance on partners and alliances, partner capacity, the partner list |
+| `js/views/regions.js` | Regions: pick a region, then its profile with the main reports for that region against the rest |
+| `js/views/regions-parts.js` | The profile's lower parts: the plan at a glance, the region's insights and what its leader wrote |
 | `js/views/insights.js` | The Insights page: every insight, ranked and grouped |
 | `js/views/guide.js` | The Guide page: how to use the app, planning explained, glossary |
 
@@ -137,6 +156,12 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/reports.js` | The report schema, explained field by field |
 | `config/reports-overview.js` | Report definitions for the Overview |
 | `config/reports-industry.js` | Report definitions for Industry priorities |
+| `config/reports-newbusiness.js` | Report definitions for New business |
+| `config/reports-customers.js` | Report definitions for Customer growth |
+| `config/reports-partners.js` | Report definitions for Partners |
+| `config/reports-themes.js` | The recurring themes report |
+| `config/profile.js` | The reports a region profile shows, in order |
+| `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, on/off switch, where it attaches |
 
 ### `content/` and `css/`
@@ -144,12 +169,13 @@ vendor/           ECharts, the Archivo fonts and their licences
 | File | What it does |
 |---|---|
 | `content/ui-text.js` | General wording: app name, tour, Guide and glossary screens |
-| `content/text-*.js` | Wording per area: shell, engine, data, panel, overview, industry, pages |
+| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips) |
 | `content/glossary.js` | The general glossary: every term in plain English |
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |
-| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary |
+| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes |
+| `css/view-head.css` | The shared header and two-panel layout of the newer views |
 
 ### `data/` and `docs/`
 
@@ -163,7 +189,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
-| `docs/AGENT-BRIEF.md`, `docs/build-plan.md` | How the first build was organized (background only) |
+| `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md` | How the builds were organized (background only) |
 
 ### `tests/`, `tools/`, `scripts/`, `vendor/`
 
@@ -173,11 +199,23 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `tests/harness.js` | The small test runner behind `tests.html` |
 | `tests/fixtures/mini-data.js` | A tiny valid data file (four regions), worked out by hand in `tests/fixtures/mini-expected.js` |
 | `tests/fixtures/broken-cases.js` | Deliberately broken data files for the contract check tests |
+| `tests/fixtures/mini-p2.js` | Extra rows (recap, accounts, partners) for the Phase 2 tests, worked out by hand in `tests/fixtures/mini-p2-expected.js` |
+| `tests/fixtures/sample-expected.js` | Figures the sample data generator worked out, for tests on the sample data |
+| `tests/fixtures/insights-fixture.js` | A small fixed list of insights for the Insights page tests |
+| `tests/auto-cases.js` | The automated cases in the Test Plan, so a case without a test shows as pending |
+| `tests/harness.css`, `tests/selftest.html`, `tests/cvd.js` | The test page's look, the harness's own checks, and colour-blindness maths for the theme tests |
+| `tests/qa.html` | The app as `index-sample.html` loads it, with hooks for the QA checks |
 | `tools/generate-sample-data.js` | Rebuilds the sample data from `tools/sample-settings.js` (helpers: `tools/sample-*.js`) |
 | `tools/lint.js` | Checks the house rules: headers, file size, no web calls, no stray colours |
 | `tools/check-docs.js` | Checks every path the docs name exists |
 | `tools/build-pages.js` | Writes the script list into the three pages |
+| `tools/build-auto-cases.js` | Writes `tests/auto-cases.js` from the Test Plan |
+| `tools/parse-results.js` | Reads a headless test run and reports the results |
 | `scripts/verify.sh` | Runs every check and the headless tests |
+| `scripts/test-headless.sh`, `scripts/lib-browser.sh` | Runs a test page in headless Chrome or Edge; finding the browser |
+| `scripts/screenshot.sh` | Screenshots of a page at a given size and zoom |
+| `scripts/check-text.sh`, `scripts/open-pr.sh` | Checks text against the private word list; opens a pull request after that check |
+| `scripts/qa/*` | The QA checks (`scripts/qa/run-all.sh` runs them all): console errors, text sizes, offline, smoke test, screenshot matrix |
 | `vendor/echarts.min.js` | The chart library (Apache ECharts 5.6.0); fonts are in `vendor/fonts/` |
 
 ## How data, content and theme fit together
@@ -210,7 +248,10 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 
 | Change | Share these files | Then check |
 |---|---|---|
-| A new report | `config/reports.js`, `config/reports-overview.js` or `config/reports-industry.js`, `config/views.js`, `js/engine/measures.js` (prompt 7) | `tests.html`, then the view in `index-sample.html` |
+| A new report | `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, `js/engine/measures.js`, `js/engine/measures-p2.js` (prompt 7) | `tests.html`, then the view in `index-sample.html` |
+| A report on the region profile | `config/profile.js`, `config/views.js`, the report's `config/reports-*.js` file (prompt 9) | The Regions view for one region |
+| A column on a list | The list's `config/reports-*.js` file, `js/engine/rows.js`, `content/text-engine2.js`, `docs/DATA-CONTRACT.md` (prompt 10) | `tests.html`, then the list |
+| A recurring theme keyword | `config/comment-themes.js`, `docs/PLANTED-CASES.md` (prompt 8) | `tests.html`, then the themes report on New business |
 | A new insight rule | `config/insight-rules.js`, the family's file in `js/insights/` (e.g. `js/insights/rules-realism.js`), `js/insights/engine.js`, `js/engine/measures.js`, `docs/PLANTED-CASES.md` | `tests.html`, then the Insights page |
 | Tuning insights | `config/settings.js`, `config/insight-rules.js`, `docs/PLANTED-CASES.md` (prompt 5) | `tests.html`, then the Insights page |
 | Branding | `js/theme.js` (prompt 4); edit it in the internal copy only | `tests.html?suite=theme`, then `index.html` |
