@@ -67,6 +67,10 @@ step "lint${lint_flag:+ --release}" "$node_bin" tools/lint.js "${lint_flag[@]}"
 step "lint self-test" "$node_bin" tools/lint.js --self-test
 step "denylist scan" denylist_scan
 step "ignored-files guard" ignored_guard
+# The QA page must list the same scripts as the app (it is generated from index-sample.html)
+if [ -f scripts/qa/make-qa-page.js ]; then
+  step "qa page in step" "$node_bin" scripts/qa/make-qa-page.js --check
+fi
 # Every path the README and docs name must exist (TPV-TC-204)
 step "docs paths" "$node_bin" tools/check-docs.js
 # The committed sample data must be exactly what the generator writes (US-1.3.3)
