@@ -683,6 +683,10 @@
       a.equal(last().cmp.mode, 'one');
       a.deepEqual(last().entities.map(function (e) { return e.id; }), ['bravo', 'rest'], 'one region against the rest');
       a.equal(qs('.tap-panel__custom', p.el), null, 'no custom badge: the page says what is compared');
+      var asked = [];
+      TAP.explain = { open: function (id, o) { asked.push(o && o.cmp); } };
+      click(qs('[data-action="about"]', p.el));
+      a.equal(asked[0] && asked[0].focus, 'bravo', 'the explanation describes the fixed comparison');
     }));
 
     T.test('X-panel-fixed-cmp-epoch', 'The fixed comparison survives a change of the shared comparison and of the view', scene(function (a, s) {
