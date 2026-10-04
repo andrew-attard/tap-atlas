@@ -61,14 +61,20 @@
   }
 
   // A builder's HTML (already escaped by the builder). Clicks on data-tap-* elements are passed on as
-  // {regionId, industryId}, so the panel can ask the builder for the target.
-  function html(slot, str, onPick) {
+  // {regionId, industryId} (plus row for a list row), so the panel can ask the builder for the target.
+  // A click on a [data-tap-opt] element is a builder option instead (17.4): onOpt(key, value).
+  function html(slot, str, onPick, onOpt) {
     var box = el('div', { class: 'tap-panel__html' });
     TAP.dom.html(box, str);
     box.addEventListener('click', function (e) {
-      var hit = e.target.closest ? e.target.closest('[data-tap-region], [data-tap-industry]') : null;
+      if (!e.target.closest) return;
+      var opt = e.target.closest('[data-tap-opt]');
+      if (opt && box.contains(opt)) { if (onOpt) onOpt(opt.getAttribute('data-tap-opt'), opt.getAttribute('data-tap-value')); return; }
+      var hit = e.target.closest('[data-tap-row], [data-tap-region], [data-tap-industry]');
       if (!hit || !box.contains(hit)) return;
-      onPick({ regionId: hit.getAttribute('data-tap-region') || null, industryId: hit.getAttribute('data-tap-industry') || null });
+      var d = { regionId: hit.getAttribute('data-tap-region') || null, industryId: hit.getAttribute('data-tap-industry') || null };
+      if (hit.hasAttribute('data-tap-row')) d.row = hit.getAttribute('data-tap-row');
+      onPick(d);
     });
     slot.appendChild(box);
     return box;

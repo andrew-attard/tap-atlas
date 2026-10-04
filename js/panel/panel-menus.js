@@ -73,6 +73,7 @@
   // The types the menu offers (the table has its own button), and the one to draw: the chosen type while the
   // comparison allows it, else the default. A stored radar comes back once three or fewer regions are compared.
   function types(def, entityCount, st) {
+    if (def.shape === 'list') return { list: [], current: 'list', def: 'list' };   // a list is its own table (US-2.7.2)
     // With a breakdown, point charts drop out: a bubble can't show the second dimension (US-1.2.7)
     var list = TAP.shapes.types(def, entityCount, { breakdown: st.breakdown || null }).filter(function (x) {
       return x !== 'table' && !(st.breakdown && /^(bubble|bubbleGrid|scatter)$/.test(x));
@@ -204,7 +205,7 @@
       box.appendChild(button('type', 'chart', TAP.shapes.label(b.types.current), { expanded: open === 'type', menu: true,
         aria: t('typeAria', { type: TAP.shapes.label(b.types.current) }), onclick: function () { p.toggle('type'); } }));
     }
-    if (b.types) {
+    if (b.types && b.types.current !== 'list') {
       box.appendChild(button('table', 'table', t('table'), { pressed: !!p.st.table,
         onclick: function () { p.set({ table: !p.st.table, pop: null }); } }));
     }

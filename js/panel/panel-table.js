@@ -2,9 +2,10 @@
  * File: js/panel/panel-table.js
  * Purpose: Draws the table view of any report (the builder's table, so it shows the same data as the chart),
  *          sortable, with exact figures, the focus row marked and a source column, and copies it as text that
- *          pastes into Excel as cells (US-1.2.4).
- * Provides: TAP.panelTable (render, toText, clipboard)
- * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js, js/core/sources.js
+ *          pastes into Excel as cells (US-1.2.4). A list report's HTML gets the same row count and copy button (US-2.7.2).
+ * Provides: TAP.panelTable (render, list, toText, clipboard)
+ * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js, js/core/sources.js,
+ *             js/panel/panel-chart.js (html, at call time)
  * Used by: js/panel/panel.js
  */
 (function (TAP) {
@@ -91,12 +92,9 @@
         [col.label, el('span', { class: 'tap-panel__arrow', 'aria-hidden': 'true' }, on ? (sort.dir > 0 ? ' ▲' : ' ▼') : '')]));
   }
 
-  /*
-   * Draws the table into box. opts: {sort: {key, dir}, onSort(key), focusIds: [], label: {text}}
-   */
-  function render(box, table, opts) {
-    opts = opts || {};
-    var cols = columns(table), focus = opts.focusIds || [], rows = sorted(table, opts.sort);
+  // The row count and the copy button over a table or a list, and the status line for the copy message.
+  // The copied text is the builder's table in the order shown (opts.sort), with the data label first.
+  function head(box, table, opts, countKey) {
     var status = el('p', { class: 'tap-panel__table-status', role: 'status' });
     var copy = el('button', { type: 'button', class: 'tap-btn tap-panel__tool', 'data-action': 'copy-table', onclick: function () {
       var text = toText(table, { label: opts.label, sort: opts.sort });
@@ -105,11 +103,19 @@
         TAP.dom.append(status, ok ? t('copied') : [t('copyManual'), manual(text)]);
       });
     } }, [TAP.icons.svg('copy', { size: 18 }), el('span', null, t('copy'))]);
-
     box.appendChild(el('div', { class: 'tap-panel__table-head' }, [
-      el('span', { class: 'tap-muted' }, t('tableCount', { n: rows.length })), copy
+      el('span', { class: 'tap-muted' }, t(countKey || 'tableCount', { n: table.rows.length })), copy
     ]));
     box.appendChild(status);
+  }
+
+  /*
+   * Draws the table into box. opts: {sort: {key, dir}, onSort(key), focusIds: [], label: {text}}
+   */
+  function render(box, table, opts) {
+    opts = opts || {};
+    var cols = columns(table), focus = opts.focusIds || [], rows = sorted(table, opts.sort);
+    head(box, table, opts);
     var tbody = el('tbody');
     rows.forEach(function (r) {
       var isFocus = focus.indexOf(r.entityId) >= 0;
@@ -134,5 +140,18 @@
     return ta;
   }
 
-  TAP.panelTable = { render: render, toText: toText, clipboard: clipboard };
+  /*
+   * A list report (US-2.7.2): the builder's HTML list under the row count and the copy button, which copies the
+   * builder's table. The list scrolls inside the panel under its sticky header row (css/panel.css).
+   * opts: {label, onPick(data), onOpt(key, value)}
+   */
+  function list(box, res, opts) {
+    opts = opts || {};
+    if (res.table) head(box, res.table, { label: opts.label }, 'listCount');
+    var inner = TAP.panelChart.html(box, res.html, opts.onPick, opts.onOpt);
+    inner.classList.add('tap-panel__html--list');
+    return inner;
+  }
+
+  TAP.panelTable = { render: render, list: list, toText: toText, clipboard: clipboard };
 })(window.TAP);

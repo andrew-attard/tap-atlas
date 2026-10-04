@@ -79,6 +79,7 @@ Object.assign(window.TAP_CONTENT.text, {
     table: 'Table',
     tableNote: 'A table of the same data is always available from the Table button.',
     tableCount: '{n} rows · select a column heading to sort · exact figures',
+    listCount: '{n} rows · select a column heading to sort · select a row for its details',
     source: 'Source',
     focusRow: 'Focus region',
     copy: 'Copy to clipboard',
