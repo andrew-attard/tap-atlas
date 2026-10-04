@@ -383,5 +383,55 @@
         a.equal(TAP.keys.viewFor('x'), null, 'viewFor ignores other keys');
       });
     });
+    /* ---------- QA batch layout checks (D24 sizes, one-row toolbars, narrow grids) ---------- */
+
+    function px(node, prop) { return parseFloat(getComputedStyle(node)[prop]); }
+
+    T.test('X-int-qa7-card-notes', 'QA-7: the card notes on how figures combine, and partial notes, are body text (16 px)', function (a) {
+      withApp(function (root) {
+        TAP.store.set({ cmp: { mode: 'one', focus: 'ceu' } });
+        var how = root.querySelectorAll('.tap-ov-card__how'), part = root.querySelectorAll('.tap-ov-card__partial');
+        a.ok(how.length > 0 && part.length > 0, 'both notes are on screen (Central Europe has no customer growth)');
+        Array.prototype.forEach.call(how, function (n) { a.ok(px(n, 'fontSize') >= 16, 'how-combined note at ' + px(n, 'fontSize') + ' px'); });
+        Array.prototype.forEach.call(part, function (n) { a.ok(px(n, 'fontSize') >= 16, 'partial note at ' + px(n, 'fontSize') + ' px'); });
+      });
+    });
+
+    T.test('X-int-qa10-toolbar', 'QA-10: a half-width panel keeps its toolbar on one row, and every tool keeps a spoken name', function (a) {
+      withApp(function (root) {
+        TAP.store.set({ view: 'industry' });
+        ['ind-quad', 'ind-ratings'].forEach(function (id) {
+          var p = panelEl(root, id), tops = qsa('.tap-panel__tools > .tap-panel__tool', p).map(function (b) { return Math.round(b.getBoundingClientRect().top); });
+          a.ok(p.getBoundingClientRect().width < 44 * 16, id + ' is a half-width panel (' + Math.round(p.getBoundingClientRect().width) + ' px)');
+          a.equal(tops.filter(function (t) { return Math.abs(t - tops[0]) > 8; }).length, 0, id + ': one row of tools (' + tops.join(', ') + ')');
+          ['about', 'table'].forEach(function (act) {
+            var b = p.querySelector('[data-action="' + act + '"]');
+            a.ok(b.querySelector('.tap-icon'), id + ' ' + act + ': the icon shows');
+            a.ok((b.getAttribute('aria-label') || b.textContent).trim().length > 2, id + ' ' + act + ': it still has a name');
+          });
+        });
+        var wide = panelEl(root, 'ind-tiers').querySelector('[data-action="table"] > span:not(.tap-icon)');
+        a.ok(wide.getBoundingClientRect().width > 20, 'a full-width panel keeps the words');
+      });
+    });
+
+    T.test('X-int-qa8-qa9-grid', 'QA-8, QA-9: tier-grid column names stay apart, and a narrow grid shows a dash for not provided', function (a) {
+      withApp(function (root) {
+        TAP.store.set({ view: 'industry' });
+        var cols = qsa('.tap-tg__col', panelEl(root, 'ind-tiers'));
+        a.ok(cols.length >= 7, 'a column per region');
+        cols.forEach(function (c) { a.ok(px(c, 'paddingRight') >= 4, c.textContent + ': space before the next name'); });
+        var host = panelEl(root, 'ind-tiers').parentNode;
+        host.style.width = '700px';
+        var np = panelEl(root, 'ind-tiers').querySelector('.tap-tg__cell--np');
+        a.ok(np, 'a not-provided cell (the sample has one)');
+        a.ok(getComputedStyle(np.querySelector('.tap-tg__npdash')).display !== 'none', 'narrow: the dash shows');
+        a.ok(np.querySelector('.tap-tg__npword').getBoundingClientRect().width <= 1, 'narrow: the words are visually hidden');
+        a.ok(np.scrollWidth <= np.clientWidth + 1, 'nothing overflows the cell');
+        a.ok(/not provided/i.test(np.getAttribute('aria-label')), 'the cell still says not provided to a screen reader');
+        host.style.width = '';
+        a.equal(getComputedStyle(np.querySelector('.tap-tg__npdash')).display, 'none', 'wide: no dash');
+      });
+    });
   });
 })(window.TAP);
