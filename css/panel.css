@@ -27,6 +27,20 @@
 .tap-panel__takeaway:empty { min-height: 0; }
 .tap-panel__hide { min-height: 32px; padding: 0 var(--tap-sp-2); font-weight: 600; vertical-align: middle; }
 
+/* The panel takes focus on a click (for the drill keys); only keyboard focus shows a ring */
+.tap-panel:focus:not(:focus-visible) { outline: none; }
+
+/* Drill-down (US-2.7.1): the breadcrumb above the title, every earlier level a button, and the hint line */
+.tap-panel__drill { display: flex; flex-direction: column; gap: var(--tap-sp-1); }
+.tap-panel__crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1) var(--tap-sp-2); font-size: var(--tap-fs-body); }
+.tap-panel__crumb { font-weight: 800; }
+button.tap-panel__crumb {
+  min-height: 32px; padding: 0; font: inherit; font-weight: 600; color: var(--tap-accent-deep); text-decoration: underline;
+  background: none; border: 0; cursor: pointer;
+}
+.tap-panel__crumb-sep { color: var(--tap-muted); }
+.tap-panel__drill-hint { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }
+
 /* Toolbar: words beside every icon, nothing hover-only */
 .tap-panel__tools { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
 .tap-panel__tool { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); white-space: nowrap; }
