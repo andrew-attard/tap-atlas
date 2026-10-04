@@ -179,6 +179,138 @@
     } else T.skip('TPV-TC-377', 'The concentration, at-risk and segment balance insights attach to this view’s reports',
       'pending: waits for the attach change in config/insight-rules.js (requested from the lead)');
 
+    /* ---------- US-2.2.2 segments ---------- */
+
+    // Worked out by hand from tests/fixtures/mini-data.js, segments in order Strategic, Growth, Core, Scaled.
+    // alpha: a1 strategic 500 / 60, a4 growth 150 / 180, a2 core 200 / 110, a3 scaled 30 / 0 (current ARR / order intake)
+    // bravo: b1 strategic 600 / 132, b2 core 100 / 30. delta: d1 strategic 800 / 210, d2 core 400 / 150, d3 scaled 50 / 0.
+    // charlie: empty customer growth section, so not provided.
+    var SEGS = ['strategic', 'growth', 'core', 'scaled'];
+    var SEG_MINI = {
+      alpha: { accounts: [1, 1, 1, 1], arr: [500, 150, 200, 30], oi: [60, 180, 110, 0] },
+      bravo: { accounts: [1, 0, 1, 0], arr: [600, 0, 100, 0], oi: [132, 0, 30, 0] },
+      delta: { accounts: [1, 0, 1, 1], arr: [800, 0, 400, 50], oi: [210, 0, 150, 0] }
+    };
+    var SEG_TOTAL = { 'cg.accounts': 'accounts', 'cg.currentArr': 'arr', 'cg.oi3': 'oi' };
+    function segRow(res, entityId) { return res.table.rows.filter(function (r) { return r.entityId === entityId; })[0]; }
+    function seriesSegments(res) {
+      return ((res.option || {}).series || []).filter(function (s) { return s.tapRole === 'value'; }).map(function (s) {
+        var d = (s.data || []).filter(function (x) { return x && x.key; })[0];
+        return d ? TAP.cgBuilders.segmentOf(d.key) : null;
+      });
+    }
+
+    when([196], 'TPV-TC-380', 'Measure switch: Accounts (default), Current ARR, Three-year order intake; values match the hand calculation', function (a) {
+      var def = TAP.reports.get('cg-segments');
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['Accounts', 'Current ARR', 'Three-year order intake']);
+      a.equal(TAP.prepare.selected(def, {}), 'cg.accounts', 'Accounts is the default');
+      Object.keys(SEG_TOTAL).forEach(function (m) {
+        var v = SEG_TOTAL[m], res = build('cg-segments', { mode: 'all' }, { measureId: m, type: 'table' });
+        Object.keys(SEG_MINI).forEach(function (r) {
+          var row = segRow(res, r), sum = 0;
+          SEGS.forEach(function (s, i) {
+            var c = row.cells['cg.seg.' + s + '.' + v];
+            a.equal(c.state, 'value', r + ' ' + s + ' ' + v + ' has a value');
+            a.near(c.v, SEG_MINI[r][v][i], 1e-9, r + ' ' + s + ' ' + v);
+            sum += SEG_MINI[r][v][i];
+          });
+          a.near(row.cells[m].v, sum, 1e-9, r + ' ' + m + ' total');
+        });
+        a.equal(segRow(res, 'charlie').cells[m].state, 'notProvided', 'charlie ' + m + ' is not provided');
+      });
+    });
+
+    T.test('TPV-TC-381', 'Chart types: 100% stacked bar by default, also stacked bar and table', function (a) {
+      var def = TAP.reports.get('cg-segments');
+      a.equal(def.defaultType, 'stacked100');
+      [1, 4, 7].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['stacked100', 'stackedBar', 'table'], n + ' regions'); });
+    });
+
+    when([196, 204], 'TPV-TC-382', 'Segments are always Strategic, Growth, Core, Scaled in series, legend and table', function (a) {
+      var labels = TAP.reports.get('cg-segments').parts['cg.accounts'].map(function (id) { return TAP.measures.meta(id).label; });
+      Object.keys(SEG_TOTAL).forEach(function (m) {
+        MODES.forEach(function (mode) {
+          ['stacked100', 'stackedBar', 'table'].forEach(function (type) {
+            var res = build('cg-segments', mode, { measureId: m, type: type }), label = m + ' ' + mode.mode + ' ' + type;
+            a.equal(res.error, null, label + ' builds');
+            if (type !== 'table') a.deepEqual(seriesSegments(res), SEGS, label + ': series');
+            a.deepEqual(res.legend.map(function (l) { return l.label; }), labels, label + ': legend');
+            var cols = res.table.columns.map(function (c) { return TAP.cgBuilders.segmentOf(c.key); }).filter(Boolean);
+            a.deepEqual(cols, SEGS, label + ': table columns');
+          });
+        });
+      });
+    });
+
+    when([196, 204], 'X-cg-segments-ink', 'Segments are drawn in ink steps, darkest Strategic, each named in the legend', function (a) {
+      var th = window.TAP_THEME, res = build('cg-segments', { mode: 'all' });
+      ((res.option || {}).series || []).filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) {
+        (s.data || []).forEach(function (d) {
+          if (!d || !d.key) return;
+          a.equal(d.itemStyle.color, th.shade(th.ink, SEGS.indexOf(TAP.cgBuilders.segmentOf(d.key))), d.entityId + ' ' + d.key);
+        });
+      });
+      a.deepEqual(res.legend.map(function (l) { return l.color; }), SEGS.map(function (s, i) { return th.shade(th.ink, i); }), 'legend swatches');
+      a.ok(res.legend.every(function (l) { return l.role === 'part' && l.label; }), 'every segment named; no region colour key');
+    });
+
+    when([196, 229], 'TPV-TC-384', 'Broken down by risk: high, medium and not flagged add up to each segment', function (a) {
+      // alpha by risk (hand): high a2 core 200 / 110; medium a4 growth 150 / 180; not flagged a1 strategic 500 / 60, a3 scaled 30 / 0
+      var want = { high: { core: [1, 200, 110] }, medium: { growth: [1, 150, 180] }, none: { strategic: [1, 500, 60], scaled: [1, 30, 0] } };
+      ['accounts', 'arr', 'oi'].forEach(function (v, vi) {
+        SEGS.forEach(function (s) {
+          var id = 'cg.seg.' + s + '.' + v, fn = TAP.measures.get(id), sum = 0;
+          a.ok(TAP.measures.meta(id).dims.indexOf('risk') >= 0, id + ' breaks down by risk');
+          ['high', 'medium', 'none'].forEach(function (risk) {
+            var c = fn('alpha', { risk: risk }), hand = (want[risk][s] || [0, 0, 0])[vi];
+            a.near(c.v, hand, 1e-9, 'alpha ' + id + ' ' + risk);
+            sum += c.v;
+          });
+          a.near(sum, fn('alpha', {}).v, 1e-9, 'alpha ' + id + ': the parts add up');
+        });
+      });
+      var ds = TAP.prepare.run(TAP.reports.get('cg-segments'), ctxFor('cg-segments', { mode: 'all' }, { breakdown: 'risk' }));
+      var vals = ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === 'risk'; }).map(function (c) { return c.breakdown.value; });
+      ['high', 'medium', 'none'].forEach(function (r) { a.ok(vals.indexOf(r) >= 0, 'a column for ' + r); });
+    });
+
+    when([196], 'TPV-TC-385', 'The segment stored in the data file is used, even where the thresholds would say otherwise', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[0].customerGrowth.accounts[0].segment = 'scaled';   // a1: current ARR 500, above the strategic threshold 400
+      TAP.data.load(plan);
+      var res = build('cg-segments', { mode: 'one', focus: 'alpha', restAs: 'individual' }, { type: 'table' }), row = segRow(res, 'alpha');
+      a.equal(row.cells['cg.seg.strategic.accounts'].v, 0, 'no strategic account left');
+      a.equal(row.cells['cg.seg.scaled.accounts'].v, 2, 'a1 counts as scaled, as stored');
+    });
+
+    T.test('TPV-TC-386', 'Details list each region’s segment thresholds as held in the data file; "not provided" for the empty section', function (a) {
+      sample();
+      var ids = TAP.data.regions().map(function (r) { return r.id; });
+      var d = TAP.details.build({ reportId: 'cg-segments', regionIds: ids, items: ids.map(function (r) { return { section: 'customerGrowth', regionId: r, row: null }; }) });
+      a.equal(d.groups.length, ids.length, 'one group per region');
+      ids.forEach(function (r, i) {
+        var th = (TAP.data.region(r).customerGrowth || {}).thresholds || {}, g = d.groups[i];
+        a.match(g.title, new RegExp(TAP.content.regionName(TAP.data.region(r)).replace(/[.*+?^${}()|[\]\\&]/g, '\\$&')), r + ' named');
+        ['strategicArr', 'scaledArr', 'growthArr', 'growthOrderIntake'].forEach(function (k, j) {
+          var c = g.rows[j].cell, held = th[k];
+          a.equal(c.state, held == null ? 'notProvided' : 'value', r + ' ' + k + ' state');
+          if (held != null) a.equal(c.v, held, r + ' ' + k);
+          a.equal(c.src.field, 'thresholds.' + k, r + ' ' + k + ' source field');
+          a.ok(TAP.sources.address(c.src).cell, r + ' ' + k + ' has a cell address');
+        });
+      });
+      var empty = window.SAMPLE_EXPECT.gaps.emptySection[0];
+      a.ok(d.groups[ids.indexOf(empty)].rows.every(function (x) { return x.cell.state === 'notProvided'; }), empty + ': every threshold not provided');
+    });
+
+    when([196, 204], 'X-cg-segments-target', 'A bar click lists the thresholds of every region behind the bar', function (a) {
+      var res = build('cg-segments', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' });
+      var tg = res.target({ data: { entityId: 'rest', key: 'cg.seg.core.accounts' } });
+      a.deepEqual(tg.items.map(function (i) { return [i.section, i.regionId, i.row]; }),
+        [['customerGrowth', 'bravo', null], ['customerGrowth', 'charlie', null], ['customerGrowth', 'delta', null]]);
+      a.equal(TAP.details.build(tg).groups.length, 3, 'details show the three regions');
+    });
+
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.partners.reports), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
