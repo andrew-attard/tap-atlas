@@ -1,7 +1,8 @@
 /*
  * File: tests/test-pages-p2.js
  * Purpose: Tests for Phase 2 glossary, guide, tips, tour and shortcuts.
- * Provides: test cases for the PAGES2 stream: US-2.6.1 (TPV-TC-496 to 498), X-pages2-*
+ * Provides: test cases for the PAGES2 stream: US-2.6.1 (TPV-TC-496 to 498), US-2.6.2 (TPV-TC-500, 501),
+ *           X-pages2-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: PAGES2 stream
@@ -69,6 +70,21 @@
     var root = T.dom.mount(), handle = TAP.views.get('guide').mount(root);
     try { return fn(root); } finally { handle.destroy(); }
   }
+  // Mounts a view, runs fn with its root and always destroys it. Tips are shown again afterwards, as on a reload.
+  function withView(id, fn) {
+    var root = T.dom.mount(), handle = TAP.views.get(id).mount(root);
+    try { return fn(root); } finally { if (handle && handle.destroy) handle.destroy(); TAP.viewHead.showTips(); }
+  }
+  function tipOf(root, id) { return root.querySelector('.tap-vh__tip[data-view="' + id + '"]'); }
+  function shows(node) { return !!node && !node.hidden && node.getClientRects().length > 0; }
+  function storageKeys() {
+    var out = [];
+    [window.localStorage, window.sessionStorage].forEach(function (st, i) {
+      try { for (var k = 0; k < st.length; k++) out.push(i + ':' + st.key(k)); } catch (e) { /* storage blocked */ }
+    });
+    return out.sort();
+  }
+
   function howToFor(view) {
     return (TAP.content.guide().howTo.sections || []).filter(function (s) { return s.link && s.link.view === view; })[0];
   }
@@ -191,6 +207,53 @@
       a.ok(!paras.some(function (p) { return /weighted average/.test(p); }), 'no share is called a weighted average');
       var levers = TAP.explain.sections('nb-levers', cmp).filter(function (s) { return s.key === 'combined'; })[0].paras;
       a.ok(levers.some(function (p) { return /^Hit rate is a weighted average/.test(p); }), 'a weighted rate still says it is weighted');
+    });
+
+    /* ---------- US-2.6.2: a "how to read this view" line (#225) ---------- */
+
+    TAP.views.order().forEach(function (id) {
+      var title = 'The ' + id + ' view has its tip line in the content files, under its title';
+      if (TAP.views.get(id).__stub) { T.skip('TPV-TC-500', title, 'pending: the ' + id + ' view is still a stub'); return; }
+      T.test('TPV-TC-500', title, function (a) {
+        var text = TAP.content.text('viewTips.' + id);
+        a.ok(text && text !== '[viewTips.' + id + ']', 'a line in content/text-pages.js');
+        a.ok(text.length < 160 && sentences(text) === 1, 'one line: ' + text.length + ' characters');
+        withView(id, function (root) {
+          var tip = tipOf(root, id), h1 = root.querySelector('h1');
+          a.ok(shows(tip), 'the line shows');
+          a.ok(tip && txt(tip).indexOf(text) === 0, 'with the content text');
+          a.ok(h1 && tip && (h1.compareDocumentPosition(tip) & Node.DOCUMENT_POSITION_FOLLOWING), 'under the title');
+          a.equal(root.querySelectorAll('.tap-vh__tip[data-view]').length, 1, 'once');
+        });
+      });
+    });
+
+    T.test('TPV-TC-501', '"Hide tips" hides the line on every view for the session, and stores nothing', function (a) {
+      var before = storageKeys();
+      withView('overview', function (root) {
+        var btn = tipOf(root, 'overview').querySelector('.tap-vh__tiphide');
+        a.equal(txt(btn), TAP.content.text('viewTips.hide'), 'the button reads "Hide tips"');
+        btn.click();
+        a.ok(!shows(tipOf(root, 'overview')), 'the line on screen hides at once');
+        a.ok(TAP.viewHead.tipsHidden(), 'hidden for the session');
+        TAP.views.order().filter(function (id) { return !TAP.views.get(id).__stub; }).forEach(function (id) {
+          var r = T.dom.mount(), h = TAP.views.get(id).mount(r);
+          a.ok(!shows(tipOf(r, id)), id + ': no line');
+          if (h && h.destroy) h.destroy();
+        });
+        a.deepEqual(storageKeys(), before, 'nothing was stored, so a reload shows the tips again');
+      });
+      a.ok(!TAP.viewHead.tipsHidden(), 'a fresh start (as on reload) shows them');
+    });
+
+    T.test('X-pages2-tip-size', 'The tip line and its button are at least 16 px and need no hover', function (a) {
+      withView('newBusiness', function (root) {
+        var tip = tipOf(root, 'newBusiness');
+        [tip.querySelector('.tap-vh__tiptext'), tip.querySelector('.tap-vh__tiphide')].forEach(function (n) {
+          a.ok(parseFloat(getComputedStyle(n).fontSize) >= 16, n.className + ': ' + getComputedStyle(n).fontSize);
+          a.ok(getComputedStyle(n).visibility === 'visible' && shows(n), n.className + ' shows without hover');
+        });
+      });
     });
   });
 })(window.TAP);
