@@ -180,7 +180,8 @@
 /* Value kinds (US-2.6.4): the glyph and word under each heading's name, and the one-line key under a list or table */
 .tap-panel__colkind { display: flex; flex-wrap: wrap; gap: 0 var(--tap-sp-2); margin-top: 2px; font-weight: 400; white-space: normal; }
 .tap-panel__colkind .tap-kind { font-weight: 400; }
-.tap-panel__table th.num .tap-panel__colkind, .tap-panel__html--list th.num .tap-panel__colkind { justify-content: flex-end; }
+.tap-panel__table th.num .tap-panel__colkind, .tap-panel__html--list th.num .tap-panel__colkind,
+.tap-panel__html--list th.tap-list__num .tap-panel__colkind { justify-content: flex-end; }
 .tap-panel__kind-key {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-4); margin: var(--tap-sp-2) 0 0;
   font-size: var(--tap-fs-label); color: var(--tap-muted);
