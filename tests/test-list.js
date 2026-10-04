@@ -565,7 +565,17 @@
       a.ok(qs('.tap-panel__crumbs', p.el).closest('.tap-panel__head'), 'in the panel header');
     }));
 
-    T.test('TPV-TC-275', 'Each breadcrumb step returns the panel to that level', scene(function (a, s) {
+    T.test('X-drill-hint', 'A level that drills further says so under its title; the last level does not', scene(function (a, s) {
+      levels(s);
+      var p = s.panel('x-d1');
+      a.match(txt(qs('.tap-panel__drill-hint', p.el)), /step down to industry/, 'names the next level');
+      down2(p);
+      a.equal(qs('.tap-panel__drill-hint', p.el), null, 'none at the last level');
+      a.match(txt(qs('.tap-panel__crumbs', p.el)), /Backspace/, 'the breadcrumb says how to go back up');
+      a.equal(qs('.tap-panel__drill-hint', s.panel('x-d3').el), null, 'none on a report without drill');
+    }));
+
+    T.test('TPV-TC-275','Each breadcrumb step returns the panel to that level', scene(function (a, s) {
       levels(s);
       var p = s.panel('x-d1');
       down2(p);
