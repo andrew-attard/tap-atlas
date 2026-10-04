@@ -54,7 +54,7 @@
 
   // Esc (after any popover or side panel) closes the expanded chart; the arrows step to the next or previous one.
   function keys(p, e) {
-    if (TAP.store.get().expanded !== p.id || e.defaultPrevented) return;
+    if (TAP.store.get().expanded !== p.id || e.defaultPrevented || !TAP.panelKeys.enabled) return;   // D70 switch
     if (e.key === 'Escape') {
       if (TAP.layers.top()) return;
       e.preventDefault();

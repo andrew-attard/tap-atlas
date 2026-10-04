@@ -79,6 +79,7 @@ Object.assign(window.TAP_CONTENT.text, {
     // Drill-down (US-2.7.1)
     drillPath: 'Drill-down path',
     drillHint: 'Select part of the chart to step down to {level}.',
+    drillHintList: 'Select a row of the list to step down to {level}.',
     drillKeys: '(Backspace or Alt + ← goes back up)',
     drillUnknown: 'The next drill level "{id}" is not a report.',
     drillLoop: 'The drill levels lead back to "{id}".',
@@ -88,7 +89,7 @@ Object.assign(window.TAP_CONTENT.text, {
     tableNote: 'A table of the same data is always available from the Table button.',
     tableCount: '{n} rows · select a column heading to sort · exact figures',
     kindKey: 'Kinds of value:',
-    listCount:'{n} rows · select a column heading to sort · select a row for its details',
+    listCount: '{n} rows · select a column heading to sort · select a row for its details',
     source: 'Source',
     focusRow: 'Focus region',
     copy: 'Copy to clipboard',
