@@ -980,5 +980,35 @@
       a.ok(calls.length > n, 'a resize that changes the chart builds it again');
       a.equal(last().size.w, 300, 'with the new size');
     }));
+    T.test('X-panel-height-hint', 'Polish (b): the chart is at least as tall as the builder asks', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { height: 900 }; };
+      var p = s.panel('x-fake'), chart = qs('.tap-panel__chart', p.el);
+      a.equal(chart.style.minHeight, '900px', 'minimum height from the hint');
+      a.ok(chart.clientHeight >= 900, 'drawn that tall');
+      FAKE = null;
+      p.refresh();
+      a.equal(qs('.tap-panel__chart', p.el).style.minHeight, '', 'no hint: the normal height');
+      var grid = s.panel('ind-tiers');
+      click(qs('[data-action="type"]', grid.el));
+      click(qs('[data-type="bubbleGrid"]', grid.el));
+      var g = qs('.tap-panel__chart', grid.el), rows = TAP.data.industries({ rated: true }).length;
+      a.ok(g.clientHeight >= rows * TH.space[8], 'the bubble grid gets a row of room per industry (' + g.clientHeight + ' px)');
+    }));
+
+    T.test('X-panel-legend-keys', 'Polish (c), QA-4: keys without a colour, and numbered keys', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { legend: [{ label: 'A note', color: null, role: 'note' }, { label: 'Not provided', color: null, role: 'notProvided' },
+        { label: 'Region A', color: TH.regions[0], role: 'region', mark: 1 }, { label: 'Region B', color: TH.focusGrey, role: 'muted', mark: 2 }] }; };
+      var p = s.panel('x-fake'), items = qsa('.tap-panel__legend-item', p.el);
+      a.equal(items.length, 4, 'four items');
+      a.equal(getComputedStyle(qs('.tap-panel__key', items[0])).display, 'none', 'a note shows words only');
+      var np = getComputedStyle(qs('.tap-panel__key', items[1]));
+      a.equal(np.borderTopStyle, 'dashed', 'not provided is an outlined key');
+      a.equal(np.backgroundColor, 'rgba(0, 0, 0, 0)', 'with no fill');
+      a.equal(txt(items[2]), '1Region A', 'a numbered key reads its number before the name');
+      a.ok(qs('.tap-panel__key--num', items[2]), 'drawn as a numbered disc');
+      a.ok(qs('.tap-panel__key--light', items[3]), 'dark number on a light grey key');
+    }));
   });
 })(window.TAP);
