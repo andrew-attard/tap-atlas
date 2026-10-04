@@ -350,7 +350,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 - **Esc order:** popovers handle Esc first and stop it (`preventDefault()`). Side panels listen on `window` and ignore an Esc that was already handled. Then an expanded panel closes.
 - `TAP.details.build(target)` returns `{title, groups: [{title, rows: [{label, cell}]}]}` (owned by INDUSTRY; the shell draws it).
 
-**Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant, mark}`. Every field except `reportId` is optional. `mark` says what to draw: `'industryRow'`, `'regionColumn'`, `'cell'`, `'points'`, `'quadrant'` or `'bar'`. It comes from the rule's `highlight` setting. `state.highlight` holds a Target.
+**Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant, mark, items, theme}`. Every field except `reportId` is optional. `items` (Phase 2) names list rows (17.4); `theme` names a recurring theme for the themes report (17.7). `mark` says what to draw: `'industryRow'`, `'regionColumn'`, `'cell'`, `'points'`, `'quadrant'` or `'bar'`. It comes from the rule's `highlight` setting. `state.highlight` holds a Target.
 
 **UI modules** (owned by SHELL unless noted):
 
@@ -412,7 +412,7 @@ The engine drops any finding built from a not-provided value. It skips compariso
 
 Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'text'`), and `field` when the unit is `'rating'`, so pages format it with `TAP.format.cell(cell, {unit, field, exact: true})` without guessing. Add `measureId` when the figure comes from a catalogue measure.
 
-**Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, attach, highlight, fallback, label: 'Observation to discuss'}`. `attach` lists every report the insight belongs to; panel lists filter on it, and `reportId` is `attach[0]`. When there is no Phase 1 report, `reportId` is null and `fallback` is `'details'`: "Show me" then calls `TAP.layers.openDetails(highlight)`.
+**Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, attach, highlight, fallback, label: 'Observation to discuss'}`. `attach` lists the attached reports that exist (a rule may name reports still being built); panel lists filter on it, and `reportId` is its first. When there is no Phase 1 report, `reportId` is null and `fallback` is `'details'`: "Show me" then calls `TAP.layers.openDetails(highlight)`.
 
 ## 13. Content (`content/*`, `js/core/content.js`, `js/ui/glossary.js`)
 
@@ -538,6 +538,10 @@ TAP_REPORTS['cg-accounts'] = {
 - `defaultBreakdown` in a definition is the breakdown the panel starts with (and returns to when `scopeEpoch` changes).
 - Row bubbles (`rowBubble`) name `TAP.rows` column keys in `x`, `y` and `size`; `TAP.reports.measureIds` skips them when `def.rows` is set. `TAP_SETTINGS.rowBubble.labelMax` (10) sets how many carry a label.
 - CGP's wrappers `cgSegments`, `cgGrowth`, `cgExposure` live in `js/reports/cg-builders.js`.
+- `TAP.rows` also gives `section(source)` (the Data Contract section of a row source) and `rowSrc(...)`; "also" cells (`alsoTargeted`, `alsoNamed`) carry `regionIds`.
+- A target item may have `row: null`: it means the region's whole section (for example the customer growth thresholds), not one row.
+- "Show me" on a list highlights the matching rows (`is-hl`) and scrolls the list to the first; it doesn't filter (D71). Insight rules that point at list rows use highlight mark `null` and carry `items`.
+- The banned-word check skips the workbook names an insight quotes (`partner`, `subIndustry`, `regions`).
 
 **Panel** (PANEL2): `type: 'list'` hides the chart type menu and the table switch. Clicks on any `[data-tap-opt]` element in builder HTML set `ctx.opts[key] = value` and rebuild (generic, not list-specific). Clicks on `[data-tap-row]` open details with the builder's target. The list header row is sticky and the body scrolls inside the panel.
 
