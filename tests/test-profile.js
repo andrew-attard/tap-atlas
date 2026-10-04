@@ -14,8 +14,6 @@
   var qsa = function (sel, root) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
   var txt = function (el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; };
   var MINI = ['alpha', 'bravo', 'charlie', 'delta'];
-  // Switched on when panels take their own comparison (opts.cmp, PANEL2b); until then those tests show as skipped.
-  var PANEL_CMP = false;
 
   function view() { return TAP.views.get('regions'); }
   // Mounts the Regions view on its own, with state.region set first. Returns {root, handle}.
@@ -195,19 +193,18 @@
     });
 
     // Real panels: every comparison they draw with is the profile's own, never the shared one
-    (PANEL_CMP ? T.test : T.skip)('TPV-TC-441', 'The panels on the profile draw the region against the average of the rest',
-      PANEL_CMP ? function (a) {
-        TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo', 'charlie'] } });
-        var real = TAP.scope.entities, used = [], m;
-        TAP.scope.entities = function (c) { used.push(c); return real.apply(TAP.scope, arguments); };
-        try { m = mountFor('delta'); } finally { TAP.scope.entities = real; }
-        try {
-          a.ok(qsa('.tap-panel', m.root).length > 0, 'panels drawn');
-          a.ok(used.length > 0, 'the panels asked for their entities');
-          a.equal(used.filter(function (c) { return !c || c.mode !== 'one' || c.focus !== 'delta'; }).length, 0,
-            'every panel used the profile comparison');
-        } finally { m.handle.destroy(); }
-      } : 'pending: waits for panel opts.cmp (PANEL2b)');
+    T.test('TPV-TC-441', 'The panels on the profile draw the region against the average of the rest', function (a) {
+      TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo', 'charlie'] } });
+      var real = TAP.scope.entities, used = [], m;
+      TAP.scope.entities = function (c) { used.push(c); return real.apply(TAP.scope, arguments); };
+      try { m = mountFor('delta'); } finally { TAP.scope.entities = real; }
+      try {
+        a.ok(qsa('.tap-panel', m.root).length > 0, 'panels drawn');
+        a.ok(used.length > 0, 'the panels asked for their entities');
+        a.equal(used.filter(function (c) { return !c || c.mode !== 'one' || c.focus !== 'delta'; }).length, 0,
+          'every panel used the profile comparison');
+      } finally { m.handle.destroy(); }
+    });
 
     T.test('TPV-TC-441', 'Leaving the profile for another view keeps the shared comparison', function (a) {
       return withApp(function () {
