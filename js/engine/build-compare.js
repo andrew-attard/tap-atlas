@@ -25,7 +25,8 @@
     if (type === 'table') return res;
     if (type === 'radar' && (!cats || rows.length > 3)) type = cats ? 'dot' : 'bar';   // a stale choice falls back
     var draw = { cats: cats, keys: keys, bd: bd, rows: rows, ds: ds, ctx: ctx, k: k, res: res };
-    res.option = type === 'radar' ? radar(draw) : type === 'dot' ? dot(draw) : bd.length ? grouped(draw) : bars(draw);
+    // A dot plot with a breakdown draws grouped bars until the dot plot takes breakdowns (#195)
+    res.option = type === 'radar' ? radar(draw) : type === 'dot' && !bd.length ? dot(draw) : bd.length ? grouped(draw) : bars(draw);
     return res;
   }
 
@@ -42,13 +43,21 @@
             return item(row, key, c, { itemStyle: { color: th.shade(row.entity.color, i), borderColor: on ? hl.color : th.ground,
               borderWidth: on ? hl.width : th.border.control } });
           }
-          if (c.state === 'notProvided') np.push({ value: [0, ri], entityId: row.entityId, text: k.t('chart.npFor', { name: col.label }), title: row.label, what: col.label });
           return { value: null };
         }),
         label: { show: true, position: 'right', fontSize: th.type.chart, color: th.ink, formatter: function (p) {
           return p.data && p.data.raw != null ? col.label + '  ' + TAP.format.cell({ v: p.data.raw, state: 'value' }, { unit: col.unit }) : '';
         } },
         tooltip: tooltip(draw) };
+    });
+    // One not-provided mark per row, naming the values left blank (all blank reads simply "not provided")
+    draw.rows.forEach(function (row, ri) {
+      var gaps = draw.bd.filter(function (key) { return row.cells[key].state === 'notProvided'; });
+      if (!gaps.length) return;
+      var some = draw.bd.some(function (key) { return row.cells[key].state === 'value'; });
+      var names = TAP.format.list(gaps.map(function (key) { return k.colOf(draw.ds, key).label; }));
+      np.push({ value: [0, ri], entityId: row.entityId, text: some ? k.t('chart.npSome', { names: names }) : k.t('states.notProvided'),
+        title: row.label, what: names });
     });
     draw.res.legend = draw.res.legend.concat(draw.bd.map(function (key, i) {
       return { label: k.colOf(draw.ds, key).label, color: th.shade(th.ink, i), role: 'part' };
