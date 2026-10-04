@@ -235,14 +235,24 @@
       click(qs('[data-control="breakdown"] [data-value="none"]', p.el));
       a.equal(pressed(p), 'none', 'none can still be chosen');
       TAP.store.set({ cmp: { mode: 'org' } });
-      a.equal(pressed(p), 'none', 'a choice made stays, as for any breakdown');
+      a.equal(pressed(p), 'year', 'a change of comparison returns to the default breakdown');
+      click(qs('[data-control="breakdown"] [data-value="none"]', p.el));
       TAP.bus.emit('charts:reset');
-      a.equal(pressed(p), 'year', '"Reset all charts" returns to the default breakdown');
+      a.equal(pressed(p), 'year', '"Reset all charts" returns to it too');
     }));
 
-    T.test('X-panel-default-breakdown', 'A defaultBreakdown the report does not offer is ignored', scene(function (a, s) {
+    T.test('X-panel-default-breakdown', 'Without defaultBreakdown a chosen breakdown stays across comparisons (Phase 1)', scene(function (a, s) {
+      s.report(cmpDef({ id: 'x-bd3', defaultBreakdown: undefined }));
+      var p = s.panel('x-bd3');
+      a.equal(pressed(p), 'none', 'opens with none');
+      click(qs('[data-control="breakdown"] [data-value="year"]', p.el));
+      TAP.store.set({ cmp: { mode: 'org' } });
+      a.equal(pressed(p), 'year', 'kept');
+    }));
+
+    T.test('X-panel-default-breakdown', 'A defaultBreakdown the report does not offer is an error in its own panel', scene(function (a, s) {
       s.report(cmpDef({ id: 'x-bd2', defaultBreakdown: 'industry' }));
-      a.equal(pressed(s.panel('x-bd2')), 'none');
+      a.match(txt(qs('.tap-panel__error', s.panel('x-bd2').el)), /defaultBreakdown/);
     }));
   });
 })(window.TAP);
