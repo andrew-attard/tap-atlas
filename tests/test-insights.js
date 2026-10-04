@@ -5,11 +5,13 @@
  * Provides: test cases for INSIGHTS story #44, X-insights-*; window.T_INSIGHT_SHAPE and window.T_INSIGHTS (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
+ * Owner: INSIGHTS2 stream (Phase 2)
  */
 (function (TAP) {
   'use strict';
 
-  var FAMILIES = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
+  var PHASE1 = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
+  var FAMILIES = PHASE1.concat(['plan', 'shared', 'themes']);
   var MARKS = ['industryRow', 'regionColumn', 'cell', 'points', 'quadrant', 'bar', null];
   var STATES = ['value', 'notProvided', 'notApplicable'];
   var UNITS = ['money', 'pct', 'rating', 'score', 'count', 'tier', 'text'];
@@ -49,6 +51,10 @@
     return !TAP.stub.list().some(function (s) { return s.what === 'insight rules: ' + family; });
   }
   function ofRule(id) { return TAP.insights.all().filter(function (x) { return x.ruleId === id; }); }
+  function listed(reportId) {
+    var V = window.TAP_VIEWS;
+    return Object.keys(V).some(function (v) { return v !== 'order' && (V[v].reports || []).indexOf(reportId) >= 0; });
+  }
 
   // A throwaway rule for engine tests: a config entry plus its code, both removed afterwards.
   function withRule(def, fn, body) {
@@ -86,13 +92,17 @@
         a.ok(Array.isArray(r.reads) && r.reads.length > 0, r.id + ' names the data it reads');
         a.ok(/\{\w+\}/.test(r.template), r.id + ' has a sentence template');
         a.ok(Array.isArray(r.attach), r.id + ' attach list');
-        r.attach.forEach(function (rep) { a.ok(TAP.reports.get(rep), r.id + ' attaches to a real report: ' + rep); });
+        r.attach.forEach(function (rep) {
+          // While Phase 2 is being built, a report a view lists may not exist yet (as X-contract-reports)
+          if (!TAP.reports.get(rep) && TAP.stub.list().length && listed(rep)) { a.ok(true, r.id + ': ' + rep + ' not built yet'); return; }
+          a.ok(TAP.reports.get(rep), r.id + ' attaches to a real report: ' + rep);
+        });
         a.ok(MARKS.indexOf(r.highlight) >= 0, r.id + ' highlight mark');
         a.ok(r.attach.length > 0 || r.fallback === 'details', r.id + ' without a report falls back to details');
         a.ok(!ids[r.id], r.id + ' is unique');
         ids[r.id] = true;
       });
-      FAMILIES.forEach(function (f) { a.ok(rules.some(function (r) { return r.family === f; }), 'family ' + f + ' has rules'); });
+      PHASE1.forEach(function (f) { a.ok(rules.some(function (r) { return r.family === f; }), 'family ' + f + ' has rules'); });
       var w = window.TAP_RULES.wording;
       a.ok(w.guide.length >= 4, 'the wording guide is in the configuration file');
       ['unrealistic', 'wrong', 'poor', 'inconsistent'].forEach(function (b) { a.ok(w.banned.indexOf(b) >= 0, 'bans ' + b); });
@@ -157,10 +167,11 @@
       });
     });
 
-    if (FAMILIES.every(built)) {
+    // Phase 2 families join once their rule files are built
+    if (PHASE1.every(built)) {
       T.test('TPV-TC-133', 'On the sample data every rule produces at least one insight', function (a) {
         sample();
-        window.TAP_RULES.rules.filter(function (r) { return r.enabled; }).forEach(function (r) {
+        window.TAP_RULES.rules.filter(function (r) { return r.enabled && built(r.family); }).forEach(function (r) {
           a.ok(ofRule(r.id).length > 0, r.id + ' fires on the sample data');
         });
         a.deepEqual(TAP.insights.failures(), [], 'no rule failed');
@@ -234,7 +245,7 @@
       var list = window.TEST_FIXTURES.insights;
       a.ok(list.length >= 8, 'about eight insights');
       list.forEach(function (x) { checkShape(a, x); });
-      FAMILIES.forEach(function (f) {
+      PHASE1.forEach(function (f) {
         a.ok(list.some(function (x) { return x.family === f; }), 'family ' + f + ' is covered');
       });
       a.ok(list.some(function (x) { return x.fallback === 'details'; }), 'one insight falls back to the details panel');
