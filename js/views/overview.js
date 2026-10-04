@@ -249,7 +249,9 @@
     drawCards();
     var panel = mountPanel(panelHost);
 
+    var handle;
     var off = TAP.store.on(function (state, changed) {
+      if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
       if (changed.indexOf('cmp') >= 0) { drawText(); drawCards(); }
       else if (changed.indexOf('hiddenInsights') >= 0) drawText();
     });
@@ -257,13 +259,14 @@
     var ro = window.ResizeObserver ? new window.ResizeObserver(function () { TAP.overviewCards.layout(cardsHost); }) : null;
     if (ro) ro.observe(cardsHost);
 
-    return {
+    handle = {
       destroy: function () {
         off();
         if (ro) ro.disconnect();
         if (panel && panel.destroy) panel.destroy();
       }
     };
+    return handle;
   }
 
   TAP.views.register('overview', { title: 'Overview', mount: mount });

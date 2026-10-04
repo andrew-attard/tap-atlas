@@ -252,6 +252,7 @@
     }
 
     var off = TAP.store.on(function (state, changed) {
+      if (!root.isConnected) { off(); return; }   // off the page (removed without destroy()): stop listening
       if (has(changed, 'cmp') || has(changed, 'hiddenInsights')) { ui.status = ''; draw(); }
     });
     draw();
