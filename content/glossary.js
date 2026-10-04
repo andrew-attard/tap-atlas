@@ -132,7 +132,7 @@ window.TAP_CONTENT.glossary = Object.assign(window.TAP_CONTENT.glossary || {}, {
   avgDealSize: { term: 'Average deal size', aliases: ['deal size', 'average deal'],
     short: 'The ARR a region expects from each new customer it wins, on average.',
     why: 'Large differences between regions selling to the same industry are worth discussing.', related: ['arrPotential', 'hitRate'] },
-  growthAssumption: { term: 'Growth assumption', aliases: ['growth assumptions', 'growth %'],
+  growthAssumption: { term: 'Growth assumption', aliases: ['growth assumptions', 'growth %', 'year 2 growth', 'year 3 growth'],
     short: 'How much a leader expects revenue to grow from one plan year to the next, before any price increase.',
     why: 'It drives Year 2 and Year 3. Small changes add up over three years.', related: ['planYear', 'newBusiness', 'customerGrowth'] },
 
