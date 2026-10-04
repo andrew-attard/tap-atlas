@@ -502,6 +502,25 @@
       }
     });
 
+    T.test('X-cg-exposure-items', 'A bar lists exactly the accounts its share counted', function (a) {
+      // a1's increments made blank: it has no incremental ARR, so it counts in neither share and is never listed
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[0].customerGrowth.accounts[0].incrementalArr = [null, null, null];
+      plan.regions[0].customerGrowth.accounts[2].riskLevel = 'low';   // not high or medium: not at risk
+      TAP.data.load(plan);
+      var rows = function (m) { return TAP.cgBuilders.accountItems(['alpha'], m).map(function (i) { return i.row; }); };
+      a.deepEqual(rows('cg.top3Share'), [13, 11, 12], 'a4 150, a2 100, a3 0; a1 has no figure');
+      a.deepEqual(rows('cg.riskShare'), [13, 11], 'high and medium only');
+      var rules = window.TAP_RULES.rules, conc = rules.filter(function (r) { return r.id === 'concentration'; })[0];
+      var risk = rules.filter(function (r) { return r.id === 'atRisk'; })[0], keep = [conc.params.top, risk.params.levels];
+      conc.params.top = 2;
+      risk.params.levels = ['high'];
+      try {
+        a.equal(rows('cg.top3Share').length, 3, 'always the top 3, as the share');
+        a.deepEqual(rows('cg.riskShare'), [13, 11], 'always high and medium, as the share');
+      } finally { conc.params.top = keep[0]; risk.params.levels = keep[1]; }
+    });
+
     T.test('X-cg-layout-rows', 'Reports pair two by two; a list or a report left over takes a full row', function (a) {
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.partners.reports), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
