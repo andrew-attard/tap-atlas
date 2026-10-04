@@ -4,7 +4,7 @@
  *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
  *          session" with an "N hidden · Show hidden" note (US-1.7.11).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
+ * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
  *             js/core/sources.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
  *             js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails),
  *             config/settings.js (family weights)
@@ -231,7 +231,8 @@
         el('p', { class: 'tap-ins__kicker' }, t('kicker')),
         el('h1', { class: 'tap-ins__h1', tabindex: '-1' }, t('heading')),
         el('p', { class: 'tap-ins__intro' }, list.length === 1 ? t('introOne') : t('intro', { n: list.length })),
-        el('p', { class: 'tap-ins__scope' }, t('scope', { sentence: TAP.scope.sentence(cmp()) }))
+        el('p', { class: 'tap-ins__scope' }, t('scope', { sentence: TAP.scope.sentence(cmp()) })),
+        TAP.viewHead.tip('insights')
       ]));
       page.appendChild(filters(list, families));
       page.appendChild(summary(shown.length, list.length));

@@ -36,7 +36,8 @@ window.TAP_CONTENT.guide = {
     sections: [
       { id: 'menu', title: 'The menu', paragraphs: [
         'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights and this Guide. The view you are on is highlighted.',
-        'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.'
+        'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.',
+        'A one-line tip under each view’s title says where to start. "Hide tips" hides the tips until the page is reloaded.'
       ] },
       { id: 'viewNewBusiness', title: 'The New business view', link: { view: 'newBusiness' }, paragraphs: [
         'New business shows where each region expects new customers to come from: the industries and channels its new business rests on, and the assumptions behind the number.',
