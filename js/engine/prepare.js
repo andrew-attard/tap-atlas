@@ -31,7 +31,7 @@
     var ys = (TAP.data.meta() || {}).years;
     return ys && ys[y - 1] ? String(ys[y - 1]) : TAP.content.text('chart.year', { n: y });
   }
-  // Breakdown dimensions (ARCHITECTURE 17.3) and the measure context key each one sets.
+
   // Breakdown dimensions are listed in TAP.reports.BREAKDOWNS (ARCHITECTURE 17.3); each sets one measure context key.
   var CTX_KEY = { year: 'year', industry: 'industryId', channel: 'channel', motion: 'motion', segment: 'segment', risk: 'risk' };
 

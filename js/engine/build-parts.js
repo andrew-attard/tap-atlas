@@ -1,6 +1,7 @@
 /*
  * File: js/engine/build-parts.js
- * Purpose: Generic chart builder for parts of a whole (stacked bars, 100% stacked bars, grouped bars, treemap)
+ * Purpose: Generic chart builder for parts of a whole (stacked bars, 100% stacked bars, grouped bars, treemap),
+ *          with one stack per region and value when broken down (US-2.7.5),
  *          and the parts bubble view, drawn from the definition's x, y and size.
  * Provides: chart builder 'parts' (registered with TAP.builders)
  * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit), js/engine/aggregate.js
@@ -22,7 +23,9 @@
     var rows = k.visibleRows(ds, [m].concat(parts));
     // Other breakdowns (US-2.7.5): the table gains a column per value; the chart draws one stack per region and value
     var bd = byYear ? [] : ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === ctx.breakdown; });
-    var res = k.result(def, ds, { table: k.table(ds, keys.concat(bd.map(function (c) { return c.key; })), rows),
+    // The table shows the selected measure per value, so every heading is unique; the chart reads the parts too
+    var bdTable = bd.filter(function (c) { return c.measureId === m; });
+    var res = k.result(def, ds, { table: k.table(ds, keys.concat(bdTable.map(function (c) { return c.key; })), rows),
       legend: legend(k, ds, parts, rows), notes: k.notes({ rows: rows, columns: ds.columns }, [m]) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;
@@ -41,6 +44,8 @@
       values.forEach(function (v) {
         var cells = {};
         keys.forEach(function (key) { cells[key] = r.cells[key + '@' + v.dim + ':' + v.value] || r.cells[key]; });
+        // A stack whose every figure is not applicable is left out quietly (US-1.2.11)
+        if (keys.every(function (key) { return cells[key].state === 'notApplicable'; })) return;
         out.push({ id: r.id + ':' + v.value, entityId: r.entityId, entity: r.entity, industryId: r.industryId,
           label: k.t('breakdown.entityValue', { entity: r.label, value: v.label }), cells: cells });
       });
