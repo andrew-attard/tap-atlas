@@ -136,6 +136,30 @@ window.TEST_EXPECT.miniP2 = {
     orgTotal: { yes: ['rc.nb.arr', 'cg.top3Share', 'pt.oiPerFte', 'nb.arr.tier2'], no: ['cg.currentArr', 'pt.arr', 'nb.arr.tier1'] }
   },
 
+  // Breakdowns (US-2.7.5): one figure per value, adding up to the figure without a breakdown.
+  // entity: a region id, 'org' (organization total) or 'restOfAlphaAverage' (Region A against the average of the rest).
+  breakdowns: [
+    { dim: 'year', id: 'rc.nb.arr', entity: 'alpha', values: { 1: 600, 2: 700, 3: 800 }, total: 2100 },
+    // nb.arr by industry, organization total. Region C's ind1 row is blank; a Tier 1 or 2 industry with no row is
+    // not provided and a Tier 3 one not applicable (D48), so: ind1 A 1655 + B 3400; ind2 B 600; ind3 D 2850;
+    // ind4 A 600 + C 300. "Other" has no value anywhere, so it gets no column.
+    { dim: 'industry', id: 'nb.arr', entity: 'org', values: { ind1: 5055, ind2: 600, ind3: 2850, ind4: 900 }, total: 9405 },
+    { dim: 'industry', id: 'nb.arr', entity: 'alpha', values: { ind1: 1655, ind2: null, ind4: 600 }, total: 2255 },
+    // rc.nb.arr by channel: direct 1300 + 2000 + 900; partner 800 + 0 + 900; aA 0 + 1200 + 450; aB 0 + 0 + 450
+    { dim: 'channel', id: 'rc.nb.arr', entity: 'org', values: { direct: 4200, partner: 1700, allianceA: 1650, allianceB: 450 }, total: 8000 },
+    { dim: 'motion', id: 'rc.all.arr', entity: 'org', values: { nb: 8000, cg: 668 }, total: 8668 },     // cg 250 + 150 + 268
+    // cg.currentArr by segment: strategic 500 + 600 + 800; growth a4 150; core 200 + 80 + 100 + 400; scaled 30 + 50
+    { dim: 'segment', id: 'cg.currentArr', entity: 'org', values: { strategic: 1900, growth: 150, core: 780, scaled: 80 }, total: 2910 },
+    // by risk: high a2 200 + b2 100; medium a4 150 + d2 400; none the other six accounts
+    { dim: 'risk', id: 'cg.currentArr', entity: 'org', values: { high: 300, medium: 550, none: 2060 }, total: 2910 },
+    // The average of B and D for each value (C has no accounts or recap): e.g. strategic (600 + 800) / 2
+    { dim: 'segment', id: 'cg.currentArr', entity: 'restOfAlphaAverage', values: { strategic: 700, growth: 0, core: 250, scaled: 25 }, total: 975 },
+    { dim: 'channel', id: 'rc.nb.arr', entity: 'restOfAlphaAverage', values: { direct: 1450, partner: 450, allianceA: 825, allianceB: 225 }, total: 2950 }
+  ],
+  // rc.all.oi stacked as ARR plus services, broken down by channel, organization total (direct):
+  // ARR A 1300 + 200, B 2000 + 100, D 900 + 268 = 4768; services A 260 + 40, B 200 + 10, D 225 + 92 = 827; total 5595
+  partsByChannel: { direct: { 'rc.all.arr': 4768, 'rc.all.services': 827, 'rc.all.oi': 5595 } },
+
   // Combined figures. Region C has no recap, accounts or partners, so it is left out (named as not provided).
   combined: {
     orgTotal: {

@@ -202,4 +202,119 @@
       a.equal(TAP.measures.get('cg.arr')('alpha', {}).v, window.TEST_EXPECT.mini.region.alpha['cg.arr'], 'the Phase 1 figure is unchanged');
     });
   });
+
+  /* ---------- breakdowns (US-2.7.5) ---------- */
+
+  var DIMS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk'];
+  function def(shape, ids, bds, parts) {
+    return { id: 'x-breakdown', view: 'overview', title: 'Test', explain: { shows: 's', read: 'r', lookFor: 'l' }, shape: shape,
+      defaultType: shape === 'parts' ? 'stackedBar' : 'bar', types: shape === 'parts' ? ['stackedBar', 'groupedBar', 'table'] : ['bar', 'groupedBar', 'dot', 'table'],
+      measures: ids.map(function (id) { return { id: id }; }), parts: parts || {}, breakdowns: bds || DIMS, sources: ['DER'], options: {} };
+  }
+  function entity(name) {
+    if (name === 'org') return org();
+    if (name === 'restOfAlphaAverage') return rest('alpha', 'average');
+    return TAP.scope.entities(cmp({ mode: 'all' })).filter(function (e) { return e.id === name; })[0];
+  }
+  function bdCols(ds, dim) { return ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === dim; }); }
+  function build(d, extra) {
+    return TAP.builders.get(d.shape)(Object.assign({ def: d, cmp: cmp({ mode: 'org' }), entities: [org()] }, extra));
+  }
+  function values(opt) { return opt.series.filter(function (s) { return s.tapRole === 'value'; }); }
+
+  // Every breakdown value against the hand figure, and the values add up to the figure without a breakdown.
+  function checkBreakdown(a, b) {
+    var ds = TAP.prepare.run(def('compare', [b.id]), { entities: [entity(b.entity)], breakdown: b.dim });
+    var cols = bdCols(ds, b.dim), row = ds.rows[0], sum = 0, what = b.dim + ' ' + b.id + ' ' + b.entity;
+    Object.keys(b.values).forEach(function (v) {
+      var col = cols.filter(function (c) { return String(c.breakdown.value) === v; })[0];
+      a.ok(col, what + ': a column for ' + v);
+      a.equal(col.key, b.dim === 'year' ? b.id + '@y' + v : b.id + '@' + b.dim + ':' + v, what + ' column key');
+      expectCell(a, row.cells[col.key], b.values[v], what + ' ' + v);
+    });
+    cols.forEach(function (c) { if (row.cells[c.key].state === 'value') sum += row.cells[c.key].v; });
+    a.near(sum, b.total, TOL, what + ': the parts add up');
+    a.near(row.cells[b.id].v, b.total, TOL, what + ': the total without a breakdown');
+    return cols;
+  }
+
+  T.suite('breakdowns', function () {
+    T.test('TPV-TC-310', 'A report may allow all six breakdowns', function (a) {
+      load();
+      a.deepEqual(TAP.prepare.BREAKDOWNS, DIMS);
+      a.deepEqual(TAP.reports.validate(def('compare', ['rc.all.arr'])), [], 'year, industry, channel, motion, segment and risk are accepted');
+    });
+    T.skip('TPV-TC-310', 'An unknown breakdown fails validation', 'waits for the check in js/engine/registry.js (lead, contract change requested)');
+
+    T.test('TPV-TC-311', 'Only breakdowns the selected measure lists are offered, and they follow the measure switch', function (a) {
+      load();
+      var d = def('compare', ['rc.all.arr', 'cg.currentArr']);
+      a.deepEqual(TAP.prepare.breakdowns(d, { measureId: 'rc.all.arr' }), ['year', 'channel', 'motion']);
+      a.deepEqual(TAP.prepare.breakdowns(d, { measureId: 'cg.currentArr' }), ['segment', 'risk']);
+      a.deepEqual(TAP.prepare.breakdowns(def('compare', ['rc.all.arr'], ['channel', 'segment']), {}), ['channel'], 'and only those the report allows');
+      var p = def('parts', ['rc.all.oi'], DIMS, { 'rc.all.oi': ['rc.nb.oi', 'rc.cg.oi'] });
+      a.deepEqual(TAP.prepare.breakdowns(p, {}), ['year', 'channel'], 'a parts report needs every part to support it (the motion parts have no motion)');
+      var ds = TAP.prepare.run(d, { entities: [org()], breakdown: 'segment' });
+      a.equal(ds.columns.filter(function (c) { return c.breakdown; }).length, 0, 'an unsupported breakdown adds no columns');
+    });
+
+    T.test('TPV-TC-312', 'With a breakdown, compare draws grouped bars and every group is labelled', function (a) {
+      load();
+      ['bar', 'groupedBar'].forEach(function (type) {
+        var opt = build(def('compare', ['rc.nb.arr']), { type: type, breakdown: 'channel' }).option, s = values(opt);
+        a.deepEqual(s.map(function (x) { return x.name; }), ['Direct', 'Partner', 'Alliance A', 'Alliance B'], type + ': one series per channel');
+        a.ok(s.every(function (x) { return x.type === 'bar' && !x.stack; }), type + ': grouped, not stacked');
+        s.forEach(function (x) {
+          a.match(x.label.formatter({ data: x.data[0], seriesName: x.name }), new RegExp(x.name), x.name + ' is written on its bar');
+        });
+        a.near(s[0].data[0].raw, 4200, TOL, 'direct bar is the hand figure');
+      });
+    });
+
+    T.test('TPV-TC-312', 'With a breakdown, parts draws one stack per region and value, each labelled', function (a) {
+      load();
+      var p = def('parts', ['rc.all.oi'], DIMS, { 'rc.all.oi': ['rc.all.arr', 'rc.all.services'] });
+      var res = build(p, { type: 'stackedBar', breakdown: 'channel' }), opt = res.option, X2 = X.partsByChannel.direct;
+      a.equal(opt.yAxis.data.length, 4, 'one stack per region and channel');
+      a.match(opt.yAxis.data[0], /Direct/);
+      a.match(opt.yAxis.data[3], /Alliance B/);
+      var s = values(opt);
+      a.near(s[0].data[0].raw, X2['rc.all.arr'], TOL, 'ARR part of the direct stack');
+      a.near(s[1].data[0].raw, X2['rc.all.services'], TOL, 'services part of the direct stack');
+      a.near(res.table.rows[0].cells['rc.all.oi'].v, X2['rc.all.oi'], TOL, 'the stack total');
+    });
+
+    T.test('TPV-TC-314', 'Each breakdown gives one table column per value, adding up to the total (hand figures)', function (a) {
+      load();
+      X.breakdowns.forEach(function (b) { checkBreakdown(a, b); });
+      var ind = X.breakdowns.filter(function (b) { return b.dim === 'industry' && b.entity === 'org'; })[0];
+      var cols = checkBreakdown(a, ind);
+      a.deepEqual(cols.map(function (c) { return c.breakdown.value; }), Object.keys(ind.values), 'only industries with a value get a column');
+      var t = build(def('compare', ['rc.nb.arr']), { type: 'table', breakdown: 'channel' }).table;
+      a.deepEqual(t.columns.map(function (c) { return c.key; }), ['entity', 'rc.nb.arr', 'rc.nb.arr@channel:direct', 'rc.nb.arr@channel:partner',
+        'rc.nb.arr@channel:allianceA', 'rc.nb.arr@channel:allianceB'], 'the table shows the total and one column per value');
+    });
+
+    T.test('TPV-TC-315', 'Combined figures follow the combining rules for each breakdown value', function (a) {
+      load();
+      X.breakdowns.filter(function (b) { return b.entity === 'org' || b.entity === 'restOfAlphaAverage'; }).forEach(function (b) {
+        var cols = checkBreakdown(a, b);
+        var ds = TAP.prepare.run(def('compare', [b.id]), { entities: [entity(b.entity)], breakdown: b.dim });
+        var c = ds.rows[0].cells[cols[0].key];
+        a.equal(c.src.how, b.entity === 'org' ? 'sum' : 'mean', b.dim + ': ' + (b.entity === 'org' ? 'total' : 'average'));
+      });
+    });
+
+    T.test('TPV-TC-316', 'Another breakdown replaces the first; removing it restores the original chart', function (a) {
+      load();
+      var d = def('compare', ['rc.all.arr']);
+      a.equal(values(build(d, { type: 'groupedBar', breakdown: 'channel' }).option).length, 4);
+      var motion = values(build(d, { type: 'groupedBar', breakdown: 'motion' }).option);
+      a.deepEqual(motion.map(function (x) { return x.name; }), ['New business', 'Customer growth'], 'motion replaces channel');
+      var plain = build(d, { type: 'bar', breakdown: null }), again = values(plain.option);
+      a.equal(again.length, 1, 'one series again');
+      a.near(again[0].data[0].raw, 8668, TOL, 'the organization total without a breakdown');
+      a.deepEqual(plain.table.columns.map(function (c) { return c.key; }), ['entity', 'rc.all.arr'], 'the table drops the value columns');
+    });
+  });
 })(window.TAP);
