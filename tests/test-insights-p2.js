@@ -608,7 +608,7 @@
     });
 
     // The panel selects highlight.measureId on Show me once PANEL2b's change lands; that PR sets this to true.
-    var PANEL_TAKES_MEASURE = false;
+    var PANEL_TAKES_MEASURE = true;
     (PANEL_TAKES_MEASURE ? T.test : function (id, title) { T.skip(id, title, 'waits for the panel to select highlight.measureId (PANEL2b)'); })(
       'X-insights2-showme-measure', 'Show me switches the report to the insight’s measure', function (a) {
       var root = T.dom.mount();
