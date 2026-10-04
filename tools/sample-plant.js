@@ -1,9 +1,11 @@
 /*
  * File: tools/sample-plant.js
- * Purpose: Plants the cases of docs/PLANTED-CASES.md (P01 to P16, G1 to G6) into the generated base data, keeps
- *          other rows from producing near-duplicate findings, then recomputes every derived value.
+ * Purpose: Plants the cases of docs/PLANTED-CASES.md (P01 to P16, G1 to G6, and Q01 to Q06 through sample-plant-p2.js)
+ *          into the generated base data, keeps other rows from producing near-duplicate findings, then recomputes
+ *          every derived value.
  * Provides: module.exports.apply(plan, ctx)
- * Depends on: tools/sample-planted.js (the values), tools/sample-build.js, tools/sample-derive.js, tools/sample-names.js
+ * Depends on: tools/sample-planted.js (the values), tools/sample-build.js, tools/sample-derive.js, tools/sample-names.js,
+ *             tools/sample-plant-p2.js (the Phase 2 cases)
  * Used by: tools/generate-sample-data.js
  *
  * P01, P02 and the blank tier in G1 come straight from the tier settings in tools/sample-settings.js.
@@ -14,6 +16,7 @@ const PL = require('./sample-planted');
 const B = require('./sample-build');
 const D = require('./sample-derive');
 const NAMES = require('./sample-names');
+const P2 = require('./sample-plant-p2');
 
 const RATINGS = B.RATINGS;
 const ABILITY = ['references', 'productFit', 'expertise'];
@@ -188,7 +191,8 @@ function plantNewBusiness(plan, p) {
   const scale = want / sum(mcRows.map(function (m) { return m.pipelineCreated12m; }));
   mcRows.forEach(function (m) { m.pipelineCreated12m = Math.round(m.pipelineCreated12m * scale); });
   const big = mcRows.slice().sort(function (x, y) { return y.pipelineCreated12m - x.pipelineCreated12m; })[0];
-  big.pipelineCreated12m = D.r1(big.pipelineCreated12m + want - sum(mcRows.map(function (m) { return m.pipelineCreated12m; })));
+  // Rounded to EUR 1 (three decimals in thousands), so the ratio is exactly the planted one
+  big.pipelineCreated12m = Math.round((big.pipelineCreated12m + want - sum(mcRows.map(function (m) { return m.pipelineCreated12m; }))) * 1000) / 1000;
 }
 
 function plantCustomerGrowth(p) {
@@ -236,10 +240,12 @@ function apply(plan, ctx) {
   plantMoney(plan, p);
   avoidDuplicates(plan, p);
   fixCommentary(plan);
+  P2.before(plan);
   plantNewBusiness(plan, p);
   plantCustomerGrowth(p);
   Object.keys(PL.notes).forEach(function (id) { p.region(id).source.notes = PL.notes[id].slice(); });
   plan.regions.forEach(function (r) { B.finish(r, ctx); });
+  P2.after(plan, ctx);
   return plan;
 }
 
