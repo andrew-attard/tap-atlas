@@ -5,7 +5,7 @@
  * Provides: TAP.overviewCards (render, layout, columns, figure, openSource, sourceRow)
  * Depends on: js/engine/measures.js, js/engine/scope.js, js/engine/aggregate.js (describe), js/core/dom.js,
  *             js/core/format.js, js/core/sources.js, js/ui/layers.js, js/core/store.js, js/theme.js,
- *             content/text-overview.js
+ *             content/text-overview.js, js/views/regions.js (TAP.profile.link, at call time)
  * Used by: js/views/overview.js
  */
 (function (TAP) {
@@ -132,6 +132,14 @@
     return '';
   }
 
+  // "Open profile" for a region's card (US-2.4.1, PROFILE stream): the link and its words come from the Regions view.
+  function profileLink(ent) {
+    if (!TAP.profile || !TAP.profile.link) return null;
+    var id = ent.regionIds[0];
+    return TAP.profile.link(id, { class: 'tap-ov-card__profile', 'data-action': 'open-profile',
+      'aria-label': TAP.content.text('profile.openProfileFor', { name: ent.label }) }, TAP.content.text('profile.openProfile'));
+  }
+
   function buildCard(ent, withKicker) {
     var c = cellsFor(ent), combined = ent.kind === 'combined';
     var spec = function (id, unit) { return { measure: id, cell: c[id], unit: unit, label: label(id) }; };
@@ -167,7 +175,8 @@
       line('tap-ov-card__pool', t('cards.pool'), el('div', { class: 'tap-ov-card__chips' },
         el('span', { class: 'tap-ov-card__chip' }, [figure(spec('nb.targetAccounts', 'count')), ' ', t('cards.targetAccounts')]))),
       line('tap-ov-card__customers', t('cards.customers'), chips('tap-ov-card__segments',
-        SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }), function (s) { return short(s.measure); }))
+        SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }), function (s) { return short(s.measure); })),
+      combined ? null : profileLink(ent)
     ]);
     // The whole card opens the region's details; a combined card lists where its figures come from.
     node.addEventListener('click', function () {
