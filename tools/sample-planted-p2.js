@@ -13,7 +13,7 @@
 module.exports = {
   // Q01: Southern Europe sells most of its new business through partners. Channel split per row, in
   // [direct, partner, allianceA, allianceB] order; customer growth stays direct, as in every region.
-  channelReliance: { region: 'seu', channel: 'partner', split: [0.2, 0.7, 0.1, 0], gap: 0.2 },
+  channelReliance: { region: 'seu', channel: 'partner', split: [0.2, 0.65, 0.1, 0.05], gap: 0.2 },
   // Q02: Asia Pacific targets fewer new accounts, so its ARR ambition leans on existing customers. Applied
   // before the Phase 1 calibrations (P09, P12), which then settle on the changed figures.
   planMakeup: { region: 'apac', targetAccounts: 0.4, gap: 0.2 },
