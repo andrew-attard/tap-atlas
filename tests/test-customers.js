@@ -363,7 +363,7 @@
       a.deepEqual(TAP.shapes.types(def, 4), ['dot', 'table'], 'without the year breakdown, dot plot and table');
     });
 
-    when([196], 'TPV-TC-390', 'Segment switch: All accounts and the four segments' accounts; one segment uses only its accounts', function (a) {
+    when([196], 'TPV-TC-390', 'Segment switch: All accounts and each segment’s accounts; one segment uses only its accounts', function (a) {
       var def = TAP.reports.get('cg-growth');
       a.deepEqual(def.measures.map(function (m) { return m.label; }), ['All accounts', 'Strategic accounts', 'Growth accounts', 'Core accounts', 'Scaled accounts']);
       a.equal(TAP.prepare.selected(def, {}), 'cg.growth.all', 'All accounts is the default');
