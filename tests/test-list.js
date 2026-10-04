@@ -583,7 +583,7 @@
       levels(s);
       var p = s.panel('x-d1');
       down2(p);
-      document.body.focus();
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       key('Backspace');
       a.equal(last().def.id, 'x-d3', 'focus outside the panel: unchanged');
       qs('[data-action="about"]', p.el).focus();
@@ -602,7 +602,7 @@
     T.test('TPV-TC-276', 'Clicking a mark puts focus in the panel, so Backspace works after a mouse drill', scene(function (a, s) {
       levels(s);
       var p = s.panel('x-d1');
-      document.body.focus();
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       qs('.tap-panel__chart', p.el).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       hit(p, { regionId: 'alpha', industryId: 'ind2' });
       a.ok(p.el.contains(document.activeElement), 'the panel has focus');
