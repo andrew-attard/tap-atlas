@@ -456,6 +456,103 @@
     });
   });
 
+  /* ---------- US-2.1.3 which channels carry each region's new business ---------- */
+
+  var CHN = 'nb-channels', CHANNELS = ['direct', 'partner', 'allianceA', 'allianceB'];
+  var withRecap = when(p2('rc.nb.arr.direct') && !!(window.TEST_FIXTURES || {}).miniP2, 'waits for the recap measures and the miniP2 fixture (ENGINE2, #196)');
+  // Hand-calculated from tests/fixtures/mini-p2.js: new business recap items summed over the three plan years.
+  // Region A's alliance B, 2029 ARR is blank, so its ARR there is the two years given (0). Region C has no recap.
+  var P2_RECAP = {
+    arr: { alpha: [1300, 800, 0, 0], bravo: [2000, 0, 1200, 0], delta: [900, 900, 450, 450] },      // 400+400+500, 200+300+300 ...
+    services: { alpha: [260, 160, 0, 0], bravo: [200, 0, 120, 0], delta: [225, 225, 115, 110] }   // 80+80+100, 40+60+60 ...
+  };
+  function miniP2() { TAP.data.load(T_FIXTURE('miniP2')); }
+  function channels(c, extra) { return build(CHN, c, extra); }
+  function ccell(res, entityId, key) {
+    var row = res.table.rows.filter(function (r) { return r.entityId === entityId; })[0];
+    return row ? row.cells[key] : null;
+  }
+
+  T.suite('newbusiness-channels', function () {
+    withRecap('TPV-TC-340', 'Mini data: new business order intake per region and channel equals the hand calculation', function (a) {
+      miniP2();
+      ['arr', 'services'].forEach(function (t) {
+        var res = channels({ mode: 'all' }, { measureId: 'rc.nb.' + t });
+        a.equal(res.error, null, t + ' builds');
+        Object.keys(P2_RECAP[t]).forEach(function (r) {
+          CHANNELS.forEach(function (c, i) { a.near(ccell(res, r, 'rc.nb.' + t + '.' + c).v, P2_RECAP[t][r][i], 1e-9, t + ' ' + r + ' ' + c); });
+        });
+        a.equal(ccell(res, 'charlie', 'rc.nb.' + t).state, 'notProvided', t + ': Region C has no recap, so not provided');
+      });
+    });
+
+    withRecap('TPV-TC-341', 'Figures follow the recap’s new business items, not the channel splits', function (a) {
+      var plan = T_FIXTURE('miniP2');
+      // Region D's only row splits 25% to each channel; make the recap say otherwise for 2027 direct ARR
+      plan.regions[3].recap.forEach(function (it) {
+        if (it.motion === 'newBusiness' && it.type === 'arr' && it.channel === 'direct' && it.year === 2027) it.value = 999;
+        if (it.motion === 'customerGrowth' && it.type === 'arr' && it.channel === 'direct') it.value = 5000;
+      });
+      TAP.data.load(plan);
+      var res = channels({ mode: 'all' }, { measureId: 'rc.nb.arr' });
+      a.near(ccell(res, 'delta', 'rc.nb.arr.direct').v, 999 + 300 + 400, 1e-9, 'the recap figure, not 25% of the row');
+      a.ok(ccell(res, 'delta', 'rc.nb.arr.direct').v !== 0.25 * 2850, 'not recalculated from the split');
+      a.near(ccell(res, 'delta', 'rc.nb.arr').v, 1699 + 900 + 450 + 450, 1e-9, 'customer growth items are left out');
+    });
+
+    withRecap('TPV-TC-342', 'Stacked bar by default; 100% stacked bar and table offered', function (a) {
+      var def = TAP.reports.get(CHN), types = TAP.shapes.types(def, 7);
+      a.equal(def.defaultType, 'stackedBar', 'stacked bar first');
+      a.ok(types.indexOf('stacked100') >= 0, '100% stacked bar offered');
+      a.ok(types.indexOf('table') >= 0, 'table offered');
+      a.deepEqual(def.parts['rc.nb.arr'], CHANNELS.map(function (c) { return 'rc.nb.arr.' + c; }), 'the four channels stack');
+    });
+
+    withRecap('TPV-TC-345', 'Measure switch: ARR, Services, Total order intake (ARR default); order intake is ARR plus services', function (a) {
+      miniP2();
+      var def = TAP.reports.get(CHN);
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['ARR', 'Services', 'Total order intake'], 'the three measures');
+      a.equal(TAP.prepare.selected(def, {}), 'rc.nb.arr', 'ARR by default');
+      var oi = channels({ mode: 'all' }, { measureId: 'rc.nb.oi' });
+      Object.keys(P2_RECAP.arr).forEach(function (r) {
+        CHANNELS.forEach(function (c, i) {
+          a.near(ccell(oi, r, 'rc.nb.oi.' + c).v, P2_RECAP.arr[r][i] + P2_RECAP.services[r][i], 1e-9, r + ' ' + c + ': ARR + services');
+        });
+      });
+    });
+
+    withRecap('TPV-TC-346', 'By year, the yearly values add up to each three-year total', function (a) {
+      miniP2();
+      var res = channels({ mode: 'all' }, { measureId: 'rc.nb.arr', breakdown: 'year' }), n = 0;
+      res.table.rows.forEach(function (r) {
+        var tot = r.cells['rc.nb.arr'], ys = [1, 2, 3].map(function (y) { return r.cells['rc.nb.arr@y' + y]; });
+        if (!tot || tot.state !== 'value' || !ys.every(Boolean)) return;
+        a.near(ys.reduce(function (s, c) { return s + (c.state === 'value' ? c.v : 0); }, 0), tot.v, 1e-9, r.entityId + ': years add up');
+        n++;
+      });
+      a.ok(n >= 3, 'checked ' + n + ' regions');
+      a.near(ccell(res, 'alpha', 'rc.nb.arr@y1').v, 600, 1e-9, 'Region A 2027: 400 + 200');
+    });
+
+    withRecap('TPV-TC-347', 'A renamed channel is used in the legend, the labels and the table', function (a) {
+      var plan = T_FIXTURE('miniP2');
+      plan.lookups.channels.filter(function (c) { return c.id === 'partner'; })[0].name = 'Resellers';
+      TAP.data.load(plan);
+      var res = channels({ mode: 'all' }, { measureId: 'rc.nb.arr' });
+      a.ok(res.legend.some(function (l) { return /Resellers/.test(l.label); }), 'legend');
+      var col = res.table.columns.filter(function (c) { return c.key === 'rc.nb.arr.partner'; })[0];
+      a.match(col.label, /Resellers/, 'table column');
+      var s = res.option.series.filter(function (x) { return x.data && x.data.some(function (d) { return d && d.key === 'rc.nb.arr.partner'; }); })[0];
+      a.match(s.name, /Resellers/, 'the series the bar labels and tooltips use');
+    });
+
+    withRecap('X-nb-channels-explain', 'The explanation says services by channel can differ slightly from services potential, and why', function (a) {
+      var def = TAP.reports.get(CHN);
+      a.match(def.explain.read + ' ' + def.explain.shows, /services by channel can differ slightly/i, 'the one line');
+      a.match(def.explain.read + ' ' + def.explain.shows, /partner/i, 'and why: part of direct services moves to partners');
+    });
+  });
+
   /* ---------- US-2.1.4 the levers behind each region's number ---------- */
 
   var LEV = 'nb-levers';
