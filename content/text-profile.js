@@ -33,6 +33,21 @@ Object.assign(window.TAP_CONTENT.text, {
       below: 'below the average of the rest',
       same: 'the same as the average of the rest',
       figureTitle: '{label}. Source: {where}'
+    },
+    // US-2.4.4: the region's insights and its leader's words
+    insights: {
+      title: 'Insights about {name}',
+      intro: '{n} observations name this region, the most significant first.',
+      introOne: 'One observation names this region.',
+      none: 'No insight names {name} at the moment.',
+      label: 'Observation to discuss',
+      showMe: 'Show me'
+    },
+    words: {
+      title: 'What {name}’s plan says',
+      intro: 'The leader’s commentary and success factors, by industry, each with the cell it came from.',
+      commentary: 'Commentary',
+      successFactors: 'Success factors'
     }
   }
 });

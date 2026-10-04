@@ -97,7 +97,14 @@
       body.appendChild(slots.length > 1 ? TAP.viewHead.pair(slots) : el('div', { class: 'tap-pf__wide' }, slots));
       slots.forEach(function (slot, i) { panels.push(TAP.viewHead.mountPanel(slot, row[i], { cmp: c })); });
     });
+    // The region's insights and its leader's words, side by side (US-2.4.4); a hidden insight leaves the list at once
+    var ins = el('div', { class: 'tap-vh-slot', 'data-slot': 'insights' }), words = el('div', { class: 'tap-vh-slot', 'data-slot': 'words' });
+    var drawIns = function () { TAP.dom.clear(ins); TAP.profileParts.drawInsights(ins, id); };
+    drawIns();
+    page.appendChild(TAP.profileParts.drawWords(words, id) ? TAP.viewHead.pair([ins, words]) : ins);
+    var off = TAP.store.on(function (s, changed) { if (changed.indexOf('hiddenInsights') >= 0) drawIns(); });
     return { destroy: function () {
+      off();
       panels.forEach(function (p) { if (p && p.destroy) p.destroy(); });
       head.destroy();
     } };
