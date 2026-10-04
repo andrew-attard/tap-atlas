@@ -557,6 +557,43 @@
       a.ok(!series(all).some(function (x) { return x.tapRole === 'link'; }), 'All regions: nothing to join');
     });
 
+    T.test('X-industry-tiers-combined-note', 'QA-12: when the comparison combines regions, the tier grid says why it shows them one by one', function (a) {
+      var one = grid('heatmap', { mode: 'one', focus: 'alpha' }), org = grid('heatmap', { mode: 'org' }), all = grid('heatmap', { mode: 'all' });
+      a.equal(one.notes[0], TAP.content.text('tierGrid.notCombinedRest'), 'one against the rest as one figure');
+      a.equal(org.notes[0], TAP.content.text('tierGrid.notCombinedAll'), 'organization total');
+      a.equal(all.notes.indexOf(TAP.content.text('tierGrid.notCombinedRest')), -1, 'All regions: no note');
+      var ind = grid('heatmap', { mode: 'one', focus: 'alpha', restAs: 'individual' });
+      a.equal(ind.notes.indexOf(TAP.content.text('tierGrid.notCombinedRest')), -1, 'the rest drawn one by one: no note');
+      a.equal(grid('bubbleGrid', { mode: 'org' }).notes[0], TAP.content.text('tierGrid.notCombinedAll'), 'the bubble grid says so too');
+    });
+
+    T.test('X-industry-quad-switch', 'QA-6: the Show switch matches what is drawn, and is left out where averaging cannot apply', function (a) {
+      function sw(c, o) { return quad('bubble', c, { opts: o || {} }).controls.filter(function (x) { return x.key === 'everyRegion'; })[0] || null; }
+      a.ok(sw({ mode: 'all' }), 'All regions: offered');
+      a.equal(sw({ mode: 'all' }).value, false, 'average pressed by default');
+      a.equal(sw({ mode: 'all' }, { everyRegion: true }).value, true, 'every region pressed when chosen');
+      a.ok(sw({ mode: 'one', focus: 'alpha' }), 'one against the rest: offered');
+      a.ok(sw({ mode: 'set', set: ['alpha', 'bravo', 'charlie'] }), 'a set: offered (it averages)');
+      a.equal(sw({ mode: 'pair', focus: 'alpha', second: 'bravo' }), null, 'a pair: left out, each region already has its own bubble');
+      a.ok(quad('bubble', { mode: 'pair', focus: 'alpha', second: 'bravo' }).controls.some(function (x) { return x.key === 'industryFilter'; }), 'the industry filter stays');
+    });
+
+    T.test('X-industry-quad-leaders', 'Leader lines only where a label moved away from its bubble; short ones when every region is drawn', function (a) {
+      sample();
+      var size = { w: 560, h: 560 }, R = sampleIds();
+      var res = quad('bubble', { mode: 'all' }, { size: size }), shown = points(res).filter(function (d) { return d.label.show; });
+      shown.forEach(function (d) {
+        var moved = d.label.dy !== 0 || Math.abs(d.label.position[0] - (d.label.side === 'right' ? d.symbolSize : 0)) > 6;
+        a.equal(!!(d.labelLine && d.labelLine.show), moved, d.name + ': a line only when moved');
+      });
+      [[{ mode: 'pair', focus: R[0], second: R[2] }, {}], [{ mode: 'all' }, { everyRegion: true }]].forEach(function (c) {
+        points(quad('bubble', c[0], { size: size, opts: c[1] })).filter(function (d) { return d.label.show; }).forEach(function (d) {
+          var gap = Math.abs(d.label.position[0] - (d.label.side === 'right' ? d.symbolSize : 0));
+          a.ok(gap <= 28 && Math.abs(d.label.dy) <= 2 * (TH.type.chart + 6), c[0].mode + ': ' + d.name + ' stays near its bubble');
+        });
+      });
+    });
+
     T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {
       var all = quad('bubble', { mode: 'all' }).takeaway, one = quad('bubble', { mode: 'one', focus: 'delta' }).takeaway;
       a.ok(all && one && all !== one, 'differs by scope');
