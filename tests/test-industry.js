@@ -594,6 +594,22 @@
       });
     });
 
+    T.test('X-industry-quad-labels-module', 'TAP.quadrantLabels places labels on its own: biggest first, none overlapping, frame returned', function (a) {
+      function pt(name, x, y, d, gp) { return { x: { v: x }, y: { v: y }, dx: 0, dy: 0, d: d, named: true, text: name, ind: { groupPriority: !!gp } }; }
+      var pts = [pt('Small one', 2, 2, 10), pt('Biggest industry name here', 2.01, 2.01, 30), pt('Group pick', 2.02, 1.99, 30, true), pt('Far away', 1.2, 2.8, 12)];
+      var F = TAP.quadrantLabels.place(pts, { size: { w: 560, h: 560 } }, { scale: { min: 1, max: 3 } });
+      a.ok(F.w > 300 && F.h > 300 && F.m.left > 0, 'returns the plot frame');
+      a.ok(pts[1].lab && pts[2].lab, 'the two biggest bubbles are labelled');
+      a.ok(/\n/.test(pts[1].label), 'a long name is on two lines');
+      a.equal(pts[3].label, 'Far away', 'a short name is unchanged');
+      var pos = TAP.quadrantLabels.at(pts[1], 30);
+      a.ok(pos.align === 'left' || pos.align === 'right', 'at() gives an ECharts label position');
+      var near = [pt('A', 2, 2, 20), pt('B', 2, 2, 20)];
+      TAP.quadrantLabels.place(near, { size: { w: 560, h: 560 } }, { scale: { min: 1, max: 3 }, near: true });
+      near.forEach(function (p) { if (p.lab) a.ok(p.lab.gap <= 28, p.text + ': near spot only'); });
+      a.ok(TAP.quadrantLabels.place([], {}, {}).w > 0, 'no points: still a frame');
+    });
+
     T.test('X-industry-quad-takeaway', 'The takeaway follows the comparison scope', function (a) {
       var all = quad('bubble', { mode: 'all' }).takeaway, one = quad('bubble', { mode: 'one', focus: 'delta' }).takeaway;
       a.ok(all && one && all !== one, 'differs by scope');
