@@ -14,7 +14,7 @@
   var code = {};                      // rule id -> fn(ctx)
   var cache = null;                   // {key, plan, list, failures}
   // Vars holding names from the workbooks. They are the data's words, not ours, so the banned-word check skips them.
-  var NAME_VARS = ['region', 'industry', 'industries', 'accounts', 'segment'];
+  var NAME_VARS = ['region', 'industry', 'industries', 'accounts', 'segment', 'regions', 'partner', 'subIndustry'];
   // Words that only reach a sentence when a figure went missing on the way.
   var GAP_WORDS = ['NaN', 'undefined', 'null', 'Infinity'];
 

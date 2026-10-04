@@ -161,6 +161,26 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average elsewhere.',
     attach: ['ov-ambition'], highlight: 'bar' });
 
+  /* ---------- shared (US-2.5.3, US-2.5.4) ---------- */
+  rule({ id: 'sharedSubIndustry', family: 'shared',
+    description: 'A sub-industry named in the New Business rows of at least 2 regions (the same text, ignoring case and extra spaces), so references and assets could be shared.',
+    reads: ['newBusiness.subVertical'], params: { minRegions: 2 },
+    scoring: 'Strength: the share of regions naming it, against twice the threshold share. Money: the new business ARR potential on those rows.',
+    template: '{n} regions name the sub-industry {subIndustry} as a target: {regions}.',
+    attach: ['nb-rows'], highlight: null });
+  rule({ id: 'sharedPartner', family: 'shared',
+    description: 'A partner named by at least 2 regions (the same text, ignoring case and extra spaces), so the relationship could be shared.',
+    reads: ['partners.name'], params: { minRegions: 2 },
+    scoring: 'Strength: the share of regions naming it, against twice the threshold share. Money: the partner’s planned ARR in those regions.',
+    template: '{n} regions name {partner} as a partner: {regions}.',
+    attach: ['pt-list'], highlight: null });
+  rule({ id: 'partnerCapacity', family: 'shared',
+    description: 'A partner whose planned three-year order intake per person (sales and consultant staff, counted as full-time equivalents) is at least twice the average across partners (total order intake over total staff). Not computed when fewer than 5 partners in the data give staff figures.',
+    reads: ['partners.fteSales', 'partners.fteConsultants'], params: { multiple: 2, minPartners: 5 },
+    scoring: 'Strength: how far the multiple is past 1, against twice the threshold’s distance. Money: the partner’s planned order intake.',
+    template: '{partner} ({region}) is planned at {amount} per person, {multiple} the average across partners ({avg}).',
+    attach: ['pt-capacity'], highlight: 'points' });
+
   /* ---------- themes (US-2.5.1) ---------- */
   rule({ id: 'recurringTheme', family: 'themes',
     description: 'A theme from the keyword lists in config/comment-themes.js that comes up (whole words, any case) in the success factors or commentary of at least 3 regions (TAP_COMMENT_THEMES.minRegions). Counted by this app, not tagged in the workbooks.',
@@ -202,6 +222,8 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       mediumRisk: '{name} (medium risk)',
       // Channel words in a sentence; any other channel uses its name from the data
       channel: { direct: 'direct sales', partner: 'partners' },
+      namedBy: 'As {region} wrote it', about: 'about {n}×', perPerson: 'Order intake per person, {partner}',
+      allPartners: 'all partners with staff figures', partnerFte: 'Sales and consultant staff (full-time equivalent), {partner}',
       themeVerb: { plural: 'come', one: 'comes' },
       themeWhere: { successFactors: 'success factors', commentary: 'commentary', both: 'success factors and commentary' },
       themeRegions: 'Regions mentioning {theme} (counted by this app)', themeQuote: 'What {region} wrote',
