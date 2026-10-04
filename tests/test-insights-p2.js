@@ -2,7 +2,8 @@
  * File: tests/test-insights-p2.js
  * Purpose: Tests for the Phase 2 planted cases in the sample data, the Phase 2 insight rules and recurring themes.
  * Provides: test cases for the INSIGHTS2 stream: TPV-TC-304, 307, 308 (US-2.7.4, sample data), 463 to 470 (US-2.5.1),
- *           471 to 475 (US-2.5.2), 477 to 479 (US-2.5.3), 481 to 484 (US-2.5.4), 486 to 490 (US-2.5.5), X-insights2-*
+ *           471 to 475 (US-2.5.2), 477 to 479 (US-2.5.3), 481 to 484 (US-2.5.4), 486 to 490 (US-2.5.5), 492, 493, 495
+ *           (US-2.5.6), X-insights2-*
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (T_INSIGHTS), the app scripts,
  *             data/sample-plan-data.js (window.PLAN_DATA), tests/fixtures/sample-expected.js (window.SAMPLE_EXPECT)
  * Used by: tests.html
@@ -544,6 +545,87 @@
       if (TAP.reports.get('pt-capacity')) a.equal(x.reportId, 'pt-capacity');
       else a.equal(x.fallback, 'details', 'pt-capacity not built yet: Show me opens the details');
       window.T_INSIGHT_SHAPE(a, x);
+    });
+
+    /* ---------- US-2.5.6: insights point to the new reports ---------- */
+
+    // The Phase 1 rules that fell back to the details panel, and the reports that show their data.
+    var MOVED = { outlier: ['nb-levers', 'cg-growth'], noPipeline: ['nb-industries'], winsVsPeers: ['nb-levers'],
+      concentration: ['cg-exposure'], atRisk: ['cg-exposure'], segmentMix: ['cg-segments'] };
+
+    T.test('TPV-TC-492', 'Every Phase 1 rule that fell back to details names the Phase 2 report that shows its data', function (a) {
+      Object.keys(MOVED).forEach(function (id) {
+        a.deepEqual(cfg(id).attach, MOVED[id], id + ' attaches to ' + MOVED[id].join(', '));
+        a.ok(!!cfg(id).highlight, id + ' has a highlight mark');
+      });
+      var show = cfg('outlier').params.show;
+      a.deepEqual(show['nb.hitRate'], ['nb-levers', 'nb.hitRate'], 'outlier hit rate: the levers report, on Hit rate');
+      ['cg.growthY1', 'cg.growthY2', 'cg.growthY3'].forEach(function (m) { a.equal(show[m][0], 'cg-growth', m + ': the growth report'); });
+      Object.keys(show).forEach(function (m) {
+        var def = TAP.reports.get(show[m][0]);
+        if (def) a.ok((def.measures || []).some(function (x) { return x.id === show[m][1]; }), m + ': ' + show[m][1] + ' is a measure of ' + show[m][0]);
+        else a.ok(true, show[m][0] + ' not built yet');
+      });
+    });
+
+    T.test('TPV-TC-493', 'Show me goes to the report’s view, names the measure the insight is about and the data', function (a) {
+      I().sample();
+      var byId = {};
+      TAP.insights.all().forEach(function (x) { byId[x.id] = x; });
+      var cases = [
+        ['outlier:nb.hitRate:ceu', 'nb-levers', 'newBusiness', 'nb.hitRate', ['ceu'], []],
+        ['outlier:nb.avgDealSize:latam', 'nb-levers', 'newBusiness', 'nb.avgDealSize', ['latam'], []],
+        ['outlier:cg.growthY2:na', 'cg-growth', 'customers', 'cg.growth.all', ['na'], []],
+        ['winsVsPeers:na', 'nb-levers', 'newBusiness', 'nb.wins', ['na'], []],
+        ['noPipeline:apac:transport', 'nb-industries', 'newBusiness', 'ind.nb.arr', ['apac'], ['transport']]
+      ];
+      cases.forEach(function (c) {
+        var x = byId[c[0]];
+        a.ok(x, c[0] + ' is on the sample (P08, P09, P12, P11 and the year-2 growth outlier)');
+        if (!x) return;
+        a.equal(x.reportId, c[1], c[0] + ': report');
+        a.equal(TAP.reports.get(x.reportId).view, c[2], c[0] + ': view');
+        a.equal(x.highlight.measureId, c[3], c[0] + ': the measure it is about');
+        a.ok(TAP.reports.get(c[1]).measures.some(function (m) { return m.id === c[3]; }), c[0] + ': a measure the report offers');
+        a.deepEqual(x.highlight.regionIds, c[4], c[0] + ': the region');
+        a.deepEqual(x.highlight.industryIds, c[5], c[0] + ': the industry');
+        a.equal(x.fallback, null, c[0] + ': not the details panel');
+      });
+    });
+
+    T.test('TPV-TC-495', 'On the sample, no insight falls back to details where a report exists for it', function (a) {
+      I().sample();
+      var exists = function (id) { return !!TAP.reports.get(id); };
+      var show = cfg('outlier').params.show;
+      TAP.insights.all().forEach(function (x) {
+        // Reports that could show it: the rule's, narrowed for outliers to the one showing the assumption
+        var could = x.ruleId === 'outlier' ? (show[x.id.split(':')[1]] || []).slice(0, 1) : cfg(x.ruleId).attach;
+        if (could.some(exists)) a.ok(x.reportId && x.fallback === null, x.id + ' lands on ' + (x.reportId || 'details'));
+        else a.equal(x.fallback, 'details', x.id + ': no report is built for it yet');
+      });
+      a.equal(TAP.insights.all().filter(function (x) { return x.ruleId === 'outlier' && !x.reportId; }).length, 0,
+        'no sample outlier is about the services ratio, the one assumption no report shows');
+    });
+
+    // The panel selects highlight.measureId on Show me once PANEL2b's change lands; that PR sets this to true.
+    var PANEL_TAKES_MEASURE = false;
+    (PANEL_TAKES_MEASURE ? T.test : function (id, title) { T.skip(id, title, 'waits for the panel to select highlight.measureId (PANEL2b)'); })(
+      'X-insights2-showme-measure', 'Show me switches the report to the insight’s measure', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: JSON.parse(JSON.stringify(P)) });
+      TAP.showme.bind();
+      try {
+        var x = TAP.insights.all().filter(function (i) { return i.id === 'outlier:nb.hitRate:ceu'; })[0];
+        TAP.showme.go({ insightId: x.id, target: x.highlight });
+        var panel = root.querySelector('.tap-panel[data-report="nb-levers"]');
+        a.ok(panel, 'the levers report is on screen');
+        var on = panel && panel.querySelector('[data-control="measure"] [aria-pressed="true"]');
+        a.equal(on && on.getAttribute('data-value'), 'nb.hitRate', 'Hit rate is selected');
+      } finally {
+        TAP.showme.unbind();
+        try { TAP.layers.close(); } catch (e) { /* none open */ }
+        TAP.app.stop();
+      }
     });
   });
 })(window.TAP);
