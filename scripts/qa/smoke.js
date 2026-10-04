@@ -88,13 +88,12 @@
         return s.trim();
       });
       if (m === 'one') {
-        ['total', 'average'].forEach(function (a) {
-          step(v + ': one, rest as ' + a, function () {
-            click($('[data-picker="restAgg"] .tap-seg__opt[data-value="' + a + '"]'));
+        // One control since the compact bar (D50): Individually | Average | Total
+        ['total', 'average', 'individual'].forEach(function (a) {
+          step(v + ': one, the others ' + a, function () {
+            click($('[data-picker="rest"] .tap-seg__opt[data-value="' + a + '"]'));
           });
         });
-        step(v + ': one, rest individually', function () { click($('[data-picker="restAs"] .tap-seg__opt[data-value="individual"]')); });
-        step(v + ': one, rest combined', function () { click($('[data-picker="restAs"] .tap-seg__opt[data-value="combined"]')); });
         step(v + ': one, change focus', function () {
           var s = $('[data-picker="focus"] select'), opts = $$('option', s);
           choose(s, opts[opts.length - 1].value);
