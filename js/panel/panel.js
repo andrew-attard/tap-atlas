@@ -57,19 +57,23 @@
 
   function highlightOf(p, s) {
     if (p.st.highlight) return p.st.highlight;
-    return s.highlight && s.highlight.reportId === p.id ? s.highlight : null;
+    return !p.drill.depth() && s.highlight && s.highlight.reportId === p.id ? s.highlight : null;
   }
 
   // Validates and builds. Returns {def, ctx, res, errors, types, ...}; every problem stays inside this panel.
   function build(p, s) {
-    var def = TAP.reports.get(p.id), errors = TAP.reports.validate(def), cmp = cmpOf(p, s);
+    var cmp = cmpOf(p, s), key = JSON.stringify(cmp);
+    if (p.cmpKey && p.cmpKey !== key) p.drill.top({ quiet: true });   // any comparison change: back to the top level
+    p.cmpKey = key;
+    var def = TAP.reports.get(p.drill.current()), errors = TAP.reports.validate(def);
+    if (def && def.drill && !errors.length) errors = TAP.panelDrill.levels(def).errors;
     var industryId = industryOf(p, def, s), entities = TAP.scope.entities(cmp);
     if (def && !errors.length) TAP.panelMenus.fitBreakdown(def, p.st);   // a breakdown the measure doesn't list is dropped
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
     var ctx = def ? { def: def, type: types ? types.current : def.defaultType, measureId: p.st.measureId,
       sizeId: p.st.sizeId, breakdown: p.st.breakdown, cmp: cmp, entities: entities, year: null, industryId: industryId,
       highlight: highlightOf(p, s), expanded: s.expanded === p.id, theme: window.TAP_THEME, opts: Object.assign({}, p.st.opts),
-      size: p.size || null } : null;
+      size: p.size || null, drill: p.drill.target() } : null;
     var res = null, fn = !errors.length && builderOf(def);
     if (!errors.length && !fn) errors = [t('noBuilder', { shape: def.shape })];
     if (fn) {
@@ -87,11 +91,13 @@
     if ((target.regionIds || []).length) TAP.layers.openDetails(target);
   }
 
-  // A click in builder HTML: a list row opens its details only; anything else follows the usual rule.
-  function pick(res, d) {
-    var target = res.target ? res.target({ data: d }) : null;
-    if (d.row) { if (target) TAP.layers.openDetails(target); } else follow(target);
+  // A click: a report with drill levels opens the next level for a target naming a region (17.6); otherwise a
+  // list row opens its details only, and anything else follows the usual rule.
+  function go(p, b, target, row) {
+    if (b.def.drill && target && (target.regionIds || []).length && p.drill.push(target, b.def)) return;
+    if (row) { if (target) TAP.layers.openDetails(target); } else follow(target);
   }
+  function pick(p, b, d) { go(p, b, b.res.target ? b.res.target({ data: d }) : null, d.row); }
 
   // A [data-tap-opt] click in builder HTML (a list's sort headings, for example): a builder option, like its controls.
   function option(p) { return function (key, value) { p.st.opts[key] = value; render(p); }; }
@@ -108,7 +114,7 @@
     if (res.empty) { C.dispose(p.cs); C.empty(box, res.missing); return box; }
     if (b.ctx.type === 'list' && res.html) {
       C.dispose(p.cs);
-      TAP.panelTable.list(box, res, { label: TAP.shell.label(), onPick: function (d) { pick(res, d); }, onOpt: option(p) });
+      TAP.panelTable.list(box, res, { label: TAP.shell.label(), onPick: function (d) { pick(p, b, d); }, onOpt: option(p) });
       return box;
     }
     if (tabled(p, b)) {
@@ -122,10 +128,10 @@
     }
     if (res.html) {
       C.dispose(p.cs);
-      C.html(box, res.html, function (d) { pick(res, d); }, option(p));
+      C.html(box, res.html, function (d) { pick(p, b, d); }, option(p));
     } else if (res.option) {
       C.render(p.cs, box, res.option, { label: b.title, tall: /bubble|scatter/.test(b.ctx.type || ''),
-        scale: s.expanded === p.id ? 1.3 : 1, height: res.height || null, onClick: function (prm) { follow(res.target ? res.target(prm) : null); } });
+        scale: s.expanded === p.id ? 1.3 : 1, height: res.height || null, onClick: function (prm) { go(p, b, res.target ? res.target(prm) : null); } });
       if (res.sized) remeasure(p, b.ctx.size);
     } else C.dispose(p.cs);
     return box;
@@ -143,7 +149,7 @@
     if (!p.live) return;
     var s = TAP.store.get(), keep = TAP.panelChart.focusKey(p.root), I = TAP.panelInsights;
     p.seen = {};   // glossary terms are marked once per panel
-    var b = build(p, s), info = I.get(cmpOf(p, s), p.id), ok = !b.errors.length && b.res && !b.res.empty;
+    var b = build(p, s), info = I.get(cmpOf(p, s), p.drill.current()), ok = !b.errors.length && b.res && !b.res.empty;
     p.drewHl = !!(b.ctx && b.ctx.highlight);
     var big = s.expanded === p.id;
     if (p.root.isConnected) p.wasConnected = true;
@@ -157,6 +163,7 @@
       big ? X().strip(p, s) : null,
       el('header', { class: 'tap-panel__head' }, [
         el('div', { class: 'tap-panel__titles' }, [
+          p.drill.crumbs(b.def),
           el('h2', { class: 'tap-panel__title', html: TAP.content.mark(b.title, p.seen) }),
           I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide),
           p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
@@ -190,10 +197,12 @@
     if (!p.live) return;
     if (p.wasConnected && !p.root.isConnected) { destroy(p); return; }   // removed without destroy()
     // A report with a default breakdown returns to it too (17.4); otherwise a chosen breakdown stays, as in Phase 1
+    if (changed.indexOf('scopeEpoch') >= 0) p.drill.top({ quiet: true });   // a comparison or view change: top level (17.6)
     if (changed.indexOf('scopeEpoch') >= 0) Object.assign(p.st, scoped(), firstBreakdown(p.id) ? { breakdown: firstBreakdown(p.id) } : {});
     if (changed.indexOf('industry') >= 0) p.opts.industryId = null;
     var shown = changed.indexOf('highlight') >= 0 && s.highlight && s.highlight.reportId === p.id;   // "Show me" wins over the list
     if (shown) {
+      p.drill.top({ quiet: true });
       Object.assign(p.st, { highlight: null, selected: null, sentence: null });
       delete p.st.opts.theme;   // a theme clicked earlier would hide the one the "Show me" points at (#72)
     }
@@ -208,6 +217,7 @@
     p.live = false;
     p.off.forEach(function (fn) { fn(); });
     X().remove(p);
+    p.drill.destroy();
     TAP.panelChart.dispose(p.cs);
     if (p.root.parentNode) p.root.parentNode.removeChild(p.root);
   }
@@ -239,7 +249,8 @@
     p.off.push(TAP.store.on(function (s, changed) { onStore(p, s, changed); }));
     // "Reset all charts" (the Guide): every chart back to its default type and settings, nothing remembered
     p.off.push(TAP.bus.on('charts:reset', function () {
-      remember(p.id, null);
+      p.drill.top({ quiet: true });
+      [p.id].concat(TAP.panelDrill.levels(TAP.reports.get(p.id)).ids).forEach(function (id) { remember(id, null); });
       Object.assign(p.st, lasting(p.id), scoped(), { pop: null });
       render(p);
     }));
@@ -253,8 +264,8 @@
     p.toggle = function (name) { p.st.pop = name && p.st.pop !== name ? name : null; render(p); };
     p.set = function (patch) { Object.assign(p.st, patch); render(p); };
     p.setType = function (type) {
-      var def = TAP.reports.get(reportId);
-      remember(reportId, def && type === def.defaultType ? null : type);   // the default needs no memory
+      var id = p.drill.current(), def = TAP.reports.get(id);   // each drill level remembers its own type
+      remember(id, def && type === def.defaultType ? null : type);   // the default needs no memory
       p.set({ type: type, pop: null });
     };
     p.expand = function (on) { if (on) TAP.store.set({ expanded: reportId }); else X().collapse(); };
@@ -264,7 +275,10 @@
       p.set({ pop: null });
       TAP.panelExport[how === 'save' ? 'saveImage' : 'copyImage'](p.root).then(function (msg) { TAP.dom.text(p.statusEl, msg); });
     };
-    p.root = el('section', { class: 'tap-panel', 'data-report': reportId, 'data-tour': 'panel' });
+    // tabindex -1: a click in the panel gives it focus, so Backspace can step up a drill level (17.6)
+    p.root = el('section', { class: 'tap-panel', 'data-report': reportId, 'data-tour': 'panel', tabindex: '-1' });
+    p.fresh = lasting;
+    p.drill = TAP.panelDrill.create(p);
     host.appendChild(p.root);
     X().add(p);
     listen(p);
