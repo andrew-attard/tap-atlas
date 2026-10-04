@@ -44,7 +44,12 @@
       });
       if (first) s.itemStyle = Object.assign({}, s.itemStyle, { color: shade(first) });
     });
-    res.legend = (res.legend || []).filter(function (l) { return l.role === 'part'; });
+    // The key names each segment as the lookups do, the same whichever figure is shown
+    var names = {};
+    (((TAP.data.lookups() || {}).segments) || []).forEach(function (s) { names[s.id] = s.name; });
+    res.legend = (res.legend || []).filter(function (l) { return l.role === 'part'; }).map(function (l, i) {
+      return Object.assign({}, l, { label: names[SEGMENTS[i]] || l.label });
+    });
     var target = res.target;
     // A click lists the segment thresholds of each region behind the bar, since they differ by region
     res.target = function (params) {
