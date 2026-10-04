@@ -42,6 +42,14 @@
 
   /* ---------- recap: order intake by motion, type and channel ---------- */
 
+  // A channel's name from the lookup, read when asked, so a renamed channel flows to legends, labels and tables.
+  // Without a lookup name the fixed words in content/text-engine2.js stand.
+  function channelName(c) {
+    var x = ((TAP.data.lookups() || {}).channels || []).filter(function (l) { return l.id === c; })[0];
+    return x && x.name ? x.name : null;
+  }
+  function named(m, fn) { return Object.assign(m, { words: fn }); }
+
   // Sums the recap items that match. Recap years are calendar years; ctx.year is the plan year 1 to 3.
   function recap(r, ctx, motions, types, channel) {
     var years = (TAP.data.meta() || {}).years || [], want = ctx.year ? [years[ctx.year - 1]] : years;
@@ -68,12 +76,19 @@
         return recap(r, ctx, ms, TYPES[t], ctx.channel || null);
       });
       CH.forEach(function (c) {
-        M.define(id + '.' + c, k.amount('DER', ['year']), function (r, ctx) { return recap(r, ctx || {}, fixed, TYPES[t], c); });
+        M.define(id + '.' + c, named(k.amount('DER', ['year']), function () {
+          var name = channelName(c);
+          return name ? { label: TAP.content.text('measures.rc.withChannel', { measure: TAP.content.text('measures.' + id + '.short'), channel: name }),
+            short: name } : null;
+        }), function (r, ctx) { return recap(r, ctx || {}, fixed, TYPES[t], c); });
       });
     });
   });
   CH.forEach(function (c) {
-    M.define('rc.share.' + c, rate('APP', 'rc.all.oi', ['year']), function (r, ctx) {
+    M.define('rc.share.' + c, named(rate('APP', 'rc.all.oi', ['year']), function () {
+      var name = channelName(c);
+      return name ? { label: TAP.content.text('measures.rc.shareOf', { channel: name }), short: TAP.content.text('measures.rc.shareShort', { channel: name }) } : null;
+    }), function (r, ctx) {
       ctx = ctx || {};
       var n = recap(r, ctx, BOTH, TYPES.oi, c), d = recap(r, ctx, BOTH, TYPES.oi, null);
       var s = k.src(r, 'recap', 'value', [], ctx.year, 'APP');

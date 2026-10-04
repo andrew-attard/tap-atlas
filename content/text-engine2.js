@@ -31,7 +31,8 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
   };
   var TIER = { arr: 'New business ARR potential', services: 'New business services potential', oi: 'New business order intake potential' };
 
-  var rc = { share: {} };
+  // Channel measures take the channel's name from the data's lookup when it has one (see js/engine/measures-p2.js)
+  var rc = { share: {}, withChannel: '{measure}, {channel}', shareOf: 'Share of order intake through {channel}', shareShort: '{channel} share' };
   Object.keys(RECAP).forEach(function (m) {
     rc[m] = {};
     Object.keys(RECAP[m]).forEach(function (t) {
