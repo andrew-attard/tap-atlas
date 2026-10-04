@@ -4,7 +4,7 @@
  *          It builds the report for the current comparison and redraws on store changes. It keeps the chart
  *          type and measure for the session (the type is also remembered in the browser), and a few choices
  *          (builder options, the selected insight) only until the shared comparison changes. List reports and
- *          builder option clicks: ARCHITECTURE 17.4.
+ *          builder option clicks: ARCHITECTURE 17.4. A page may fix a panel's comparison with opts.cmp (#216).
  * Provides: TAP.panel (create)
  * Depends on: js/panel/panel-expand.js, js/panel/panel-*.js, js/engine/registry.js, scope.js, js/core/store.js, storage.js, content.js, format.js,
  *             sources.js, dom.js, icons.js, data.js, js/ui/layers.js, shell.js (label), js/theme.js (all at call time)
@@ -52,6 +52,9 @@
     return def.title.replace(/\{industry\}/g, ind ? ind.name : '');
   }
 
+  // The panel's comparison: its own override, else the one its page fixed (opts.cmp, #216), else the shared one.
+  function cmpOf(p, s) { return p.st.custom || p.opts.cmp || s.cmp; }
+
   function highlightOf(p, s) {
     if (p.st.highlight) return p.st.highlight;
     return s.highlight && s.highlight.reportId === p.id ? s.highlight : null;
@@ -59,7 +62,7 @@
 
   // Validates and builds. Returns {def, ctx, res, errors, types, ...}; every problem stays inside this panel.
   function build(p, s) {
-    var def = TAP.reports.get(p.id), errors = TAP.reports.validate(def), cmp = p.st.custom || s.cmp;
+    var def = TAP.reports.get(p.id), errors = TAP.reports.validate(def), cmp = cmpOf(p, s);
     var industryId = industryOf(p, def, s), entities = TAP.scope.entities(cmp);
     if (def && !errors.length) TAP.panelMenus.fitBreakdown(def, p.st);   // a breakdown the measure doesn't list is dropped
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
@@ -140,7 +143,7 @@
     if (!p.live) return;
     var s = TAP.store.get(), keep = TAP.panelChart.focusKey(p.root), I = TAP.panelInsights;
     p.seen = {};   // glossary terms are marked once per panel
-    var b = build(p, s), info = I.get(p.st.custom || s.cmp, p.id), ok = !b.errors.length && b.res && !b.res.empty;
+    var b = build(p, s), info = I.get(cmpOf(p, s), p.id), ok = !b.errors.length && b.res && !b.res.empty;
     p.drewHl = !!(b.ctx && b.ctx.highlight);
     var big = s.expanded === p.id;
     if (p.root.isConnected) p.wasConnected = true;
@@ -246,6 +249,7 @@
     var p = { id: reportId, opts: Object.assign({}, opts || {}), cs: {}, off: [], live: true };
     p.st = Object.assign({ pop: null }, lasting(reportId), scoped());
     p.render = function () { render(p); };
+    p.cmp = function () { return cmpOf(p, TAP.store.get()); };
     p.toggle = function (name) { p.st.pop = name && p.st.pop !== name ? name : null; render(p); };
     p.set = function (patch) { Object.assign(p.st, patch); render(p); };
     p.setType = function (type) {

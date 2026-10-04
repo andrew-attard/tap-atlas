@@ -125,7 +125,7 @@
 
   // The editor row under the header: mode, then only the pickers that mode needs.
   function compareEditor(p) {
-    var c = p.st.custom || fill(TAP.store.get().cmp, {});
+    var c = p.st.custom || fill(p.cmp(), {});
     var setCustom = function (patch) { p.set({ custom: fill(c, patch) }); };
     var row = el('div', { class: 'tap-panel__custom-editor' }, [
       el('span', { class: 'tap-panel__control-label' }, t('compareTitle')),
@@ -189,8 +189,9 @@
     return box;
   }
 
-  function explain(def) {
-    if (TAP.explain && !TAP.explain.__stub) { TAP.explain.open(def.id); return; }
+  // cmp: the panel's own comparison, when it has one, so the explanation describes what this chart compares.
+  function explain(def, cmp) {
+    if (TAP.explain && !TAP.explain.__stub) { TAP.explain.open(def.id, cmp ? { cmp: cmp } : undefined); return; }
     TAP.layers.open('explain', { title: t('aboutLabel'), render: function (body) {
       var seen = {};
       ['shows', 'read', 'lookFor'].forEach(function (k) {
@@ -206,7 +207,7 @@
     var box = el('div', { class: 'tap-panel__tools', role: 'toolbar', 'aria-label': t('tools') }), open = p.st.pop;
     box.appendChild(button('insights', 'insight', t('insights'), { count: info.count, expanded: open === 'ins',
       aria: t('insightsCount', { n: info.count }), disabled: !info.count, onclick: function () { p.toggle('ins'); } }));
-    box.appendChild(button('about', 'info', t('about'), { aria: t('aboutLabel'), onclick: function () { if (b.def) explain(b.def); } }));
+    box.appendChild(button('about', 'info', t('about'), { aria: t('aboutLabel'), onclick: function () { if (b.def) explain(b.def, p.st.custom || p.opts.cmp); } }));
     if (b.types && b.types.list.length) {
       box.appendChild(button('type', 'chart', TAP.shapes.label(b.types.current), { expanded: open === 'type', menu: true,
         aria: t('typeAria', { type: TAP.shapes.label(b.types.current) }), onclick: function () { p.toggle('type'); } }));
