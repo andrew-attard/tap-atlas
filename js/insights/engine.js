@@ -137,8 +137,9 @@
     if (word) { fail(out, rule, fill(ph.banned, { word: word })); return null; }
 
     var regionIds = f.regionIds, n = TAP.data.regions().length;
-    var attach = (rule.attach || []).slice();
-    var reportId = attach.length && TAP.reports.get(attach[0]) ? attach[0] : null;
+    // Only reports that exist count: while a view is being built, the next attached report that exists takes over
+    var attach = (rule.attach || []).filter(function (id) { return !!TAP.reports.get(id); });
+    var reportId = attach.length ? attach[0] : null;
     // A finding may say how many of its regions really count (a split counts the regions that depart from the rest).
     var strength = clamp(f.strength), money = clamp(f.money);
     var breadth = clamp(typeof f.breadth === 'number' ? f.breadth : n ? regionIds.length / n : 0);
