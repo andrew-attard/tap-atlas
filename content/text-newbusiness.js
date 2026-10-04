@@ -14,5 +14,20 @@ Object.assign(window.TAP_CONTENT.text, {
     kicker: 'New business',
     title: 'Where will new business come from?',
     lead: 'The industries and channels each region’s new business rests on, the assumptions behind the number, and where exactly each region is looking.'
+  },
+
+  // US-2.1.2: the industry grid
+  nbGrid: {
+    corner: 'Industry',
+    tierColumn: 'Tier',
+    tierShort: 'T{tier}',
+    tierPart: 'Tier {tier} industries',
+    notApplicable: 'not applicable',
+    cellAria: '{region}, {industry}: {value}',
+    legendShade: 'Shade shows the size of the figure; colour shows the region.',
+    legendTier: '{short} = {tier}',
+    legendNp: 'Dashed: rows filled in without a usable figure',
+    combinedNoTier: 'A tier is one region’s choice, so combined figures show the amount without a tier.',
+    noTierParts: 'The Tier 1 and Tier 2 figures are not available yet.'
   }
 });

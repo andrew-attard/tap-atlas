@@ -135,7 +135,8 @@
       plan.regions[2].recap = [];
       TAP.data.load(plan);
       defined().forEach(function (id) {
-        var res = build(id, { mode: 'all' }), cells = figureCells(res, 'charlie');
+        // The tier is the region's Market Coverage choice, not a new business figure
+        var res = build(id, { mode: 'all' }), cells = figureCells(res, 'charlie').filter(function (x) { return x.key !== 'tier'; });
         a.ok(cells.every(function (x) { return x.cell.state !== 'value'; }), id + ': no value for Region C');
         a.ok(cells.every(function (x) { return x.cell.v !== 0; }), id + ': never zero');
         if (TAP.reports.get(id).shape !== 'list') a.ok((res.missing || []).indexOf('Region C') >= 0, id + ': Region C named as missing');
@@ -267,7 +268,8 @@
       a.ok(seen >= 7 * 3, 'checked ' + seen + ' cells');
     });
 
-    T.test('TPV-TC-333', 'Grid by default; stacked bar by tier and table offered', function (a) {
+    // The stacked bar by tier is offered once its Tier 1 and Tier 2 measures exist (ENGINE2)
+    withP2('TPV-TC-333', 'Grid by default; stacked bar by tier and table offered', function (a) {
       var def = TAP.reports.get(IND), types = TAP.shapes.types(def, 7);
       a.equal(def.defaultType, 'heatmap', 'grid is the default');
       a.ok(types.indexOf('stackedBar') >= 0, 'stacked bar offered');
@@ -357,7 +359,7 @@
       a.near(gcell(org, 'org', 'ind4').v, 900, 1e-9, 'organization ind4: 600 + 300');
       a.near(gcell(org, 'org', 'ind3').v, 2850, 1e-9, 'organization ind3: Region D only, the others not applicable');
       a.near(gcell(org, 'org', 'ind2').v, 600, 1e-9, 'organization ind2');
-      a.equal(gcell(org, 'org', 'ind1', 'tier'), undefined, 'a combined figure carries no tier');
+      a.equal(gcell(org, 'org', 'ind1', 'tier').state, 'notApplicable', 'a combined figure carries no tier');
     });
 
     T.test('X-nb-grid-tiers', 'Mini data: every cell with a value shows its tier; combined columns show none', function (a) {

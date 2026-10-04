@@ -9,3 +9,52 @@
 
 /* ---------- the view (US-2.1.1): a full-width row holds one panel ---------- */
 .tap-nb__wide { min-width: 0; }
+
+/* ---------- the industry grid (US-2.1.2): value and tier in each cell, shade set inline from the theme ---------- */
+.tap-nbg { display: flex; flex-direction: column; gap: var(--tap-sp-1); overflow-x: auto; padding: var(--tap-sp-1); container-type: inline-size;
+  --tap-nbg-name: 10rem; --tap-nbg-cell: 4.5rem; }
+.tap-nbg__row {
+  display: grid; gap: var(--tap-sp-1); align-items: stretch; min-height: 3rem;
+  /* Columns stop growing at a readable width, so two or three columns don't stretch across the panel */
+  grid-template-columns: minmax(var(--tap-nbg-name), 16rem) repeat(var(--tap-nbg-cols), minmax(var(--tap-nbg-cell), 10rem));
+  min-width: calc(var(--tap-nbg-name) + var(--tap-nbg-cols) * (var(--tap-nbg-cell) + var(--tap-sp-1)));
+}
+@container (max-width: 40rem) {
+  .tap-nbg__row { --tap-nbg-name: 7.5rem; --tap-nbg-cell: 3.75rem; }
+  .tap-nbg__cell { flex-direction: column; justify-content: center; align-items: flex-start; gap: 0; }
+}
+.tap-nbg__row--head { align-items: end; min-height: 0; padding-bottom: var(--tap-sp-2); border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-nbg__row--group { min-height: 0; padding-top: var(--tap-sp-2); }
+.tap-nbg__row--group .tap-nbg__name { grid-column: 1 / -1; }
+.tap-nbg__corner { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
+.tap-nbg__col { display: flex; flex-direction: column; gap: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; line-height: 1.2; overflow-wrap: break-word; }
+.tap-nbg__bar { display: block; height: 6px; }
+.tap-nbg__col.is-focus { font-weight: 800; }
+.tap-nbg__col.is-focus .tap-nbg__bar { height: 10px; }
+.tap-nbg__col.is-muted { color: var(--tap-muted); }
+
+.tap-nbg__name {
+  display: grid; grid-template-columns: 0.75rem minmax(0, 1fr); align-content: center; column-gap: var(--tap-sp-2); padding: var(--tap-sp-1) var(--tap-sp-2) var(--tap-sp-1) 0;
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink); text-align: left; background: transparent; border: 0; cursor: pointer;
+}
+.tap-nbg__name:hover .tap-nbg__label { text-decoration: underline; text-underline-offset: 3px; }
+.tap-nbg__year { align-self: center; padding-left: var(--tap-sp-6); font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
+.tap-nbg__row.is-selected, .tap-nbg__row.is-selected + .tap-nbg__row--year { background: var(--tap-surface); }
+.tap-nbg__row.is-selected .tap-nbg__name { font-weight: 800; }
+.tap-nbg__row.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; }
+
+.tap-nbg__cell {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--tap-sp-2); padding: var(--tap-sp-1) var(--tap-sp-2);
+  font: inherit; font-size: var(--tap-fs-label); font-weight: 700; color: var(--tap-ink); text-align: left;
+  background: transparent; border: 1px solid var(--tap-grid); cursor: pointer; position: relative;
+}
+.tap-nbg__value { white-space: nowrap; }
+.tap-nbg__cell--np { border: var(--tap-rule-w) dashed var(--tap-np-border); color: var(--tap-np-fg); font-weight: 600; font-style: italic; font-size: var(--tap-fs-chartMin); line-height: 1.15; }
+.tap-nbg__cell--na { border-color: transparent; }
+.tap-nbg__cell.is-focus { border-color: var(--tap-ink); }
+.tap-nbg__cell.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; z-index: 2; }
+.tap-nbg__cell:hover { outline: var(--tap-focus-w) solid var(--tap-ink); outline-offset: 1px; }
+.tap-nbg__tier { padding: 0 var(--tap-sp-1); font-size: var(--tap-fs-chartMin); font-weight: 700; line-height: 1.4; }
+.tap-nbg__tier--t1 { background: var(--tap-tier1); color: var(--tap-tier1-fg); }
+.tap-nbg__tier--t2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); }
+.tap-nbg__tier--t3 { background: var(--tap-tier3); color: var(--tap-tier3-fg); }
