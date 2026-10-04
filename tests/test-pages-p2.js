@@ -9,5 +9,11 @@
 (function (TAP) {
   'use strict';
   T.suite('pages-p2', function () {
+    T.test('TPV-TC-496', 'FTE and its spellings on the partner reports find the FTE entry', function (a) {
+      ['FTE', 'full-time equivalent', 'full-time equivalents', 'sales FTE', 'consultant FTE'].forEach(function (w) {
+        var e = TAP.content.term(w);
+        a.ok(e && e.id === 'fte', '"' + w + '" finds the FTE entry');
+      });
+    });
   });
 })(window.TAP);
