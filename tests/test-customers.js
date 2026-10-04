@@ -13,7 +13,7 @@
   'use strict';
 
   // Switched on when ENGINE2's breakdowns (#229) and reference lines land; they have no stub to wait on.
-  var ENGINE2_BREAKDOWNS = true, ENGINE2_REFLINES = false;
+  var ENGINE2_BREAKDOWNS = true, ENGINE2_REFLINES = true;
 
   var MODES = [
     { mode: 'all' },
