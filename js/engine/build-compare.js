@@ -1,6 +1,7 @@
 /*
  * File: js/engine/build-compare.js
- * Purpose: Generic chart builder for one value per region or category (bar, dot, radar). With
+ * Purpose: Generic chart builder for one value per region or category (bar, dot, radar), and grouped bars for a
+ *          breakdown (US-2.7.5). With
  *          options.measuresAs 'categories' (e.g. the six ratings) the measures are the categories and each
  *          region or combined figure is one group; otherwise the regions are the categories.
  * Provides: chart builder 'compare' (registered with TAP.builders)
@@ -14,16 +15,47 @@
     var k = TAP.shapes.kit, def = ctx.def, ds = TAP.prepare.run(def, ctx);
     var cats = (def.options || {}).measuresAs === 'categories';
     var keys = cats ? ds.primary : ds.primary.slice(0, 1);
+    // Breakdown columns of the measure shown (US-2.7.5): one per year, industry, channel, motion, segment or risk
+    var bd = cats ? [] : ds.columns.filter(function (c) { return c.breakdown && c.measureId === keys[0]; }).map(function (c) { return c.key; });
     var rows = k.visibleRows(ds, keys);
-    var res = k.result(def, ds, { table: k.table(ds, keys, rows), legend: k.legendOf({ entities: rows.map(function (r) { return r.entity; }) }),
+    var res = k.result(def, ds, { table: k.table(ds, keys.concat(bd), rows), legend: k.legendOf({ entities: rows.map(function (r) { return r.entity; }) }),
       notes: k.notes({ rows: rows, columns: ds.columns }, keys) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     var type = ctx.type || def.defaultType;
     if (type === 'table') return res;
     if (type === 'radar' && (!cats || rows.length > 3)) type = cats ? 'dot' : 'bar';   // a stale choice falls back
-    var draw = { cats: cats, keys: keys, rows: rows, ds: ds, ctx: ctx, k: k, res: res };
-    res.option = type === 'radar' ? radar(draw) : type === 'dot' ? dot(draw) : bars(draw);
+    var draw = { cats: cats, keys: keys, bd: bd, rows: rows, ds: ds, ctx: ctx, k: k, res: res };
+    res.option = type === 'radar' ? radar(draw) : type === 'dot' ? dot(draw) : bd.length ? grouped(draw) : bars(draw);
     return res;
+  }
+
+  // Grouped bars for a breakdown: one bar per value within each region, each bar named on the bar itself as well
+  // as in the legend, so the values are told apart without colour.
+  function grouped(draw) {
+    var k = draw.k, th = k.th(), hl = th.echarts.tap.highlight, np = [];
+    var series = draw.bd.map(function (key, i) {
+      var col = k.colOf(draw.ds, key);
+      return { type: 'bar', tapRole: 'value', name: col.label, barMaxWidth: th.space[6], barGap: '10%',
+        data: draw.rows.map(function (row, ri) {
+          var c = row.cells[key], on = k.highlighted(row.entity, draw.ctx.highlight);
+          if (c.state === 'value') {
+            return item(row, key, c, { itemStyle: { color: th.shade(row.entity.color, i), borderColor: on ? hl.color : th.ground,
+              borderWidth: on ? hl.width : th.border.control } });
+          }
+          if (c.state === 'notProvided') np.push({ value: [0, ri], entityId: row.entityId, text: k.t('chart.npFor', { name: col.label }), title: row.label, what: col.label });
+          return { value: null };
+        }),
+        label: { show: true, position: 'right', fontSize: th.type.chart, color: th.ink, formatter: function (p) {
+          return p.data && p.data.raw != null ? col.label + '  ' + TAP.format.cell({ v: p.data.raw, state: 'value' }, { unit: col.unit }) : '';
+        } },
+        tooltip: tooltip(draw) };
+    });
+    draw.res.legend = draw.res.legend.concat(draw.bd.map(function (key, i) {
+      return { label: k.colOf(draw.ds, key).label, color: th.shade(th.ink, i), role: 'part' };
+    }));
+    return { grid: k.grid({ right: th.space[12] * 2 }), tooltip: { trigger: 'item' }, xAxis: k.valueAxis(k.colOf(draw.ds, draw.keys[0])),
+      yAxis: { type: 'category', inverse: true, data: draw.rows.map(function (r) { return r.label; }), axisLabel: { fontSize: th.type.chart, interval: 0 } },
+      series: series.concat(np.length ? [k.npSeries(np)] : []) };
   }
 
   // The row a mark belongs to: same region (or combined figure) and same industry, if the rows are per industry.

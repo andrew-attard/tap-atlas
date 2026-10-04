@@ -2,7 +2,7 @@
  * File: js/engine/prepare.js
  * Purpose: Runs a report's measures over the comparison scope into one dataset for the chart and the table, so
  *          both always read the same cells (US-1.2.4), and works out which regions have no data (US-1.2.11).
- * Provides: TAP.prepare (run, primaryIds, selected)
+ * Provides: TAP.prepare (run, primaryIds, selected, breakdowns)
  * Depends on: js/engine/registry.js (measureIds), js/engine/measures.js, js/engine/scope.js, js/core/data.js,
  *             js/core/content.js, js/core/store.js
  * Used by: the generic builders (build-compare, build-parts, build-xy), js/panel/panel-menus.js
@@ -31,22 +31,67 @@
     var ys = (TAP.data.meta() || {}).years;
     return ys && ys[y - 1] ? String(ys[y - 1]) : TAP.content.text('chart.year', { n: y });
   }
+  // Breakdown dimensions (ARCHITECTURE 17.3) and the measure context key each one sets.
+  // Breakdown dimensions are listed in TAP.reports.BREAKDOWNS (ARCHITECTURE 17.3); each sets one measure context key.
+  var CTX_KEY = { year: 'year', industry: 'industryId', channel: 'channel', motion: 'motion', segment: 'segment', risk: 'risk' };
 
-  function column(def, id, year) {
+  // bd: {dim, value, label} for a breakdown column. Year columns keep the Phase 1 key <id>@y1..3.
+  function column(def, id, bd) {
     var m = TAP.measures.meta(id) || { label: id, short: id, unit: 'text', valueKind: 'text', kind: 'APP' };
     var own = (def.measures || []).filter(function (x) { return x.id === id; })[0];
-    return { key: year ? id + '@y' + year : id, measureId: id, year: year || null,
-      label: year ? yearLabel(year) : (own && own.label) || m.label, short: m.short,
+    var year = bd && bd.dim === 'year' ? bd.value : null;
+    return { key: !bd ? id : year ? id + '@y' + year : id + '@' + bd.dim + ':' + bd.value, measureId: id, year: year,
+      breakdown: bd || null, label: bd ? bd.label : (own && own.label) || m.label, short: m.short,
       unit: m.unit, valueKind: m.valueKind, kind: m.kind, scale: m.scale || null };
   }
 
-  // Every measure the report names, plus one column per plan year when broken down by year.
-  function columns(def, ctx) {
+  // The measures a breakdown splits: the selected one and, on a parts report, its parts.
+  function brokenIds(def, ctx) {
+    var sel = selected(def, ctx);
+    return !sel ? [] : def.shape === 'parts' ? [sel].concat((def.parts || {})[sel] || []) : [sel];
+  }
+  function supports(id, dim) { var m = TAP.measures.meta(id); return !!m && (m.dims || []).indexOf(dim) >= 0; }
+
+  // The breakdowns to offer: allowed by the report and listed in the selected measure's dims (and every part's,
+  // except for year, which splits only the total, as in Phase 1).
+  function breakdowns(def, ctx) {
+    var ids = brokenIds(def, ctx || {});
+    if (!ids.length || (def.options || {}).measuresAs === 'categories') return [];
+    return (def.breakdowns || []).filter(function (d) {
+      if ((TAP.reports.BREAKDOWNS || []).indexOf(d) < 0 || (d === 'industry' && def.dimension === 'industry')) return false;
+      return (d === 'year' ? ids.slice(0, 1) : ids).every(function (id) { return supports(id, d); });
+    });
+  }
+
+  function lookupValues(list) { return (list || []).map(function (x) { return { value: x.id, label: x.name }; }); }
+  function words(dim, ids) { return ids.map(function (v) { return { value: v, label: TAP.content.text('breakdown.' + dim + '.' + v) }; }); }
+
+  // The values of a dimension. Industries are those with a value for some entity in scope; the rest are fixed lists.
+  function valuesOf(dim, ids, entities, mctx) {
+    var lk = TAP.data.lookups() || {};
+    if (dim === 'year') return [1, 2, 3].map(function (y) { return { value: y, label: yearLabel(y) }; });
+    if (dim === 'channel') return lookupValues(lk.channels);
+    if (dim === 'segment') return lookupValues(lk.segments);
+    if (dim === 'motion') return words('motion', ['nb', 'cg']);
+    if (dim === 'risk') return words('risk', ['high', 'medium', 'none']);
+    return TAP.data.industries().filter(function (ind) {
+      return entities.some(function (e) {
+        return ids.some(function (id) {
+          return TAP.measures.combined(id, e, Object.assign({}, mctx, { industryId: ind.id })).state === 'value';
+        });
+      });
+    }).map(function (ind) { return { value: ind.id, label: ind.name }; });
+  }
+
+  // Every measure the report names, plus one column per breakdown value for the measures it splits.
+  function columns(def, ctx, entities, mctx) {
     var cols = TAP.reports.measureIds(def).map(function (id) { return column(def, id); });
-    var sel = selected(def, ctx), m = sel && TAP.measures.meta(sel);
-    if (ctx.breakdown === 'year' && m && m.dims.indexOf('year') >= 0) {
-      [1, 2, 3].forEach(function (y) { cols.push(column(def, sel, y)); });
-    }
+    var dim = ctx.breakdown;
+    if (!dim || breakdowns(def, ctx).indexOf(dim) < 0) return cols;
+    var ids = dim === 'year' ? brokenIds(def, ctx).slice(0, 1) : brokenIds(def, ctx);
+    valuesOf(dim, ids, entities, mctx).forEach(function (v) {
+      ids.forEach(function (id) { cols.push(column(def, id, { dim: dim, value: v.value, label: v.label })); });
+    });
     return cols;
   }
 
@@ -65,8 +110,8 @@
     var cells = {};
     cols.forEach(function (c) {
       var x = Object.assign({}, mctx);
-      if (c.year) x.year = c.year;
       if (industryId) x.industryId = industryId;
+      if (c.breakdown) x[CTX_KEY[c.breakdown.dim]] = c.breakdown.value;
       cells[c.key] = TAP.measures.combined(c.measureId, entity, x);
     });
     return cells;
@@ -77,7 +122,7 @@
     var entities = ctx.entities || TAP.scope.entities(ctx.cmp);
     var mctx = { year: ctx.year || null, industryId: industryOf(def, ctx), channel: ctx.channel || null,
       weights: (def.options && def.options.weights) || null };
-    var cols = columns(def, ctx), rows = [], dim = def.dimension || 'entity';
+    var cols = columns(def, ctx, entities, mctx), rows = [], dim = def.dimension || 'entity';
     var industries = dim === 'industry' ? TAP.data.industries({ rated: true }) : null;
 
     entities.forEach(function (e) {
@@ -117,5 +162,5 @@
       names: ids.map(function (id) { return TAP.content.regionName(TAP.data.region(id)); }) };
   }
 
-  TAP.prepare = { run: run, primaryIds: primaryIds, selected: selected };
+  TAP.prepare = { run: run, primaryIds: primaryIds, selected: selected, breakdowns: breakdowns };
 })(window.TAP);
