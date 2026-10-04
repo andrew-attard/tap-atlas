@@ -2,7 +2,7 @@
  * File: config/reports-newbusiness.js
  * Purpose: Report definitions for the New business view (Epic 2.1). The recurring themes report (nb-themes) is
  *          defined in config/reports-themes.js.
- * Provides: adds to window.TAP_REPORTS (nb-industries)
+ * Provides: adds to window.TAP_REPORTS (nb-industries, nb-levers)
  * Depends on: config/reports.js (schema), js/engine/measures.js and measures-p2.js (loaded before, see below)
  * Used by: js/engine/registry.js, js/views/new-business.js
  * Owner: NB stream
@@ -34,6 +34,38 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['heatmap'].concat(known('nb.arr.tier1') ? ['stackedBar'] : []).concat(['table']),
     breakdowns: ['year'],
     sources: ['DER', 'IN'],
+    options: {}
+  };
+
+  // US-2.1.4: the assumptions each region's new business number is built from. Rates combine with the catalogue
+  // weights (config/settings.js), so the figures match the insights.
+  window.TAP_REPORTS['nb-levers'] = {
+    id: 'nb-levers',
+    view: 'newBusiness',
+    title: 'How does each region build its new business number?',
+    explain: {
+      shows: 'The assumptions behind each region’s new business number: how many target accounts, the hit rate, the average deal size, the wins they imply, and the growth planned for years 2 and 3.',
+      read: 'One bar per region in its own colour; switch the lever above the chart. Expected wins are target accounts times hit rate. Combined figures add up counts and weight rates: hit rate by target accounts, deal size by expected wins, growth by new business ARR potential. The bubble view places regions by target accounts (across) and hit rate (up), sized by average deal size.',
+      lookFor: 'Whether a plan rests on many targets, a high hit rate, large deals or steep growth, and regions that sit apart from the others on one lever.'
+    },
+    shape: 'compare',
+    builder: 'nbLevers',
+    dimension: 'entity',
+    measures: [
+      { id: 'nb.targetAccounts', label: 'Target accounts' },
+      { id: 'nb.hitRate', label: 'Hit rate' },
+      { id: 'nb.avgDealSize', label: 'Average deal size' },
+      { id: 'nb.wins', label: 'Expected wins' },
+      { id: 'nb.growthY2', label: 'Year 2 growth' },
+      { id: 'nb.growthY3', label: 'Year 3 growth' }
+    ],
+    x: 'nb.targetAccounts',
+    y: 'nb.hitRate',
+    size: { options: ['nb.avgDealSize'], default: 'nb.avgDealSize' },
+    defaultType: 'bar',
+    types: ['bar', 'dot', 'bubble', 'table'],
+    breakdowns: ['industry'],
+    sources: ['IN', 'APP'],
     options: {}
   };
 })();
