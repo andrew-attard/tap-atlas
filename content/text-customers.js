@@ -33,6 +33,11 @@ Object.assign(window.TAP_CONTENT.text, {
     multiplierIn: '{n} in {region}'
   },
 
+  // US-2.2.5: the reference line on the exposure chart
+  cgExposure: {
+    refLine: 'Insight threshold: {value}'
+  },
+
   // US-2.7.2 details for row targets (an account, a partner, a new business row), and US-2.2.2 segment thresholds
   detailsRows: {
     title: '{name}, {region}',

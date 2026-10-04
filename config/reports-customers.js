@@ -66,4 +66,29 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     sources: ['APP', 'DER', 'PRE'],
     options: {}
   };
+
+  // US-2.2.5: how much of the planned growth sits in a few accounts, or in accounts flagged at risk.
+  window.TAP_REPORTS['cg-exposure'] = {
+    id: 'cg-exposure',
+    view: 'customers',
+    title: 'How concentrated or exposed is planned customer growth?',
+    explain: {
+      shows: 'The share of each region’s three-year incremental ARR that sits in its three largest growth accounts, or in accounts flagged high or medium risk.',
+      read: 'One bar per region, with the share written on it. The line marks the level at which an insight is raised. Combined figures are worked out over the combined accounts, so the organization’s top 3 are the three largest across all regions. Click a bar to list the accounts behind it.',
+      lookFor: 'Regions where a few accounts or flagged accounts carry much of the planned growth, worth discussing before the plan is final.'
+    },
+    shape: 'compare',
+    builder: 'cgExposure',
+    dimension: 'entity',
+    measures: [
+      { id: 'cg.top3Share', label: 'Share in top 3 accounts' },
+      { id: 'cg.riskShare', label: 'Share in high or medium risk accounts' }
+    ],
+    defaultType: 'bar',
+    types: ['bar', 'dot', 'table'],
+    breakdowns: [],
+    sources: ['APP', 'DER', 'PRE'],
+    // The reference line for each measure is the threshold of its insight rule (US-1.7.8), read when drawn
+    options: { thresholds: { 'cg.top3Share': { rule: 'concentration', param: 'share' }, 'cg.riskShare': { rule: 'atRisk', param: 'share' } } }
+  };
 })();
