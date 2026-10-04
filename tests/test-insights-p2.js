@@ -439,13 +439,13 @@
 
     when(SHARED, 'TPV-TC-478', 'A partner named by 2 regions gives an insight naming both; one named by 1 does not', function (a) {
       mini(function (p) {
-        rg(p, 'alpha').partners[0].name = 'Shared Partner';
+        rg(p, 'alpha').partners[0].name = ' Shared   Partner';
         rg(p, 'delta').partners[0].name = 'shared  partner';
       });
       var list = sharedOf('sharedPartner');
       a.equal(list.length, 1, 'only the shared one (Region B’s partner is its own)');
       a.deepEqual(list[0].regionIds, ['alpha', 'delta'], 'names both regions');
-      a.equal(list[0].sentence, '2 regions name Shared Partner as a partner: Region A and Region D.');
+      a.equal(list[0].sentence, '2 regions name Shared Partner as a partner: Region A and Region D.', 'shown with single spaces');
     });
 
     when(SHARED, 'TPV-TC-479', 'Shared targets attach to the sub-industry and partner lists, and Show me names the matching rows', function (a) {
@@ -499,6 +499,32 @@
       TAP.insights.reset();
       a.equal(sharedOf('partnerCapacity').length, 0, 'not computed, even for the planted partner');
       a.ok(!TAP.insights.failures().some(function (f) { return f.ruleId === 'partnerCapacity'; }), 'and not a failure');
+    });
+
+    when(SHARED, 'X-insights2-capacity-partial', 'A partly provided partner counts towards the 5 and is compared, with its note', function (a) {
+      // Five partners with FTE, the planted one with a blank year of services; every other partner without FTE
+      var p = JSON.parse(JSON.stringify(P)), kept = [];
+      p.regions.forEach(function (r) {
+        r.partners.forEach(function (x) {
+          if (x.name === CAP.name) { x.services[2] = null; kept.push(x); return; }
+          if (kept.filter(function (k) { return k.name !== CAP.name; }).length < 4 && x.channel !== 'partner') { kept.push(x); return; }
+          x.fteSales = null;
+          x.fteConsultants = null;
+        });
+      });
+      a.equal(kept.length, 5, 'fixture: five partners with FTE');
+      var oi = function (x) { return sum(x.arr.concat(x.services).filter(num)); };
+      var fte = function (x) { return x.fteSales + x.fteConsultants; };
+      var avg = sum(kept.map(oi)) / sum(kept.map(fte));
+      var planted = kept.filter(function (x) { return x.name === CAP.name; })[0], mine = oi(planted) / fte(planted);
+      a.ok(mine / avg >= 2, 'fixture: the planted partner is still at 2x or more (' + (mine / avg).toFixed(2) + ')');
+      TAP.data.load(p);
+      TAP.insights.reset();
+      var x = sharedOf('partnerCapacity').filter(function (i) { return i.regionIds[0] === CAP.region; })[0];
+      a.ok(x, 'computed: the partly provided partner counts towards the 5');
+      a.near(x.figures[0].cell.v, mine, 1e-6, 'its order intake per person, over the years given');
+      a.ok(x.figures[0].cell.partial === true && !!x.figures[0].cell.note, 'carries the partial note');
+      a.near(x.figures[1].cell.v, avg, 1e-6, 'the average counts it too');
     });
 
     when(SHARED, 'TPV-TC-483', 'The partner capacity sentence follows the story’s pattern, with no banned word', function (a) {
