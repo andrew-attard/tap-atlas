@@ -60,17 +60,13 @@
     });
     return rows.filter(function (r) { return r.x.state !== 'notApplicable' || r.y.state !== 'notApplicable'; });
   }
-
   // Points on exactly the same spot are spread on a small circle round it, for display only.
   function nudge(pts) {
     var spots = {};
     pts.forEach(function (p) { var key = p.x.v.toFixed(6) + '|' + p.y.v.toFixed(6); (spots[key] = spots[key] || []).push(p); });
     Object.keys(spots).forEach(function (key) {
       var same = spots[key], r = 0.03 + 0.008 * same.length;
-      same.forEach(function (p, i) {
-        var a = -Math.PI / 2 + 2 * Math.PI * i / same.length, on = same.length > 1;
-        p.dx = on ? r * Math.cos(a) : 0; p.dy = on ? r * Math.sin(a) : 0;
-      });
+      same.forEach(function (p, i) { var a = -Math.PI / 2 + 2 * Math.PI * i / same.length, on = same.length > 1; p.dx = on ? r * Math.cos(a) : 0; p.dy = on ? r * Math.sin(a) : 0; });
     });
   }
 
@@ -100,7 +96,6 @@
   }
 
   /* ---------- chart ---------- */
-
   // Both axes always show the whole score scale, so the midpoint lines sit in the middle and the four areas are equal.
   var SCALE = { min: 1, max: 3, interval: 0.5 };
 
@@ -150,7 +145,7 @@
    * Places labels in screen pixels, the largest bubbles first so they win. A label never covers a labelled bubble and
    * stays in the plot; with no free spot it is left off (the point stays in the table and opens its details on click).
    */
-  function placeLabels(pts, F) {
+  function placeLabels(pts, F, near) {
     var lh = F.lh, placed = [], cw = F.fs * 0.56, tries = [];
     var dots = pts.filter(function (p) { return p.named; }).map(function (p) { var c = at(p); c.r *= 0.8; return c; });
     function at(p) { var c = px(F, p.x.v + p.dx, p.y.v + p.dy); c.r = p.d / 2; return c; }
@@ -165,7 +160,8 @@
     tries.sort(function (a, b) { return a[2] - b[2]; });
     var order = pts.filter(function (p) { return p.named; }).sort(function (a, b) { return Math.round(b.d) - Math.round(a.d) || gp(b) - gp(a) || b.y.v - a.y.v; });
     // Two rounds: every label first tries the spots close to its bubble, and only then the far ones
-    [tries.filter(function (tr) { return tr[2] <= 2; }), tries].forEach(function (list, round) {
+    var close = tries.filter(function (tr) { return tr[2] <= 2; });
+    (near ? [close] : [close, tries]).forEach(function (list, round) {
       order.forEach(function (p) {
         if (round && p.lab) return;
         var c = at(p), wr = wrap(p.text, Math.max(110, F.w * 0.34) / cw), w = wr.width * cw + 6, h = lh * wr.lines;
@@ -238,7 +234,7 @@
     var size = sizeCol ? sizer(max) : function () { return th.space[4]; }, ring = [];
     pts.forEach(function (p) { p.d = !sizeCol ? th.space[4] : p.s && p.s.state === 'value' ? size(p.s.v) : th.space[2]; });
     var paired = naming(pts, gs, perRegion, filtered);
-    placeLabels(pts, F);
+    placeLabels(pts, F, perRegion || paired);   // many bubbles: near spots only, so leader lines stay short
     var series = gs.map(function (g) {
       var mine = pts.filter(function (p) { return p.g === g; });
       if (!mine.length) return null;
@@ -252,7 +248,8 @@
           if (hit(p)) ring.push({ value: at, entityId: g.id, size: d });
           return { value: at.concat([sizeCol && hasSize ? p.s.v : 0]), raw: [p.x.v, p.y.v, sizeCol ? (hasSize ? p.s.v : null) : null],
             keys: [def.x, def.y, sizeCol ? sizeCol.key : null], entityId: g.id, industryId: p.ind.id, name: p.ind.name, symbolSize: d,
-            itemStyle: { color: g.color }, label: Object.assign({ show: !!p.lab }, labelAt(p, d),
+            itemStyle: { color: g.color }, labelLine: { show: !!p.lab && (p.lab.gap > 6 || p.lab.dy !== 0) },
+            label: Object.assign({ show: !!p.lab }, labelAt(p, d),
               { fontSize: th.type.chart, color: th.ink, backgroundColor: th.ground, padding: [1, 2], formatter: p.label || p.text }) };
         }),
         tooltip: { formatter: function (prm) { return tooltip(def, mine.filter(function (q) { return q.ind.id === prm.data.industryId; })[0], sizeCol); } } };
@@ -304,7 +301,6 @@
     });
     return out;
   }
-
   // Counts the points of the first group (the focus region, or the average) in the "not yet able" area.
   function takeaway(gs, pts, perRegion) {
     var g = gs[0], focus = g && g.role === 'focus', mine = perRegion && !focus ? pts : pts.filter(function (p) { return p.g === g; });
@@ -313,11 +309,13 @@
     return t(perRegion && !focus ? 'quadrant.takeawayEvery' : 'quadrant.takeaway', { who: g.label, n: n, total: mine.length, area: areaLabel('attractiveNotYet') });
   }
 
-  function controls(opts, inds) {
-    return [{ key: 'everyRegion', label: t('quadrant.show'), kind: 'segmented', value: !!opts.everyRegion,
-      options: [{ value: false, label: t('quadrant.showAverage') }, { value: true, label: t('quadrant.showEvery') }] },
+  // The Show switch only appears where averaging applies: a pair or one region already shows each region's own bubble.
+  function controls(opts, inds, gs, perRegion) {
+    var own = !perRegion && gs.every(function (g) { return g.kind === 'region'; });
+    return (own ? [] : [{ key: 'everyRegion', label: t('quadrant.show'), kind: 'segmented', value: !!opts.everyRegion,
+      options: [{ value: false, label: t('quadrant.showAverage') }, { value: true, label: t('quadrant.showEvery') }] }]).concat([
     { key: 'industryFilter', label: t('quadrant.filter'), kind: 'select', value: opts.industryFilter || '',
-      options: [{ value: '', label: t('quadrant.allIndustries') }].concat(inds.map(function (d) { return { value: d.id, label: d.name }; })) }];
+      options: [{ value: '', label: t('quadrant.allIndustries') }].concat(inds.map(function (d) { return { value: d.id, label: d.name }; })) }]);
   }
   function missing(ctx, def) {
     var ids = TAP.scope.regionIds(ctx.cmp), inds = TAP.data.industries({ rated: true }), any = false, gone = [];
@@ -337,7 +335,7 @@
     var rows = collect(def, gs, filter ? [filter] : all, sizeId), drawn = chart(ctx, rows, gs, sizeCol, perRegion, !!filter), gap = missing(ctx, def);
     var res = K.result(def, null, { table: table(def, rows, sizeCol), notes: notes(def, rows, perRegion, gs, drawn.paired), missing: gap.names, empty: gap.empty,
       legend: K.legendOf({ entities: gs.filter(function (g) { return drawn.pts.some(function (p) { return p.g === g; }); }) }),
-      sizeLegend: drawn.sizeLegend, controls: controls(opts, all), takeaway: takeaway(gs, drawn.pts, perRegion),
+      sizeLegend: drawn.sizeLegend, controls: controls(opts, all, gs, perRegion), takeaway: takeaway(gs, drawn.pts, perRegion),
       target: function (prm) {
         var d = prm && prm.data, g = d && gs.filter(function (x) { return x.id === d.entityId; })[0];
         return g ? { reportId: def.id, regionIds: g.regionIds.slice(), industryIds: d.industryId ? [d.industryId] : [], accountIds: [], mark: 'points' } : null;
