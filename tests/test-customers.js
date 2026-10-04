@@ -464,13 +464,16 @@
       withRule('concentration', 0.4, function () {
         a.deepEqual(TAP.cgBuilders.refLines(def, { measureId: 'cg.top3Share' }).map(function (l) { return l.value; }), [0.4], 'moves with the setting');
       });
-      if (!waiting([196]).length) {
-        a.ok(markLineValues(build('cg-exposure', { mode: 'all' }).option).indexOf(0.5) >= 0, 'the chart draws the 50% line');
-        withRule('atRisk', 0.3, function () {
-          a.ok(markLineValues(build('cg-exposure', { mode: 'all' }, { measureId: 'cg.riskShare' }).option).indexOf(0.3) >= 0, 'and redraws it at 30%');
-        });
-      }
     });
+
+    var drawnLines = function (a) {
+      a.ok(markLineValues(build('cg-exposure', { mode: 'all' }).option).indexOf(0.5) >= 0, 'the chart draws the 50% line');
+      withRule('atRisk', 0.3, function () {
+        a.ok(markLineValues(build('cg-exposure', { mode: 'all' }, { measureId: 'cg.riskShare' }).option).indexOf(0.3) >= 0, 'and redraws it at 30%');
+      });
+    };
+    if (ENGINE2_REFLINES) when([196], 'X-cg-exposure-lines', 'The chart draws the reference line, and redraws it when the threshold changes', drawnLines);
+    else T.skip('X-cg-exposure-lines', 'The chart draws the reference line, and redraws it when the threshold changes', 'pending: waits for ENGINE2 options.refLines');
 
     when([196], 'TPV-TC-404', 'The rest and organization total come from the combined accounts, not averaged shares', function (a) {
       // org: all nine accounts, total 718; top 3 = d1 168 + a4 150 + b1 120 = 438; at risk = a2 100 + a4 150 + b2 30 + d2 100 = 380
