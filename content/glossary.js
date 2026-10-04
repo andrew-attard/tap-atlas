@@ -182,6 +182,11 @@ window.TAP_CONTENT.glossary = Object.assign(window.TAP_CONTENT.glossary || {}, {
     short: 'A larger strategic partner that sells together with the region. The template has two: Alliance A and Alliance B.',
     why: 'Alliance shares show how much a plan depends on these relationships.', related: ['channel', 'partner'] },
 
+  // Partners
+  fte: { term: 'FTE', aliases: ['full-time equivalent', 'full-time equivalents', 'sales FTE', 'consultant FTE'],
+    short: 'Full-time equivalent: people counted by the share of a full working week they give. Two people working half time count as 1 FTE.',
+    why: 'Partner capacity is given in FTE, for sales staff and consultants, so partners of different sizes can be compared.', related: ['partner', 'channel'] },
+
   // Kinds of data and figures
   leaderInput: { term: 'Leader input', aliases: ['leader’s rating', 'leader judgement'],
     short: 'A value the regional leader entered from their own judgement, such as a tier, a rating or a hit rate.',
