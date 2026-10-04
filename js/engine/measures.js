@@ -227,7 +227,7 @@
       out.note = TAP.content.text('measures.partNotProvided', { parts: TAP.format.list(lost.map(function (p) { return lower(meta(p.id).label); })) });
     } else if (have.some(function (p) { return p.cell.partial; })) {
       out.partial = true;
-      out.note = TAP.content.text('measures.partialYears');
+      out.note = have.filter(function (p) { return p.cell.partial; })[0].cell.note || TAP.content.text('measures.partialYears');
     }
     return out;
   }
