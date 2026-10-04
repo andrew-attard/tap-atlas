@@ -457,5 +457,25 @@
       var plain = TAP.panelInsights.target({ regionIds: ['alpha'], highlight: { mark: 'bar' } }, 'x');
       a.ok(!('items' in plain) && !('theme' in plain), 'left out when the insight has none');
     });
+
+    // #72: a theme clicked earlier must not hide the theme a "Show me" points at.
+    TAP.builders.register('x-fake-theme', function (ctx) {
+      calls.push(ctx);
+      return { option: null, html: '<button type="button" data-tap-opt="theme" data-tap-value="pricing">Pricing</button>',
+        table: { columns: [], rows: [] }, legend: [], notes: [], missing: [], empty: false, error: null, target: function () { return null; } };
+    });
+    T.test('X-panel-showme-theme', 'A "Show me" for the panel clears a theme chosen earlier, so its own theme shows', scene(function (a, s) {
+      s.report({ id: 'x-themes', view: 'newBusiness', title: 'Which themes recur?', explain: { shows: 'S.', read: 'R.', lookFor: 'L.' },
+        shape: 'compare', builder: 'x-fake-theme', dimension: 'entity', measures: [{ id: 'nb.arr', label: 'New' }],
+        defaultType: 'bar', types: ['bar', 'table'], breakdowns: [], sources: ['DER'], options: {} });
+      var p = s.panel('x-themes');
+      click(qs('[data-tap-opt="theme"]', p.el));
+      a.equal(last().opts.theme, 'pricing', 'the clicked theme is chosen');
+      try {
+        TAP.store.set({ highlight: { reportId: 'x-themes', theme: 'skills' } });
+        a.ok(!('theme' in last().opts), 'the earlier choice is cleared');
+        a.equal(last().highlight.theme, 'skills', 'the Show me theme reaches the builder');
+      } finally { TAP.store.set({ highlight: null }); }
+    }));
   });
 })(window.TAP);
