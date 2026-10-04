@@ -375,11 +375,13 @@
       a.ok(y.indexOf('Region A · Education') >= 0, 'a not-provided stack stays, as a gap');
     });
 
-    T.test('X-breakdowns-dot', 'Until the dot plot takes breakdowns, a dot chart with a breakdown draws grouped bars', function (a) {
+    T.test('X-breakdowns-dot', 'A dot chart with a breakdown draws one labelled dot per value (US-2.7.3)', function (a) {
       load();
       var s = values(build(def('compare', ['rc.nb.arr']), { type: 'dot', breakdown: 'channel' }).option);
-      a.equal(s.length, 4);
-      a.ok(s.every(function (x) { return x.type === 'bar'; }));
+      a.deepEqual(s.map(function (x) { return x.name; }), ['Direct', 'Partner', 'Alliance A', 'Alliance B']);
+      a.ok(s.every(function (x) { return x.type === 'scatter'; }), 'dots, not bars');
+      a.equal(s[0].label.formatter({ data: s[0].data[0] }), 'Direct', 'each dot names its value');
+      a.near(s[0].data[0].value[0], 4200, TOL, 'organization direct, as in the hand figures');
     });
 
     T.test('TPV-TC-316', 'Another breakdown replaces the first; removing it restores the original chart', function (a) {
