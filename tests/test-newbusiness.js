@@ -106,8 +106,10 @@
     T.test('TPV-TC-321', 'The view holds the Epic 2.1 reports, never more than two panels in a row', function (a) {
       a.deepEqual(viewReports(), ['nb-industries', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'], 'the reports, in order');
       withView(function (root) {
+        var layout = TAP.newBusinessView.layout(), flat = [].concat.apply([], layout);
+        a.ok(layout.every(function (r) { return r.length <= 2; }), 'the layout puts at most two reports in a row');
+        a.ok(viewReports().every(function (id) { return flat.indexOf(id) >= 0; }), 'and places every report');
         var rows = root.querySelectorAll('.tap-vh-pair');
-        a.ok(rows.length >= 2, 'two-panel rows');
         Array.prototype.forEach.call(rows, function (r) { a.ok(r.children.length <= 2, 'at most two side by side'); });
         a.deepEqual(panelIds(root), defined(), 'a panel for every report defined so far, in order');
       });

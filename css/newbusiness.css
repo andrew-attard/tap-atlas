@@ -1,8 +1,11 @@
 /*
  * File: css/newbusiness.css
- * Purpose: Styles for the New business view.
- * Provides: styles for this area only
+ * Purpose: Styles for the New business view: its page rows, the industry grid and the success factors panel.
+ * Provides: styles for .tap-nb, .tap-nbg and .tap-nbf only
  * Depends on: css/base.css, css/view-head.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: NB stream. Colours and font sizes come from theme variables only.
  */
+
+/* ---------- the view (US-2.1.1): a full-width row holds one panel ---------- */
+.tap-nb__wide { min-width: 0; }
