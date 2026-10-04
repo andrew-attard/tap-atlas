@@ -481,7 +481,7 @@
           all: { mode: 'all' },
           one: { mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'average' },
           pair: { mode: 'pair', focus: ids[0], second: ids[1] },
-          set: { mode: 'set', set: TAP.data.regions().map(function (r) { return r.id; }) },
+          set: { mode: 'set', set: ids.slice(0, 3) },
           org: { mode: 'org' }
         };
         Object.keys(cases).forEach(function (m) {
@@ -494,6 +494,10 @@
           a.ok(rows[0].parts.indexOf(bar.querySelector('.tap-cmp__mode')) >= 0, m + ': the modes lead the first row');
           a.ok(h <= 120, m + ': the bar is ' + h + ' px high (was about 220 in one vs the rest)');
         });
+        // Every region in the set: the button only counts them, so the controls stay one line
+        TAP.store.set({ cmp: { mode: 'set', set: ids.slice() } });
+        var controls = bar.querySelector('.tap-cmp__row--controls').getBoundingClientRect().height;
+        a.ok(controls <= 48, 'set of all ' + ids.length + ' regions: the controls row is ' + Math.round(controls) + ' px, one line');
       });
     });
 
@@ -503,7 +507,8 @@
         var screenH = 533, ids = longest();
         [{ mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'average' }, { mode: 'set', set: ids.slice(0, 3) }].forEach(function (c) {
           ['overview', 'industry'].forEach(function (view) {
-            TAP.store.set({ view: view, cmp: c });
+            TAP.store.set({ cmp: c });
+            TAP.store.set({ view: view });
             // The Overview's first block after its headline; the Industry view's first report panel.
             var first = root.querySelector('.tap-view .tap-panel, .tap-view [data-part]:not([data-part="headline"])');
             var top = Math.round(first.getBoundingClientRect().top - root.getBoundingClientRect().top);
