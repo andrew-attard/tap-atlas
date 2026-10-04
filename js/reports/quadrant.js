@@ -99,19 +99,6 @@
   // Both axes always show the whole score scale, so the midpoint lines sit in the middle and the four areas are equal.
   var SCALE = { min: 1, max: 3, interval: 0.5 };
 
-  /*
-   * The plot in screen pixels: the panel passes the chart's size (ctx.size), so labels are placed where they will be
-   * drawn. The margins are fixed (no containLabel) and hold the axis labels and the four area names, which sit
-   * outside the plot so no bubble can cover them. f grows everything with the expanded view's larger text.
-   */
-  function frame(ctx) {
-    var th = k().th(), f = ctx.expanded ? 1.3 : 1, fs = th.type.chart * f, lh = Math.round(fs + 6);
-    var size = ctx.size && ctx.size.w > 200 ? ctx.size : { w: 520, h: th.chartHeight.tall };
-    var m = { top: Math.round(28 * f) + lh + 22, right: 16, bottom: Math.round(36 * f) + lh * 2 + 8, left: Math.round(40 * f) + lh };
-    return { f: f, fs: fs, lh: lh, m: m, x0: m.left, y0: m.top, w: Math.max(120, size.w - m.left - m.right), h: Math.max(120, size.h - m.top - m.bottom) };
-  }
-  function px(F, x, y) { return { x: F.x0 + (x - SCALE.min) / 2 * F.w, y: F.y0 + (SCALE.max - y) / 2 * F.h }; }
-
   // The four area names, outside the plot: the upper two above it, the lower two under the axis numbers.
   function areaNames(F, hl) {
     var th = k().th(), Q = th.echarts.tap.quadrant, top = F.y0 - 20, low = F.y0 + F.h + Math.round(30 * F.f), x1 = F.x0 + F.w;
@@ -141,57 +128,6 @@
         formatter: function (v) { return Math.abs(v * 2 - Math.round(v * 2)) < 1e-9 ? TAP.format.num(v) : ''; } } };
   }
 
-  /*
-   * Places labels in screen pixels, the largest bubbles first so they win. A label never covers a labelled bubble and
-   * stays in the plot; with no free spot it is left off (the point stays in the table and opens its details on click).
-   */
-  function placeLabels(pts, F, near) {
-    var lh = F.lh, placed = [], cw = F.fs * 0.56, tries = [];
-    var dots = pts.filter(function (p) { return p.named; }).map(function (p) { var c = at(p); c.r *= 0.8; return c; });
-    function at(p) { var c = px(F, p.x.v + p.dx, p.y.v + p.dy); c.r = p.d / 2; return c; }
-    function gp(p) { return p.ind.groupPriority ? 1 : 0; }   // equal sizes: group priorities first
-    function free(b) {
-      if (b.x < F.x0 || b.y < F.y0 - 4 || b.x + b.w > F.x0 + F.w + F.m.right - 4 || b.y + b.h > F.y0 + F.h) return false;
-      return !placed.some(function (q) { return b.x < q.x + q.w && q.x < b.x + b.w && b.y < q.y + q.h && q.y < b.y + b.h; }) &&
-        !dots.some(function (d) { return d.x + d.r > b.x && d.x - d.r < b.x + b.w && d.y + d.r > b.y && d.y - d.r < b.y + b.h; });
-    }
-    // Spots by distance: beside the bubble first, then a line up or down, then further out on a longer leader line
-    [6, 28, 56, 90].forEach(function (g) { [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5].forEach(function (st) { tries.push([g, st, g / lh + Math.abs(st)]); }); });
-    tries.sort(function (a, b) { return a[2] - b[2]; });
-    var order = pts.filter(function (p) { return p.named; }).sort(function (a, b) { return Math.round(b.d) - Math.round(a.d) || gp(b) - gp(a) || b.y.v - a.y.v; });
-    // Two rounds: every label first tries the spots close to its bubble, and only then the far ones
-    var close = tries.filter(function (tr) { return tr[2] <= 2; });
-    (near ? [close] : [close, tries]).forEach(function (list, round) {
-      order.forEach(function (p) {
-        if (round && p.lab) return;
-        var c = at(p), wr = wrap(p.text, Math.max(110, F.w * 0.34) / cw), w = wr.width * cw + 6, h = lh * wr.lines;
-        var sides = c.x > F.x0 + F.w * 0.6 ? ['left', 'right'] : ['right', 'left'];
-        p.label = wr.text; p.lab = null;
-        list.some(function (tr) {
-          return sides.some(function (side) {
-            var bx = { x: side === 'right' ? c.x + c.r + tr[0] : c.x - c.r - tr[0] - w, y: c.y - h / 2 + tr[1] * lh, w: w, h: h };
-            if (!free(bx)) return false;
-            placed.push(bx); p.lab = { side: side, dy: tr[1] * lh, gap: tr[0] };
-            return true;
-          });
-        });
-      });
-    });
-  }
-  // Long names break onto a second line, so they fit where one long line would not.
-  function wrap(text, max) {
-    var lines = [''];
-    String(text).split(' ').forEach(function (wd) {
-      var l = lines[lines.length - 1];
-      if (l && (l + ' ' + wd).length > max) lines.push(wd); else lines[lines.length - 1] = l ? l + ' ' + wd : wd;
-    });
-    return { lines: lines.length, width: Math.max.apply(null, lines.map(function (l) { return l.length; })), text: lines.join('\n') };
-  }
-  // The label's spot beside its bubble (d px wide), as a position inside the symbol's box, stepped by dy.
-  function labelAt(p, d) {
-    var lab = p.lab || { side: 'right', dy: 0, gap: 6 }, r = lab.side === 'right';
-    return { position: [r ? d + lab.gap : -lab.gap, d / 2 + lab.dy], align: r ? 'left' : 'right', verticalAlign: 'middle', side: lab.side, dy: lab.dy };
-  }
   // Bubbles here run smaller than on the other charts, so close scores stay apart.
   function sizer(max) {
     var lo = k().th().space[2], hi = k().th().space[6] + k().th().space[1];
@@ -226,7 +162,7 @@
     return gs[0] && gs[0].role === 'focus' ? t('quadrant.focusStatement', { focus: gs[0].label }) : t('quadrant.averageStatement');
   }
   function chart(ctx, rows, gs, sizeCol, perRegion, filtered) {
-    var K = k(), th = K.th(), def = ctx.def, mid = midpoint(), hit = marker(ctx.highlight), F = frame(ctx);
+    var K = k(), th = K.th(), def = ctx.def, mid = midpoint(), hit = marker(ctx.highlight), L = TAP.quadrantLabels, F;
     var pts = rows.filter(function (r) { return r.x.state === 'value' && r.y.state === 'value'; });
     nudge(pts);
     var max = 0;
@@ -234,7 +170,7 @@
     var size = sizeCol ? sizer(max) : function () { return th.space[4]; }, ring = [];
     pts.forEach(function (p) { p.d = !sizeCol ? th.space[4] : p.s && p.s.state === 'value' ? size(p.s.v) : th.space[2]; });
     var paired = naming(pts, gs, perRegion, filtered);
-    placeLabels(pts, F, perRegion || paired);   // many bubbles: near spots only, so leader lines stay short
+    F = L.place(pts, ctx, { scale: SCALE, near: perRegion || paired });   // many bubbles: near spots only, short leaders
     var series = gs.map(function (g) {
       var mine = pts.filter(function (p) { return p.g === g; });
       if (!mine.length) return null;
@@ -249,7 +185,7 @@
           return { value: at.concat([sizeCol && hasSize ? p.s.v : 0]), raw: [p.x.v, p.y.v, sizeCol ? (hasSize ? p.s.v : null) : null],
             keys: [def.x, def.y, sizeCol ? sizeCol.key : null], entityId: g.id, industryId: p.ind.id, name: p.ind.name, symbolSize: d,
             itemStyle: { color: g.color }, labelLine: { show: !!p.lab && (p.lab.gap > 6 || p.lab.dy !== 0) },
-            label: Object.assign({ show: !!p.lab }, labelAt(p, d),
+            label: Object.assign({ show: !!p.lab }, L.at(p, d),
               { fontSize: th.type.chart, color: th.ink, backgroundColor: th.ground, padding: [1, 2], formatter: p.label || p.text }) };
         }),
         tooltip: { formatter: function (prm) { return tooltip(def, mine.filter(function (q) { return q.ind.id === prm.data.industryId; })[0], sizeCol); } } };
