@@ -2,7 +2,7 @@
  * File: js/views/guide.js
  * Purpose: The Guide view: how to use the app, planning explained, glossary, reset charts (US-1.6.1).
  * Provides: view 'guide' (registered with TAP.views)
- * Depends on: js/engine/registry.js, js/core/dom.js, js/core/icons.js, js/core/content.js (guide, text, mark),
+ * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js (guide, text, mark),
  *             js/core/storage.js, js/core/store.js (view, bus), js/ui/glossary.js (render), js/ui/tour.js (start)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  *
@@ -91,7 +91,8 @@
     var page = el('div', { class: 'tap-guide' }, [
       el('header', { class: 'tap-guide__head' }, [
         el('p', { class: 'tap-guide__kicker' }, t('kicker')),
-        el('h1', { class: 'tap-guide__h1' }, t('heading'))
+        el('h1', { class: 'tap-guide__h1' }, t('heading')),
+        TAP.viewHead.tip('guide')
       ]),
       toc,
       section('howTo', titles.howTo || (g.howTo || {}).title, howTo(g.howTo || {})),

@@ -14,7 +14,11 @@
 .tap-vh__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 .tap-vh__title { margin: 0; font-size: var(--tap-fs-h1); }
 .tap-vh__lead { margin: 0; font-size: var(--tap-fs-lead); }
-.tap-vh__tip { margin: 0; font-size: var(--tap-fs-body); }
+/* The tip line (US-2.6.2, PAGES2): also used in the Phase 1 view headers. Body size, always visible (D24) */
+.tap-vh__tip { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-3); margin: 0; font-size: var(--tap-fs-body); }
+.tap-vh__tip[hidden] { display: none; }
+.tap-vh__tiptext { padding-left: var(--tap-sp-3); border-left: var(--tap-rule-w) solid var(--tap-accent); line-height: 1.5; }
+.tap-vh__tiphide { min-height: 0; padding: 0 var(--tap-sp-2); font-size: var(--tap-fs-body); font-weight: 400; text-decoration: underline; }
 .tap-vh__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-2) var(--tap-sp-4); }
 .tap-vh__headline[hidden] { display: none; }
 .tap-vh__headline-text { margin: 0; font-size: var(--tap-fs-h3); font-weight: 600; line-height: 1.4; }
