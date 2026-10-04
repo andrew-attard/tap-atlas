@@ -69,6 +69,8 @@
     TAP.dom.clear(box);
     var list = el('div', { class: 'tap-ind-comments__list', tabindex: '0', 'aria-label': t('commentary.listLabel') });
     if (ind) regionsInScope(cmp).forEach(function (r) { var c = commentFor(r, id); if (c) list.appendChild(c); });
+    // One plain line when nobody shown wrote about it, so the box never looks broken; no region is singled out
+    if (!list.children.length) list.appendChild(el('p', { class: 'tap-ind-comments__none' }, t('commentary.none', { industry: ind ? ind.name : '' })));
     TAP.dom.append(box, [
       el('header', { class: 'tap-ind-comments__head' }, [
         el('h2', { class: 'tap-ind-comments__title' }, t('commentary.title', { industry: ind ? ind.name : '' })),

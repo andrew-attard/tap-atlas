@@ -95,4 +95,5 @@
 .tap-ind-comment__focus { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 .tap-ind-comment__text { margin: 0; max-width: 80ch; font-size: var(--tap-fs-body); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tap-ind-comment__src { font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-ind-comments__none { margin: 0; padding: var(--tap-sp-4) var(--tap-sp-6); font-size: var(--tap-fs-body); color: var(--tap-muted); }
 .tap-ind-comments__foot { padding: var(--tap-sp-2) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-label); color: var(--tap-muted); }

@@ -24,7 +24,8 @@ Object.assign(window.TAP_CONTENT.text, {
     intro: 'Each region’s tier and comment for the selected industry, focus region first. A region appears where its leader wrote a comment.',
     listLabel: 'Comments, one per region',
     focus: 'Focus region',
-    foot: '(tier and comment)'
+    foot: '(tier and comment)',
+    none: 'None of the regions shown wrote about {industry}. Pick another industry, or compare other regions, to read what leaders wrote.'
   },
 
   // US-1.5.4: the tier grid
