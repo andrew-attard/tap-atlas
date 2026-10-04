@@ -20,8 +20,10 @@
     return (def.columns || []).map(function (c) {
       var known = all.filter(function (x) { return x.key === c.key; })[0];
       if (!known) { notes.push(t('rows.unknownColumn', { key: c.key })); return null; }
-      return { key: c.key, label: c.label || known.label, unit: known.unit, kind: known.kind,
+      var out = { key: c.key, label: c.label || known.label, unit: known.unit, kind: known.kind,
         align: NUMERIC[known.unit] ? 'right' : 'left' };
+      if (known.decimals != null) out.decimals = known.decimals;
+      return out;
     }).filter(Boolean);
   }
 
@@ -57,19 +59,22 @@
     if (drill) {
       entries = entries.filter(function (e) {
         var rs = drill.regionIds || [], is = drill.industryIds || [];
-        return (!rs.length || rs.indexOf(e.regionId) >= 0) && (!is.length || e.item.industryId == null || is.indexOf(e.item.industryId) >= 0);
+        // Partners have no industry, so only the regions apply to them
+        return (!rs.length || rs.indexOf(e.regionId) >= 0) && (!is.length || source === 'partners' || is.indexOf(e.item.industryId) >= 0);
       });
     }
     var rows = entries.map(function (e) {
       var cells = {};
       cols.forEach(function (c) { cells[c.key] = TAP.rows.cell(source, c.key, e); });
-      return { entry: e, cells: cells };
+      return { entry: e, cells: cells, memo: Object.assign({}, cells) };
     });
+    // Each row's cell for a key, worked out once ("also" columns scan every region)
+    function cellOf(r, key) { return r.memo[key] || (r.memo[key] = TAP.rows.cell(source, key, r.entry)); }
 
-    var controls = (def.filter || []).map(function (f) { return filterControl(source, f, rows, opts, cols); });
+    var controls = (def.filter || []).map(function (f) { return filterControl(source, f, rows, opts, cols, cellOf); });
     controls.forEach(function (c) {
       if (c.value === 'all') return;
-      rows = rows.filter(function (r) { var x = TAP.rows.cell(source, c.field, r.entry); return x.state === 'value' && String(x.v) === c.value; });
+      rows = rows.filter(function (r) { var x = cellOf(r, c.field); return x.state === 'value' && String(x.v) === c.value; });
     });
 
     var sorts = sortsOf(def, opts), focus = cmp.mode === 'one' || cmp.mode === 'pair' ? cmp.focus : null;
@@ -77,13 +82,13 @@
       var fx = x.r.entry.regionId === focus ? 0 : 1, fy = y.r.entry.regionId === focus ? 0 : 1;
       if (fx !== fy) return fx - fy;
       for (var s = 0; s < sorts.length; s++) {
-        var d = compare(TAP.rows.cell(source, sorts[s].key, x.r.entry), TAP.rows.cell(source, sorts[s].key, y.r.entry), sorts[s].dir);
+        var d = compare(cellOf(x.r, sorts[s].key), cellOf(y.r, sorts[s].key), sorts[s].dir);
         if (d) return d;
       }
       return x.i - y.i;
     }).map(function (x) { return x.r; });
 
-    var table = { columns: cols.map(function (c) { return { key: c.key, label: c.label, unit: c.unit, align: c.align, kind: c.kind }; }),
+    var table = { columns: cols.map(function (c) { return Object.assign({}, c); }),
       rows: rows.map(function (r) {
         var e = r.entry;
         return { id: e.id, entityId: e.regionId, regionId: e.regionId, sourceRow: e.sourceRow, cells: r.cells,
@@ -98,10 +103,10 @@
   }
 
   // One select per filter, "All" first, then the values found in scope, in alphabetical order.
-  function filterControl(source, f, rows, opts, cols) {
+  function filterControl(source, f, rows, opts, cols, cellOf) {
     var unit = (TAP.rows.columns(source).filter(function (c) { return c.key === f.key; })[0] || {}).unit, seen = {};
     rows.forEach(function (r) {
-      var c = TAP.rows.cell(source, f.key, r.entry);
+      var c = cellOf(r, f.key);
       if (c.state === 'value') seen[String(c.v)] = TAP.format.cell(c, { unit: unit });
     });
     var options = Object.keys(seen).map(function (v) { return { value: v, label: seen[v] }; })
@@ -127,7 +132,7 @@
       return '<tr data-tap-region="' + esc(e.regionId) + '" data-tap-row="' + esc(e.source + ':' + e.regionId + ':' + e.sourceRow) + '"' +
         (hl ? ' class="is-highlight"' : '') + '>' + cols.map(function (c) {
           return '<td data-tap-col="' + esc(c.key) + '"' + (c.align === 'right' ? ' class="tap-list__num"' : '') + '>' +
-            esc(TAP.format.cell(r.cells[c.key], { unit: c.unit })) + '</td>';
+            esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, decimals: c.decimals })) + '</td>';
         }).join('') + '<td data-tap-col="source" class="tap-list__src">' + esc(sourceText(e)) + '</td></tr>';
     }).join('');
     return '<table class="tap-list"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
