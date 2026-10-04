@@ -196,6 +196,7 @@
       TAP.data.load(p);
       var box = html(build(def(), { highlight: { reportId: 'x-list', items: [{ section: 'customerGrowth', regionId: 'alpha', row: 13 }] } }));
       a.ok(box.querySelector('tr[data-tap-row="accounts:alpha:13"]').classList.contains('is-highlight'));
+      a.ok(box.querySelector('tr[data-tap-row="accounts:alpha:13"]').classList.contains('is-hl'), 'the shared highlight class too');
       a.equal(box.querySelectorAll('tr.is-highlight').length, 1);
       a.equal(box.querySelector('b'), null, 'no markup from the data');
       a.match(box.textContent, /<b>Bold<\/b>/);
