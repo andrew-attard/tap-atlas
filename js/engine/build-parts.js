@@ -20,13 +20,32 @@
     var parts = byYear ? [1, 2, 3].map(function (y) { return m + '@y' + y; }) : ((def.parts || {})[m] || [m]);
     var keys = parts.indexOf(m) >= 0 ? parts : parts.concat([m]);
     var rows = k.visibleRows(ds, [m].concat(parts));
-    var res = k.result(def, ds, { table: k.table(ds, keys, rows), legend: legend(k, ds, parts, rows),
-      notes: k.notes({ rows: rows, columns: ds.columns }, [m]) });
+    // Other breakdowns (US-2.7.5): the table gains a column per value; the chart draws one stack per region and value
+    var bd = byYear ? [] : ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === ctx.breakdown; });
+    var res = k.result(def, ds, { table: k.table(ds, keys.concat(bd.map(function (c) { return c.key; })), rows),
+      legend: legend(k, ds, parts, rows), notes: k.notes({ rows: rows, columns: ds.columns }, [m]) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;
+    if (bd.length) rows = split(k, rows, bd, keys);
     var draw = { k: k, ds: ds, ctx: ctx, m: m, parts: parts, rows: rows, res: res };
     res.option = type === 'treemap' ? treemap(draw) : bars(draw, type);
     return res;
+  }
+
+  // One row per region and breakdown value, its cells read from that value's columns under the plain measure keys,
+  // so the stacks, totals and tooltips draw it like any other row. Labelled "Region A · Direct".
+  function split(k, rows, bd, keys) {
+    var values = [], out = [];
+    bd.forEach(function (c) { if (!values.some(function (v) { return v.value === c.breakdown.value; })) values.push(c.breakdown); });
+    rows.forEach(function (r) {
+      values.forEach(function (v) {
+        var cells = {};
+        keys.forEach(function (key) { cells[key] = r.cells[key + '@' + v.dim + ':' + v.value] || r.cells[key]; });
+        out.push({ id: r.id + ':' + v.value, entityId: r.entityId, entity: r.entity, industryId: r.industryId,
+          label: k.t('breakdown.entityValue', { entity: r.label, value: v.label }), cells: cells });
+      });
+    });
+    return out;
   }
 
   function bubble(k, def, ctx, ds) {
@@ -59,6 +78,12 @@
     return k.tip(row.label, lines);
   }
 
+  // The row a mark belongs to: by row id (a region has several rows once broken down), else by region.
+  function rowOf(draw, d) {
+    d = d || {};
+    return draw.rows.filter(function (r) { return d.rowId != null ? r.id === d.rowId : r.entityId === d.entityId; })[0];
+  }
+
   function chartValue(v, unit) { return TAP.format.cell({ v: v, state: 'value' }, { unit: unit }); }
 
   function bars(draw, type) {
@@ -78,7 +103,7 @@
           var c = r.cells[key], tot = totals[i].state === 'value' ? totals[i].v : 0;
           if (c.state !== 'value') return { value: null };
           var on = k.highlighted(r.entity, draw.ctx.highlight), dark = pi === 0 && r.entity.role !== 'muted';
-          return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: key, entityId: r.entityId, name: r.label, mark: 'bar',
+          return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: key, entityId: r.entityId, rowId: r.id, name: r.label, mark: 'bar',
             itemStyle: { color: th.shade(r.entity.color, pi), borderColor: on ? hl.color : th.ground, borderWidth: on ? hl.width : th.border.control },
             label: { color: dark ? th.onColour : th.ink } };
         }),
@@ -88,10 +113,7 @@
           if (pct) return p.value >= 9 ? TAP.format.pct(p.value / 100) : '';
           return d.raw >= maxT * 0.09 ? chartValue(d.raw, col.unit) : '';
         } },
-        tooltip: { formatter: function (p) {
-          var row = draw.rows.filter(function (r) { return r.entityId === p.data.entityId; })[0];
-          return tipFor(draw, row, key);
-        } } };
+        tooltip: { formatter: function (p) { return tipFor(draw, rowOf(draw, p.data), key); } } };
     });
     if (stack && !pct) series.push(totalSeries(draw, totals, mc));
     if (np.length) series.push(k.npSeries(np));
@@ -127,12 +149,12 @@
       return false;
     }).map(function (r) {
       var on = k.highlighted(r.entity, draw.ctx.highlight);
-      return { name: r.label, entityId: r.entityId, mark: 'bar',
+      return { name: r.label, entityId: r.entityId, rowId: r.id, mark: 'bar',
         itemStyle: on ? { color: r.entity.color, borderColor: hl.color, borderWidth: hl.width } : { color: r.entity.color },
         children: draw.parts.map(function (key, pi) {
           var c = r.cells[key];
           if (c.state !== 'value' || !(c.v > 0)) return null;
-          return { name: k.colOf(draw.ds, key).label, value: c.v, raw: c.v, key: key, entityId: r.entityId,
+          return { name: k.colOf(draw.ds, key).label, value: c.v, raw: c.v, key: key, entityId: r.entityId, rowId: r.id,
             itemStyle: { color: th.shade(r.entity.color, pi) }, label: { color: pi === 0 && r.entity.role !== 'muted' ? th.onColour : th.ink } };
         }).filter(Boolean) };
     });
@@ -147,7 +169,7 @@
           { itemStyle: { borderColor: th.ground, borderWidth: th.border.control, gapWidth: th.border.control } }],
         data: data,
         tooltip: { formatter: function (p) {
-          var row = draw.rows.filter(function (r) { return r.entityId === p.data.entityId; })[0];
+          var row = rowOf(draw, p.data);
           return row ? tipFor(draw, row, p.data.key || draw.m) : '';
         } } }] };
   }
