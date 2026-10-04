@@ -71,6 +71,8 @@
       var m = TAP.measures.meta(id);
       if (!m) return;
       if (m.valueKind === 'rating') rating = true;
+      // Shares and ratios kept as parts are worked out from the combined totals, never weighted (ARCHITECTURE 17.5)
+      if (m.combine === 'ratioOfSums') { paras.push(t('rateRatio', { measure: m.label })); return; }
       var wb = m.valueKind === 'rate' ? TAP.agg.weightBy(id, weights) : null;
       if (wb) paras.push(t('rateWeight', { measure: m.label, weight: lower(label(wb)) }));
     });

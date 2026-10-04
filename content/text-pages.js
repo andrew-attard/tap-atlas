@@ -28,6 +28,7 @@ Object.assign(window.TAP_CONTENT.text, {
     noCombined: 'Every region is shown on its own here, so no figures are combined.',
     combinedLine: '{label}: {how}',
     rateWeight: '{measure} is a weighted average, with each region counting in proportion to its {weight}.',
+    rateRatio: '{measure} is worked out from the combined totals: the regions’ parts are added up first, then divided, so it is never an average of the regions’ own figures.',
     ratingRange: 'Ratings are averaged, and the lowest and highest region ratings are shown as a range.'
   },
 
