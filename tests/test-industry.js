@@ -761,6 +761,13 @@
         TAP.store.set({ industry: 'ind2' });
         a.equal(comments(root).length, 0, 'nobody commented on ind2: nothing listed');
         a.ok(!/no comment|0 comments|not commented/i.test(root.querySelector('.tap-ind-comments').textContent), 'and no "no comment" label or count');
+        // QA-5: one plain line instead of an empty box, naming no region
+        var none = root.querySelector('.tap-ind-comments__none');
+        a.ok(none, 'an empty-state line');
+        a.equal(none.textContent, TAP.content.text('commentary.none', { industry: TAP.data.industry('ind2').name }), 'its wording');
+        TAP.data.regions().forEach(function (r) { a.equal(none.textContent.indexOf(r.name), -1, 'does not name ' + r.name); });
+        TAP.store.set({ industry: 'ind3' });
+        a.equal(root.querySelector('.tap-ind-comments__none'), null, 'gone when there are comments');
       });
     });
 
