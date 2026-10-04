@@ -2,7 +2,7 @@
  * File: config/reports-newbusiness.js
  * Purpose: Report definitions for the New business view (Epic 2.1). The recurring themes report (nb-themes) is
  *          defined in config/reports-themes.js.
- * Provides: adds to window.TAP_REPORTS (nb-industries, nb-channels, nb-levers)
+ * Provides: adds to window.TAP_REPORTS (nb-industries, nb-channels, nb-rows, nb-levers)
  * Depends on: config/reports.js (schema); measure ids from js/engine/measures.js, scores.js and measures-p2.js
  * Used by: js/engine/registry.js, js/views/new-business.js
  * Owner: NB stream
@@ -52,6 +52,31 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stackedBar', 'stacked100', 'table'],
     breakdowns: ['year'],
     sources: ['DER'],
+    options: {}
+  };
+
+  // US-2.1.5: every sub-industry and market each region is targeting, one row per new business row (17.4).
+  // "Also targeted by" matches sub-industry names on exact text, ignoring case and spacing only.
+  window.TAP_REPORTS['nb-rows'] = {
+    id: 'nb-rows',
+    view: 'newBusiness',
+    title: 'Where exactly is each region looking?',
+    explain: {
+      shows: 'Every sub-industry and market each region targets, with its industry, tier, target accounts and three-year ARR potential, one row per line of the New Business sheet.',
+      read: 'Sorted by industry, then by ARR potential, highest first; click a heading to sort by it, and pick an industry to keep only its rows. “Also targeted by” names the other regions that wrote the same sub-industry, matched on the exact words, ignoring case and spacing, so near-duplicates are not matched. The last column gives the row each line comes from.',
+      lookFor: 'Where regions hunt in the same sub-industry, and where one region looks somewhere no other region does.'
+    },
+    shape: 'list',
+    builder: null,
+    defaultType: 'list',
+    types: ['list'],
+    rows: 'newBusiness',
+    columns: [{ key: 'region' }, { key: 'industry' }, { key: 'tier' }, { key: 'subVertical' }, { key: 'market' },
+      { key: 'targetAccounts' }, { key: 'arr3' }, { key: 'alsoTargeted' }],
+    sort: [{ key: 'industry', dir: 'asc' }, { key: 'arr3', dir: 'desc' }],
+    filter: [{ key: 'industry' }],
+    sources: ['IN', 'DER', 'APP'],
+    breakdowns: [],
     options: {}
   };
 

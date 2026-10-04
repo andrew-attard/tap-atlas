@@ -100,11 +100,13 @@
     return el('div', { class: 'tap-vh-slot', 'data-slot': id });
   }
 
-  // The list's industry filter (a builder control) selects the industry too. "All" names no industry and is ignored.
+  // The list's industry filter (a builder control) selects the industry too. Its values are industry names (or ids);
+  // "All" names no industry and is ignored.
   function onFilter(e) {
-    var s = e.target;
+    var s = e.target, v = s && s.value;
     if (!s || s.getAttribute('data-control') !== 'filter:industry') return;
-    if (TAP.data.industry(s.value) && s.value !== TAP.store.get().industry) TAP.store.set({ industry: s.value });
+    var ind = TAP.data.industry(v) || TAP.data.industries().filter(function (d) { return d.name === v; })[0];
+    if (ind && ind.id !== TAP.store.get().industry) TAP.store.set({ industry: ind.id });
   }
 
   function mount(root) {
