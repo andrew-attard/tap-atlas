@@ -62,7 +62,7 @@
       onSelect: function (ins) {
         var off = p.st.selected === ins.id, tg = target(ins, p.id), sm = TAP.showme;
         // A region the chart can't show on its own: "Show me" widens the comparison first
-        if (!off && sm && !sm.__stub && sm.widen(tg, p.st.custom || TAP.store.get().cmp, ins.regionIds)) {
+        if (!off && sm && !sm.__stub && sm.widen(tg, p.cmp(), ins.regionIds)) {
           p.st.pop = null;
           sm.go({ insightId: ins.id, target: tg });
           return;

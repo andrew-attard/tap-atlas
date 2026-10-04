@@ -43,7 +43,7 @@
     return el('div', { class: 'tap-panel__expand-strip' }, [
       lab ? el('div', { class: 'tap-panel__expand-label tap-panel__expand-label--' + lab.kind, role: 'note' }, lab.text) : null,
       el('div', { class: 'tap-panel__expand-row' }, [
-        el('span', { class: 'tap-panel__expand-sentence' }, TAP.scope.sentence(p.st.custom || s.cmp)),
+        el('span', { class: 'tap-panel__expand-sentence' }, TAP.scope.sentence(p.cmp())),
         el('span', { class: 'tap-panel__date' }, t('dataDate', { date: TAP.format.date(TAP.sources.dataDate()) })),
         list.length > 1 ? el('span', { class: 'tap-muted' }, t('chartOf', { i: list.indexOf(p.id) + 1, n: list.length })) : null,
         el('button', { type: 'button', class: 'tap-btn tap-panel__tool', 'data-action': 'collapse', onclick: collapse },
