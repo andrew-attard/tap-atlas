@@ -55,6 +55,10 @@
 }
 .tap-cmp__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-6); }
 .tap-cmp__row--sentence { position: relative; gap: var(--tap-sp-2) var(--tap-sp-4); }
+/* On a view nothing follows (the Guide), only the sentence line and the data date stay (QA-13) */
+.tap-cmp--slim { padding-top: var(--tap-sp-2); padding-bottom: var(--tap-sp-2); }
+.tap-cmp--slim .tap-cmp__row--controls { display: none; }
+.tap-cmp--slim .tap-cmp__sentence { font-size: var(--tap-fs-body); }
 .tap-cmp__title, .tap-cmp__label { font-size: var(--tap-fs-body); font-weight: 800; }
 .tap-cmp__label { font-weight: 600; }
 .tap-cmp__picker { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
