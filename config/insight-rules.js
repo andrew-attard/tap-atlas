@@ -118,19 +118,19 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     reads: ['customerGrowth.accounts.incrementalArr'], params: { share: 0.5, top: 3, minAccounts: 5 },
     scoring: 'Strength: the share against twice the threshold. Money: the growth in those accounts.',
     template: '{share} of {region}’s planned customer growth sits in {n} accounts ({accounts}){risk}.',
-    attach: [], highlight: null });
+    attach: ['cg-exposure'], highlight: 'bar' });
   rule({ id: 'atRisk', family: 'exposure',
     description: 'At least 25% of a region’s planned customer growth in accounts flagged high or medium risk.',
     reads: ['customerGrowth.accounts.riskLevel'], params: { share: 0.25, levels: ['high', 'medium'] },
     scoring: 'Strength: the share against twice the threshold. Money: the growth in those accounts.',
     template: '{share} of {region}’s planned customer growth is in accounts flagged at risk ({amount} across {n} accounts).',
-    attach: [], highlight: null });
+    attach: ['cg-exposure'], highlight: 'bar' });
   rule({ id: 'segmentMix', family: 'exposure',
     description: 'A region drawing at least 60% of its planned customer growth from one segment, at least 20 points above every other region’s share for that segment.',
     reads: ['customerGrowth.accounts.segment'], params: { share: 0.6, gap: 0.2 }, compare: true,
     scoring: 'Strength: the gap to the highest other region against twice the threshold. Money: the growth in that segment.',
     template: '{region}’s planned customer growth relies mostly on {segment} accounts ({share}, against {min} to {max} in the other regions).',
-    attach: [], highlight: null });
+    attach: ['cg-segments'], highlight: 'bar' });
 
   /* ---------- capability (US-1.7.9) ---------- */
   rule({ id: 'notYetWinnable', family: 'capability',
