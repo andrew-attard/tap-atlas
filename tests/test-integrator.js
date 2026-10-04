@@ -433,5 +433,21 @@
         a.equal(getComputedStyle(np.querySelector('.tap-tg__npdash')).display, 'none', 'wide: no dash');
       });
     });
+
+    T.test('X-int-qa13-guide-bar', 'QA-13: on the Guide the comparison bar shrinks to its sentence line; other views keep it whole', function (a) {
+      withApp(function (root) {
+        TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });
+        var bar = root.querySelector('.tap-cmp'), controls = bar.querySelector('.tap-cmp__row--controls');
+        var full = bar.getBoundingClientRect().height;
+        a.ok(controls.getBoundingClientRect().height > 0, 'Overview: the controls show');
+        TAP.store.set({ view: 'guide' });
+        a.equal(controls.getBoundingClientRect().height, 0, 'Guide: the controls are hidden');
+        a.ok(bar.querySelector('.tap-cmp__sentence').textContent.length > 0, 'Guide: the sentence stays');
+        a.ok(bar.querySelector('.tap-cmp__date').getBoundingClientRect().height > 0, 'Guide: the data date stays');
+        a.ok(bar.getBoundingClientRect().height < full / 2, 'Guide: under half the height (' + Math.round(bar.getBoundingClientRect().height) + ' of ' + Math.round(full) + ' px)');
+        TAP.store.set({ view: 'insights' });
+        a.ok(controls.getBoundingClientRect().height > 0, 'Insights follows the comparison: the controls are back');
+      });
+    });
   });
 })(window.TAP);
