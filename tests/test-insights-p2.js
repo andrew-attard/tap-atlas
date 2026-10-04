@@ -1,8 +1,8 @@
 /*
  * File: tests/test-insights-p2.js
  * Purpose: Tests for the Phase 2 planted cases in the sample data, the Phase 2 insight rules and recurring themes.
- * Provides: test cases for the INSIGHTS2 stream: TPV-TC-304, 307, 308 (US-2.7.4, sample data), 471 to 475 (US-2.5.2),
- *           486 to 490 (US-2.5.5), X-insights2-*
+ * Provides: test cases for the INSIGHTS2 stream: TPV-TC-304, 307, 308 (US-2.7.4, sample data), 463 to 470 (US-2.5.1),
+ *           471 to 475 (US-2.5.2), 486 to 490 (US-2.5.5), X-insights2-*
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (T_INSIGHTS), the app scripts,
  *             data/sample-plan-data.js (window.PLAN_DATA), tests/fixtures/sample-expected.js (window.SAMPLE_EXPECT)
  * Used by: tests.html
@@ -148,6 +148,120 @@
       a.deepEqual(sample.errors, [], 'sample data: no errors');
       a.deepEqual(sample.warnings.map(function (w) { return w.path; }), ['regions[4].customerGrowth.accounts'],
         'sample data: only the planted empty section (G2) is a warning');
+    });
+
+    /* ---------- US-2.5.1: recurring themes in leaders' words ---------- */
+
+    var THEMES = ['TAP.themes', 'builder themes', 'insight rules: themes'];
+    var themeSample = function () { TAP.data.load(JSON.parse(JSON.stringify(P))); TAP.insights.reset(); };
+    var themeBuild = function (cmp, opts) {
+      var def = TAP.reports.get('nb-themes'), c = Object.assign(TAP.store.defaults().cmp, cmp || {});
+      return TAP.builders.get('themes')({ def: def, type: 'bar', cmp: c, entities: TAP.scope.entities(c), opts: opts || {}, highlight: null });
+    };
+    var themeRule = function () { return TAP.insights.all().filter(function (x) { return x.ruleId === 'recurringTheme'; }); };
+    // The mini fixture with one comment per region (texts by region id) and nothing else to read.
+    var themeFixture = function (texts) {
+      var p = T_FIXTURE('mini');
+      p.regions.forEach(function (r) {
+        r.newBusiness.forEach(function (x) { x.successFactors = null; });
+        r.marketCoverage.forEach(function (m, i) { m.commentary = i === 0 ? texts[r.id] || null : null; });
+      });
+      TAP.data.load(p);
+      TAP.insights.reset();
+    };
+
+    T.test('TPV-TC-463', 'The theme configuration holds at least six themes, each with a name and keywords', function (a) {
+      var C = window.TAP_COMMENT_THEMES, ids = {};
+      a.equal(C.minRegions, 3, 'default threshold of 3 regions');
+      a.ok(C.themes.length >= 6, C.themes.length + ' themes');
+      C.themes.forEach(function (th) {
+        a.ok(typeof th.id === 'string' && !ids[th.id], th.id + ' has a unique id');
+        ids[th.id] = true;
+        a.ok(typeof th.label === 'string' && th.label.length > 2, th.id + ' has a name');
+        a.ok(Array.isArray(th.keywords) && th.keywords.length > 0 && th.keywords.every(function (k) { return typeof k === 'string' && k.trim(); }),
+          th.id + ' has a keyword list');
+      });
+      ['references', 'partners', 'productGaps', 'marketing', 'skills', 'pricing'].forEach(function (id) { a.ok(ids[id], 'starter theme ' + id); });
+    });
+
+    when(THEMES, 'TPV-TC-465', 'The themes report ranks themes by regions mentioning them, as planted (Q06)', function (a) {
+      themeSample();
+      var res = themeBuild({ mode: 'all' });
+      a.equal(res.error, null);
+      a.deepEqual(res.table.rows.map(function (r) { return r.entityId; }), X.q06.themes.map(function (t) { return t.id; }), 'ranked as planted');
+      a.deepEqual(res.table.rows.map(function (r) { return r.cells.regions.v; }), X.q06.themes.map(function (t) { return t.n; }), 'region counts as planted');
+      var div = document.createElement('div');
+      TAP.dom.html(div, res.html);
+      var bars = div.querySelectorAll('.tap-themes__bar');
+      a.equal(bars.length, X.q06.themes.length, 'one bar per theme');
+      a.equal(bars[0].getAttribute('data-tap-value'), X.q06.themes[0].id, 'the most mentioned first');
+      a.ok(bars[0].textContent.indexOf('7 of 7 regions') >= 0, 'the count is written, not shown by the bar alone');
+    });
+
+    when(THEMES, 'TPV-TC-466', 'A selected theme’s quotes are grouped by region, focus region first, each with its source', function (a) {
+      themeSample();
+      var res = themeBuild({ mode: 'one', focus: 'mea' }, { theme: 'marketing' });
+      var div = document.createElement('div');
+      TAP.dom.html(div, res.html);
+      var want = X.q06.themes.filter(function (t) { return t.id === 'marketing'; })[0].regions;
+      var got = [].map.call(div.querySelectorAll('.tap-themes__region'), function (el) { return el.getAttribute('data-region'); });
+      a.equal(got[0], 'mea', 'the focus region first');
+      a.deepEqual(got.slice().sort(), want.slice().sort(), 'every region that mentions it');
+      a.deepEqual(got.slice(1), want.filter(function (r) { return r !== 'mea'; }), 'then file order');
+      [].forEach.call(div.querySelectorAll('.tap-themes__quote'), function (q) {
+        a.match(q.querySelector('.tap-themes__src').textContent, / plan\.xlsx › (2\. New Business|1\. Market Coverage) › [A-Z]+\d+$/, 'source: ' + q.textContent);
+      });
+      a.ok(div.querySelector('[data-tap-value="marketing"]').classList.contains('is-selected'), 'the bar shows as selected');
+    });
+
+    when(THEMES, 'TPV-TC-468', 'Themes in 3 and 4 regions give insights, one in 2 does not; at a threshold of 2 all three do', function (a) {
+      var C = window.TAP_COMMENT_THEMES, was = C.minRegions;
+      // references: alpha, bravo, charlie; product gaps: bravo, delta; partners: all four
+      themeFixture({ alpha: 'References and a specialist partner', bravo: 'Local references, partner enablement, product gaps',
+        charlie: 'Reference visits and partner marketing', delta: 'Partner training and product gaps to close' });
+      var ids = function () { return themeRule().map(function (x) { return x.id; }).sort(); };
+      var n = {};
+      TAP.themes.all().forEach(function (t) { n[t.id] = t.regions.length; });
+      a.deepEqual([n.references, n.productGaps, n.partners], [3, 2, 4], 'fixture: themes in 3, 2 and 4 regions');
+      a.deepEqual(ids(), ['recurringTheme:partners', 'recurringTheme:references'], 'the default threshold of 3: the themes in 3 and 4');
+      var four = themeRule().filter(function (x) { return x.id === 'recurringTheme:partners'; })[0];
+      a.equal(four.sentence, 'Partners come up in the commentary of 4 regions.', 'the expected sentence');
+      try {
+        C.minRegions = 2;
+        TAP.insights.reset();
+        a.deepEqual(ids(), ['recurringTheme:partners', 'recurringTheme:productGaps', 'recurringTheme:references'], 'threshold 2: all three');
+      } finally { C.minRegions = was; TAP.insights.reset(); }
+    });
+
+    when(['TAP.themes'], 'TPV-TC-469', 'Keywords match whole words in any case only', function (a) {
+      a.ok(TAP.themes.match('We need REFERENCES').indexOf('references') >= 0, '"We need REFERENCES" counts for references');
+      a.equal(TAP.themes.match('a partnership model').indexOf('partners'), -1, '"a partnership model" does not count for partners');
+      a.ok(TAP.themes.match('Our partner, not theirs').indexOf('partners') >= 0, 'punctuation ends a word');
+      a.ok(TAP.themes.match('Product  gaps hold us back').indexOf('productGaps') >= 0, 'a phrase matches across extra spaces');
+      a.deepEqual(TAP.themes.match(''), [], 'empty text: nothing');
+    });
+
+    when(['TAP.themes'], 'TPV-TC-470', 'The themes report’s explanation names every theme’s keywords', function (a) {
+      var text = TAP.explain.sections('nb-themes').map(function (s) { return s.paras.join(' '); }).join(' ');
+      window.TAP_COMMENT_THEMES.themes.forEach(function (th) {
+        a.ok(text.indexOf(th.label + ': ' + th.keywords.join(', ')) >= 0, th.label + ' and its keywords');
+      });
+    });
+
+    when(THEMES, 'X-insights2-theme-insights', 'Recurring themes on the sample: wording, figures and the Show me target', function (a) {
+      themeSample();
+      var list = themeRule(), recurring = X.q06.themes.filter(function (t) { return t.n >= 3; });
+      a.deepEqual(list.map(function (x) { return x.id.split(':')[1]; }).sort(), recurring.map(function (t) { return t.id; }).sort(), 'one per theme in 3 regions or more');
+      var refs = list.filter(function (x) { return x.id === 'recurringTheme:references'; })[0];
+      a.equal(refs.sentence, 'References come up in the success factors and commentary of 7 regions.');
+      a.equal(list.filter(function (x) { return x.id === 'recurringTheme:marketing'; })[0].sentence, 'Marketing support comes up in the success factors of 5 regions.');
+      a.equal(refs.figures[0].cell.v, 7, 'the count');
+      a.equal(refs.figures[0].cell.kind, 'APP', 'calculated by this app (D63)');
+      a.equal(refs.figures.length, 8, 'and a quote from each region');
+      a.equal(refs.highlight.theme, 'references', 'Show me selects the theme');
+      a.deepEqual(window.TAP_RULES.rules.filter(function (r) { return r.id === 'recurringTheme'; })[0].attach, ['nb-themes']);
+      a.equal(refs.reportId, 'nb-themes');
+      list.forEach(function (x) { window.T_INSIGHT_SHAPE(a, x); });
     });
 
     when(['Phase 2 measures (js/engine/measures-p2.js)'], 'X-insights2-planted-measures',
