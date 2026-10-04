@@ -9,7 +9,7 @@
 
 /* The frame: 2px ink on the ground, flat (no shadow) */
 .tap-panel {
-  position: relative; display: flex; flex-direction: column; min-width: 0;
+  position: relative; display: flex; flex-direction: column; min-width: 0; container: tap-panel / inline-size;
   background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); color: var(--tap-ink);
 }
 
@@ -31,6 +31,15 @@
 .tap-panel__tools { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
 .tap-panel__tool { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); white-space: nowrap; }
 .tap-panel__tool[aria-expanded="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+/* Half-width panels (QA-10): About and Table keep their icon and spoken name, the word is visually hidden, so the
+   toolbar stays on one row; the chart type, Insights and More keep their words */
+@container tap-panel (max-width: 44rem) {
+  .tap-panel__tools { gap: 6px; }
+  .tap-panel__tool { padding-left: 10px; padding-right: 10px; }
+  .tap-panel__tool[data-action="about"] > span:not(.tap-icon), .tap-panel__tool[data-action="table"] > span:not(.tap-icon) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
 .tap-panel__count {
   min-width: 24px; padding: 0 6px; text-align: center; line-height: 24px;
   font-size: var(--tap-fs-label); font-weight: 800; background: var(--tap-accent-deep); color: var(--tap-on-colour);

@@ -132,7 +132,8 @@
     var cls = 'tap-tg__cell ' + (ok ? 'tap-tg__cell--t' + cell.v : 'tap-tg__cell--np') + (c.role === 'muted' ? ' is-muted' : '') +
       (c.role === 'focus' ? ' is-focus' : '') + (m.hl.cell(c.id, r.industryId) ? ' is-hl' : '');
     return '<button type="button" role="cell" class="' + cls + '" data-tap-region="' + esc(c.id) + '" data-tap-industry="' +
-      esc(r.industryId) + '" data-tap-value="' + (ok ? esc(cell.v) : '') + '" aria-label="' + esc(aria) + '">' + (ok ? '<span class="tap-tg__word">' + esc(tier.replace(/\s*\S+$/, '')) + ' </span>' + esc(cell.v) : esc(tier)) +
+      esc(r.industryId) + '" data-tap-value="' + (ok ? esc(cell.v) : '') + '" aria-label="' + esc(aria) + '">' + (ok ? '<span class="tap-tg__word">' + esc(tier.replace(/\s*\S+$/, '')) + ' </span>' + esc(cell.v)
+        : '<span class="tap-tg__npword">' + esc(tier) + '</span><span class="tap-tg__npdash" aria-hidden="true">–</span>') +
       (central ? ' <span class="tap-tg__cstar" aria-hidden="true">' + esc(t('tierGrid.star')) + '</span>' : '') + '</button>';
   }
 

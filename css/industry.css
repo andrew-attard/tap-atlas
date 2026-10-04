@@ -16,14 +16,18 @@
   min-width: calc(var(--tap-tg-name) + var(--tap-tg-cols) * (var(--tap-tg-cell) + var(--tap-sp-1)) + var(--tap-tg-agree));
 }
 /* Narrow panels (small laptops at high zoom): cells show the tier number only; the legend names the tiers */
+.tap-tg__npdash { display: none; }
 @container (max-width: 52rem) {
-  .tap-tg__row { --tap-tg-name: 8.5rem; --tap-tg-cell: 2.75rem; --tap-tg-agree: 6rem; }
+  .tap-tg__row { --tap-tg-name: 8.5rem; --tap-tg-cell: 3.75rem; --tap-tg-agree: 5.5rem; }
+  .tap-tg .tap-tg__col { overflow-wrap: normal; padding-right: var(--tap-sp-1); }
   .tap-tg__word { display: none; }
+  .tap-tg__npword { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tap-tg__npdash { display: inline; }
 }
 .tap-tg__row--head { align-items: end; min-height: 0; padding-bottom: var(--tap-sp-2); border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
 .tap-tg__corner, .tap-tg__agree-head { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); line-height: 1.25; }
 .tap-tg__agree-head { padding-left: var(--tap-sp-2); }
-.tap-tg__col { display: flex; flex-direction: column; gap: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.tap-tg__col { display: flex; flex-direction: column; gap: var(--tap-sp-2); padding-right: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; line-height: 1.2; overflow-wrap: break-word; }
 .tap-tg__bar { display: block; height: 6px; }
 .tap-tg__col.is-focus { font-weight: 800; }
 .tap-tg__col.is-focus .tap-tg__bar { height: 10px; }
