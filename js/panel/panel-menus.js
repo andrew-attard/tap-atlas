@@ -236,7 +236,7 @@
     var def = b.def, o = def.options || {}, type = b.ctx.type, own = [];
     var ms = def.measures || [];
     // No switch where the axes come from x and y, or where the measures are the categories
-    var xy = def.shape === 'xy' || def.shape === 'xyz' || (def.shape === 'parts' && type === 'bubble');
+    var xy = def.shape === 'xy' || def.shape === 'xyz' || (type === 'bubble' && (def.shape === 'parts' || !!(def.x && def.y)));
     if (ms.length > 1 && o.measuresAs !== 'categories' && !xy) {
       own.push({ key: 'measure', label: t('measure'), kind: 'segmented', value: TAP.prepare.selected(def, { measureId: p.st.measureId }),
         options: ms.map(function (m) { return { value: m.id, label: m.label }; }), onPick: function (k, v) { p.set({ measureId: v }); } });
