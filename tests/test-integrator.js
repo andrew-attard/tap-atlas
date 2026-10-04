@@ -532,6 +532,20 @@
 
     /* ---------- test hygiene (polish f) ---------- */
 
+    T.test('X-int-hygiene-view-and-cmp', 'Changing view and comparison in one step leaves the old view silent', function (a) {
+      withApp(function (root) {
+        var calls = 0, keep = TAP.insights.top;
+        TAP.store.set({ view: 'overview' });
+        TAP.insights.top = function () { calls++; return keep.apply(TAP.insights, arguments); };
+        try {
+          TAP.store.set({ view: 'guide', cmp: { mode: 'org' } });   // one update: the Overview is destroyed during it
+          calls = 0;
+          TAP.store.set({ cmp: { mode: 'all' } });
+          a.equal(calls, 0, 'the destroyed Overview no longer asks for insights');
+        } finally { TAP.insights.top = keep; }
+      });
+    });
+
     T.test('X-int-hygiene-views', 'Polish (f): a view taken off the page without destroy() stops redrawing and asking for insights', function (a) {
       ['overview', 'industry', 'insights'].forEach(function (id) {
         var host = T.dom.mount();

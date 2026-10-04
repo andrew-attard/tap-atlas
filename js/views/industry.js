@@ -107,11 +107,13 @@
     }
     drawComments(notes);
     var handle;
+    var dead = false;
     var offs = [
       TAP.bus.on('industry:select', function (p) {
         if (p && p.industryId && p.industryId !== TAP.store.get().industry) TAP.store.set({ industry: p.industryId });
       }),
       TAP.store.on(function (s, changed) {
+        if (dead) return;   // destroyed; the store may still call this once from its listener copy
         if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
         // Details that name one industry select it too, so the commentary follows any click (ARCHITECTURE s10)
         var tg = changed.indexOf('layer') >= 0 && s.layer && s.layer.name === 'details' && s.layer.payload && s.layer.payload.target;
@@ -122,6 +124,7 @@
       })
     ];
     handle = { destroy: function () {
+      dead = true;
       panels.forEach(function (p) { if (p && p.destroy) p.destroy(); });
       offs.forEach(function (f) { if (typeof f === 'function') f(); });
     } };
