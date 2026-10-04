@@ -391,7 +391,10 @@
       plan.regions[3].customerGrowth.accounts[0].multiplier3y = 1.5;   // d1 and d2 now both use one
       plan.regions[3].customerGrowth.accounts[1].multiplier3y = 1.2;
       TAP.data.load(plan);
-      a.ok(build('cg-growth', { mode: 'all' }).notes.indexOf('2 accounts in Region D use a three-year multiplier; they count through the incremental ARR the workbook calculated.') >= 0, 'plural');
+      a.ok(build('cg-growth', { mode: 'set', set: ['delta'] }).notes.indexOf('2 accounts in Region D use a three-year multiplier; they count through the incremental ARR the workbook calculated.') >= 0, 'plural');
+      // Several regions share one note, so the chart doesn't grow a line per region
+      var both = build('cg-growth', { mode: 'all' }).notes.filter(function (n) { return /multiplier/.test(n); });
+      a.deepEqual(both, ['Accounts planned with a three-year multiplier count through the incremental ARR the workbook calculated: 1 in Region A and 2 in Region D.'], 'one note for several regions');
     });
 
     when([196], 'TPV-TC-392', 'One vs the rest and organization total: weighted by current ARR', function (a) {

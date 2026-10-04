@@ -69,13 +69,17 @@
     if (res.error) return res;
     var seg = /^cg\.growth\.([a-z]+)$/.exec(TAP.prepare.selected(ctx.def, ctx) || ''), mctx = {};
     if (seg && seg[1] !== 'all') mctx.segment = seg[1];
-    var count = TAP.measures.get('cg.multiplierAccounts');
+    var count = TAP.measures.get('cg.multiplierAccounts'), found = [];
     TAP.scope.regionIds(ctx.cmp).forEach(function (r) {
       var c = count ? count(r, mctx) : null;
-      if (!c || c.state !== 'value' || !(c.v > 0)) return;
-      var name = TAP.content.regionName(TAP.data.region(r));
-      res.notes.push(TAP.content.text(c.v === 1 ? 'cgGrowth.multiplierOne' : 'cgGrowth.multiplierMany', { n: c.v, region: name }));
+      if (c && c.state === 'value' && c.v > 0) found.push({ n: c.v, region: TAP.content.regionName(TAP.data.region(r)) });
     });
+    var t = TAP.content.text;
+    // One region gets a sentence; several share one line, so the notes stay short on a shared screen
+    if (found.length === 1) res.notes.push(t(found[0].n === 1 ? 'cgGrowth.multiplierOne' : 'cgGrowth.multiplierMany', found[0]));
+    else if (found.length) {
+      res.notes.push(t('cgGrowth.multiplierList', { list: TAP.format.list(found.map(function (f) { return t('cgGrowth.multiplierIn', f); })) }));
+    }
     return res;
   }
 

@@ -28,7 +28,9 @@ Object.assign(window.TAP_CONTENT.text, {
   // US-2.2.3: the note under the growth chart
   cgGrowth: {
     multiplierOne: '1 account in {region} uses a three-year multiplier; it counts through the incremental ARR the workbook calculated.',
-    multiplierMany: '{n} accounts in {region} use a three-year multiplier; they count through the incremental ARR the workbook calculated.'
+    multiplierMany: '{n} accounts in {region} use a three-year multiplier; they count through the incremental ARR the workbook calculated.',
+    multiplierList: 'Accounts planned with a three-year multiplier count through the incremental ARR the workbook calculated: {list}.',
+    multiplierIn: '{n} in {region}'
   },
 
   // US-2.7.2 details for row targets (an account, a partner, a new business row), and US-2.2.2 segment thresholds
