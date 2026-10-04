@@ -79,5 +79,80 @@
       var res = H.build('pt-reliance', { mode: 'all' }, { breakdown: 'year', type: 'table' });
       a.equal(res.error, null, 'builds broken down by year');
     });
+
+    /* ---------- US-2.3.3 partner capacity ---------- */
+
+    // From the mini data: sales plus consultant FTE, three-year ARR, three-year services
+    // A1: 2 + 3 = 5, 100 + 150 + 200 = 450, 20 + 30 + 40 = 90; B1: 5, 150, 30; D1: 5, 240, 0. Region C has no partners.
+    var PARTNERS = { 'alpha:10': [5, 450, 90], 'bravo:10': [5, 150, 30], 'delta:10': [5, 240, 0] };
+
+    T.test('TPV-TC-424', 'One bubble per partner: FTE across, three-year ARR up, three-year services as size', function (a) {
+      var res = H.build('pt-capacity', { mode: 'all' }), seen = H.bubbles(res);
+      a.equal(res.error, null, 'draws');
+      a.deepEqual(seen.map(function (b) { return b.rowId; }).sort(), Object.keys(PARTNERS), 'every partner once');
+      seen.forEach(function (b) { a.deepEqual([b.x, b.y, b.size], PARTNERS[b.rowId], b.rowId); });
+      a.deepEqual(res.missing, ['Region C'], 'the region with no partner list is named, not drawn at zero');
+    });
+
+    T.test('X-pt-capacity-names', 'Every partner is named beside its bubble or numbered in the key, in its region’s colour', function (a) {
+      var res = H.build('pt-capacity', { mode: 'all' });
+      H.bubbles(res).forEach(function (b) {
+        var d = b.series.data.filter(function (x) { return x.rowId === b.rowId; })[0], text = d.label.formatter();
+        var key = res.legend.filter(function (l) { return l.mark != null && String(l.mark) === text; })[0];
+        a.ok(d.label.show && (text === b.name || (key && key.label.indexOf(b.name) === 0)), b.rowId + ' is named');
+        a.equal(b.color, TAP.scope.colorOf(b.regionId), b.rowId + ' region colour');
+      });
+    });
+
+    T.test('TPV-TC-426', 'A partner’s details: channel, maturity, expertise, FTE, central support, ARR and services by year, order intake per FTE', function (a) {
+      var d = TAP.details.build({ reportId: 'pt-capacity', items: [{ section: 'partners', regionId: 'alpha', row: 10 }] });
+      a.equal(d.title, 'Fictional Partner A1, Region A', 'title');
+      var rows = [];
+      d.groups.forEach(function (g) { rows = rows.concat(g.rows); });
+      var labels = {};
+      TAP.rows.columns('partners').forEach(function (c) { labels[c.key] = c.label; });
+      var byLabel = function (key) { return rows.filter(function (r) { return r.label === labels[key]; })[0]; };
+      a.equal(byLabel('channel').cell.v, 'Partner', 'channel');
+      a.equal(byLabel('maturity').cell.v, 'Developing', 'maturity as given (D61)');
+      a.equal(byLabel('expertiseGeo').cell.v, 'Home market', 'geography expertise');
+      a.equal(byLabel('expertiseProduct').cell.v, 'Product line 1', 'product expertise');
+      a.equal(byLabel('fte').cell.v, 5, 'sales plus consultant FTE');
+      a.equal(byLabel('centralSupportPct').cell.v, 0.1, 'central support %');
+      var oi = byLabel('oiPerFte');
+      a.near(oi.cell.v, (450 + 90) / 5, 1e-9, 'order intake per FTE = (ARR + services) / FTE');
+      a.equal(oi.cell.kind, 'APP', 'marked as calculated by this app');
+      var year = function (field, y) { return rows.filter(function (r) { return r.cell && r.cell.src && r.cell.src.field === field && r.cell.src.year === y; })[0]; };
+      a.deepEqual([1, 2, 3].map(function (y) { return year('arr', y).cell.v; }), [100, 150, 200], 'ARR by year');
+      a.deepEqual([1, 2, 3].map(function (y) { return year('services', y).cell.v; }), [20, 30, 40], 'services by year');
+      a.match(TAP.sources.address(year('arr', 2).cell.src).text, /Region A plan\.xlsx › 4\. Partner › K10$/, 'year 2 ARR has its own cell');
+    });
+
+    T.test('TPV-TC-428', 'Partners with no FTE given are left out and named in a note', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[1].partners[0].fteSales = null;
+      plan.regions[1].partners[0].fteConsultants = null;
+      a.ok(TAP.data.load(plan).ok, 'the changed fixture loads');
+      var res = H.build('pt-capacity', { mode: 'all' });
+      a.ok(!H.bubbles(res).some(function (b) { return b.rowId === 'bravo:10'; }), 'B1 not drawn');
+      a.ok(res.notes.some(function (n) { return /^Fictional Partner B1 \(Region B\) is not on the chart/.test(n); }), 'named: ' + res.notes.join(' | '));
+    });
+
+    T.test('TPV-TC-429', 'Table view: its rows match the bubbles', function (a) {
+      a.deepEqual(TAP.shapes.types(TAP.reports.get('pt-capacity'), 7), ['bubble', 'table'], 'bubble and table');
+      H.MODES.forEach(function (m) {
+        var res = H.build('pt-capacity', m), seen = H.bubbles(res);
+        a.equal(res.table.rows.length, seen.length, m.mode + ': one row per bubble');
+        seen.forEach(function (b) {
+          var r = res.table.rows.filter(function (x) { return x.rowId === b.rowId; })[0];
+          a.deepEqual([r.cells.fte.v, r.cells.arr3.v, r.cells.services3.v], [b.x, b.y, b.size], m.mode + ' ' + b.rowId);
+        });
+      });
+    });
+
+    T.test('X-pt-capacity-target', 'A bubble click opens that partner’s details', function (a) {
+      var res = H.build('pt-capacity', { mode: 'all' }), b = H.bubbles(res).filter(function (x) { return x.rowId === 'delta:10'; })[0];
+      var d = b.series.data.filter(function (x) { return x.rowId === 'delta:10'; })[0];
+      a.deepEqual(res.target({ data: d }).items, [{ section: 'partners', regionId: 'delta', row: 10 }]);
+    });
   });
 })(window.TAP);
