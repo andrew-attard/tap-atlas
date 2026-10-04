@@ -89,6 +89,7 @@
     TAP.dom.append(page, [top, title]);
     var head = TAP.viewHead.render(title, { viewId: VIEW, kicker: t('kicker'), title: name(id),
       lead: t('lead', { sentence: TAP.scope.sentence(c) }) });
+    TAP.profileParts.drawGlance(page, id);
     var body = el('section', { class: 'tap-pf__reports', 'aria-label': t('reports', { name: name(id) }) });
     page.appendChild(body);
     rows().forEach(function (row) {

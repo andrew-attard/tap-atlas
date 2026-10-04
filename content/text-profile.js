@@ -22,6 +22,17 @@ Object.assign(window.TAP_CONTENT.text, {
     kicker: 'Region profile',
     lead: '{sentence}, on this page only.',
     picker: 'Region',
-    reports: 'Reports for {name} against the average of the other regions'
+    reports: 'Reports for {name} against the average of the other regions',
+    // US-2.4.2: the plan at a glance. Neutral words only (D20): a difference is never good or bad.
+    glance: {
+      title: 'The plan at a glance',
+      hint: 'Select a figure for its details, or an average for how it was worked out',
+      total: 'Total',
+      against: 'Compared with the rest',
+      above: 'above the average of the rest',
+      below: 'below the average of the rest',
+      same: 'the same as the average of the rest',
+      figureTitle: '{label}. Source: {where}'
+    }
   }
 });

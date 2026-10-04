@@ -33,6 +33,23 @@
 .tap-pf__reports { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
 .tap-pf__wide { min-width: 0; }
 
+/* ---------- the plan at a glance (US-2.4.2): no colour for a difference, words only (D20) ---------- */
+.tap-pf-glance { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
+.tap-pf-glance__title { margin: 0; font-size: var(--tap-fs-h2); }
+.tap-pf-glance__hint { margin: 0; font-size: var(--tap-fs-label); color: var(--tap-muted); }
+.tap-pf-glance__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-4) var(--tap-sp-6); }
+.tap-pf-glance__line { background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); padding: var(--tap-sp-3) var(--tap-sp-4); min-width: 0; }
+.tap-pf-glance__label { margin: 0 0 var(--tap-sp-2); font-size: var(--tap-fs-h3); }
+.tap-pf-glance__table { width: 100%; border-collapse: collapse; font-size: var(--tap-fs-body); }
+.tap-pf-glance__table th, .tap-pf-glance__table td { padding: var(--tap-sp-1) var(--tap-sp-2); text-align: left; vertical-align: baseline; }
+.tap-pf-glance__table thead th { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); border-bottom: var(--tap-rule-w) solid var(--tap-rule); }
+.tap-pf-glance__table tbody th { font-weight: 600; white-space: nowrap; }
+.tap-pf-glance__table td:not(.tap-pf-glance__cmp) { white-space: nowrap; }
+.tap-pf-glance__table tbody tr + tr > * { border-top: 1px solid var(--tap-rule); }
+.tap-pf-glance__fig { text-align: left; }
+.tap-pf-glance__cmp { font-size: var(--tap-fs-label); }
+.tap-pf-glance__partial { margin: var(--tap-sp-2) 0 0; font-size: var(--tap-fs-label); font-style: italic; }
+
 /* ---------- "Open profile" on an Overview card ---------- */
 .tap-ov-card__profile {
   align-self: flex-start; margin: auto var(--tap-sp-2) 0; padding: var(--tap-sp-1) 0;
