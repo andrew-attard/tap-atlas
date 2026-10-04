@@ -48,16 +48,18 @@
         [TAP.icons.svg('reset', { size: 18 }), t('reset')])
     ]);
     return [g.intro ? el('p', { class: 'tap-guide__lead' }, g.intro) : null, actions, status]
-      .concat((g.sections || []).map(function (s) { return part(s); }));
+      .concat((g.sections || []).map(function (s) { return part(s, link(s)); }));
+  }
+
+  // "Open <view>" under a section that names a view; nothing when the view isn't in the menu.
+  function link(s) {
+    var view = s.link && s.link.view && TAP.views.get(s.link.view) ? s.link.view : null;
+    return view ? el('button', { type: 'button', class: 'tap-btn tap-btn--ghost tap-guide__link',
+      onclick: function () { TAP.store.set({ view: view }); } }, [t('openView', { view: TAP.views.title(view) }), TAP.icons.svg('arrow', { size: 18 })]) : null;
   }
 
   function planning(g) {
-    return (g.sections || []).map(function (s) {
-      var view = s.link && s.link.view && TAP.views.get(s.link.view) ? s.link.view : null;
-      var link = view ? el('button', { type: 'button', class: 'tap-btn tap-btn--ghost tap-guide__link',
-        onclick: function () { TAP.store.set({ view: view }); } }, [t('openView', { view: TAP.views.title(view) }), TAP.icons.svg('arrow', { size: 18 })]) : null;
-      return part(s, link);
-    });
+    return (g.sections || []).map(function (s) { return part(s, link(s)); });
   }
 
   function section(id, title, children) {

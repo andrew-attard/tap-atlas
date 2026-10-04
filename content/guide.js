@@ -10,9 +10,10 @@
  *
  *   contents   The short contents list at the top: [{ id, title }]. The ids are the page's three sections:
  *              'howTo', 'planning' and 'glossary' (the glossary list itself comes from TAP.glossary.render).
- *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'] }] }
- *              "How to use this app". The "Take the tour" and "Reset all charts to default" buttons belong here;
- *              their labels live in content/text-pages.js.
+ *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'], link: { view: 'newBusiness' } (optional) }] }
+ *              "How to use this app", with one section per view that needs explaining (each linking to its view).
+ *              The "Take the tour" and "Reset all charts to default" buttons belong here; their labels live in
+ *              content/text-pages.js.
  *   planning   { title, sections: [{ id, title, paragraphs: ['...'], link: { view: 'industry' } | null }] }
  *              "Territory account planning explained". link names the view that shows the section (a view id
  *              from config/views.js), or null when no single view does.
@@ -34,8 +35,24 @@ window.TAP_CONTENT.guide = {
     intro: 'This app puts every region’s territory account plan side by side. It reads the finished workbooks and never changes them.',
     sections: [
       { id: 'menu', title: 'The menu', paragraphs: [
-        'The menu at the top lists the views: Overview, Industry priorities, Insights and this Guide. The view you are on is highlighted.',
+        'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights and this Guide. The view you are on is highlighted.',
         'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.'
+      ] },
+      { id: 'viewNewBusiness', title: 'The New business view', link: { view: 'newBusiness' }, paragraphs: [
+        'New business shows where each region expects new customers to come from: the industries and channels its new business rests on, and the assumptions behind the number.',
+        'Start with the industry grid, then compare levers such as target accounts and hit rate. The list below names every sub-industry and market each region targets, and which other regions target the same one.'
+      ] },
+      { id: 'viewCustomers', title: 'The Customer growth view', link: { view: 'customers' }, paragraphs: [
+        'Customer growth shows how each region plans to grow its existing customers: how the customer base is segmented and the growth each region assumes.',
+        'It also shows how much of that growth rests on the three largest accounts or on accounts flagged at risk. The account list names every account in the plan; select a row to see its figures by plan year.'
+      ] },
+      { id: 'viewPartners', title: 'The Partners view', link: { view: 'partners' }, paragraphs: [
+        'Partners shows how much each plan relies on partners and alliances, and what the named partners bring: their staff, planned order intake and order intake per FTE.',
+        'The partner list names every partner, with the other regions that named the same one.'
+      ] },
+      { id: 'viewRegions', title: 'Region profiles', link: { view: 'regions' }, paragraphs: [
+        'A region profile puts one region’s whole plan on one page: its ambition, industry priorities, new business, customers and partners, with the same charts as the other views.',
+        'To open one, choose Regions in the menu and pick a region, or select "Open profile" on a region card on the Overview or in a details panel. The back button returns to where you were.'
       ] },
       { id: 'compare', title: 'The comparison bar', paragraphs: [
         'The comparison bar decides which regions every chart shows. You can show all regions, one focus region against the rest, two regions side by side, a chosen set, or the organization total.',
@@ -45,7 +62,8 @@ window.TAP_CONTENT.guide = {
       { id: 'panels', title: 'Report panels', paragraphs: [
         'Every chart sits in a panel that works the same way. The title is the question the chart answers, and the line below it gives the main takeaway.',
         'The explanation icon says what the chart shows, how to read it and what to look for. Clicking a bar, point or cell opens a side panel with everything known about that item.',
-        'A panel can be expanded to fill the screen for discussion, and saved or copied as an image for slides. Esc returns to the view.'
+        'A panel can be expanded to fill the screen for discussion, and saved or copied as an image for slides. Esc returns to the view.',
+        'Some charts open one level down when you select a bar, for example from a region to its industries. The trail of names above the chart goes back up.'
       ] },
       { id: 'chartTypes', title: 'Chart types', paragraphs: [
         'The chart type menu lists only the types that suit the data, such as bars, dots, bubbles or a heatmap. The default type is marked and one click goes back to it.',
@@ -54,7 +72,8 @@ window.TAP_CONTENT.guide = {
       ] },
       { id: 'table', title: 'Table view', paragraphs: [
         'Every chart can be shown as a table with the exact figures. Charts round to one decimal, for example 1.2M; tables show the full value.',
-        'Columns can be sorted, and the focus region’s row is highlighted. The copy button copies the table so it pastes cleanly into a spreadsheet, an email or a slide.'
+        'Columns can be sorted, and the focus region’s row is highlighted. The copy button copies the table so it pastes cleanly into a spreadsheet, an email or a slide.',
+        'Some panels are lists, one row per line of a workbook, such as every account or partner. Select a heading to sort, use the filter above the list to narrow it, and select a row to see everything about it.'
       ] },
       { id: 'sources', title: 'Where figures come from', paragraphs: [
         'Every figure can be traced to its workbook, sheet and cell. Tooltips and table rows show the address, and say what kind of data it is.',
@@ -90,20 +109,20 @@ window.TAP_CONTENT.guide = {
         'System figures sit next to the ratings: current ARR, pipeline and pipeline created in the last 12 months. They show where the region already does business.',
         'This section is what the Industry priorities view shows: tiers by region, attractiveness against ability to win, and the six ratings for one industry.'
       ] },
-      { id: 'newBusiness', title: '2. New business', link: { view: 'overview' }, paragraphs: [
+      { id: 'newBusiness', title: '2. New business', link: { view: 'newBusiness' }, paragraphs: [
         'For Tier 1 and Tier 2 industries only, the leader breaks each industry into sub-verticals in a geographic market. Each row says how many accounts to target, the expected hit rate and the average deal size.',
         'The workbook multiplies these into ARR potential and adds services using the services ratio. Each row also splits its value across channels and lists key success factors.',
-        'The Overview shows the new business part of each region’s ambition. More detailed new business views come in a later phase.'
+        'The New business view shows these rows by industry, channel and lever, and lists every sub-industry each region targets.'
       ] },
-      { id: 'customerGrowth', title: '3. Customer growth', link: { view: 'overview' }, paragraphs: [
+      { id: 'customerGrowth', title: '3. Customer growth', link: { view: 'customers' }, paragraphs: [
         'Here the leader works through the region’s existing customers, which come from company systems. For each one they set the expected yearly growth and a services ratio.',
         'The workbook calculates the extra ARR and services per year, and puts each customer in a segment using the segmentation rule.',
-        'The Overview shows the customer growth part of each region’s ambition, next to new business.'
+        'The Customer growth view shows the segments, the growth each region assumes and how concentrated it is, account by account.'
       ] },
-      { id: 'partners', title: '4. Partners and recap', link: { view: 'overview' }, paragraphs: [
+      { id: 'partners', title: '4. Partners and recap', link: { view: 'partners' }, paragraphs: [
         'The recap adds up the plan by plan year and by channel, split into new business and customer growth, ARR and services. Most of it is calculated from the two sections before.',
         'The leader also lists the partners who will carry the plan, with their channel, expertise and sales capacity.',
-        'The Overview shows the totals. Channel and partner views come in a later phase.'
+        'The Overview shows the totals. The Partners view shows the channel split and every partner named.'
       ] },
       { id: 'tiers', title: 'How to read tiers', link: { view: 'industry' }, paragraphs: [
         'Every industry gets one of three tiers. Tier 1 is group priority: set centrally for all regions, not chosen by the leader.',
@@ -120,12 +139,12 @@ window.TAP_CONTENT.guide = {
         'Both run from 1 to 3. The attractiveness chart splits at 2.0 into four areas, and a score of exactly 2.0 counts as high.',
         'An industry rated attractive with a low ability to win shows where help may be needed. If any rating behind a score is blank, the score is not provided.'
       ] },
-      { id: 'segments', title: 'How to read segments', link: { view: 'overview' }, paragraphs: [
+      { id: 'segments', title: 'How to read segments', link: { view: 'customers' }, paragraphs: [
         'Existing customers are put in four segments: strategic, growth, core and scaled. The workbook does this with a fixed rule, using limits each leader sets.',
         'The rule runs in order. Current ARR above the strategic limit makes a customer strategic; below the scaled limit makes it scaled.',
         'Of the rest, a customer with high planned order intake and ARR above the growth limit is growth. Everyone else is core. Because each region sets its own limits, compare segments with care.'
       ] },
-      { id: 'channels', title: 'How to read channels', link: null, paragraphs: [
+      { id: 'channels', title: 'How to read channels', link: { view: 'partners' }, paragraphs: [
         'A channel is the route to the customer. The template has four: direct, partner, and two alliances, Alliance A and Alliance B.',
         'Each new business row splits its value across the channels, adding up to 100%. The split shows how much a plan depends on partners and alliances.'
       ] },
