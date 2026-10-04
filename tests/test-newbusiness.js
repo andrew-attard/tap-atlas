@@ -224,8 +224,6 @@
   /* ---------- US-2.1.2 which industries carry each region's new business ---------- */
 
   var IND = 'nb-industries';
-  var p2 = function (id) { return !!TAP.measures.meta(id); };
-  var withP2 = when(p2('ind.nb.oi') && p2('nb.arr.tier1'), 'waits for the Phase 2 measures (ENGINE2, #196)');
   // Hand-calculated from tests/fixtures/mini-data.js: three-year sums of each row's arrPotential (and servicesPotential).
   // np = not provided (Tier 1 or 2, or a blank tier, with no usable row), na = not applicable (Tier 3).
   var MINI_ARR = {
@@ -282,8 +280,7 @@
       a.ok(seen >= 7 * 3, 'checked ' + seen + ' cells');
     });
 
-    // The stacked bar by tier is offered once its Tier 1 and Tier 2 measures exist (ENGINE2)
-    withP2('TPV-TC-333', 'Grid by default; stacked bar by tier and table offered', function (a) {
+    T.test('TPV-TC-333', 'Grid by default; stacked bar by tier and table offered', function (a) {
       var def = TAP.reports.get(IND), types = TAP.shapes.types(def, 7);
       a.equal(def.defaultType, 'heatmap', 'grid is the default');
       a.ok(types.indexOf('stackedBar') >= 0, 'stacked bar offered');
@@ -291,7 +288,7 @@
       a.equal(def.builder, 'nbGrid', 'the dedicated builder');
     });
 
-    withP2('TPV-TC-334', 'Mini data: Tier 1 and Tier 2 parts equal the hand sums and add up to each region’s total', function (a) {
+    T.test('TPV-TC-334', 'Mini data: Tier 1 and Tier 2 parts equal the hand sums and add up to each region’s total', function (a) {
       var res = grid({ mode: 'all' }, { type: 'stackedBar' });
       a.equal(res.error, null, 'builds');
       a.ok(res.option, 'draws a chart');
@@ -308,7 +305,7 @@
       });
     });
 
-    withP2('TPV-TC-335', 'Measure switch: ARR, Services, Total order intake (ARR default); order intake is ARR plus services', function (a) {
+    T.test('TPV-TC-335', 'Measure switch: ARR, Services, Total order intake (ARR default); order intake is ARR plus services', function (a) {
       var def = TAP.reports.get(IND);
       a.deepEqual(def.measures.map(function (m) { return m.label; }), ['ARR', 'Services', 'Total order intake'], 'the three measures');
       a.equal(TAP.prepare.selected(def, {}), 'ind.nb.arr', 'ARR by default');
@@ -459,7 +456,15 @@
   /* ---------- US-2.1.3 which channels carry each region's new business ---------- */
 
   var CHN = 'nb-channels', CHANNELS = ['direct', 'partner', 'allianceA', 'allianceB'];
-  var withRecap = when(p2('rc.nb.arr.direct') && !!(window.TEST_FIXTURES || {}).miniP2, 'waits for the recap measures and the miniP2 fixture (ENGINE2, #196)');
+  // TPV-TC-347 waits for the channel measure names to come from the lookups (ENGINE2 follow-up to #196).
+  function channelNamesFromLookups() {
+    try {
+      var plan = JSON.parse(JSON.stringify(window.TEST_FIXTURES.miniP2));
+      plan.lookups.channels.forEach(function (c) { if (c.id === 'partner') c.name = 'Renamed channel'; });
+      TAP.data.load(plan);
+      return /Renamed channel/.test(TAP.measures.meta('rc.nb.arr.partner').label);
+    } catch (e) { return false; }
+  }
   // Hand-calculated from tests/fixtures/mini-p2.js: new business recap items summed over the three plan years.
   // Region A's alliance B, 2029 ARR is blank, so its ARR there is the two years given (0). Region C has no recap.
   var P2_RECAP = {
@@ -474,7 +479,7 @@
   }
 
   T.suite('newbusiness-channels', function () {
-    withRecap('TPV-TC-340', 'Mini data: new business order intake per region and channel equals the hand calculation', function (a) {
+    T.test('TPV-TC-340', 'Mini data: new business order intake per region and channel equals the hand calculation', function (a) {
       miniP2();
       ['arr', 'services'].forEach(function (t) {
         var res = channels({ mode: 'all' }, { measureId: 'rc.nb.' + t });
@@ -486,7 +491,7 @@
       });
     });
 
-    withRecap('TPV-TC-341', 'Figures follow the recap’s new business items, not the channel splits', function (a) {
+    T.test('TPV-TC-341', 'Figures follow the recap’s new business items, not the channel splits', function (a) {
       var plan = T_FIXTURE('miniP2');
       // Region D's only row splits 25% to each channel; make the recap say otherwise for 2027 direct ARR
       plan.regions[3].recap.forEach(function (it) {
@@ -500,7 +505,7 @@
       a.near(ccell(res, 'delta', 'rc.nb.arr').v, 1699 + 900 + 450 + 450, 1e-9, 'customer growth items are left out');
     });
 
-    withRecap('TPV-TC-342', 'Stacked bar by default; 100% stacked bar and table offered', function (a) {
+    T.test('TPV-TC-342', 'Stacked bar by default; 100% stacked bar and table offered', function (a) {
       var def = TAP.reports.get(CHN), types = TAP.shapes.types(def, 7);
       a.equal(def.defaultType, 'stackedBar', 'stacked bar first');
       a.ok(types.indexOf('stacked100') >= 0, '100% stacked bar offered');
@@ -508,7 +513,7 @@
       a.deepEqual(def.parts['rc.nb.arr'], CHANNELS.map(function (c) { return 'rc.nb.arr.' + c; }), 'the four channels stack');
     });
 
-    withRecap('TPV-TC-345', 'Measure switch: ARR, Services, Total order intake (ARR default); order intake is ARR plus services', function (a) {
+    T.test('TPV-TC-345', 'Measure switch: ARR, Services, Total order intake (ARR default); order intake is ARR plus services', function (a) {
       miniP2();
       var def = TAP.reports.get(CHN);
       a.deepEqual(def.measures.map(function (m) { return m.label; }), ['ARR', 'Services', 'Total order intake'], 'the three measures');
@@ -521,7 +526,7 @@
       });
     });
 
-    withRecap('TPV-TC-346', 'By year, the yearly values add up to each three-year total', function (a) {
+    T.test('TPV-TC-346', 'By year, the yearly values add up to each three-year total', function (a) {
       miniP2();
       var res = channels({ mode: 'all' }, { measureId: 'rc.nb.arr', breakdown: 'year' }), n = 0;
       res.table.rows.forEach(function (r) {
@@ -534,7 +539,7 @@
       a.near(ccell(res, 'alpha', 'rc.nb.arr@y1').v, 600, 1e-9, 'Region A 2027: 400 + 200');
     });
 
-    withRecap('TPV-TC-347', 'A renamed channel is used in the legend, the labels and the table', function (a) {
+    when(channelNamesFromLookups(), 'waits for channel names from the lookups (ENGINE2)')('TPV-TC-347', 'A renamed channel is used in the legend, the labels and the table', function (a) {
       var plan = T_FIXTURE('miniP2');
       plan.lookups.channels.filter(function (c) { return c.id === 'partner'; })[0].name = 'Resellers';
       TAP.data.load(plan);
@@ -546,7 +551,7 @@
       a.match(s.name, /Resellers/, 'the series the bar labels and tooltips use');
     });
 
-    withRecap('X-nb-channels-explain', 'The explanation says services by channel can differ slightly from services potential, and why', function (a) {
+    T.test('X-nb-channels-explain', 'The explanation says services by channel can differ slightly from services potential, and why', function (a) {
       var def = TAP.reports.get(CHN);
       a.match(def.explain.read + ' ' + def.explain.shows, /services by channel can differ slightly/i, 'the one line');
       a.match(def.explain.read + ' ' + def.explain.shows, /partner/i, 'and why: part of direct services moves to partners');
