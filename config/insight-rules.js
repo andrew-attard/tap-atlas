@@ -177,7 +177,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'partnerCapacity', family: 'shared',
     description: 'A partner whose planned three-year order intake per person (sales and consultant staff, counted as full-time equivalents) is at least twice the average across partners (total order intake over total staff). Not computed when fewer than 5 partners in the data give staff figures.',
     reads: ['partners.fteSales', 'partners.fteConsultants'], params: { multiple: 2, minPartners: 5 },
-    scoring: 'Strength: how far the multiple is past 1, against twice the threshold’s distance. Money: the partner’s planned order intake.',
+    scoring: 'Strength: how far the multiple is past 1, against twice the threshold’s distance. Money: the partner’s planned three-year ARR.',
     template: '{partner} ({region}) is planned at {amount} per person, {multiple} the average across partners ({avg}).',
     attach: ['pt-capacity'], highlight: 'points' });
 
