@@ -125,6 +125,15 @@
     return GAP_WORDS.concat([missing]).filter(function (w) { return wordIn(text, w, ''); })[0] || null;
   }
 
+  // The "Show me" target. Phase 2 findings may also name list rows (items, 17.4) or a theme (the themes report).
+  function target(f, reportId, regionIds, mark) {
+    var hl = { reportId: reportId, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
+      quadrant: f.quadrant || null, mark: mark };
+    if (Array.isArray(f.items)) hl.items = f.items;
+    if (f.theme) hl.theme = f.theme;
+    return hl;
+  }
+
   function build(rule, f, out) {
     var ph = wording().phrases, min = settings().minRegions || 3;
     if (blankFigure(f)) return null;                                     // never built from a blank
@@ -150,8 +159,7 @@
       strength: strength, money: money, breadth: breadth,
       sources: f.sources && f.sources.length ? f.sources : f.figures.map(function (g) { return g.cell.src; }),
       reportId: reportId, attach: reportId ? attach : [],
-      highlight: { reportId: reportId, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
-        quadrant: f.quadrant || null, mark: reportId ? rule.highlight || null : null },
+      highlight: target(f, reportId, regionIds, reportId ? rule.highlight || null : null),
       fallback: reportId ? null : 'details',
       label: ph.label
     };
