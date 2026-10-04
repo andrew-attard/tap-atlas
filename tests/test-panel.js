@@ -1062,4 +1062,36 @@
       } finally { TAP.data.load(T_FIXTURE('mini')); }
     }));
   });
+
+  /* ---------- "Show me" selects the insight's measure (#223, US-2.5.6) ---------- */
+
+  T.suite('panel-showme-measure', function () {
+    function pressedMeasure(p) {
+      var b = qs('[data-control="measure"] [aria-pressed="true"]', p.el);
+      return b && b.getAttribute('data-value');
+    }
+    var TWO = { measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] };
+
+    T.test('X-panel-showme-measure', 'A "Show me" naming one of the report\'s measures switches the panel to it', scene(function (a, s) {
+      s.report(fakeDef(TWO));
+      var p = s.panel('x-fake');
+      a.equal(pressedMeasure(p), 'nb.arr', 'starts on the first measure');
+      try {
+        TAP.store.set({ highlight: { reportId: 'x-fake', regionIds: ['alpha'], measureId: 'cg.arr', mark: 'bar' } });
+        a.equal(last().measureId, 'cg.arr', 'built for the insight\'s measure');
+        a.equal(pressedMeasure(p), 'cg.arr', 'and the switch shows it');
+      } finally { TAP.store.set({ highlight: null }); }
+    }));
+
+    T.test('X-panel-showme-measure-other', 'A measure the report does not have, or a Show me for another report, changes nothing', scene(function (a, s) {
+      s.report(fakeDef(TWO));
+      var p = s.panel('x-fake');
+      try {
+        TAP.store.set({ highlight: { reportId: 'x-fake', regionIds: ['alpha'], measureId: 'pt.fte', mark: 'bar' } });
+        a.equal(pressedMeasure(p), 'nb.arr', 'not one of its measures: kept');
+        TAP.store.set({ highlight: { reportId: 'x-other', regionIds: ['alpha'], measureId: 'cg.arr', mark: 'bar' } });
+        a.equal(pressedMeasure(p), 'nb.arr', 'another report: kept');
+      } finally { TAP.store.set({ highlight: null }); }
+    }));
+  });
 })(window.TAP);
