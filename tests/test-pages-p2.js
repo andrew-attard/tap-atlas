@@ -217,7 +217,8 @@
       T.test('TPV-TC-500', title, function (a) {
         var text = TAP.content.text('viewTips.' + id);
         a.ok(text && text !== '[viewTips.' + id + ']', 'a line in content/text-pages.js');
-        a.ok(text.length < 160 && sentences(text) === 1, 'one line: ' + text.length + ' characters');
+        // Short enough to sit on one line with its button at 1280 px and 150% zoom
+        a.ok(text.length <= 80 && sentences(text) === 1, 'one short line: ' + text.length + ' characters');
         withView(id, function (root) {
           var tip = tipOf(root, id), h1 = root.querySelector('h1');
           a.ok(shows(tip), 'the line shows');
