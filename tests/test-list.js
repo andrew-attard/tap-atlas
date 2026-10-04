@@ -303,10 +303,15 @@
 
     T.test('TPV-TC-508', 'Every Phase 1 table carries kinds on its figure columns', scene(function (a, s) {
       ['ov-ambition', 'ind-tiers', 'ind-quad', 'ind-ratings'].forEach(function (id) {
-        var p = s.panel(id), tbl = showTable(p);
-        var figures = qsa('thead th', tbl).filter(function (th) { return th.classList.contains('num'); });
+        var p = s.panel(id), tbl = showTable(p), def = TAP.reports.get(id), c = TAP.store.get().cmp;
+        // The builder's own table says which columns hold figures of a kind (a "No." index column holds none)
+        var res = TAP.builders.get(def.builder || def.shape)({ def: def, type: def.defaultType, cmp: c, entities: TAP.scope.entities(c),
+          year: null, industryId: TAP.data.industries({ rated: true })[0].id, highlight: null, expanded: false, theme: window.TAP_THEME, opts: {} });
+        var figures = res.table.columns.filter(function (col) {
+          return res.table.rows.some(function (r) { return r.cells[col.key] && r.cells[col.key].kind; });
+        });
         a.ok(figures.length > 0, id + ': has figure columns');
-        figures.forEach(function (th) { a.ok(kindsIn(th).length > 0, id + ': ' + txt(qs('.tap-panel__sort', th)) + ' carries a kind'); });
+        figures.forEach(function (col) { a.ok(kindsIn(headTo(tbl, col.key)).length > 0, id + ': ' + col.label + ' carries a kind'); });
       });
     }));
 
