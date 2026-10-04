@@ -2,7 +2,7 @@
  * File: tests/test-insights-p2.js
  * Purpose: Tests for the Phase 2 planted cases in the sample data, the Phase 2 insight rules and recurring themes.
  * Provides: test cases for the INSIGHTS2 stream: TPV-TC-304, 307, 308 (US-2.7.4, sample data), 463 to 470 (US-2.5.1),
- *           471 to 475 (US-2.5.2), 486 to 490 (US-2.5.5), X-insights2-*
+ *           471 to 475 (US-2.5.2), 477 to 479 (US-2.5.3), 481 to 484 (US-2.5.4), 486 to 490 (US-2.5.5), X-insights2-*
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (T_INSIGHTS), the app scripts,
  *             data/sample-plan-data.js (window.PLAN_DATA), tests/fixtures/sample-expected.js (window.SAMPLE_EXPECT)
  * Used by: tests.html
@@ -415,6 +415,109 @@
       a.equal(x.reportId, 'ov-ambition');
       a.equal(x.highlight.mark, 'bar');
       a.deepEqual(x.highlight.regionIds, ['apac']);
+    });
+
+    /* ---------- US-2.5.3: shared targets ---------- */
+
+    var SHARED = ['insight rules: shared'];
+    var sharedOf = function (id) { return TAP.insights.all().filter(function (x) { return x.ruleId === id; }); };
+    var subNames = function (names) {
+      mini(function (p) {
+        p.regions.forEach(function (r) { r.newBusiness.forEach(function (x, i) { x.subVertical = (names[r.id] || [])[i] || r.id + ' own ' + i; }); });
+      });
+    };
+
+    when(SHARED, 'TPV-TC-477', 'A sub-industry named by 2 regions gives an insight naming both; one named by 1 does not', function (a) {
+      // "Hospitals" in alpha and bravo, typed differently; "Clinics" in charlie only
+      subNames({ alpha: ['Hospitals'], bravo: ['x', '  hospitals '], charlie: ['Clinics'] });
+      var list = sharedOf('sharedSubIndustry');
+      a.equal(list.length, 1, 'only the shared one');
+      a.deepEqual(list[0].regionIds, ['alpha', 'bravo'], 'names both regions');
+      a.equal(list[0].sentence, '2 regions name the sub-industry Hospitals as a target: Region A and Region B.');
+      a.deepEqual(banned(list[0].sentence), [], 'no banned word');
+    });
+
+    when(SHARED, 'TPV-TC-478', 'A partner named by 2 regions gives an insight naming both; one named by 1 does not', function (a) {
+      mini(function (p) {
+        rg(p, 'alpha').partners[0].name = 'Shared Partner';
+        rg(p, 'delta').partners[0].name = 'shared  partner';
+      });
+      var list = sharedOf('sharedPartner');
+      a.equal(list.length, 1, 'only the shared one (Region B’s partner is its own)');
+      a.deepEqual(list[0].regionIds, ['alpha', 'delta'], 'names both regions');
+      a.equal(list[0].sentence, '2 regions name Shared Partner as a partner: Region A and Region D.');
+    });
+
+    when(SHARED, 'TPV-TC-479', 'Shared targets attach to the sub-industry and partner lists, and Show me names the matching rows', function (a) {
+      I().sample();
+      var sub = sharedOf('sharedSubIndustry'), pt = sharedOf('sharedPartner');
+      a.deepEqual(cfg('sharedSubIndustry').attach, ['nb-rows']);
+      a.deepEqual(cfg('sharedPartner').attach, ['pt-list']);
+      a.equal(sub.length, 1, 'one shared sub-industry on the sample (Q03)');
+      a.deepEqual(sub[0].highlight.items, X.q03.shared[0].rows.map(function (r) { return { section: 'newBusiness', regionId: r[0], row: r[1] }; }),
+        'the target lists the matching new business rows');
+      a.equal(pt.length, 1, 'one shared partner on the sample (Q04)');
+      a.deepEqual(pt[0].highlight.items, X.q04.shared[0].rows.map(function (r) { return { section: 'partners', regionId: r[0], row: r[1] }; }),
+        'the target lists the matching partner rows');
+      [[sub[0], 'nb-rows'], [pt[0], 'pt-list']].forEach(function (p) {
+        if (TAP.reports.get(p[1])) a.equal(p[0].reportId, p[1], p[1]);
+        else a.equal(p[0].fallback, 'details', p[1] + ' not built yet: Show me opens the details');
+      });
+    });
+
+    when(SHARED, 'X-insights2-shared-sample', 'The planted shared sub-industry and partner read as expected', function (a) {
+      I().sample();
+      a.equal(sharedOf('sharedSubIndustry')[0].sentence, '2 regions name the sub-industry Acute care hospitals as a target: North America and Asia Pacific.');
+      a.equal(sharedOf('sharedPartner')[0].sentence, '2 regions name Donvocombe Systems as a partner: North America and Latin America.');
+      sharedOf('sharedSubIndustry').concat(sharedOf('sharedPartner')).forEach(function (x) { window.T_INSIGHT_SHAPE(a, x); });
+    });
+
+    /* ---------- US-2.5.4: partner capacity ---------- */
+
+    var CAP = X.q05.flagged[0];
+
+    when(SHARED, 'TPV-TC-481', 'The planted partner gives an insight with its order intake per person and multiple; partners under 2x do not', function (a) {
+      I().sample();
+      var list = sharedOf('partnerCapacity');
+      a.equal(list.length, 1, 'one partner at 2x or more (Q05)');
+      a.deepEqual(list[0].regionIds, [CAP.region]);
+      a.near(list[0].figures[0].cell.v, CAP.perFte, 1e-6, 'order intake per person');
+      a.near(list[0].figures[1].cell.v, X.q05.average, 1e-6, 'the average across partners');
+      a.near(list[0].figures[0].cell.v / list[0].figures[1].cell.v, CAP.multiple, 1e-6, 'the multiple');
+    });
+
+    when(SHARED, 'TPV-TC-482', 'With only 4 partners with FTE there is no partner capacity insight', function (a) {
+      var p = JSON.parse(JSON.stringify(P)), kept = 0;
+      p.regions.forEach(function (r) {
+        r.partners.forEach(function (x) {
+          if (x.name === CAP.name || kept < 3) { if (x.name !== CAP.name) kept++; return; }
+          x.fteSales = null;
+          x.fteConsultants = null;
+        });
+      });
+      TAP.data.load(p);
+      TAP.insights.reset();
+      a.equal(sharedOf('partnerCapacity').length, 0, 'not computed, even for the planted partner');
+      a.ok(!TAP.insights.failures().some(function (f) { return f.ruleId === 'partnerCapacity'; }), 'and not a failure');
+    });
+
+    when(SHARED, 'TPV-TC-483', 'The partner capacity sentence follows the story’s pattern, with no banned word', function (a) {
+      I().sample();
+      var x = sharedOf('partnerCapacity')[0];
+      a.equal(x.sentence, CAP.name + ' (Middle East & Africa) is planned at ' + TAP.format.money(CAP.perFte) +
+        ' per person, about 3× the average across partners (' + TAP.format.money(X.q05.average) + ').');
+      a.deepEqual(banned(x.sentence), [], 'no banned word');
+    });
+
+    when(SHARED, 'TPV-TC-484', 'Partner capacity attaches to the partner capacity report and highlights the partner’s bubble', function (a) {
+      I().sample();
+      var x = sharedOf('partnerCapacity')[0];
+      a.deepEqual(cfg('partnerCapacity').attach, ['pt-capacity']);
+      a.equal(cfg('partnerCapacity').highlight, 'points', 'the bubble');
+      a.deepEqual(x.highlight.items, [{ section: 'partners', regionId: CAP.region, row: CAP.row }], 'the partner’s row');
+      if (TAP.reports.get('pt-capacity')) a.equal(x.reportId, 'pt-capacity');
+      else a.equal(x.fallback, 'details', 'pt-capacity not built yet: Show me opens the details');
+      window.T_INSIGHT_SHAPE(a, x);
     });
   });
 })(window.TAP);
