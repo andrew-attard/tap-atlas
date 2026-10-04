@@ -38,4 +38,29 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     sources: ['DER'],
     options: {}
   };
+
+  // US-2.3.3: partner capacity against planned contribution, one bubble per partner.
+  window.TAP_REPORTS['pt-capacity'] = {
+    id: 'pt-capacity',
+    view: 'partners',
+    title: 'Do the partners have the people behind their planned contribution?',
+    explain: {
+      shows: 'Every named partner: its sales plus consultant FTE across, the ARR it is planned to bring over three years up, and its three-year services as the bubble size.',
+      read: 'Each bubble is one partner in its region’s colour, named beside it or numbered in the key. Partners with no FTE given can’t be placed and are named below the chart. Click a bubble for the partner’s details, including order intake per FTE, which this app calculates.',
+      lookFor: 'Partners high on the chart and far to the left: a large planned contribution from few people, worth discussing with the region.'
+    },
+    shape: 'xyz',
+    builder: 'rowBubble',
+    dimension: 'entity',
+    rows: 'partners',
+    measures: [],
+    x: 'fte',
+    y: 'arr3',
+    size: { options: ['services3'], default: 'services3' },
+    defaultType: 'bubble',
+    types: ['bubble', 'table'],
+    breakdowns: [],
+    sources: ['IN', 'APP'],
+    options: { label: 'all' }
+  };
 })();
