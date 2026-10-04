@@ -356,7 +356,10 @@
         H('tier2', { n: tier2.n, regions: words(tier2.n), industry: tier2.industry.name })
       ].join(' ');
       a.equal(headlineText(), expected);
-      a.match(expected, /^7 regions plan €76\.2M .* 67% .* 33% /, 'sanity: the planted figures');
+      // Built from SAMPLE_EXPECT so it follows the generator (Q02 moved these figures in Phase 2)
+      var esc = function (s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+      a.match(expected, new RegExp('^' + X.regions + ' regions plan ' + esc(TAP.format.money(X.ambArr)) + ' .* ' +
+        esc(TAP.format.pct(X.nbShare)) + ' .* ' + esc(TAP.format.pct(X.cgShare)) + ' '), 'sanity: the planted figures');
     });
 
     T.test('TPV-TC-099', 'With no ambition figures at all, the headline says so instead of failing', function (a) {
@@ -439,7 +442,7 @@
           var body = document.createElement('div');
           calls[0][1].render(body);
           var s = txt(body);
-          a.ok(s.indexOf(TAP.format.moneyExact(76179.7)) >= 0, 'the exact ambition');
+          a.ok(s.indexOf(TAP.format.moneyExact(window.SAMPLE_EXPECT.headline.ambArr)) >= 0, 'the exact ambition');
           a.ok(s.indexOf(TAP.sources.address(TAP.measures.combined('amb.arr', { kind: 'combined', regionIds: window.SAMPLE_EXPECT.regions, how: 'total' }, {}).src).text) >= 0,
             'how the ambition was combined');
           var edu = TAP.measures.get('ind.tier')('na', { industryId: 'education' });
