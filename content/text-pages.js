@@ -121,7 +121,10 @@ Object.assign(window.TAP_CONTENT.text, {
       assumptions: { name: 'Outlier assumptions', line: 'Planning assumptions far from those of the other regions.' },
       realism: { name: 'Realism checks', line: 'Ambition compared with the pipeline and accounts behind it.' },
       exposure: { name: 'Concentration and risk', line: 'Where much of a plan rests on a few accounts or one segment.' },
-      capability: { name: 'Attractive but not yet winnable', line: 'Industries rated attractive where the ability to win is rated lower.' }
+      capability: { name: 'Attractive but not yet winnable', line: 'Industries rated attractive where the ability to win is rated lower.' },
+      plan: { name: 'Plan make-up and channels', line: 'How each plan splits between new business and existing customers, and across channels.' },
+      shared: { name: 'Shared targets and partners', line: 'Sub-industries and partners named by several regions, and partners planned to bring much more per person.' },
+      themes: { name: 'Recurring themes', line: 'Themes that come up in several regions’ commentary and success factors.' }
     }
   }
 });

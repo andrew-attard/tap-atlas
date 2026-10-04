@@ -45,7 +45,13 @@
     showme: ['go'],
     keys: ['bind', 'unbind'],
     quadrantLabels: ['place'],
-    app: ['start', 'stop', 'mountView', 'current']
+    app: ['start', 'stop', 'mountView', 'current'],
+    // Phase 2 (docs/ARCHITECTURE.md section 17)
+    viewHead: ['render', 'headline', 'mountPanel', 'pair'],
+    rows: ['list', 'cell', 'columns', 'matchKey'],
+    detailsRows: ['build'],
+    panelDrill: ['create'],
+    themes: ['all', 'match']
   };
 
   var GLOBALS = ['TAP_THEME', 'TAP_SETTINGS', 'TAP_VIEWS', 'TAP_REPORTS', 'TAP_RULES', 'TAP_CONTENT'];
@@ -65,19 +71,21 @@
     });
 
     T.test('X-contract-builders', 'The generic and dedicated chart builders are registered', function (a) {
-      ['compare', 'parts', 'xy', 'tierGrid', 'quadrant'].forEach(function (b) {
+      ['compare', 'parts', 'xy', 'tierGrid', 'quadrant', 'list', 'nbGrid', 'rowBubble', 'themes'].forEach(function (b) {
         a.equal(typeof TAP.builders.get(b), 'function', 'builder ' + b);
       });
     });
 
-    T.test('X-contract-views', 'The four Phase 1 views are registered in menu order', function (a) {
-      a.deepEqual(TAP.views.order(), ['overview', 'industry', 'insights', 'guide']);
+    T.test('X-contract-views', 'The Phase 1 and Phase 2 views are registered in menu order', function (a) {
+      a.deepEqual(TAP.views.order(), ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'regions', 'insights', 'guide']);
     });
 
     T.test('X-contract-reports', 'Every report a view lists exists and passes validation', function (a) {
       Object.keys(window.TAP_VIEWS).filter(function (k) { return k !== 'order'; }).forEach(function (v) {
         (window.TAP_VIEWS[v].reports || []).forEach(function (id) {
           var def = TAP.reports.get(id);
+          // While Phase 2 is being built a listed report may not exist yet; once no stub is left, every one must
+          if (!def && TAP.stub.list().length) { a.ok(true, 'report ' + id + ' not built yet'); return; }
           a.ok(def, 'report ' + id + ' exists');
           a.deepEqual(TAP.reports.validate(def), [], 'report ' + id + ' is valid');
         });

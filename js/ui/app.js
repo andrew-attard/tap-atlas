@@ -28,9 +28,14 @@
     return patch;
   }
 
-  function viewFromHash() {
-    var id = (window.location.hash || '').replace(/^#\/?/, '');
-    return TAP.views.get(id) ? id : null;
+  // '#industry' gives the view; '#regions/north' also gives the region for the profile (US-2.4.1).
+  function fromHash() {
+    var parts = (window.location.hash || '').replace(/^#\/?/, '').split('/');
+    var id = TAP.views.get(parts[0]) ? parts[0] : null;
+    return { view: id, region: id === 'regions' && parts[1] ? decodeURIComponent(parts[1]) : null };
+  }
+  function hashFor(state) {
+    return state.view + (state.view === 'regions' && state.region ? '/' + encodeURIComponent(state.region) : '');
   }
 
   // Shows a view in the shell's view area, removing the previous one.
@@ -49,10 +54,11 @@
 
   // Store -> address bar and view. The address bar follows the view so the back button works (US-1.1.2).
   function onState(state, changed) {
-    if (changed.indexOf('view') < 0) return;
-    if (state.expanded) TAP.store.set({ expanded: null });   // an expanded chart belongs to the view it was on
-    if (viewFromHash() !== state.view) window.location.hash = state.view;
-    mountView(state.view);
+    var viewChanged = changed.indexOf('view') >= 0;
+    if (!viewChanged && changed.indexOf('region') < 0) return;
+    if (viewChanged && state.expanded) TAP.store.set({ expanded: null });   // an expanded chart belongs to the view it was on
+    if (window.location.hash.replace(/^#\/?/, '') !== hashFor(state)) window.location.hash = hashFor(state);
+    if (viewChanged) mountView(state.view);
   }
 
   function start(opts) {
@@ -91,8 +97,8 @@
       hashBound = true;
       window.addEventListener('hashchange', function () {
         if (!unsubscribe) return;   // the app isn't running (error screen or not started)
-        var id = viewFromHash();
-        if (id && id !== TAP.store.get().view) TAP.store.set({ view: id });
+        var h = fromHash(), s = TAP.store.get();
+        if (h.view && (h.view !== s.view || h.region !== s.region)) TAP.store.set({ view: h.view, region: h.region });
       });
     }
 

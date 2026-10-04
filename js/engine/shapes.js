@@ -22,7 +22,9 @@
 
   // Table always; radar only with 3 or fewer entities; bubble types only with a size measure;
   // grouped bars only once a breakdown is chosen (except for the 'years' shape, where they are native).
+  // A list (US-2.7.2) is its own table, so it offers no other type.
   function types(def, entityCount, opts) {
+    if (def.shape === 'list') return ['list'];
     var allowed = TAP.reports.SHAPE_TYPES[def.shape] || [];
     var hasSize = !!(def.size && def.size.options && def.size.options.length);
     var out = (def.types || []).filter(function (x) {

@@ -10,9 +10,9 @@
 (function (TAP) {
   'use strict';
 
-  var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread'];
+  var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread', 'list'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',
-    'heatmap', 'bubbleGrid', 'line', 'table'];
+    'heatmap', 'bubbleGrid', 'line', 'table', 'list'];
 
   // The chart types each data shape allows (D18). 'groupedBar' appears once a breakdown is chosen.
   var SHAPE_TYPES = {
@@ -22,7 +22,8 @@
     xyz: ['bubble', 'scatter', 'table'],
     grid: ['heatmap', 'bubbleGrid', 'table'],
     years: ['line', 'groupedBar', 'table'],
-    spread: ['dot', 'table']
+    spread: ['dot', 'table'],
+    list: ['list']              // a list of rows is its own table (US-2.7.2): no chart types, no table switch
   };
 
   /* ---------- reports ---------- */
@@ -55,10 +56,14 @@
           e.push('Chart type "' + t + '" doesn’t suit the "' + def.shape + '" shape.');
         }
       });
-      if (def.types.indexOf('table') < 0) e.push('"types" must include "table" (a table view is always available).');
+      if (def.types.indexOf('table') < 0 && def.shape !== 'list') e.push('"types" must include "table" (a table view is always available).');
       if (def.defaultType && def.types.indexOf(def.defaultType) < 0) e.push('"defaultType" must be one of "types".');
     }
-    if (!def.builder && (!Array.isArray(def.measures) || !def.measures.length)) e.push('"measures" must list at least one measure.');
+    if (!def.builder && def.shape !== 'list' && (!Array.isArray(def.measures) || !def.measures.length)) e.push('"measures" must list at least one measure.');
+    if (def.shape === 'list') {
+      if (['newBusiness', 'accounts', 'partners'].indexOf(def.rows) < 0) e.push('A list needs "rows": newBusiness, accounts or partners.');
+      if (!Array.isArray(def.columns) || !def.columns.length) e.push('A list needs "columns".');
+    }
     if (def.builder && !TAP.builders.get(def.builder)) e.push('No chart builder called "' + def.builder + '".');
     if (Array.isArray(def.breakdowns) && def.breakdowns.length > 0 && typeof def.breakdowns[0] !== 'string') {
       e.push('"breakdowns" must be a list of names.');
