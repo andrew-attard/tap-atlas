@@ -422,4 +422,40 @@
       a.ok(parseFloat(getComputedStyle(tag).fontSize) >= 14, 'label size or larger');
     }));
   });
+
+  /* ---------- follow-ups: measure switch on a compare bubble (#200), insight targets keep their fields (#220) ---------- */
+
+  T.suite('panel-followups', function () {
+    TAP.builders.register('x-fake-fu', function (ctx) {
+      calls.push(ctx);
+      return { option: { xAxis: { type: 'value' }, yAxis: { type: 'value' }, series: [{ type: 'scatter', data: [[1, 2]] }] },
+        table: { columns: [], rows: [] }, legend: [], notes: [], missing: [], empty: false, error: null, target: function () { return null; } };
+    });
+
+    T.test('X-panel-measure-bubble', 'No measure switch on the bubble view of a compare report with x and y', scene(function (a, s) {
+      s.report({ id: 'x-lev', view: 'newBusiness', title: 'Which levers carry the plan?', explain: { shows: 'S.', read: 'R.', lookFor: 'L.' },
+        shape: 'compare', builder: 'x-fake-fu', dimension: 'entity', measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }],
+        x: 'nb.arr', y: 'cg.arr', size: { options: ['base.arr'], default: 'base.arr' },
+        defaultType: 'bubble', types: ['bar', 'bubble', 'table'], breakdowns: [], sources: ['DER'], options: {} });
+      var p = s.panel('x-lev');
+      a.equal(last().type, 'bubble');
+      a.equal(qs('[data-control="measure"]', p.el), null, 'the axes come from x and y: no switch');
+      click(qs('[data-action="type"]', p.el));
+      click(qs('[data-type="bar"]', p.el));
+      a.ok(qs('[data-control="measure"]', p.el), 'the bar view keeps its measure switch');
+    }));
+
+    T.test('X-panel-insight-target', 'A panel "Show me" keeps the insight target\'s list rows and theme', function (a) {
+      var ins = { regionIds: ['alpha'], industryIds: [], accountIds: [],
+        highlight: { mark: 'row', items: [{ section: 'partners', regionId: 'alpha', row: 12 }], theme: 'skills' } };
+      var tg = TAP.panelInsights.target(ins, 'pt-list');
+      a.deepEqual(tg.items, [{ section: 'partners', regionId: 'alpha', row: 12 }], 'items');
+      a.equal(tg.theme, 'skills', 'theme');
+      a.equal(tg.reportId, 'pt-list');
+      tg.items[0].row = 99;
+      a.equal(ins.highlight.items[0].row, 12, 'a copy, so the insight is never changed');
+      var plain = TAP.panelInsights.target({ regionIds: ['alpha'], highlight: { mark: 'bar' } }, 'x');
+      a.ok(!('items' in plain) && !('theme' in plain), 'left out when the insight has none');
+    });
+  });
 })(window.TAP);
