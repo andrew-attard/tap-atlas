@@ -2,7 +2,8 @@
  * File: js/engine/measures.js
  * Purpose: One registry of every figure the app can show, read the same way by reports, cards and insights, so
  *          figures can't drift apart. Each measure returns a full cell with its source (ARCHITECTURE section 7).
- * Provides: TAP.measures (get, meta, define, list, combined, DERIVED: the derived sums and their parts)
+ * Provides: TAP.measures (get, meta, define, list, combined, derive, DERIVED: the derived sums and their parts,
+ *           kit: cell helpers for js/engine/measures-p2.js)
  * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/engine/aggregate.js (at call time).
  *             js/engine/scores.js adds the ind.* measures
  * Used by: prepare, builders, cards, headline, insights, details
@@ -200,13 +201,16 @@
     'amb.services': ['nb.services', 'cg.services'],
     'amb.oi': ['nb.arr', 'cg.arr', 'nb.services', 'cg.services']
   };
-  Object.keys(DERIVED).forEach(function (id) {
-    define(id, amount('APP', NB), function (r, ctx) {
+  // A sum of other measures: per region the sum of its parts, combined as the sum of the combined parts.
+  function derive(id, parts, m) {
+    DERIVED[id] = parts.slice();
+    define(id, m || amount('APP', NB), function (r, ctx) {
       ctx = ctx || {};
-      var parts = DERIVED[id].map(function (p) { return { id: p, cell: get(p)(r, ctx) }; });
-      return sumParts(parts, { regionId: r, section: null, field: id, row: null, rows: [], year: ctx.year || null, cell: null, kind: 'APP' });
+      var cells = DERIVED[id].map(function (p) { return { id: p, cell: get(p)(r, ctx) }; });
+      return sumParts(cells, { regionId: r, section: null, field: id, row: null, rows: [], year: ctx.year || null, cell: null, kind: 'APP' });
     });
-  });
+  }
+  Object.keys(DERIVED).forEach(function (id) { derive(id, DERIVED[id]); });
 
   // Adds the parts that have a value. A missing part makes the sum partial, with a note naming it.
   function sumParts(parts, s) {
@@ -242,6 +246,8 @@
     var how = entity.how === 'average' ? 'average' : 'total';
     if (DERIVED[id]) return combinedParts(id, entity, how, ctx);
     var items = entity.regionIds.map(function (r) { return { regionId: r, cell: get(id)(r, ctx) }; });
+    // Shares and ratios: the summed numerators over the summed denominators, never a mean of ratios (17.5)
+    if (m.combine === 'ratioOfSums') return TAP.agg.ratio(items);
     return TAP.agg.combine(items, m.valueKind, how, { measureId: id, weights: ctx.weights, ctx: ctx });
   }
 
@@ -263,5 +269,8 @@
     return out;
   }
 
-  TAP.measures = { get: get, meta: meta, define: define, list: list, combined: combined, DERIVED: DERIVED };
+  // Shared with js/engine/measures-p2.js, so Phase 2 cells are made by the same rules.
+  var kit = { isNum: isNum, src: src, cell: cell, blank: blank, notApplicable: notApplicable, byYear: byYear, gap: gap,
+    amount: amount, count: count };
+  TAP.measures = { get: get, meta: meta, define: define, list: list, combined: combined, derive: derive, DERIVED: DERIVED, kit: kit };
 })(window.TAP);
