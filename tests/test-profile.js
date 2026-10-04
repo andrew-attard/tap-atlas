@@ -363,5 +363,77 @@
         });
       } finally { m.handle.destroy(); }
     });
+
+    /* ---------- US-2.4.4: this region's insights and words (#217) ---------- */
+
+    function sample() { TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA))); TAP.insights.reset(); }
+    function blank(v) { return v == null || String(v).trim() === ''; }
+
+    T.test('TPV-TC-454', 'The insights panel lists every insight naming the region, most significant first, each with a Show me target', function (a) {
+      sample();
+      var want = TAP.insights.all().filter(function (x) { return x.regionIds.indexOf('na') >= 0; });
+      var got = parts().insights('na');
+      a.ok(want.length > 0, want.length + ' insights name North America');
+      a.deepEqual(got.map(function (x) { return x.id; }).sort(), want.map(function (x) { return x.id; }).sort(), 'every one of them, and no other');
+      for (var i = 1; i < got.length; i++) a.ok(got[i - 1].significance >= got[i].significance, 'ranked by significance at ' + i);
+      got.forEach(function (x) { a.ok(x.highlight && x.highlight.regionIds, x.id + ' has a Show me target'); });
+      var m = mountFor('na');
+      try {
+        var items = qsa('.tap-pf-insights [data-insight]', m.root);
+        a.equal(items.length, got.length, 'one entry per insight on screen');
+        a.equal(items[0] && items[0].getAttribute('data-insight'), got[0].id, 'the most significant first');
+        a.equal(qsa('.tap-pf-insights [data-insight] [data-action="showme"]', m.root).length, got.length, 'each with Show me');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-profile-showme', 'Show me on the profile hands the insight and its target to the Show me wiring', function (a) {
+      sample();
+      var x = parts().insights('na')[0], seen = null, off = TAP.bus.on('showme', function (p) { seen = p; });
+      var m = mountFor('na');
+      try { qs('.tap-pf-insights [data-insight] [data-action="showme"]', m.root).click(); } finally { m.handle.destroy(); off(); }
+      a.equal(seen && seen.insightId, x.id, 'the insight');
+      a.deepEqual(seen && seen.target, x.highlight, 'its target');
+    });
+
+    T.test('TPV-TC-456', 'The words panel lists the region\'s commentary and success factors by industry, each with its source cell', function (a) {
+      sample();
+      var reg = TAP.data.region('na'), groups = parts().words('na'), all = [];
+      groups.forEach(function (g) { g.entries.forEach(function (e) { all.push({ g: g, e: e }); }); });
+      var comments = reg.marketCoverage.filter(function (r) { return !blank(r.commentary); });
+      var factors = reg.newBusiness.filter(function (r) { return !blank(r.successFactors); });
+      a.equal(all.filter(function (x) { return x.e.kind === 'commentary'; }).length, comments.length, 'every commentary (' + comments.length + ')');
+      a.equal(all.filter(function (x) { return x.e.kind === 'successFactors'; }).length, factors.length, 'every success factor (' + factors.length + ')');
+      all.forEach(function (x) {
+        a.equal(x.e.industryId, x.g.industryId, x.e.text.slice(0, 20) + ': grouped under its industry');
+        a.match(x.e.where, /›.*›/, x.e.text.slice(0, 20) + ': names its file, sheet and cell');
+      });
+      var ids = groups.map(function (g) { return g.industryId; });
+      a.equal(ids.length, ids.filter(function (id, i) { return ids.indexOf(id) === i; }).length, 'one group per industry');
+    });
+
+    T.test('TPV-TC-457', 'Only entries that exist are listed, with no "no comment" label', function (a) {
+      var groups = parts().words('alpha');
+      a.deepEqual(groups.map(function (g) { return g.industryId; }), ['ind1', 'ind4'], 'only the industries with words (ind2 and ind3 have none)');
+      a.deepEqual(groups[0].entries.map(function (e) { return [e.kind, e.text]; }),
+        [['commentary', 'Strong base in clinics.'], ['successFactors', 'Local references']], 'ind1: its comment and success factor');
+      a.deepEqual(groups[1].entries.map(function (e) { return [e.kind, e.text]; }),
+        [['commentary', 'Attractive, but we lack references.'], ['successFactors', 'Specialist partner']], 'ind4');
+      a.equal(groups[0].entries[0].where, 'Region A plan.xlsx › 1. Market Coverage › N10', 'the commentary cell');
+      var m = mountFor('alpha');
+      try {
+        var box = qs('.tap-pf-words', m.root);
+        a.equal(qsa('[data-word]', box).length, 4, 'four entries on screen');
+        a.ok(!/no comment|not provided/i.test(txt(box)), 'no label for a missing comment');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('TPV-TC-458', 'An insight hidden for the session is not listed on the profile', function (a) {
+      sample();
+      var first = parts().insights('na')[0];
+      TAP.insights.hide(first.id);
+      a.ok(parts().insights('na').every(function (x) { return x.id !== first.id; }), 'gone from the list');
+      var m = mountFor('na');
+      try { a.ok(!qs('.tap-pf-insights [data-insight="' + first.id + '"]', m.root), 'gone from the page'); } finally { m.handle.destroy(); }
+    });
   });
 })(window.TAP);
