@@ -673,6 +673,44 @@
       a.equal(last().cmp.mode, 'all');
       a.equal(qs('.tap-panel__custom', p.el), null);
     }));
+
+    // A page that fixes a panel's comparison (the region profile, #216): TAP.panel.create(el, id, {cmp}).
+    var FIXED = { mode: 'one', focus: 'bravo' };
+    T.test('X-panel-fixed-cmp', 'A panel created with its own comparison uses it while the shared one stays All regions', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake', { cmp: FIXED });
+      a.equal(TAP.store.get().cmp.mode, 'all', 'shared comparison untouched');
+      a.equal(last().cmp.mode, 'one');
+      a.deepEqual(last().entities.map(function (e) { return e.id; }), ['bravo', 'rest'], 'one region against the rest');
+      a.equal(qs('.tap-panel__custom', p.el), null, 'no custom badge: the page says what is compared');
+    }));
+
+    T.test('X-panel-fixed-cmp-epoch', 'The fixed comparison survives a change of the shared comparison and of the view', scene(function (a, s) {
+      s.report(fakeDef());
+      s.panel('x-fake', { cmp: FIXED });
+      var epoch = TAP.store.get().scopeEpoch;
+      TAP.store.set({ cmp: { mode: 'org' } });
+      a.ok(TAP.store.get().scopeEpoch !== epoch, 'the scope epoch moved');
+      a.equal(last().cmp.mode, 'one', 'kept after a comparison change');
+      a.equal(last().cmp.focus, 'bravo');
+      TAP.store.set({ view: 'industry' });
+      TAP.store.set({ view: 'overview' });
+      a.deepEqual(last().entities.map(function (e) { return e.id; }), ['bravo', 'rest'], 'kept after a view change');
+    }));
+
+    T.test('X-panel-fixed-cmp-override', '"Compare differently" starts from the fixed comparison, and reset returns to it', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake', { cmp: FIXED });
+      openCompare(p);
+      a.equal(qs('select[data-control="cmp-mode"]', p.el).value, 'one', 'editor starts from the fixed comparison');
+      choose(p, 'cmp-mode', 'org');
+      a.equal(last().cmp.mode, 'org', 'the override wins');
+      a.ok(qs('.tap-panel__custom', p.el), 'and shows its badge');
+      click(qs('[data-action="custom-reset"]', p.el));
+      a.equal(last().cmp.mode, 'one', 'reset returns to the fixed comparison');
+      a.equal(last().cmp.focus, 'bravo');
+      a.equal(qs('.tap-panel__custom', p.el), null, 'badge gone');
+    }));
   });
 
   /* ---------- US-1.2.8: full-screen chart (#20) ---------- */
