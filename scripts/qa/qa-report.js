@@ -95,7 +95,7 @@ if (kind === 'log') {
     if (!o.archivo) say('ERROR', 'Archivo is not available to the page');
     if (r.screen || !r.viewChars) say('ERROR', 'the app did not draw offline (' + (r.screen ? 'system screen' : 'empty view') + ')');
     (r.notBuilt || []).forEach((t) => say('ERROR', 'on screen offline: ' + t));
-    if (!failed) say('PASS', o.total + ' requests, all from the folder; ECharts ' + o.echarts + '; Archivo ' +
+    if (!failed) say('PASS', 'no web request and no failed load; ECharts ' + o.echarts + '; Archivo ' +
       archivo.map((f) => f.weight + ':' + f.status).join(' ') + '; ' + r.panels + ' panels, ' + r.charts + ' charts');
   } else if (kind === 'smoke') {
     const steps = res.smoke || [];
