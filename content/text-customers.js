@@ -56,7 +56,7 @@ Object.assign(window.TAP_CONTENT.text, {
     byYearOf: '{name}: by plan year',
     perYear: '{label}, {year}',
     year: 'Year {n}',
-    yearly: { arr: 'ARR', services: 'Services', growthPct: 'Growth %', incrementalArr: 'Incremental ARR', servicesOi: 'Services order intake' },
+    yearly: { arr: 'ARR', services: 'Services', incrementalArr: 'Incremental ARR', servicesOi: 'Services order intake' },
     sourceRow: 'Source row',
     rowText: '{where} › row {row}',
     missing: 'Row {row} of {region} is not in the data',

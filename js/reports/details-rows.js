@@ -4,7 +4,7 @@
  *          (US-2.7.2), its figures by plan year and its source row. An item with no row stands for a region's
  *          customer growth section and lists its segment thresholds, since they differ by region (US-2.2.2).
  * Provides: TAP.detailsRows (build)
- * Depends on: js/engine/rows.js, js/core/data.js, js/core/content.js, js/core/sources.js (all at call time)
+ * Depends on: js/engine/rows.js, js/core/data.js, js/core/content.js, js/core/sources.js, js/core/format.js (all at call time)
  * Used by: js/reports/details.js
  * Owner: CGP stream (#208)
  */
@@ -18,11 +18,10 @@
   // The TAP.rows source for each Data Contract section.
   var SOURCE = { newBusiness: 'newBusiness', customerGrowth: 'accounts', partners: 'partners' };
 
-  // Fields held by plan year, shown one row per year: [field, label key, kind, unit].
+  // Fields held by plan year and not already a list column, shown one row per year: [field, label key, kind, unit].
   var YEARLY = {
     newBusiness: [['arrPotential', 'arr', 'DER', 'money'], ['servicesPotential', 'services', 'DER', 'money']],
-    accounts: [['growthPct', 'growthPct', 'IN', 'pct'], ['incrementalArr', 'incrementalArr', 'DER', 'money'],
-      ['servicesOrderIntake', 'servicesOi', 'DER', 'money']],
+    accounts: [['incrementalArr', 'incrementalArr', 'DER', 'money'], ['servicesOrderIntake', 'servicesOi', 'DER', 'money']],
     partners: [['arr', 'arr', 'IN', 'money'], ['services', 'services', 'IN', 'money']]
   };
 
@@ -59,7 +58,7 @@
     var out = [];
     (YEARLY[source] || []).forEach(function (f) {
       var list = (r.item || {})[f[0]];
-      if (!Array.isArray(list)) return;   // e.g. an account planned with a multiplier has no growth % by year
+      if (!Array.isArray(list)) return;
       [1, 2, 3].forEach(function (n) {
         out.push({ label: t('perYear', { label: t('yearly.' + f[1]), year: yearLabel(n) }), unit: f[3],
           cell: cellOf(list[n - 1], f[2], { regionId: r.regionId, section: section, field: f[0], row: r.sourceRow, rows: [r.sourceRow], year: n, cell: null, kind: f[2] }) });
