@@ -103,7 +103,7 @@
       C.html(box, res.html, function (d) { follow(res.target ? res.target({ data: d }) : null); });
     } else if (res.option) {
       C.render(p.cs, box, res.option, { label: b.title, tall: /bubble|scatter/.test(b.ctx.type || ''),
-        scale: s.expanded === p.id ? 1.3 : 1, onClick: function (prm) { follow(res.target ? res.target(prm) : null); } });
+        scale: s.expanded === p.id ? 1.3 : 1, height: res.height || null, onClick: function (prm) { follow(res.target ? res.target(prm) : null); } });
       if (res.sized) remeasure(p, b.ctx.size);
     } else C.dispose(p.cs);
     return box;

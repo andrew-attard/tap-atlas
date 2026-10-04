@@ -156,6 +156,14 @@
 }
 .tap-panel__legend-item { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
 .tap-panel__key { width: 16px; height: 16px; flex: none; border: var(--tap-control-w) solid var(--tap-ink); }
+.tap-panel__key--num {
+  width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+  font-size: var(--tap-fs-chartMin); font-weight: 700; color: var(--tap-on-colour);
+}
+.tap-panel__key--light { color: var(--tap-ink); }
+/* A key with no colour: an outline for "not provided", nothing for a note (it is words only) */
+.tap-panel__key--none { background: transparent; border: var(--tap-rule-w) dashed var(--tap-np-border); }
+.tap-panel__legend-item--note .tap-panel__key--none { display: none; }
 .tap-panel__parts { flex-basis: 100%; color: var(--tap-muted); }
 .tap-panel__size { display: inline-flex; align-items: flex-end; gap: 14px; margin-left: auto; }
 .tap-panel__size-label { align-self: center; max-width: 240px; font-size: var(--tap-fs-label); font-weight: 600; }

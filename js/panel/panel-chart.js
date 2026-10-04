@@ -26,13 +26,14 @@
   /*
    * Draws an ECharts option into slot. cs is the panel's chart state ({el, chart}); the chart element and its
    * ECharts instance are kept between redraws, so switching a setting only replaces the option.
-   * opts: {label, tall, scale, onClick(params)}
+   * opts: {label, tall, scale, height, onClick(params)}. height is the builder's hint (px): the chart is at least that tall.
    */
   function render(cs, slot, option, opts) {
     opts = opts || {};
     if (!cs.el) cs.el = el('div', { role: 'img' });
     cs.el.className = 'tap-panel__chart' + (opts.tall ? ' tap-panel__chart--tall' : '');
     cs.el.setAttribute('aria-label', opts.label || '');
+    cs.el.style.minHeight = opts.height ? Math.round(opts.height * (opts.scale || 1)) + 'px' : '';
     slot.appendChild(cs.el);
     if (!cs.chart || cs.chart.isDisposed()) {
       cs.chart = window.echarts.init(cs.el, 'tap');
@@ -109,9 +110,12 @@
     if (!items.length && !size && !shades) return null;
     var box = el('div', { class: 'tap-panel__legend' });
     items.forEach(function (l) {
-      box.appendChild(el('span', { class: 'tap-panel__legend-item' + (l.role ? ' tap-panel__legend-item--' + l.role : '') }, [
-        el('span', { class: 'tap-panel__key', style: 'background:' + l.color, 'aria-hidden': 'true' }), l.label
-      ]));
+      // A numbered key matches the numbered dots (QA-4); a key with no colour is drawn as an outline (or left out for a note)
+      var key = el('span', { class: 'tap-panel__key' + (l.mark != null ? ' tap-panel__key--num' : '') + (l.color ? '' : ' tap-panel__key--none'),
+        'aria-hidden': 'true' }, l.mark != null ? String(l.mark) : null);
+      if (l.color) key.style.background = l.color;
+      if (l.mark != null && l.role === 'muted') key.classList.add('tap-panel__key--light');
+      box.appendChild(el('span', { class: 'tap-panel__legend-item' + (l.role ? ' tap-panel__legend-item--' + l.role : '') }, [key, l.label]));
     });
     if (shades) box.appendChild(shades);
     if (size) {
