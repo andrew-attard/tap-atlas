@@ -68,7 +68,7 @@
 .tap-tg__npcount { color: var(--tap-np-fg); font-style: italic; }
 
 /* ---------- the view ---------- */
-.tap-ind { display: flex; flex-direction: column; gap: var(--tap-sp-8); padding: var(--tap-sp-8) var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
+.tap-ind { display: flex; flex-direction: column; gap: var(--tap-sp-6); padding: 0 var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
 .tap-ind__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 74rem; }
 .tap-ind__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 .tap-ind__title { margin: 0; font-size: var(--tap-fs-h1); }

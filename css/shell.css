@@ -47,22 +47,23 @@
 .tap-menu__item:hover { background: var(--tap-surface); }
 .tap-menu__item[aria-current="page"] { font-weight: 800; border-bottom-color: var(--tap-ink); }
 
-/* Comparison bar: row 1 is the mode and its pickers, row 2 the sentence and the data date */
+/* Comparison bar, two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
+   Controls keep a 40 px touch height; their words are label size so row 1 fits at 1280 px. */
 .tap-cmp {
   display: flex; flex-direction: column; gap: var(--tap-sp-2);
-  padding: var(--tap-sp-3) var(--tap-edge);
+  padding: var(--tap-sp-2) var(--tap-edge);
   background: var(--tap-surface); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
 }
-.tap-cmp__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-6); }
-.tap-cmp__row--sentence { position: relative; gap: var(--tap-sp-2) var(--tap-sp-4); }
+.tap-cmp__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3); }
+.tap-cmp__row--sentence { position: relative; }
 /* On a view nothing follows (the Guide), only the sentence line and the data date stay (QA-13) */
-.tap-cmp--slim { padding-top: var(--tap-sp-2); padding-bottom: var(--tap-sp-2); }
 .tap-cmp--slim .tap-cmp__row--controls { display: none; }
 .tap-cmp--slim .tap-cmp__sentence { font-size: var(--tap-fs-body); }
-.tap-cmp__title, .tap-cmp__label { font-size: var(--tap-fs-body); font-weight: 800; }
-.tap-cmp__label { font-weight: 600; }
-.tap-cmp__picker { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
-.tap-cmp .tap-cmp__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); background: var(--tap-ground); }
+.tap-cmp__title { font-size: var(--tap-fs-body); font-weight: 800; }
+.tap-cmp__label { font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-cmp__picker { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
+.tap-cmp .tap-cmp__select { max-width: 12rem; border-width: var(--tap-rule-w); background: var(--tap-ground); }
+.tap-cmp .tap-seg__opt { padding: 0 var(--tap-sp-2); font-size: var(--tap-fs-label); }
 
 /* Segmented control: the selected option is filled with ink, never red */
 .tap-seg { display: inline-flex; flex-wrap: wrap; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
@@ -75,15 +76,25 @@
 .tap-seg__opt:hover { background: var(--tap-surface); }
 .tap-seg__opt[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
 
-/* Region chips for a chosen set: colour square, name and a tick, so the state never relies on colour */
-.tap-cmp__chips { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+/* A chosen set: one button with the count, opening the region chips below it by click (D50).
+   Each chip has a colour square, the name and a tick, so the state never relies on colour. */
+.tap-cmp__setbtn { border-width: var(--tap-rule-w); background: var(--tap-ground); }
+.tap-cmp__setbtn[aria-expanded="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-cmp__setpop {
+  position: absolute; top: calc(100% + var(--tap-sp-2)); left: 0; z-index: 40;
+  display: flex; flex-direction: column; align-items: stretch; gap: var(--tap-sp-3);
+  width: min(32rem, 92vw); padding: var(--tap-sp-4);
+  background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-lg);
+}
+.tap-cmp__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tap-sp-2); }
 .tap-cmp__chip {
   display: inline-flex; align-items: center; gap: var(--tap-sp-2); min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3);
   font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
   background: transparent; border: var(--tap-rule-w) solid var(--tap-rule); cursor: pointer;
 }
-.tap-cmp__chip[aria-pressed="true"] { font-weight: 800; background: var(--tap-ground); border-color: var(--tap-ink); }
+.tap-cmp__chip[aria-pressed="true"] { font-weight: 800; background: var(--tap-surface); border-color: var(--tap-ink); }
 .tap-cmp__tick { display: inline-block; min-width: 1ch; }
+.tap-cmp__setdone { align-self: flex-start; }
 
 /* The plain sentence, its explanation and the data date */
 .tap-cmp__say { flex: 1 1 480px; display: flex; align-items: center; gap: var(--tap-sp-2); margin: 0; }
@@ -101,7 +112,7 @@
 .tap-cmp__status:empty { display: none; }
 
 /* The area views mount into */
-.tap-view { display: block; padding: var(--tap-sp-8) var(--tap-edge) var(--tap-sp-12); max-width: var(--tap-max-w); }
+.tap-view { display: block; padding: var(--tap-sp-4) var(--tap-edge) var(--tap-sp-12); max-width: var(--tap-max-w); }
 .tap-view:focus { outline: none; }
 
 /* Start-up screens: icon, heading, the cause and what to do; for data errors, the list and a copy button */
