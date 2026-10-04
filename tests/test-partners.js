@@ -104,6 +104,18 @@
       });
     });
 
+    T.test('X-pt-capacity-crowded', 'Many partners: names where they fit, at most the label limit numbered, and a note for the rest', function (a) {
+      H.sample();
+      var res = H.build('pt-capacity', { mode: 'all' }, { size: { w: 560, h: 440 } }), seen = H.bubbles(res);
+      var keys = res.legend.filter(function (l) { return l.mark != null; });
+      a.ok(keys.length <= window.TAP_SETTINGS.rowBubble.labelMax, keys.length + ' numbers, within the limit');
+      keys.forEach(function (l) { a.ok(l.color, l.label + ': the number sits on a coloured key, readable'); });
+      var shown = seen.filter(function (b) { return b.labelled; }).length, rest = seen.length - shown;
+      a.ok(shown > 0, shown + ' partners named or numbered');
+      if (rest) a.ok(res.notes.some(function (n) { return n.indexOf(rest + ' more partners') === 0; }), 'a note says how many are not named');
+      a.equal(res.table.rows.length, seen.length, 'the table lists every one');
+    });
+
     T.test('TPV-TC-426', 'A partner’s details: channel, maturity, expertise, FTE, central support, ARR and services by year, order intake per FTE', function (a) {
       var d = TAP.details.build({ reportId: 'pt-capacity', items: [{ section: 'partners', regionId: 'alpha', row: 10 }] });
       a.equal(d.title, 'Fictional Partner A1, Region A', 'title');
