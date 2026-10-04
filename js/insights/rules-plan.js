@@ -1,12 +1,72 @@
 /*
  * File: js/insights/rules-plan.js
- * Purpose: Channel reliance (US-2.5.2) and plan make-up (US-2.5.5) insight rules.
- * Provides: rule code registered with TAP.insights.defineRule
- * Depends on: js/insights/engine.js, config/insight-rules.js, js/engine/measures.js
+ * Purpose: Channel reliance (US-2.5.2) and plan make-up (US-2.5.5) insight rules: a region whose channel mix, or whose
+ *          split between new business and existing customers, sits far from the other regions'.
+ * Provides: insight rules for the 'plan' family (via TAP.insights.defineRule): channelReliance, planMakeup
+ * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/measures-p2.js (rc.share.*,
+ *             rc.all.oi.*, amb.nbShare), js/core/data.js (the channel list)
  * Used by: js/insights/engine.js
- * Owner: INSIGHTS2 stream (#219)
+ *
+ * "Elsewhere" is the other regions' combined figure, their summed parts over their summed totals, as the charts'
+ * "rest" bar shows it (D69). Only regions that provide the figure take part, on both sides of the comparison.
  */
 (function (TAP) {
   'use strict';
-  TAP.stub.rules('plan', 219);
+
+  var SLACK = 1e-9;   // a gap of exactly the threshold counts, whatever the floating-point rounding
+
+  // The region's figure, the others' combined figure, and the gap between them.
+  function compare(u, measureId, r, ids) {
+    var mine = u.m(measureId, r), rest = u.others(measureId, r, null, ids);
+    if (u.value(mine) === null || u.value(rest) === null) return null;
+    return { id: measureId, mine: mine, rest: rest, gap: mine.v - rest.v };
+  }
+  function figures(u, c, r, n) {
+    return [u.fig(c.id, u.name(r), c.mine), u.fig(c.id, u.phrase('othersAvg', { n: n }), c.rest)];
+  }
+  function channelWords(u, id) {
+    var said = u.phrase('channel.' + id);
+    if (said.charAt(0) !== '[') return said;
+    var ch = ((TAP.data.lookups() || {}).channels || []).filter(function (c) { return c.id === id; })[0];
+    return ch ? ch.name : id;
+  }
+
+  // One finding per region: the channel furthest from the others, when that gap reaches the threshold.
+  TAP.insights.defineRule('channelReliance', function (ctx) {
+    var u = ctx.util, p = ctx.params;
+    var channels = ((TAP.data.lookups() || {}).channels || []).map(function (c) { return c.id; });
+    if (!channels.length) return [];
+    var ids = u.regions().filter(function (r) { return u.value(u.m('rc.share.' + channels[0], r)) !== null; });
+    if (ids.length < 2) return [];
+    return ids.map(function (r) {
+      var best = null;
+      channels.forEach(function (c) {
+        var x = compare(u, 'rc.share.' + c, r, ids);
+        if (x && (!best || Math.abs(x.gap) > Math.abs(best.gap))) { best = x; best.channel = c; }
+      });
+      if (!best || Math.abs(best.gap) < p.gap - SLACK) return null;
+      var amount = u.value(u.m('rc.all.oi.' + best.channel, r)) || 0;
+      return { key: r + ':' + best.channel, regionIds: [r], provided: ids.length,
+        vars: { region: u.name(r), share: u.pct(best.mine.v), channel: channelWords(u, best.channel), avg: u.pct(best.rest.v) },
+        figures: figures(u, best, r, ids.length - 1),
+        strength: u.clamp(Math.abs(best.gap) / (2 * p.gap)), money: u.moneyShare(amount, 'arr') };
+    }).filter(Boolean);
+  });
+
+  // Regions without both new business and customer growth give no share, so they are left out of both sides.
+  TAP.insights.defineRule('planMakeup', function (ctx) {
+    var u = ctx.util, p = ctx.params;
+    var ids = u.regions().filter(function (r) { var c = u.m('amb.nbShare', r); return u.value(c) !== null && !c.partial; });
+    if (ids.length < 2) return [];
+    return ids.map(function (r) {
+      var x = compare(u, 'amb.nbShare', r, ids);
+      if (!x || Math.abs(x.gap) < p.gap - SLACK) return null;
+      var amb = u.m('amb.arr', r);
+      return { key: r, regionIds: [r], provided: ids.length,
+        vars: { region: u.name(r), share: u.pct(x.mine.v), avg: u.pct(x.rest.v) },
+        figures: figures(u, x, r, ids.length - 1).concat([u.fig('nb.arr', u.name(r), u.m('nb.arr', r)),
+          u.fig('cg.arr', u.name(r), u.m('cg.arr', r))]),
+        strength: u.clamp(Math.abs(x.gap) / (2 * p.gap)), money: u.moneyShare(u.value(amb) || 0, 'arr') };
+    }).filter(Boolean);
+  });
 })(window.TAP);
