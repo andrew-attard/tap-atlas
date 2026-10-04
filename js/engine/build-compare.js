@@ -55,23 +55,47 @@
   // The number a region's dots carry when many groups share a row (QA-4): its place in the file, so it never changes.
   function numberOf(e) { return e.kind === 'region' ? TAP.data.regionIndex(e.regionIds[0]) + 1 : null; }
 
+  /*
+   * With many groups, dots that share a rating in a row are spread as a small swarm round their score: up to 4 side by
+   * side, then a second line. The spread is a pixel offset of the drawn symbol only (symbolOffset), so the value, the
+   * tooltip and the table stay exact and the row stays compact.
+   */
+  function swarm(draw, size) {
+    var spots = {}, out = {}, per = 4, step = size + 2;
+    draw.rows.forEach(function (row, gi) {
+      draw.keys.forEach(function (key, j) {
+        var c = row.cells[key];
+        if (c.state === 'value') (spots[j + '|' + c.v] = spots[j + '|' + c.v] || []).push(gi);
+      });
+    });
+    Object.keys(spots).forEach(function (sk) {
+      var list = spots[sk], lines = Math.ceil(list.length / per), j = sk.split('|')[0];
+      list.forEach(function (gi, i) {
+        var line = Math.floor(i / per), inLine = Math.min(per, list.length - line * per), at = i - line * per;
+        out[gi + '|' + j] = [Math.round((at - (inLine - 1) / 2) * step), Math.round((line - (lines - 1) / 2) * step)];
+      });
+    });
+    return out;
+  }
+
   // Dot plot. Groups sit side by side within a category; the nudge moves only the category position,
   // never the value, and tooltips read the cell itself. With more than 3 groups each dot carries its region's number,
-  // matching the legend, so dots that share a rating are told apart without colour, and the chart grows to fit them.
+  // matching the legend, so dots that share a rating are told apart without colour.
   function dot(draw) {
     var k = draw.k, th = k.th(), col = k.colOf(draw.ds, draw.keys[0]), rating = isRating(col);
     var G = draw.cats ? draw.rows.length : 1, np = [], ring = [], many = draw.cats && G > 3;
-    var off = function (gi) { return G < 2 ? 0 : many ? (gi / (G - 1) - 0.5) * 0.84 : (gi - (G - 1) / 2) * Math.min(0.12, 0.72 / G); };
+    var off = function (gi) { return G < 2 || many ? 0 : (gi - (G - 1) / 2) * Math.min(0.12, 0.72 / G); };
     var npX = rating ? 0.5 : 0, size = many ? 18 : G > 4 ? th.space[3] : th.space[4];
-    var groups = draw.cats ? draw.rows.map(function (r) { return [r]; }) : [draw.rows];
+    var groups = draw.cats ? draw.rows.map(function (r) { return [r]; }) : [draw.rows], spread = many ? swarm(draw, size) : {};
     var series = groups.map(function (rs, gi) {
       var data = [], e = rs[0].entity, n = many ? numberOf(e) : null;
       rs.forEach(function (row, ri) {
         draw.keys.forEach(function (key, j) {
           var c = row.cells[key], y = draw.cats ? j + off(gi) : ri;
           if (c.state === 'value') {
-            data.push(item(row, key, c, { value: [c.v, y], itemStyle: { color: row.entity.color } }));
-            if (k.highlighted(row.entity, draw.ctx.highlight)) ring.push({ value: [c.v, y], entityId: row.entityId, size: size });
+            var so = spread[gi + '|' + j] || undefined;
+            data.push(item(row, key, c, { value: [c.v, y], itemStyle: { color: row.entity.color }, symbolOffset: so }));
+            if (k.highlighted(row.entity, draw.ctx.highlight)) ring.push({ value: [c.v, y], entityId: row.entityId, size: size, symbolOffset: so });
           } else if (c.state === 'notProvided') {
             np.push({ value: [npX, y], entityId: row.entityId, text: npText(draw, row), title: row.label, what: k.colOf(draw.ds, key).label });
           }
@@ -84,10 +108,7 @@
         label: n ? { show: true, position: 'inside', formatter: String(n), fontSize: th.type.chartMin, fontWeight: 700,
           color: e.role === 'muted' ? th.ink : th.onColour } : undefined };
     });
-    if (many) {
-      draw.res.legend = draw.res.legend.map(function (l, i) { return Object.assign({}, l, { mark: numberOf(draw.rows[i].entity) }); });
-      draw.res.height = draw.keys.length * Math.ceil(G * (size + 1) / 0.84) + th.space[12] + th.space[6];
-    }
+    if (many) draw.res.legend = draw.res.legend.map(function (l, i) { return Object.assign({}, l, { mark: numberOf(draw.rows[i].entity) }); });
     var labels = draw.cats ? catLabels(draw) : draw.rows.map(function (r) { return r.label; });
     var xAxis = rating ? k.valueAxis(col, { min: 0.5, max: 3.5, interval: 0.5,
       axisLabel: { fontSize: th.type.chart, formatter: function (v) { return v % 1 === 0 ? String(v) : ''; } } }) : k.valueAxis(col);
