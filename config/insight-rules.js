@@ -165,7 +165,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'recurringTheme', family: 'themes',
     description: 'A theme from the keyword lists in config/comment-themes.js that comes up (whole words, any case) in the success factors or commentary of at least 3 regions (TAP_COMMENT_THEMES.minRegions). Counted by this app, not tagged in the workbooks.',
     reads: ['newBusiness.successFactors', 'marketCoverage.commentary'], params: {},
-    scoring: 'Strength: grows from the threshold to every region, up to 0.4, so themes rank below the rules that compare figures. Money: none.',
+    scoring: 'Strength: grows from the threshold to every region, up to 0.2, so a theme ranks below the rules that compare figures. Money: none.',
     template: '{theme} {verb} up in the {where} of {n} regions.',
     attach: ['nb-themes'], highlight: 'bar' });
 
