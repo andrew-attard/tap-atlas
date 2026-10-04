@@ -25,6 +25,12 @@
 
   function drawDetails(body, payload) {
     var built = TAP.details.build(payload && payload.target);
+    // Optional links under the title, e.g. "Open profile" (US-2.4.1): [{id, label, href}]
+    if ((built.actions || []).length) {
+      body.appendChild(el('p', { class: 'tap-details__actions' }, built.actions.map(function (a) {
+        return el('a', { class: 'tap-btn', href: a.href, 'data-action': a.id }, a.label);
+      })));
+    }
     (built.groups || []).forEach(function (g) {
       var group = el('section', { class: 'tap-details__group' }, el('h3', null, g.title));
       (g.rows || []).forEach(function (r) { group.appendChild(detailRow(r)); });

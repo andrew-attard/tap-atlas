@@ -72,7 +72,7 @@ The three pages load the same app scripts in the same order (lint checks this). 
    - warnings go to the data sources panel.
 4. Theme variables are applied, the shell is drawn, and the first view mounts: **Overview, All regions, no focus** (US-1.1.3).
 
-**Screenshot mode.** With `?screenshot=1`, the query values `view`, `mode`, `focus`, `second`, `set` (comma list) and `rest` (`average|total`) set the opening state. This is used only by `scripts/screenshot.sh`. Without `screenshot=1` the query is ignored.
+**Screenshot mode.** With `?screenshot=1`, the query values `view`, `region` (Regions view), `mode`, `focus`, `second`, `set` (comma list) and `rest` (`average|total`) set the opening state. This is used only by `scripts/screenshot.sh`. Without `screenshot=1` the query is ignored.
 
 ## 5. State and events: `TAP.store`, `TAP.bus` (`js/core/store.js`)
 
@@ -481,6 +481,8 @@ Phase 2 adds three report views, a region profile, list reports, more breakdowns
 
 - Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `regions`, `insights`, `guide`. Number keys 1 to 8 follow it.
 - **State:** `state.region` is the region shown on the Regions view, or null (list of regions to pick from). Setting it does not raise `scopeEpoch`.
+- **Frame hook:** the shell sets `data-view="<view id>"` on the `.tap-app` root, so a view's stylesheet can adjust the frame (the Regions view hides the comparison bar).
+- **Details actions:** `TAP.details.build` may return `actions: [{id, label, href}]`, drawn as links under the details title ("Open profile").
 - **Address bar:** `#regions/<id>` opens a profile; `#regions` the picker. `js/ui/app.js` keeps the address bar and `{view, region}` in step, so the back button works.
 - A view still being built may list report ids that don't exist yet; `X-contract-reports` allows that only while stubs remain.
 
