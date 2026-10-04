@@ -15,6 +15,8 @@
   var t = function (key, vars) { return TAP.content.text(key, vars); };
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var active = null;   // cleanup for the bar on screen
+  // Views where nothing follows the comparison: the bar shrinks to its sentence line there (QA-13)
+  var QUIET = ['guide'];
 
   function cmp() { return TAP.store.get().cmp; }
   function write(patch) { TAP.store.set({ cmp: patch }); }
@@ -122,7 +124,7 @@
     ui.showPop = showPop;
 
     TAP.dom.append(root, [
-      el('div', { class: 'tap-cmp__row' }, [
+      el('div', { class: 'tap-cmp__row tap-cmp__row--controls' }, [
         el('span', { class: 'tap-cmp__title' }, t('compare.label')), ui.modes,
         ui.pickers.focus, ui.pickers.second, ui.pickers.restAs, ui.pickers.restAgg, ui.pickers.set
       ]),
@@ -202,10 +204,13 @@
     repair();
     var ui = build(root);
     render(ui);
+    function quiet() { root.classList.toggle('tap-cmp--slim', QUIET.indexOf(TAP.store.get().view) >= 0); }
+    quiet();
 
     var offStore = TAP.store.on(function (state, changed) {
       if (!root.isConnected) { stop(); return; }
       if (changed.indexOf('cmp') >= 0) render(ui);
+      if (changed.indexOf('view') >= 0) quiet();
     });
     // Esc closes the explanation before any side panel (layers skip an Esc that was already handled).
     function onKey(e) {
