@@ -35,6 +35,8 @@ Object.assign(window.TAP_CONTENT.text, {
     agreeSub: 'Tier 1 · 2 · 3',
     agreeCounts: '{t1} · {t2} · {t3}',
     agreeNp: '{n} not provided',
+    notCombinedRest: 'Tiers can’t be combined, so the other regions are shown one by one.',
+    notCombinedAll: 'Tiers can’t be combined, so every region is shown one by one.',
     star: '★',
     central: 'Set centrally',
     cellAria: '{region}, {industry}: {tier}',

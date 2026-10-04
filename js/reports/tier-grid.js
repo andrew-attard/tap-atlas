@@ -287,11 +287,21 @@
     var res = K.result(ctx.def, null, { missing: gap.names, empty: gap.empty, target: targetFn(ctx.def), takeaway: takeaway(m),
       controls: [{ key: 'sort', label: t('tierGrid.sortLabel'), kind: 'segmented', value: m.sort,
         options: m.sorts.map(function (s) { return { value: s, label: t('tierGrid.sorts.' + s) }; }) }] });
-    if (type === 'bubbleGrid') return Object.assign(res, bubbleGrid(m, ctx));
-    res.table = matrix(m);
-    res.legend = tierLegend();
-    if (type !== 'table') res.html = heatmap(m);
+    if (type === 'bubbleGrid') Object.assign(res, bubbleGrid(m, ctx));
+    else {
+      res.table = matrix(m);
+      res.legend = tierLegend();
+      if (type !== 'table') res.html = heatmap(m);
+    }
+    res.notes = combinedNote(ctx).concat(res.notes || []);
     return res;
+  }
+
+  // A tier is a choice, not a number, so it can't be averaged or summed: say so when the comparison combines regions.
+  function combinedNote(ctx) {
+    var ents = ctx.entities || TAP.scope.entities(ctx.cmp);
+    if (!ents.some(function (e) { return e.kind === 'combined'; })) return [];
+    return [t(ents.some(function (e) { return e.role === 'focus'; }) ? 'tierGrid.notCombinedRest' : 'tierGrid.notCombinedAll')];
   }
 
   TAP.tierStats = { forIndustry: forIndustry, all: all, mostSplit: mostSplit, SORTS: SORTS };
