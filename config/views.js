@@ -9,13 +9,15 @@
  * section 17; a view still being built may list reports that don't exist yet.
  */
 window.TAP_VIEWS = {
-  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'regions', 'insights', 'guide'],
+  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'other', 'regions', 'insights', 'guide'],
   overview: { title: 'Overview', reports: ['ov-ambition'] },
   industry: { title: 'Industry priorities', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
   newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
   customers: { title: 'Customer growth', reports: ['cg-segments', 'cg-growth', 'cg-exposure', 'cg-bubble', 'cg-accounts'] },
   partners: { title: 'Partners', reports: ['pt-reliance', 'pt-capacity', 'pt-list'] },
   // The profile's reports are listed in config/profile.js; it shows existing reports for one region
+  // Other sections (US-3.2.2) shows only when the data has extra sections; its lists are built from the data
+  other: { title: 'Other sections', reports: [] },
   regions: { title: 'Regions', reports: [] },
   insights: { title: 'Insights', reports: [] },
   guide: { title: 'Guide', reports: [] }

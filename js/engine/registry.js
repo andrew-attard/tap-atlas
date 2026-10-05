@@ -121,7 +121,12 @@
     // View ids in menu order: the configured order, keeping only views that exist.
     order: function () {
       var cfg = (window.TAP_VIEWS && window.TAP_VIEWS.order) || Object.keys(views);
-      return cfg.filter(function (id) { return !!views[id]; });
+      // A view with available() shows only when it returns true, e.g. Other sections (US-3.2.2)
+      return cfg.filter(function (id) {
+        var v = views[id];
+        if (!v) return false;
+        try { return typeof v.available !== 'function' || !!v.available(); } catch (e) { return false; }
+      });
     },
     // Menu title: the configured title wins, then the view's own.
     title: function (id) {

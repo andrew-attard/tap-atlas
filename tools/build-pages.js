@@ -20,7 +20,7 @@ const APP = [
   'config/settings.js',
   'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-data.js', 'content/text-panel.js',
   'content/text-overview.js', 'content/text-industry.js', 'content/text-pages.js', 'content/text-engine2.js',
-  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/glossary.js', 'content/guide.js',
+  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/text-present.js', 'content/text-custom.js', 'content/text-extra.js', 'content/glossary.js', 'content/guide.js',
   'ORG',
   'js/core/content.js',
   'DATA',
@@ -28,9 +28,9 @@ const APP = [
   'js/engine/registry.js', 'js/engine/aggregate.js', 'js/engine/scope.js', 'js/engine/measures.js', 'js/engine/scores.js',
   'js/engine/measures-p2.js', 'js/engine/rows.js',
   'js/engine/shapes.js', 'js/engine/prepare.js',
-  'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js',
+  'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js', 'js/engine/custom.js',
   'config/reports.js', 'config/reports-overview.js', 'config/reports-industry.js', 'config/reports-newbusiness.js',
-  'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/views.js', 'config/profile.js',
+  'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/views.js', 'config/profile.js', 'config/running-order.js',
   'config/comment-themes.js', 'config/insight-rules.js',
   'js/reports/tier-stats.js', 'js/reports/tier-grid.js', 'js/reports/quadrant-labels.js', 'js/reports/quadrant.js', 'js/reports/details.js',
   'js/reports/details-rows.js', 'js/reports/cg-builders.js', 'js/reports/nb-grid.js', 'js/reports/nb-levers.js', 'js/reports/row-bubble.js', 'js/reports/themes.js',
@@ -41,15 +41,15 @@ const APP = [
   'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel.js',
   'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/explain.js', 'js/ui/tour.js',
-  'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js',
+  'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/present.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
-  'js/views/customers.js', 'js/views/partners.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/views/guide.js',
+  'js/views/customers.js', 'js/views/partners.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/ui/custom-builder.js', 'js/views/guide.js',
   'js/ui/app.js'
 ];
 
 const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.css', 'css/panel.css',
   'css/overview.css', 'css/industry.css', 'css/pages.css', 'css/view-head.css', 'css/newbusiness.css', 'css/customers.css',
-  'css/profile.css', 'css/themes.css'];
+  'css/profile.css', 'css/themes.css', 'css/present.css', 'css/custom.css'];
 
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [
@@ -59,7 +59,7 @@ const TESTS = [
   'tests/test-shell.js', 'tests/test-content.js', 'tests/test-panel.js',
   'tests/test-overview.js', 'tests/test-industry.js', 'tests/test-insights.js', 'tests/test-rules.js', 'tests/test-ranking.js', 'tests/test-guardrails.js', 'tests/test-pages.js', 'tests/test-integrator.js',
   'tests/test-measures-p2.js', 'tests/test-rows.js', 'tests/test-list.js', 'tests/test-newbusiness.js', 'tests/test-customers.js',
-  'tests/test-partners.js', 'tests/test-insights-p2.js', 'tests/test-profile.js', 'tests/test-pages-p2.js',
+  'tests/test-partners.js', 'tests/test-insights-p2.js', 'tests/test-profile.js', 'tests/test-pages-p2.js', 'tests/test-present.js', 'tests/test-custom.js', 'tests/test-extra.js', 'tests/test-docs3.js',
   'tests/test-meta.js'
 ];
 

@@ -13,7 +13,6 @@
  */
 (function (TAP) {
   'use strict';
-
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   function t(key, vars) { return TAP.content.text('panel.' + key, vars); }
   var REDRAW = ['cmp', 'industry', 'hiddenInsights', 'highlight', 'scopeEpoch', 'expanded'];
@@ -261,8 +260,9 @@
   }
 
   function create(host, reportId, opts) {
+    reportId = TAP.panelDrill.reportOf(reportId);   // a definition object is registered first (18.3)
     var p = { id: reportId, opts: Object.assign({}, opts || {}), cs: {}, off: [], live: true };
-    p.st = Object.assign({ pop: null }, lasting(reportId), scoped());
+    p.st = Object.assign({ pop: null }, lasting(reportId), scoped(), TAP.panelDrill.initial(p.opts.initial));
     p.render = function () { render(p); };
     p.cmp = function () { return cmpOf(p, TAP.store.get()); };
     p.toggle = function (name) { p.st.pop = name && p.st.pop !== name ? name : null; render(p); };
