@@ -821,6 +821,17 @@
       } finally { spacer.remove(); window.scrollTo(0, y); }
     });
 
+    // Review fix #379 (SV-15): an industry name is put into the explanation title as it is, never read as a pattern
+    T.test('X-review-SV-15', 'An industry name with $ patterns shows as written in the explanation title', function (a) {
+      var p = T_FIXTURE('mini');
+      p.lookups.industries[0].name = 'Oil $& Gas $$ $\' $`';
+      a.ok(TAP.data.load(p).ok, 'the renamed data loads');
+      TAP.store.set({ industry: p.lookups.industries[0].id });
+      withExplain('ind-ratings', function (layer) {
+        a.equal(txt(layer.querySelector('.tap-explain__report')), 'How do regions rate Oil $& Gas $$ $\' $`?', 'the title holds the name as written');
+      });
+    });
+
     T.test('X-pages-insights-engine', 'Without the insight engine the page shows a plain message', function (a) {
       var old = TAP.insights, root = T.dom.mount();
       TAP.insights = { __stub: 44, ranked: function () { throw new Error('Not built yet (#44): TAP.insights.ranked'); } };

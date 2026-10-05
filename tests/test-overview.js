@@ -384,6 +384,20 @@
       ].join(' '));
     });
 
+    // Review fix #379 (SV-14): names from the workbooks are never marked as glossary terms
+    T.test('X-review-SV-14', 'A name holding a glossary word gets no term button inside it', function (a) {
+      var p = T_FIXTURE('mini');
+      p.lookups.industries.filter(function (i) { return i.id === 'ind4'; })[0].name = 'Pipeline Services';   // Utilities, Tier 2 everywhere
+      a.ok(TAP.data.load(p).ok, 'the renamed data loads');
+      var m = mountView();
+      try {
+        var line = qs('.tap-ov__sentence', m.host);
+        a.ok(txt(line).indexOf('make Pipeline Services a focus industry') >= 0, 'the tier sentence names the industry: ' + txt(line));
+        var inName = qsa('.tap-term', line).filter(function (b) { return /Pipeline|Services/.test(b.textContent); });
+        a.deepEqual(inName.map(function (b) { return b.textContent; }), [], 'no term button inside the industry name');
+      } finally { m.handle.destroy(); }
+    });
+
     T.test('X-overview-headline-focus', 'With a focus region, the headline is about it against the rest (TPV-TC-100)', function (a) {
       var R = window.TEST_EXPECT.mini.region.alpha, rest = window.TEST_EXPECT.mini.combined.restOfAlphaAverage;
       TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' } });
