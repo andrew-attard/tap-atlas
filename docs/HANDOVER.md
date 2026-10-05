@@ -104,10 +104,11 @@ These are open on purpose: each needs the real data, the real template or a deci
 
 1. **Account names (D54).** Customer growth shows whatever the data file's account `name` field holds (provisionally the real names, D14). There is no setting in the app to swap names for anonymous labels. Decide during the import who receives the folder: for a copy shared with every regional leader, the import can write labels instead of names.
 2. **Partner maturity values (D61).** The allowed values were not in the template copy reviewed (Data Contract open question 3). The app shows maturity as the text the data holds, with no fixed scale and no chart by maturity. Once the real values are confirmed, they can be added as a lookup in the contract.
-3. **Rate weights to confirm.** When regions are combined, rates are weighted averages. The weights in `config/settings.js` (`combine.weights`) are proposed defaults, still to be confirmed with leadership: hit rate by target accounts with a hit rate, average deal size by expected wins, new business growth and services ratio by three-year ARR potential, customer growth by current ARR. The two chart scores (attractiveness and ability to win) use equal weights, and insight ranking uses 0.5 strength, 0.3 money at stake and 0.2 breadth. Each change shows at once in every chart and insight that uses it.
+3. **Rate weights to confirm.** When regions are combined, a rate is the ratio of the summed rows each region's own figure used (D78): hit rate over target accounts with a hit rate, average deal size over expected wins, new business growth and services ratio over three-year ARR potential, customer growth % over current ARR. A row with a rate but a blank weight is left out and the figure is marked partly provided. These weights are proposed defaults still to be confirmed with leadership. The two chart scores (attractiveness and ability to win) use equal weights, and insight ranking uses 0.5 strength, 0.3 money at stake and 0.2 breadth; theme insights always rank after figure-based ones (D80).
 4. **Plan years (Data Contract open question 2).** Confirm the plan years and that year 1 is the first forecast year.
 5. **The rest of the template.** Sections the contract doesn't name one by one arrive as extra sections and show as lists only. A chart or view of their own follows `docs/EXTENDING-TEMPLATE.md`.
 6. **Stories not built.** None: every Phase 3 story was built.
+7. **Channel reliance on the New business channels chart (#351).** The insight compares shares of total order intake but also appears on the new business only channels chart, where the bars show different shares. On hold for the owner's full template.
 
 Other limits by design:
 
@@ -115,8 +116,10 @@ Other limits by design:
 - **Small choices are remembered per browser** (chart types, the tour), through the browser's storage. Another laptop starts fresh.
 - **Light theme only, no animation,** for a shared screen (D24).
 - **Region colours repeat after eight regions**; the data sources panel then shows a warning.
+- **Region ids `rest` and `org` are refused** by the data check (D82): the app uses them for the combined bars.
+- **First screen at 1280 x 800.** On Customer growth and Partners the first chart starts just below the first screen (the header of a half-width panel takes the space). Scroll once, open the chart full screen, or present it.
 - **GitHub Pages is not switched on** (D59). `docs/PUBLISHING.md` has the steps for when that is decided.
 
 ## Releases
 
-Each phase ends with a tag and a GitHub release (D58): `v0.1.0` (Phase 1, the first demo and Copilot handover build), `v0.2.0` (Phase 2: New business, Customer growth, Partners, region profiles, lists, drill-down, more insights) and `v0.3.0` (Phase 3: presentation mode, custom charts, extra sections, this handover pack and the portfolio edition). Present from a release, or from a known-good copy of the folder, never from work in progress.
+Each phase ends with a tag and a GitHub release (D58): `v0.1.0` (Phase 1, the first demo and Copilot handover build), `v0.2.0` (Phase 2: New business, Customer growth, Partners, region profiles, lists, drill-down, more insights) `v0.3.0` (Phase 3: presentation mode, custom charts, extra sections, this handover pack and the portfolio edition) and `v0.3.1` (the review pass: bug fixes, robustness to imperfect data and polish, no new features). Present from a release, or from a known-good copy of the folder, never from work in progress.
