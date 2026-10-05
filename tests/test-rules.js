@@ -124,6 +124,13 @@
       a.equal(figure(x, 'ind.pipeline').cell.v, X.p04.pipelineTotal);
     });
 
+    T.test('X-review-RI-7', 'The weak-rating description and scoring describe the rule as configured (the largest figure only)', function (a) {
+      var rule = window.TAP_RULES.rules.filter(function (r) { return r.id === 'weakRating'; })[0];
+      a.equal(rule.params.rank, 1, 'the rule looks at the largest figure only');
+      a.ok(/the region’s largest current ARR or pipeline figure/.test(rule.description), 'the description says the largest: ' + rule.description);
+      a.ok(!/three|second|third/.test(rule.description + ' ' + rule.scoring), 'neither text mentions the second or third largest');
+    });
+
     T.test('TPV-TC-150', 'A planted unfavourable ability rating with large ARR gives a weak-rating insight', function (a) {
       sample();
       var x = get('weakRating:ceu:manufacturing');
