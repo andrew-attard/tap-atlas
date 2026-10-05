@@ -1,7 +1,7 @@
 /*
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206).
- * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5
+ * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -167,6 +167,23 @@
       a.ok(paths.indexOf('regions[0].customerGrowth.accounts[0].sourceRow') < 0, 'the first use of the number is fine');
       var w = res.warnings.filter(function (x) { return x.path === 'regions[0].customerGrowth.accounts[1].sourceRow'; })[0];
       a.ok(w && /row/.test(w.expected) && w.found === 10, 'says what it expected and what it found');
+    });
+
+    // Review DE-10: import dates that are not ISO dates loaded silently and could show the wrong day.
+    T.test('X-review-DE-10', 'A date that is not an ISO date is a warning, and the data date skips it', function (a) {
+      var p = T_FIXTURE('mini');
+      p.meta.generatedAt = '2026/10/03';
+      p.regions[0].source.fileModified = '28.09.2026';
+      ['alpha', 'bravo', 'charlie'].forEach(function (id, i) { p.regions[i].source.importedAt = '12/31/2026'; });
+      var res = TAP.check.run(p), paths = res.warnings.map(function (w) { return w.path; });
+      a.deepEqual(res.errors, [], errorList(res));
+      ['meta.generatedAt', 'regions[0].source.fileModified', 'regions[0].source.importedAt', 'regions[2].source.importedAt']
+        .forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is warned about'); });
+      a.ok(paths.indexOf('regions[3].source.importedAt') < 0, 'an ISO date is fine');
+      TAP.data.load(p);
+      // A, B and C carry unreadable dates, so the latest readable import is Region D's (1 Oct), not "31 Dec 2026"
+      a.equal(TAP.sources.dataDate(), '2026-10-01T15:00:00Z');
+      a.equal(TAP.format.date(TAP.sources.dataDate()), '1 Oct 2026');
     });
 
     // Review DE-5: a region with the id of a combined figure ("rest", "org") shared its id with that figure.

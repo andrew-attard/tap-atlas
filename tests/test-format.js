@@ -1,7 +1,7 @@
 /*
  * File: tests/test-format.js
  * Purpose: Tests for number, rating and date formatting (US-1.2.6).
- * Provides: test cases TPV-TC-077, X-format-*, X-review-DE-1, X-review-DE-7, X-review-DE-11
+ * Provides: test cases TPV-TC-077, X-format-*, X-review-DE-1, X-review-DE-7, X-review-DE-10, X-review-DE-11
  * Depends on: tests/harness.js, tests/test-setup.js (mini fixture loaded), js/core/format.js
  * Used by: tests.html
  */
@@ -103,6 +103,18 @@
       a.equal(F.date('2026-01-31T23:30:00Z'), '31 Jan 2026');
       a.equal(F.date('2026-10-02T09:05:00Z', { time: true }), '2 Oct 2026, 09:05');
       a.equal(F.date(null), 'not provided');
+    });
+
+    // Review DE-10: dates were read with new Date(text), so a day-first "02/10/2026" showed as 9 Feb 2026.
+    T.test('X-review-DE-10', 'Only ISO dates are shown; any other text reads "not provided"', function (a) {
+      a.equal(F.date('02/10/2026'), 'not provided', 'day-first text is not guessed at');
+      a.equal(F.date('Oct 2, 2026'), 'not provided');
+      a.equal(F.date('2026-10-02'), '2 Oct 2026', 'a date without a time');
+      a.equal(F.date('2026-10-02T09:00:00+02:00', { time: true }), '2 Oct 2026, 07:00', '09:00 at +02:00 is 07:00 UTC');
+      a.equal(F.date('2026-10-02T09:05:00.000Z', { time: true }), '2 Oct 2026, 09:05');
+      a.equal(F.isoDate('2026-10-02T09:00:00Z'), true);
+      a.equal(F.isoDate('2026-13-02'), false, 'month 13 is not a date');
+      a.equal(F.isoDate('02/10/2026'), false);
     });
 
     T.test('X-format-list', 'Lists of names join with commas and "and"', function (a) {
