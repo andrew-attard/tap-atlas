@@ -106,7 +106,7 @@ One entry per regional workbook. **File order sets each region's colour.**
 
 | Field | Type | Tag | Notes |
 |---|---|---|---|
-| `id` | text | IMP | Short stable key, e.g. `"north"`. Unique |
+| `id` | text | IMP | Short stable key, e.g. `"north"`. Unique, and not `"rest"` or `"org"` (kept for combined figures) |
 | `name` | text | PRE | Display name |
 | `source` | object | IMP | `{ fileName, fileModified, importedAt, notes: [] }`. Each note is `{ message, sheet, cell }`, from the import checks. Shown only in the data sources panel |
 | `marketCoverage` | list | | See below |
@@ -289,7 +289,8 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a broken reference between sections: an `industryId` or `productLine` not in `lookups`, a New Business row whose industry has no Market Coverage row or whose tier differs from it;
 - `meta.years` not exactly three different plan years, or a by-year list without three values (or with a value that is not a number);
 - a New Business `channelSplit` missing one of the four channels;
-- duplicate region ids, duplicate industries in a region's Market Coverage, duplicate account ids.
+- duplicate region ids, duplicate industries in a region's Market Coverage, duplicate account ids;
+- a region id of `rest` or `org`: the app keeps these two ids for combined figures (the rest of the regions, the organization total).
 
 **Warnings load anyway** and are listed in the data sources panel:
 - a channel split not adding up to 100% (within 1 point);

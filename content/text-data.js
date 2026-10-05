@@ -53,6 +53,7 @@ Object.assign(window.TAP_CONTENT.text, {
       regions: 'a list of regions',
       someRegions: 'at least one region',
       uniqueRegion: 'an id no other region uses',
+      keptRegionId: 'a region id other than "rest" or "org", which the app keeps for combined figures',
       uniqueIndustry: 'an industry not already listed in this section',
       uniqueId: 'an id not already used in this list',
       mcTier: 'the Market Coverage tier for this industry ({tier})',
