@@ -29,20 +29,27 @@
 
   /* ---------- the sections, cleaned ---------- */
 
-  // The usable sections in file order: the first section with each text id, if it has columns, and the columns
-  // with a usable key. Of two sections with one id the first is kept even when it is broken, as check() does.
+  // A section id may not hold a colon: the row source "extra:<id>" is split on colons in row references.
+  function goodId(id) { return filled(id) && id.indexOf(':') < 0; }
+  // The columns with a usable key: an object, a text key not seen before and not reserved.
+  function usable(columns) {
+    var keys = Object.create(null);
+    return (Array.isArray(columns) ? columns : []).filter(function (c) {
+      if (!isObj(c) || !filled(c.key) || keys[c.key] || RESERVED.indexOf(c.key) >= 0) return false;
+      return (keys[c.key] = true);
+    });
+  }
+
+  // The usable sections in file order: the first section with each text id, if its id is good and it has a usable
+  // column. Of two sections with one id the first is kept even when it is broken, as check() does.
   function cleanSections(meta) {
     var list = isObj(meta) && Array.isArray(meta.extraSections) ? meta.extraSections : [], seen = Object.create(null);
     return list.filter(function (s) {
       if (!isObj(s) || !filled(s.id) || seen[s.id]) return false;
       seen[s.id] = true;
-      return Array.isArray(s.columns) && s.columns.length > 0;
+      return goodId(s.id) && usable(s.columns).length > 0;
     }).map(function (s) {
-      var keys = Object.create(null);
-      var columns = s.columns.filter(function (c) {
-        if (!isObj(c) || !filled(c.key) || keys[c.key] || RESERVED.indexOf(c.key) >= 0) return false;
-        return (keys[c.key] = true);
-      }).map(function (c) {
+      var columns = usable(s.columns).map(function (c) {
         return { key: c.key, label: filled(c.label) ? c.label : c.key, unit: UNITS.indexOf(c.unit) >= 0 ? c.unit : 'text',
           kind: KINDS.indexOf(c.kind) >= 0 ? c.kind : 'IN', column: filled(c.column) ? c.column : null };
       });
@@ -97,7 +104,7 @@
   }
   function rowName(source, item) {
     var s = section(idOf(source)), c = s && nameColumn(s), v = c && item ? item[c.key] : null;
-    return v == null || v === '' ? null : String(v);
+    return c && c.unit === 'text' && filled(v) ? v : null;   // only text names a row, as the list shows it
   }
 
   function src(source, regionId, field, n, kind) {
@@ -162,10 +169,11 @@
       if (!isObj(s)) return warn(p, null, t('check.section'), s);
       var name = filled(s.title) ? s.title : filled(s.id) ? s.id : '#' + (i + 1), keys = Object.create(null), entry = null;
       if (!filled(s.id) || known[s.id]) warn(p + '.id', name, t('check.id'), s.id); else entry = known[s.id] = { name: name, keys: keys };
+      // A section left out of the view (an id with a colon, no usable column) gets one warning; its rows none
+      if (entry && !goodId(s.id)) { entry.broken = true; return warn(p + '.id', name, t('check.id'), s.id); }
       if (!filled(s.title)) warn(p + '.title', name, t('check.title'), s.title);
       if (s.intro != null && !isStr(s.intro)) warn(p + '.intro', name, t('check.intro'), s.intro);
-      // Without columns the section is left out of the view, so its rows get no warnings of their own
-      if (!Array.isArray(s.columns) || !s.columns.length) {
+      if (!usable(s.columns).length) {
         if (entry) entry.broken = true;
         return warn(p + '.columns', name, t('check.columns'), s.columns);
       }
