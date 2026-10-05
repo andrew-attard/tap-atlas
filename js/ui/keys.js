@@ -55,7 +55,8 @@
     if (!id || typing(e.target) || tourOn()) return;
     e.preventDefault();
     if (TAP.layers.top()) TAP.layers.close();
-    if (TAP.store.get().view !== id) TAP.store.set({ view: id });
+    // As the menu does (js/ui/shell.js): Regions opens the region picker, not the last profile shown (US-2.4.1)
+    TAP.store.set(id === 'regions' ? { view: id, region: null } : { view: id });
   }
 
   // Listens on window, after popovers on the document; safe to call again.
