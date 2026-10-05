@@ -194,7 +194,8 @@
       a.equal(by.segments.link.view, 'customers', 'segments');
       strings(TAP.content.guide(), 'guide').forEach(function (s) { a.ok(!/later phase/i.test(s.text), s.path + ' promises nothing for later'); });
       var menu = TAP.content.guide().howTo.sections.filter(function (s) { return s.id === 'menu'; })[0];
-      a.ok(/New business, Customer growth, Partners, Regions/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
+      // Other sections (Phase 3) sits between Partners and Regions in the menu (#382)
+      a.ok(/New business, Customer growth, Partners, Other sections .*Regions/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
     });
 
     T.test('X-pages2-explain-ratio', 'Shares combined from parts say so, instead of calling themselves weighted', function (a) {
