@@ -376,10 +376,13 @@
       a.deepEqual(banned(x.sentence), [], 'no banned word');
     });
 
-    when(PLAN, 'TPV-TC-475', 'Channel reliance attaches to the partner reliance and channel reports and highlights the region’s bar', function (a) {
+    // D86: only the partner reliance chart shows the share of total order intake the sentence quotes
+    when(PLAN, 'TPV-TC-475', 'Channel reliance attaches to the partner reliance report and highlights the region’s bar', function (a) {
       I().sample();
       var rule = cfg('channelReliance'), x = I().ofRule('channelReliance')[0];
-      a.deepEqual(rule.attach, ['pt-reliance', 'nb-channels']);
+      a.deepEqual(rule.attach, ['pt-reliance'], 'not the new business channels chart, which shows new business only (D86)');
+      a.equal(TAP.insights.ranked({ mode: 'all' }, { reportId: 'nb-channels' }).filter(function (i) { return i.ruleId === 'channelReliance'; }).length, 0,
+        'no channel reliance insight on the new business channels chart');
       a.equal(rule.highlight, 'bar');
       a.deepEqual(x.highlight.regionIds, ['seu'], 'the region’s bar');
       // While the views are being built, the insight attaches to the reports that exist
