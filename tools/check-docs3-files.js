@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 /*
  * File: tools/check-docs3-files.js
- * Purpose: The checks of generated files for tools/check-docs3.js: the portfolio screenshots (one per view,
- *          1440 x 900, stable names that the pages link to) and the known-good copy made by scripts/package.sh.
- * Provides: module.exports ({checkShots, checkShotNames, checkPackage, shotName, pngSize})
- * Depends on: Node 18+; tools/check-docs3.js (existsExact, read at call time); bash and git for the package check
+ * Purpose: The deeper checks for tools/check-docs3.js: the portfolio screenshots (one per view, 1440 x 900,
+ *          stable names that the pages link to), the known-good copy made by scripts/package.sh, and every field
+ *          the contract check reads being named in the Data Contract.
+ * Provides: module.exports ({checkShots, checkShotNames, checkPackage, checkContractFields, fieldsTheCheckReads,
+ *           shotName, pngSize})
+ * Depends on: Node 18+; tools/check-docs3.js (existsExact, read at call time); bash and git for the package check;
+ *             js/core/namespace.js, check.js, extra.js and data/sample-plan-data.js, run in a Node sandbox
  * Used by: tools/check-docs3.js
  * Owner: DOCS3 stream
  */
@@ -146,4 +149,48 @@ function checkPackage(root, handover) {
   return { problems, checked: PACKAGED.length + NOT_PACKAGED.length + 4 };
 }
 
-module.exports = { checkShots, checkShotNames, checkPackage, shotName, pngSize };
+/* ---------- TPV-TC-598: every field the contract check reads is in the Data Contract ---------- */
+
+const BUILTIN = ['length', 'forEach', 'map', 'filter', 'some', 'every', 'indexOf', 'slice', 'concat', 'join', 'keys',
+  'hasOwnProperty', 'constructor', 'toString', 'valueOf', 'push', 'reduce', 'find', 'includes', 'sort', 'toJSON', 'then'];
+
+// Runs the app's contract check (js/core/check.js and js/core/extra.js) on the sample data and records every
+// property it reads. Only names the check's own code spells out count as fields, so data values used as keys
+// (region ids, extra section ids and columns) are left out.
+function fieldsTheCheckReads(root) {
+  const ctx = { console: console, addEventListener: function () {}, document: { addEventListener: function () {} } };
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  const code = {};
+  ['js/core/namespace.js', 'js/core/check.js', 'js/core/extra.js', 'data/sample-plan-data.js'].forEach((f) => {
+    code[f] = fs.readFileSync(path.join(root, f), 'utf8');
+    if (f === 'js/core/check.js') {
+      vm.runInContext('window.TAP.content = { text: function (k) { return k; }, regionName: function (r) { return r && r.name; },' +
+        ' setting: function (k, d) { return d; } };', ctx);
+    }
+    vm.runInContext(code[f], ctx, { filename: f });
+  });
+  const reads = new Set();
+  const wrap = (o) => (o === null || typeof o !== 'object') ? o : new Proxy(o, {
+    get: (t, k, r) => { if (typeof k === 'string') reads.add(k); return wrap(Reflect.get(t, k, r)); },
+    has: (t, k) => { if (typeof k === 'string') reads.add(k); return Reflect.has(t, k); }
+  });
+  ctx.TAP.check.run(wrap(ctx.PLAN_DATA));
+  // Code only: comments could mention a data value in passing.
+  const src = (code['js/core/check.js'] + code['js/core/extra.js']).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+  return [...reads].filter((k) => !/^\d+$/.test(k) && BUILTIN.indexOf(k) < 0 &&
+    new RegExp('(^|[^A-Za-z0-9_$])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9_$])').test(src)).sort();
+}
+
+function checkContractFields(root) {
+  const contract = fs.readFileSync(path.join(root, 'docs/DATA-CONTRACT.md'), 'utf8');
+  const words = new Set();
+  (contract.match(/`[^`\n]+`/g) || []).forEach((span) => (span.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).forEach((w) => words.add(w)));
+  let fields;
+  try { fields = fieldsTheCheckReads(root); } catch (e) { return { problems: ['could not run the contract check: ' + e.message], checked: 0 }; }
+  const problems = fields.filter((f) => !words.has(f)).map((f) => 'docs/DATA-CONTRACT.md: the contract check reads "' + f + '", which the contract never names');
+  if (fields.length < 20) problems.push('only ' + fields.length + ' fields recorded from the contract check: the recording looks broken');
+  return { problems, checked: fields.length };
+}
+
+module.exports = { checkShots, checkShotNames, checkPackage, checkContractFields, fieldsTheCheckReads, shotName, pngSize };
