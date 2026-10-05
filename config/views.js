@@ -13,7 +13,7 @@ window.TAP_VIEWS = {
   order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'other', 'regions', 'insights', 'guide'],
   overview: { title: 'Overview', reports: ['ov-ambition'] },
   industry: { title: 'Industry priorities', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
-  newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
+  newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
   customers: { title: 'Customer growth', reports: ['cg-segments', 'cg-growth', 'cg-exposure', 'cg-bubble', 'cg-accounts'] },
   partners: { title: 'Partners', reports: ['pt-reliance', 'pt-capacity', 'pt-list'] },
   // Outlook (Phase 4, docs/ARCHITECTURE.md section 19.3): the plans against the strategic plan and the base year

@@ -1,9 +1,10 @@
 /*
  * File: content/text-newbusiness.js
- * Purpose: Wording for the New business view: its header, the industry grid and the success factors panel.
- * Provides: adds to window.TAP_CONTENT.text (keys nbView, nbGrid, nbFactors)
+ * Purpose: Wording for the New business view: its header, the industry grid and the success factors panel; and for
+ *          the reports that split a figure by one dimension (solutions, routes, maturity levels).
+ * Provides: adds to window.TAP_CONTENT.text (keys nbView, nbGrid, nbFactors, dimStack)
  * Depends on: content/ui-text.js
- * Used by: js/views/new-business.js, js/reports/nb-grid.js
+ * Used by: js/views/new-business.js, js/reports/nb-grid.js, js/reports/dim-stack.js, js/reports/stack-draw.js
  * Owner: NB stream. Placeholders in {braces} are filled in by the code; the organization layer can replace any phrase by using the same key.
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
@@ -30,6 +31,16 @@ Object.assign(window.TAP_CONTENT.text, {
     combinedNoTier: 'A tier is one region’s choice, so combined figures show the amount without a tier.',
     noTierParts: 'The Tier 1 and Tier 2 figures are not available yet.',
     drillLabel: '{industry}, {region}'
+  },
+
+  // US-4.4.1 and the other figures split by one dimension (builder dimStack): the grid, its key and a drill level's name
+  dimStack: {
+    notApplicable: 'not applicable',
+    cellAria: '{region}, {part}: {value}',
+    legendShade: 'Shade shows the size of the figure; colour shows the region.',
+    legendNp: 'Dashed: not provided',
+    drillLabel: '{part}, {region}',
+    noBy: 'This report can’t split its figure by "{by}": the selected measure does not list it.'
   },
 
   // US-2.1.6: the success factors panel. Only entries that exist are listed; blanks are never called out.

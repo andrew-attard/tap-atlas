@@ -2,10 +2,11 @@
  * File: config/reports-newbusiness.js
  * Purpose: Report definitions for the New business view (Epic 2.1). The recurring themes report (nb-themes) is
  *          defined in config/reports-themes.js.
- * Provides: adds to window.TAP_REPORTS (nb-industries, nb-channels, nb-rows, nb-levers)
- * Depends on: config/reports.js (schema); measure ids from js/engine/measures.js, scores.js and measures-p2.js
+ * Provides: adds to window.TAP_REPORTS (nb-industries, nb-solutions, nb-channels, nb-rows, nb-levers)
+ * Depends on: config/reports.js (schema); measure ids from js/engine/measures.js, scores.js, measures-p2.js and
+ *             measures-p4b.js; builder 'dimStack' (js/reports/dim-stack.js)
  * Used by: js/engine/registry.js, js/views/new-business.js
- * Owner: NB stream
+ * Owner: NB stream; nb-solutions: NBPT stream (#449)
  */
 window.TAP_REPORTS = window.TAP_REPORTS || {};
 
@@ -31,6 +32,30 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     // A cell opens that region's rows for the industry in the same panel (US-2.7.1); without drill-down, its details
     drill: { next: 'nb-rows', label: 'Sub-industries and markets' },
     options: {}
+  };
+
+  // US-4.4.1: new business by solution, from the solution each row names. Rows that name none are counted under
+  // "No solution named" (the engine's "none" value), so the parts always add up to the region's new business.
+  window.TAP_REPORTS['nb-solutions'] = {
+    id: 'nb-solutions',
+    view: 'newBusiness',
+    title: 'Which solutions does each region’s new business rest on?',
+    explain: {
+      shows: 'Each region’s new business potential by solution, from the solution each row of the New Business sheet names. Rows that name no solution are counted under “No solution named”, so the solutions always add up to the region’s new business.',
+      read: 'Solutions run down and regions across. Each cell shows the value, shaded stronger for larger values, and the last line is each region’s total. The stacked bars show the same figures as one bar per region, each part numbered as in the key. Select a cell or a part to see that region’s rows for the solution. A region that has not filled in the solution column reads “not provided”.',
+      lookFor: 'Plans that rest mostly on one solution, solutions that carry several regions’ plans, and how much is planned with no solution named.'
+    },
+    shape: 'grid',
+    builder: 'dimStack',
+    dimension: 'entity',
+    measures: [{ id: 'nb.arr.sol', label: 'ARR' }, { id: 'nb.services.sol', label: 'Services' }, { id: 'nb.oi.sol', label: 'Total order intake' }],
+    defaultType: 'heatmap',
+    types: ['heatmap', 'stackedBar', 'table'],
+    breakdowns: ['year'],
+    sources: ['DER', 'IN'],
+    // A cell or a part opens that region's rows for the solution in the same panel (US-2.7.1)
+    drill: { next: 'nb-rows', label: 'Sub-industries and markets' },
+    options: { by: 'solution' }
   };
 
   // US-2.1.3: new business order intake by channel, from the template's own recap (D55), never from the row splits.

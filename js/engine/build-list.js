@@ -63,7 +63,8 @@
       entries = entries.filter(function (e) {
         var rs = drill.regionIds || [], is = drill.industryIds || [];
         // Partners have no industry, so only the regions apply to them
-        return (!rs.length || rs.indexOf(e.regionId) >= 0) && (!is.length || source === 'partners' || is.indexOf(e.item.industryId) >= 0);
+        return (!rs.length || rs.indexOf(e.regionId) >= 0) && (!is.length || source === 'partners' || is.indexOf(e.item.industryId) >= 0) &&
+          (drill.solution == null || source !== 'newBusiness' || TAP.measures.kit4.valueOf('solutions', e.item.solution) === drill.solution);   // a solution's rows (US-4.4.1)
       });
     }
     var rows = entries.map(function (e) {

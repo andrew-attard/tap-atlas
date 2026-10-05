@@ -1,7 +1,8 @@
 /*
  * File: js/views/new-business.js
  * Purpose: The New business view (US-2.1.1): the shared header with its headline, the industry grid at full width
- *          (one column per region, like the tier grid), the channels and the levers side by side, the sub-industry
+ *          (one column per region, like the tier grid), the solution grid under it (US-4.4.1), the channels and the
+ *          levers side by side, the sub-industry
  *          list, the success factors panel (US-2.1.6) and the recurring themes. A report not defined yet takes no
  *          slot, so the view grows as the reports land. Selecting an industry (a grid row or cell, the list's
  *          industry filter, details) updates the success factors panel.
@@ -19,9 +20,9 @@
   function t(key, vars) { return TAP.content.text(key, vars); }
   var VIEW = 'newBusiness', FACTORS = 'factors';
 
-  // Rows of the page: two items side by side at most (D24); one item takes the full width. The grid needs a column
+  // Rows of the page: two items side by side at most (D24); one item takes the full width. The two grids need a column
   // per region and the list nine columns, so each gets the full width; the success factors follow the list they filter.
-  var LAYOUT = [['nb-industries'], ['nb-channels', 'nb-levers'], ['nb-rows'], [FACTORS], ['nb-themes']];
+  var LAYOUT = [['nb-industries'], ['nb-solutions'], ['nb-channels', 'nb-levers'], ['nb-rows'], [FACTORS], ['nb-themes']];
 
   function reports() { return ((window.TAP_VIEWS || {})[VIEW] || {}).reports || []; }
   function shown(id) { return id === FACTORS || (reports().indexOf(id) >= 0 && !!TAP.reports.get(id)); }
