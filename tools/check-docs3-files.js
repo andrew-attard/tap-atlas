@@ -108,6 +108,32 @@ function runPackage(root, verifyCmd, dist) {
   });
 }
 
+// A folder whose path has spaces (common on Windows): a minimal copy with a stand-in verify.sh that passes,
+// run with no TAP_VERIFY_CMD, so the default verify call and every path in the script are tested quoted.
+function spacedPath(root) {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'tap package '));
+  const copy = path.join(base, 'app folder');
+  try {
+    ['scripts/package.sh', 'js/core/namespace.js', 'index-sample.html'].forEach((f) => {
+      fs.mkdirSync(path.dirname(path.join(copy, f)), { recursive: true });
+      fs.copyFileSync(path.join(root, f), path.join(copy, f));
+    });
+    fs.writeFileSync(path.join(copy, 'scripts/verify.sh'), '#!/usr/bin/env bash\nexit 0\n', { mode: 0o755 });
+    const env = Object.assign({}, process.env);
+    delete env.TAP_VERIFY_CMD;
+    delete env.TAP_DIST_DIR;
+    const r = spawnSync('bash', [path.join(copy, 'scripts/package.sh')], { encoding: 'utf8', cwd: copy, env: env });
+    const dist = path.join(copy, 'dist');
+    const made = fs.existsSync(dist) ? fs.readdirSync(dist) : [];
+    if (r.status !== 0 || made.length !== 1 || !fs.existsSync(path.join(dist, made[0], 'js/core/namespace.js'))) {
+      return ['package.sh failed in a folder whose path has spaces: ' + (r.stdout + r.stderr).trim().split('\n').pop()];
+    }
+    return [];
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+}
+
 function checkPackage(root, handover) {
   const problems = [];
   if (!fs.existsSync(path.join(root, 'scripts/package.sh'))) return { problems: ['scripts/package.sh is missing'], checked: 0 };
@@ -143,6 +169,7 @@ function checkPackage(root, handover) {
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true });
   }
+  problems.push(...spacedPath(root));
   // TPV-TC-611: dist/ is ignored by git.
   // Outside a git work tree (a copy of the folder) the .gitignore line is read instead.
   const inGit = spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root }).status === 0;

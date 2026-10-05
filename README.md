@@ -200,6 +200,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
 | `docs/CASE-STUDY.md` | The case study: the brief, the constraints, the key decisions, the delivery method and what each phase delivered |
+| `docs/case-study.html` | The case study as a web page, generated from `docs/CASE-STUDY.md` by `tools/build-case-study.js`: never edit by hand |
+| `docs/portfolio.css` | The styles of the landing page and the case study page, from theme variables only |
 | `docs/index.html` | The portfolio landing page: the problem, what the app does, screenshots, how it was built, and a button that opens the sample edition |
 | `docs/screenshots/*.png` | One screenshot per view of the sample edition at 1440 x 900, for the landing page and case study. Made by `scripts/portfolio-shots.sh`: never edit by hand |
 | `docs/PUBLISHING.md` | How to put the sample edition on the web with GitHub Pages, and what to check after (Pages is not switched on) |
@@ -222,6 +224,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `tools/generate-sample-data.js` | Rebuilds the sample data from `tools/sample-settings.js` (helpers: `tools/sample-*.js`) |
 | `tools/lint.js` | Checks the house rules: headers, file size, no web calls, no stray colours |
 | `tools/check-docs.js` | Checks every path the docs name exists |
+| `tools/build-case-study.js` | Writes `docs/case-study.html` from `docs/CASE-STUDY.md`; `--check` says whether it is current |
 | `tools/check-docs3.js`, `tools/check-docs3-files.js` | Check the handover and portfolio files: the sample edition works from a web host, the landing page's links, the handover guide, the screenshots and the package script |
 | `tools/build-pages.js` | Writes the script list into the three pages |
 | `tools/build-auto-cases.js` | Writes `tests/auto-cases.js` from the Test Plan |

@@ -56,7 +56,7 @@ If anything fails, switch Pages off (below), fix it on a branch and publish agai
 
 ## Keep it current
 
-Pages republishes on every push to `main`. After a release, open both addresses and repeat the checks. The screenshots on the landing page are refreshed by the screenshot script once it lands (US-3.4.3).
+Pages republishes on every push to `main`. After a release, open both addresses and repeat the checks. After a release, refresh the screenshots on the landing page and in the case study by running `scripts/portfolio-shots.sh`, then commit the changed images.
 
 ## Switch it off again
 

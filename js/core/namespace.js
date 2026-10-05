@@ -9,7 +9,7 @@
   'use strict';
   var TAP = window.TAP = window.TAP || {};
 
-  TAP.version = '0.1.0';
+  TAP.version = '0.3.0-dev';
   // The Data Contract version this build reads. The data file's meta.schemaVersion must match.
   TAP.schemaVersion = '0.2';
 

@@ -36,7 +36,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 | D31, D32 | User experience and visual design delegated to a design assistant, then reviewed | A full design of every view in hours; stories still win over the design |
 | D44 | A parallel build in waves, with contracts fixed first and fixed file ownership | Several agents can build at once without stepping on each other |
 | D48 | Missing values in three states: zero, not provided, not applicable | A blank cell is never shown as zero |
-| D57 | The Data Contract only grows: additions never change its version | An import built for the first demo keeps working through later phases |
+| D57 | `v0.1.0` stays the demo and handover build; the Data Contract only grows, and additions never change its version | An import built for the first demo keeps working through later phases |
 | D59, D67 | The portfolio edition is built in the repository but not published | Publishing is the project owner's call |
 | D65, D66, D68 | Running order in configuration; unknown template sections as optional extra sections; custom charts limited by measure metadata | Repeatable demos, no guessing at the real template, and no misleading charts such as summed rates |
 
@@ -46,7 +46,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 2. **Issues and a board.** Every epic and story became a GitHub issue, stories as sub-issues of their epics, with milestones per phase and a project board (D34).
 3. **A traced test plan.** Every acceptance criterion maps to at least one test case: automated (run on the test page), manual (done in the app) or review (an inspection of a document). Writing the cases before the code was itself a review: it found a contradiction between two stories before anything was built.
 4. **Contracts, then waves.** A lead wrote the architecture contracts and a skeleton with every module stubbed. Build streams then worked in parallel, each in its own git worktree, owning a fixed set of files, writing tests first and coding against the contracts.
-5. **Checks on every change.** A single script runs lint (house rules, file size, no web calls, no stray colours), the denylist scan, a docs paths check and the full test page headless in both browsers. CI runs on every pull request, and every pull request had an independent review before a rebase merge. Reviews of the numbers work recalculated figures by hand and caught real defects before merge, such as a weight typo that dropped every region and a tier measure that counted a missing industry as zero.
+5. **Checks on every change.** A single script runs lint (house rules, file size, no web calls, no stray colours), the denylist scan, a docs paths check and the full test page headless in both browsers. CI runs on every pull request, and every pull request had an independent review (one slip, below) and a rebase merge. Reviews of the numbers work recalculated figures by hand and caught real defects before merge, such as a weight typo that dropped every region and a tier measure that counted a missing industry as zero.
 6. **Logs and releases.** Every prompt and every decision was logged as the work went. Each phase ended with a release gate (stricter checks, the QA scripts for console errors, text sizes, offline use and a smoke test) and a tagged release (D58).
 
 ## What each phase delivered
@@ -65,9 +65,9 @@ In total: 113 stories, 633 test cases and 72 decisions, built in four days. Abou
 
 - **Contracts before code.** Fixed interfaces and file ownership let five agents build in parallel with few conflicts. When a contract didn't fit, the rule was to stop and propose a change, not to work around it.
 - **Planted cases.** Because the sample data is generated with known cases, an insight rule's test checks against the planted answer, never against what the code produced.
-- **Process safeguards.** A merge by a mistyped pull request number led to a helper that checks the branch and CI before merging; a branch clean-up that removed an agent's work led to the rule that only one's own temporary branches are deleted.
+- **Process safeguards.** One pull request was merged before its review, through a mistyped number; it was reviewed straight after and kept. That slip led to a helper that checks the branch and CI before merging; a branch clean-up that removed an agent's work led to the rule that only one's own temporary branches are deleted.
 - **Check where a design comes from.** The design assistant's style looked like a house brand; it turned out to be the project owner's own working style, which was fine, but it was checked before being treated as generic.
 
 ## See it
 
-Open the sample edition (`index-sample.html`) in the repository folder, or read the handover guide (`docs/HANDOVER.md`) for how the app is run and maintained.
+[Open the sample edition](../index-sample.html) (`index-sample.html`), or read [the handover guide](HANDOVER.md) (`docs/HANDOVER.md`) for how the app is run and maintained.
