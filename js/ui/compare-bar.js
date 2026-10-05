@@ -2,7 +2,8 @@
  * File: js/ui/compare-bar.js
  * Purpose: The comparison bar: five modes, only the pickers a mode needs, the plain sentence, an explanation of
  *          combined figures and the data date (which opens the data sources panel). It writes only state.cmp.
- *          Two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
+ *          Two rows (D50): the mode and its pickers on one line, then the sentence, the data date and the page-wide
+ *          actions the shell hands over (opts.actions: Take the tour, Present; D72).
  * Provides: TAP.compareBar (mount)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js,
  *             js/core/format.js, js/core/sources.js (dataDate), js/engine/scope.js (sentence, colorOf),
@@ -74,7 +75,7 @@
   function restValue(c) { return c.restAs === 'individual' ? 'individual' : c.restAgg; }
   function restPatch(v) { return v === 'individual' ? { restAs: 'individual' } : { restAs: 'combined', restAgg: v }; }
 
-  function build(root) {
+  function build(root, actions) {
     var ui = {};
     var status = el('p', { class: 'tap-cmp__status', role: 'status' });
     function say(msg) { TAP.dom.text(status, msg || ''); }
@@ -148,7 +149,7 @@
         ui.pickers.focus, ui.pickers.second, ui.pickers.rest, ui.pickers.set
       ]),
       el('div', { class: 'tap-cmp__row tap-cmp__row--sentence' }, [
-        el('p', { class: 'tap-cmp__say' }, [ui.sentence, ui.explain]), ui.date, ui.pop
+        el('p', { class: 'tap-cmp__say' }, [ui.sentence, ui.explain]), ui.date, actions || null, ui.pop
       ])
     ]);
     return ui;
@@ -214,11 +215,12 @@
     if (Object.keys(fix).length) write(fix);
   }
 
-  function mount(root) {
+  // opts.actions: the shell's page-wide actions slot, placed after the data date.
+  function mount(root, opts) {
     if (active) active();
     TAP.dom.clear(root);
     repair();
-    var ui = build(root);
+    var ui = build(root, opts && opts.actions);
     render(ui);
     function quiet() { root.classList.toggle('tap-cmp--slim', QUIET.indexOf(TAP.store.get().view) >= 0); }
     quiet();
