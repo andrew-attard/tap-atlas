@@ -878,6 +878,52 @@
       a.equal(shown(find(c, 'Customer growth ARR')), 'not provided', 'an empty section reads not provided');
     });
 
+    T.test('X-review-RI-16', 'A bar click opens details with the clicked figure first, as the bar and its tooltip show it', function (a) {
+      sample();
+      var P = window.PLAN_DATA, num = function (v) { return typeof v === 'number' && isFinite(v); };
+      function bar(id, c, extra, pick) {
+        var k = cmp(c), def = TAP.reports.get(id), item = null;
+        var ctx = Object.assign(ctxFor(id, def.defaultType, c), { breakdown: def.defaultBreakdown || null, entities: TAP.scope.entities(k) }, extra || {});
+        var res = TAP.builders.get(def.builder || def.shape)(ctx);
+        res.option.series.forEach(function (s) {
+          (s.data || []).forEach(function (d) { if (!item && d && typeof d === 'object' && pick(d)) item = { d: d, s: s }; });
+        });
+        return { res: res, item: item };
+      }
+      function check(label, b, hand) {
+        a.ok(b.item, label + ': the bar is drawn');
+        if (!b.item) return;
+        a.near(b.item.d.raw, hand, 1e-6, label + ': the bar holds the hand-worked figure');
+        var built = TAP.details.build(b.res.target({ data: b.item.d })), g = built.groups[0] || { rows: [] }, r = g.rows[0];
+        a.equal(g.title, 'In this chart', label + ': the first group is the chart’s figure');
+        a.ok(r && r.cell.state === 'value' && Math.abs(r.cell.v - hand) < 1e-6, label + ': the details show it (' + (r && r.cell.v) + ')');
+        a.ok(r && r.cell.src, label + ': with its source');
+        var tip = b.item.s.tooltip && b.item.s.tooltip.formatter({ data: b.item.d });
+        if (r) a.ok(String(tip).indexOf(TAP.format.cell(r.cell, { unit: r.unit, exact: true })) >= 0, label + ': the tooltip shows the same figure');
+      }
+      // Southern Europe's order intake through partners: every partner recap item (both motions, ARR and services)
+      var seu = P.regions.filter(function (r) { return r.id === 'seu'; })[0];
+      var hand1 = seu.recap.filter(function (x) { return x.channel === 'partner' && num(x.value); }).reduce(function (s, x) { return s + x.value; }, 0);
+      check('pt-reliance, one region', bar('pt-reliance', { mode: 'all' }, { measureId: 'rc.all.oi' },
+        function (d) { return d.entityId === 'seu' && d.key === 'rc.all.oi.partner'; }), hand1);
+      // The other regions' year-1 customer growth: their summed year-1 increments over their summed current ARR
+      var inc = 0, base = 0;
+      P.regions.filter(function (r) { return r.id !== 'na'; }).forEach(function (r) {
+        r.customerGrowth.accounts.forEach(function (x) { if (num(x.incrementalArr[0]) && num(x.currentArr)) { inc += x.incrementalArr[0]; base += x.currentArr; } });
+      });
+      check('cg-growth, combined bar', bar('cg-growth', { mode: 'one', focus: 'na', restAs: 'combined', restAgg: 'average' }, null,
+        function (d) { return d.entityId === 'rest' && d.key === 'cg.growth.all@y1'; }), inc / base);
+    });
+
+    T.test('X-review-RI-17', 'An account is found within the region named, never in another region', function (a) {
+      var plan = window.T_FIXTURE('mini'), copy = JSON.parse(JSON.stringify(plan.regions[0].customerGrowth.accounts[1]));
+      copy.name = 'Fictional Twin';
+      plan.regions[1].customerGrowth.accounts.push(copy);   // the same account id in Region B
+      TAP.data.load(plan);
+      a.match(TAP.details.build({ accountIds: [copy.id], regionIds: ['bravo'] }).title, /Fictional Twin/, 'Region B’s account');
+      a.match(TAP.details.build({ accountIds: [copy.id], regionIds: ['alpha'] }).title, /Fictional Account A2/, 'Region A’s account');
+    });
+
     T.test('X-details-account', 'An account: its figures with their kinds and cells', function (a) {
       var built = TAP.details.build({ accountIds: ['a2'] });
       a.match(built.title, /Fictional Account A2/);
