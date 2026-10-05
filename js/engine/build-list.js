@@ -133,7 +133,7 @@
       return '<tr data-tap-region="' + esc(e.regionId) + '" data-tap-row="' + esc(e.source + ':' + e.regionId + ':' + e.key) + '"' +
         (hl ? ' class="is-highlight is-hl"' : '') + '>' + cols.map(function (c) {
           return '<td data-tap-col="' + esc(c.key) + '"' + (c.align === 'right' ? ' class="tap-list__num"' : '') + '>' +
-            esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, decimals: c.decimals })) + '</td>';
+            esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, decimals: c.decimals, exact: true })) + '</td>';
         }).join('') + '<td data-tap-col="source" class="tap-list__src">' + esc(sourceText(e)) + '</td></tr>';
     }).join('');
     return '<table class="tap-list"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
