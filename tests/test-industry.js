@@ -414,6 +414,20 @@
       a.equal(points(res).length, 2, 'follows the comparison scope');
     });
 
+    T.test('X-review-RI-19', 'With one industry filtered, the table numbers each row as its bubble is numbered (the region)', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { opts: { industryFilter: 'ind4' } });
+      // Hand-worked: the regions' places in file order, alpha 1 to delta 4
+      var want = { 'Region A': '1', 'Region B': '2', 'Region C': '3', 'Region D': '4' };
+      a.equal(res.table.rows.length, 4, 'one row per region');
+      res.table.rows.forEach(function (r) {
+        a.equal(r.cells.num.v, want[r.cells.entity.v], r.cells.entity.v + ': numbered as its bubble');
+      });
+      var plain = quad('bubble', { mode: 'all' });
+      var ind4 = plain.table.rows.filter(function (r) { return r.industryId === 'ind4'; })[0];
+      a.equal(ind4.cells.num.v, String(TAP.data.industries({ rated: true }).map(function (d) { return d.id; }).indexOf('ind4') + 1),
+        'unfiltered, the number stays the industry’s');
+    });
+
     T.test('X-industry-quad-highlight', 'Highlights ring every matching point, in every group', function (a) {
       var res = quad('bubble', { mode: 'all' }, { opts: { everyRegion: true }, highlight: { reportId: 'ind-quad', industryIds: ['ind4'], mark: 'points' } });
       var ring = series(res).filter(function (s) { return s.tapRole === 'highlight'; })[0];
