@@ -1,8 +1,9 @@
 /*
  * File: js/core/check.js
  * Purpose: Checks the plan data file against the Data Contract (docs/DATA-CONTRACT.md) and lists anything wrong in plain words.
- * Provides: TAP.check (run)
- * Depends on: js/core/namespace.js, js/core/content.js and content/text-data.js (message wording)
+ * Provides: TAP.check (run, kit: the shared helpers for js/core/check-rows.js)
+ * Depends on: js/core/namespace.js, js/core/content.js and content/text-data.js (message wording),
+ *             js/core/check-rows.js (the regions, at call time)
  * Used by: js/core/data.js (on load)
  *
  * run(plan) returns {errors, warnings}. Each item is {path, region, item, expected, found, message}.
@@ -173,111 +174,6 @@
     });
   }
 
-  // Regions
-  function itemName(section, o, env) {
-    var name;
-    if (section === 'marketCoverage' || section === 'newBusiness') {
-      var ind = has(env.industries, o.industryId) ? env.industries[o.industryId] : null;
-      name = ind && isStr(ind.name) ? ind.name : String(o.industryId);
-    } else if (section === 'recap') {
-      return isStr(o.sourceCell) ? say('item.cell', { cell: o.sourceCell }) : null;
-    } else {
-      name = isStr(o.name) && o.name ? o.name : String(o.id);
-    }
-    return isNum(o.sourceRow) ? say('item.row', { name: name, row: o.sourceRow }) : name;
-  }
-
-  function checkSection(r, key, rctx, env, extra) {
-    var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map();
-    var list = key === 'accounts' ? r.customerGrowth.accounts : r[key];
-    if (!Array.isArray(list)) return;
-    if (!list.length) warn(rctx, name, say('expect.items'), say('found.emptyList'), true);
-    each(list, lctx, env, function (o, i) {
-      var c = sub(lctx, i, itemName(key, o, env));
-      fields(o, SPEC[key], c, env);
-      if (key === 'recap') {
-        if (!isStr(o.sourceCell)) warn(c, 'sourceCell', say('expect.sourceCell'), o.sourceCell);
-      } else if (o.sourceRow === undefined || !(isNum(o.sourceRow) && o.sourceRow % 1 === 0)) {
-        warn(c, 'sourceRow', say('expect.sourceRow'), o.sourceRow);
-      }
-      var id = key === 'accounts' ? o.id : key === 'marketCoverage' ? o.industryId : null;
-      if (id != null && seen[id]) err(c, key === 'accounts' ? 'id' : 'industryId', say(key === 'accounts' ? 'expect.uniqueId' : 'expect.uniqueIndustry'), id);
-      seen[id] = true;
-      if (extra) extra(o, c);
-    });
-  }
-
-  function checkMarketRow(o, c, env, tiers) {
-    if (!has(env.industries, o.industryId)) return;
-    tiers[o.industryId] = o.tier;
-    if (env.industries[o.industryId].rated !== false) return;
-    RATINGS.forEach(function (k) { if (o[k] != null) warn(c, k, say('expect.unrated'), o[k]); });
-  }
-
-  function checkNewBusinessRow(o, c, env, tiers) {
-    if (isObj(o.channelSplit)) {
-      var sctx = sub(c, 'channelSplit'), sum = 0, any = false;
-      CHANNELS.forEach(function (k) { if (!has(o.channelSplit, k)) err(sctx, k, expectFor('num', true, env), undefined); });
-      Object.keys(o.channelSplit).forEach(function (k) {
-        var v = o.channelSplit[k];
-        if (!has(env.channels, k)) err(sctx, k, say('expect.channelKey'), k, true);
-        else if (v !== null && !isNum(v)) err(sctx, k, expectFor('num', true, env), v);
-        else if (isNum(v)) { sum += v; any = true; }
-      });
-      if (any && Math.abs(sum - 1) > 0.01) warn(c, 'channelSplit', say('expect.splitSum'), Math.round(sum * 1000) / 10 + '%', true);
-    }
-    if (isObj(o.growth)) fields(o.growth, SPEC.growth, sub(c, 'growth'), env);
-    if (!tiers) return arrFormula(o, c);
-    if (has(tiers, o.industryId) || !has(env.industries, o.industryId)) {
-      var mc = tiers[o.industryId];
-      if ((o.tier === 1 || o.tier === 2) && TYPES.tier.ok(mc) && o.tier !== mc) err(c, 'tier', say('expect.mcTier', { tier: mc }), o.tier);
-    } else {
-      err(c, 'industryId', say('expect.mcRow'), o.industryId);
-    }
-    arrFormula(o, c);
-  }
-
-  function arrFormula(o, c) {
-    var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null, want = o.targetAccounts * o.hitRate * o.avgDealSize;
-    if (![o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum) || Math.abs(a - want) <= Math.max(0.5, Math.abs(want) * 0.005)) return;
-    warn(c, 'arrPotential[0]', say('expect.arrFormula', { value: round2(want) }), a);
-  }
-
-  // The template's segment rule (Planning Template Structure, section 3), or null if it can't be decided.
-  function segmentFor(acc, t) {
-    if (!isObj(t) || ![acc.currentArr, t.strategicArr, t.scaledArr, t.growthArr, t.growthOrderIntake].every(isNum)) return null;
-    if (acc.currentArr > t.strategicArr) return 'strategic';
-    if (acc.currentArr < t.scaledArr) return 'scaled';
-    if (!isNum(acc.cumulativeOrderIntake)) return null;
-    return acc.cumulativeOrderIntake > t.growthOrderIntake && acc.currentArr > t.growthArr ? 'growth' : 'core';
-  }
-
-  function checkRegion(r, i, out, env, ids) {
-    var root = sub(rootCtx(out), 'regions');
-    if (!isObj(r)) { err(root, i, say('expect.region'), r); return; }
-    var rctx = { path: at(root, i), region: isStr(r.name) ? r.name : isStr(r.id) ? r.id : null, item: null, out: out };
-    fields(r, SPEC.region, rctx, env);
-    if (isStr(r.id) && ids[r.id]) err(rctx, 'id', say('expect.uniqueRegion'), r.id);
-    ids[r.id] = true;
-    var nctx = sub(rctx, 'source.notes');
-    if (isObj(r.source)) fields(r.source, SPEC.source, sub(rctx, 'source'), env);
-    if (isObj(r.source)) each(r.source.notes, nctx, env, function (n, k) { fields(n, SPEC.note, sub(nctx, k), env); });
-    var tiers = Array.isArray(r.marketCoverage) ? map() : null;
-    checkSection(r, 'marketCoverage', rctx, env, function (o, c) { checkMarketRow(o, c, env, tiers); });
-    checkSection(r, 'newBusiness', rctx, env, function (o, c) { checkNewBusinessRow(o, c, env, tiers); });
-    checkSection(r, 'partners', rctx, env);
-    checkSection(r, 'recap', rctx, env);
-    if (isObj(r.customerGrowth)) {
-      var cg = r.customerGrowth;
-      fields(cg, SPEC.customerGrowth, sub(rctx, 'customerGrowth'), env);
-      if (isObj(cg.thresholds)) fields(cg.thresholds, SPEC.thresholds, sub(rctx, 'customerGrowth.thresholds'), env);
-      checkSection(r, 'accounts', rctx, env, function (acc, c) {
-        var want = segmentFor(acc, cg.thresholds);
-        if (want && acc.segment !== want) warn(c, 'segment', say('expect.segmentRule', { segment: JSON.stringify(want) }), acc.segment);
-      });
-    }
-  }
-
   function run(plan) {
     var out = { errors: [], warnings: [], dropped: 0 };
     var env = { industries: map(), productLines: map(), channels: map(), years: [] };
@@ -288,12 +184,16 @@
       checkLookups(plan.lookups, out, env);
       if (!Array.isArray(plan.regions)) err(top, 'regions', say('expect.regions'), plan.regions);
       else if (!plan.regions.length) err(top, 'regions', say('expect.someRegions'), plan.regions);
-      else plan.regions.forEach(function (r, i) { checkRegion(r, i, out, env, ids); });
+      else plan.regions.forEach(function (r, i) { TAP.checkRows.region(r, i, out, env, ids); });
     }
     if (isObj(plan) && TAP.extra) out.warnings = out.warnings.concat(TAP.extra.check(plan));
     if (out.dropped) out.errors.push({ path: '', region: null, item: null, expected: '', found: out.dropped, message: say('more', { n: out.dropped }) });
     return { errors: out.errors, warnings: out.warnings };
   }
 
-  TAP.check = { run: run };
+  // The helpers js/core/check-rows.js checks the regions' sections with
+  var kit = { say: say, has: has, map: map, isObj: isObj, isNum: isNum, isStr: isStr, round2: round2, at: at, sub: sub,
+    rootCtx: rootCtx, err: err, warn: warn, fields: fields, each: each, expectFor: expectFor, TYPES: TYPES, SPEC: SPEC,
+    RATINGS: RATINGS, CHANNELS: CHANNELS };
+  TAP.check = { run: run, kit: kit };
 })(window.TAP);

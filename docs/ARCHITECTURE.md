@@ -439,7 +439,7 @@ content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  
    [index.html only: content/organization.js]
 js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
-js/core/sources.js  check.js  extra.js  data.js
+js/core/sources.js  check.js  check-rows.js  extra.js  data.js
 js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
 config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js
 js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js
