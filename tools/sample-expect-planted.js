@@ -36,6 +36,11 @@ function build(plan) {
     return acc.length ? clean(sum(acc.filter(pred).map(growth)) / sum(acc.map(growth))) : null;
   };
   const strat = function (id) { return function (a) { return a.currentArr > R[id].customerGrowth.thresholds.strategicArr; }; };
+  // Share of three-year order intake from accounts in a segment, as the segments chart shows it (D79)
+  const oiShare = function (id, seg) {
+    const acc = R[id].customerGrowth.accounts, oi = function (a) { return num(a.cumulativeOrderIntake) ? a.cumulativeOrderIntake : 0; };
+    return acc.length ? clean(sum(acc.filter(function (a) { return a.segment === seg; }).map(oi)) / sum(acc.map(oi))) : null;
+  };
   const pipe = function (id) { return sum(R[id].marketCoverage.map(function (m) { return m.pipelineTotal; }).filter(num)); };
   const pipe12 = function (id) { return sum(R[id].marketCoverage.map(function (m) { return m.pipelineCreated12m; }).filter(num)); };
   const y1 = function (id) { return sum(R[id].newBusiness.map(function (x) { return x.arrPotential[0]; }).filter(num)); };
@@ -74,7 +79,8 @@ function build(plan) {
     p13: { region: 'na', top3: top3.map(function (a) { return a.id; }), share: cgShare('na', function (a) { return top3.indexOf(a) !== -1; }),
       highRisk: top3.filter(function (a) { return a.riskLevel === 'high'; }).map(function (a) { return a.id; }) },
     p14: { region: 'mea', share: cgShare('mea', function (a) { return a.riskLevel === 'high' || a.riskLevel === 'medium'; }) },
-    p15: { region: 'apac', strategicShare: per(function (id) { return cgShare(id, strat(id)); }) },
+    p15: { region: 'apac', strategicShare: per(function (id) { return cgShare(id, strat(id)); }),
+      strategicOiShare: per(function (id) { return oiShare(id, 'strategic'); }) },
     p16: { industry: 'fsm', scores: per(function (id) { return score(id, 'fsm'); }),
       regions: ids.filter(function (id) { const s = score(id, 'fsm'); return s.a >= 2 && s.b < 2; }),
       successFactors: per(function (id) { return R[id].newBusiness.filter(function (x) { return x.industryId === 'fsm'; }).map(function (x) { return x.successFactors; }); }) },
@@ -137,8 +143,9 @@ function check(x) {
   ok(near(x.p13.share, 0.6, 0.005) && x.p13.highRisk.length === 1, 'P13');
   ok(near(x.p14.share, 0.4, 0.005), 'P14');
   ok(ids.every(function (id) {
-    const s = x.p15.strategicShare[id];
-    return id === 'ceu' ? s === null : id === 'apac' ? near(s, 0.8, 0.005) : s >= 0.3 && s <= 0.5;
+    const s = x.p15.strategicShare[id], o = x.p15.strategicOiShare[id];
+    return id === 'ceu' ? s === null && o === null : id === 'apac' ? near(s, 0.8, 0.005) && near(o, 0.8, 0.005) :
+      s >= 0.3 && s <= 0.5 && o >= 0.3 && o <= 0.5;
   }), 'P15');
   ok(x.p16.regions.join() === 'na,seu,mea,apac' && x.p16.regions.every(function (id) { return x.p16.scores[id].a >= 2.33 && x.p16.scores[id].b <= 1.67; }) &&
     ids.every(function (id) { return x.p16.regions.indexOf(id) !== -1 || x.p16.scores[id].b >= 2; }), 'P16');
@@ -157,7 +164,7 @@ function comment(x) {
     'P12 implied wins: ' + f(x.p12.wins) + '; ratio ' + x.p12.ratio,
     'P13 North America top-3 share ' + x.p13.share + ' (' + x.p13.top3.join(', ') + ')',
     'P14 Middle East & Africa at-risk share ' + x.p14.share,
-    'P15 Strategic share: ' + f(x.p15.strategicShare),
+    'P15 Strategic share: ' + f(x.p15.strategicShare) + '; of three-year order intake: ' + f(x.p15.strategicOiShare),
     'Attractive but not yet winnable: ' + Object.keys(x.attractiveNotYet).map(function (id) { return id + ' [' + x.attractiveNotYet[id].join(' ') + ']'; }).join(', ')];
 }
 

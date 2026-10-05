@@ -607,6 +607,56 @@
         'no sample outlier is about the services ratio, the one assumption no report shows');
     });
 
+    /* ---------- review pass: Show me opens the measure the sentence quotes (D79) ---------- */
+
+    // A report with a measure switch: more than one measure, and the measures are not the axes or the categories.
+    function hasSwitch(def) {
+      return (def.measures || []).length > 1 && (def.options || {}).measuresAs !== 'categories' && def.shape !== 'xy' && def.shape !== 'xyz';
+    }
+
+    T.test('X-review-RI-1', 'Every insight on a report with a measure switch names one of the report’s measures', function (a) {
+      I().sample();
+      var n = 0;
+      TAP.insights.all().forEach(function (x) {
+        var def = x.reportId && TAP.reports.get(x.reportId);
+        if (!def || !hasSwitch(def)) return;
+        n++;
+        var ids = def.measures.map(function (m) { return m.id; });
+        a.ok(ids.indexOf(x.highlight.measureId) >= 0, x.id + ' names a measure of ' + x.reportId + ': ' + (x.highlight.measureId || 'none'));
+      });
+      a.ok(n >= 6, 'the sample has insights on reports with a measure switch (' + n + ')');
+    });
+
+    T.test('X-review-RI-1', 'The figure each sentence quotes is the one the chart shows on the measure Show me opens', function (a) {
+      I().sample();
+      var byId = {};
+      TAP.insights.all().forEach(function (x) { byId[x.id] = x; });
+      // [insight, measure Show me opens, the part (or the measure) the chart shows, hand-worked figure (planted cases)]
+      var cases = [
+        ['atRisk:mea', 'cg.riskShare', null, X.p14.share],
+        ['concentration:na', 'cg.top3Share', null, X.p13.share],
+        ['segmentMix:apac:strategic', 'cg.oi3', 'cg.seg.strategic.oi', X.p15.strategicOiShare.apac],
+        ['planMakeup:apac', 'amb.arr', 'nb.arr', X.q02.share],
+        ['channelReliance:seu:partner', 'rc.all.oi', 'rc.all.oi.partner', X.q01.share]
+      ];
+      cases.forEach(function (c) {
+        var x = byId[c[0]];
+        a.ok(x, c[0] + ' is on the sample');
+        if (!x) return;
+        var r = x.regionIds[0], at = { year: null }, total = TAP.measures.get(c[1])(r, at);
+        var chart = c[2] ? TAP.measures.get(c[2])(r, at).v / total.v : total.v;
+        a.equal(x.highlight.measureId, c[1], c[0] + ': Show me opens ' + c[1]);
+        a.near(chart, c[3], 0.0005, c[0] + ': the chart shows the planted figure (' + pct(c[3]) + ')');
+        a.ok(x.sentence.indexOf(pct(c[3])) >= 0, c[0] + ': the sentence quotes ' + pct(c[3]) + ': ' + x.sentence);
+      });
+      var seg = byId['segmentMix:apac:strategic'], rest = Object.keys(X.p15.strategicOiShare)
+        .filter(function (k) { return k !== 'apac' && X.p15.strategicOiShare[k] != null; }).map(function (k) { return X.p15.strategicOiShare[k]; });
+      if (seg) {
+        a.ok(seg.sentence.indexOf(pct(Math.min.apply(null, rest)) + ' to ' + pct(Math.max.apply(null, rest))) >= 0,
+          'the segment insight gives the other regions’ range of order intake shares: ' + seg.sentence);
+      }
+    });
+
     // The panel selects highlight.measureId on Show me once PANEL2b's change lands; that PR sets this to true.
     var PANEL_TAKES_MEASURE = true;
     (PANEL_TAKES_MEASURE ? T.test : function (id, title) { T.skip(id, title, 'waits for the panel to select highlight.measureId (PANEL2b)'); })(

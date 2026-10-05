@@ -28,7 +28,8 @@
     return Object.keys(map).filter(function (k) { return k !== skip && map[k] != null; }).map(function (k) { return map[k]; });
   }
 
-  var share15 = others(X.p15.strategicShare, 'apac');
+  // Shares of three-year order intake, the figure the segments chart shows (D79)
+  var share15 = others(X.p15.strategicOiShare, 'apac');
 
   // The insight each planted case must produce: exact sentence where the wording is fixed, else the parts and figures.
   var PLANTED = [
@@ -56,7 +57,7 @@
     { p: 'P13', id: 'concentration:na', regions: ['na'], has: [F.pct(X.p13.share) + ' of North America', 'in 3 accounts', 'one of them flagged high risk'] },
     { p: 'P14', id: 'atRisk:mea', regions: ['mea'], has: [F.pct(X.p14.share) + ' of Middle East & Africa', 'flagged at risk'] },
     { p: 'P15', id: 'segmentMix:apac:strategic', regions: ['apac'],
-      has: ['Asia Pacific', 'Strategic accounts (' + F.pct(X.p15.strategicShare.apac),
+      has: ['Asia Pacific’s planned three-year order intake from existing customers', 'Strategic accounts (' + F.pct(X.p15.strategicOiShare.apac),
         F.pct(Math.min.apply(null, share15)) + ' to ' + F.pct(Math.max.apply(null, share15))] },
     { p: 'P16', id: 'notYetWinnable:fsm', regions: X.p16.regions,
       sentence: '4 regions see Field Service Management as attractive but rate their ability to win as low.' }
@@ -285,7 +286,7 @@
     T.test('TPV-TC-162', 'A planted region relying mostly on one segment gives a segment insight', function (a) {
       sample();
       check(a, planted('P15'));
-      a.near(get('segmentMix:apac:strategic').figures[0].cell.v, X.p15.strategicShare.apac, 1e-5, 'Strategic share');
+      a.near(get('segmentMix:apac:strategic').figures[0].cell.v, X.p15.strategicOiShare.apac, 1e-5, 'Strategic share of order intake');
       a.ok(!TAP.insights.all().some(function (x) { return x.family === 'exposure' && x.regionIds[0] === 'ceu'; }),
         'Central Europe’s empty customer growth gives no exposure insight');
     });
