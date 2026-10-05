@@ -59,7 +59,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | After a data refresh | Open `index.html`, then the data sources panel | The app opens; no errors; any warnings understood |
 | Before a pull request (terminal, Node 18+, Chrome or Edge) | `scripts/verify.sh` | `verify: PASS`: lint, the private word list scan, the ignored-files guard, the docs paths check, the handover and portfolio checks, and the tests in both browsers |
 | Before a demo | `scripts/qa/run-all.sh` | Every line PASS: no console errors, text sizes for a shared screen, no web requests, the smoke test, the screenshot matrix |
-| Before a demo, to keep a copy to present from | `scripts/package.sh` | It runs `scripts/verify.sh` first and stops if anything fails. Otherwise it prints the folder of a dated copy, `dist/tap-atlas-<version>-<date>/`, with the pages, app files, data and `docs/`, and no tests or tools |
+| Before a demo, to keep a copy to present from | `scripts/package.sh` | It runs `scripts/verify.sh` first and stops if anything fails. Otherwise it prints the folder of a dated copy, `dist/tap-atlas-<version>-<date>/`, with the pages, app files, data and `docs/`, and no tests or tools. It also works in the internal copy, which is not a git folder: there the two git-based checks are skipped, and verify says so |
 | Before a release | `scripts/verify.sh --release` | No stubs left, no warnings, every automated test case has a test |
 
 `docs/REAL-DATA-CHECKLIST.md` has the manual checks for real data.
@@ -106,7 +106,7 @@ These are open on purpose: each needs the real data, the real template or a deci
 3. **Rate weights to confirm.** When regions are combined, rates are weighted averages. The weights in `config/settings.js` (`combine.weights`) are proposed defaults, still to be confirmed with leadership: hit rate by target accounts with a hit rate, average deal size by expected wins, new business growth and services ratio by three-year ARR potential, customer growth by current ARR. The two chart scores (attractiveness and ability to win) use equal weights, and insight ranking uses 0.5 strength, 0.3 money at stake and 0.2 breadth. Each change shows at once in every chart and insight that uses it.
 4. **Plan years (Data Contract open question 2).** Confirm the plan years and that year 1 is the first forecast year.
 5. **The rest of the template.** Sections the contract doesn't name one by one arrive as extra sections and show as lists only. A chart or view of their own follows `docs/EXTENDING-TEMPLATE.md`.
-6. **Stories not built.** Every Must story is built. Should and Could stories not built in this release: to be confirmed at the `v0.3.0` release gate.
+6. **Stories not built.** None: every Phase 3 story was built.
 
 Other limits by design:
 
