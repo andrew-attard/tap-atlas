@@ -313,6 +313,8 @@
     /* ---------- US-2.4.3: reports on the profile (#216) ---------- */
 
     var STORY_REPORTS = ['ov-ambition', 'ind-tiers', 'ind-quad', 'nb-industries', 'nb-channels', 'nb-levers', 'cg-segments', 'pt-reliance'];
+    // US-4.6.3 adds the Outlook row (tests/test-pages-p4.js); its reports join the profile when they are built
+    var P4_REPORTS = ['ol-strategic', 'ol-revenue'];
     function flat(rows) { return [].concat.apply([], rows.map(function (r) { return [].concat(r); })); }
     // Runs fn with a different profile configuration, then puts the real one back.
     function withConfig(reports, fn) {
@@ -322,7 +324,7 @@
     }
 
     T.test('TPV-TC-449', 'The profile lists exactly the story\'s reports, each prepared for the region and the average of the rest', function (a) {
-      var ids = flat(window.TAP_PROFILE.reports);
+      var ids = flat(window.TAP_PROFILE.reports).filter(function (id) { return P4_REPORTS.indexOf(id) < 0; });
       a.deepEqual(ids.slice().sort(), STORY_REPORTS.slice().sort(), 'the configured reports are the story\'s');
       a.equal(ids.length, STORY_REPORTS.length, 'each once');
       ids.forEach(function (id) {
@@ -342,7 +344,8 @@
         try { return qsa('.tap-panel[data-report]', m.root).map(function (p) { return p.getAttribute('data-report'); }); } finally { m.handle.destroy(); }
       });
       a.ok(shown.indexOf('nb-channels') < 0, 'nb-channels is not on the profile');
-      a.deepEqual(shown.slice().sort(), STORY_REPORTS.filter(function (id) { return id !== 'nb-channels'; }).sort(), 'every other report still is');
+      var others = STORY_REPORTS.concat(P4_REPORTS.filter(function (id) { return TAP.reports.get(id); }));
+      a.deepEqual(shown.slice().sort(), others.filter(function (id) { return id !== 'nb-channels'; }).sort(), 'every other report still is');
       var all = spyPanels(function () { mountFor('alpha').handle.destroy(); }).map(function (p) { return p.id; });
       a.ok(all.indexOf('nb-channels') >= 0, 'with the real configuration it is back');
     });

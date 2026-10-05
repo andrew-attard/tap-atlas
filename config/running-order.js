@@ -7,7 +7,7 @@
  * Provides: window.TAP_RUNNING_ORDER
  * Depends on: nothing
  * Used by: js/ui/present.js, js/ui/present-steps.js
- * Owner: PRESENT stream
+ * Owner: PRESENT stream; the two Outlook steps PAGES4 (US-4.6.3)
  *
  * Each step names exactly one of these three:
  *   report     the id of a chart, for example 'nb-levers' (the ids are in config/reports-*.js)
@@ -49,6 +49,8 @@ window.TAP_RUNNING_ORDER = {
     { title: 'How concentrated customer growth is', report: 'cg-exposure', measure: 'cg.top3Share' },
     { title: 'Which channels carry each plan', report: 'pt-reliance', type: 'stacked100' },
     { title: 'Partner capacity in two regions', report: 'pt-capacity', cmp: { mode: 'pair', focus: 'seu', second: 'mea' } },
+    { title: 'Each plan against its strategic plan', report: 'ol-strategic' },
+    { title: 'The revenue each plan brings in, year by year', report: 'ol-revenue' },
     { title: 'The accounts behind one region’s growth', report: 'cg-accounts', cmp: { mode: 'one', focus: 'apac' } }
   ]
 };

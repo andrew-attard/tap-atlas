@@ -36,7 +36,16 @@ Object.assign(window.TAP_CONTENT.text, {
       above: 'above the average of the rest',
       below: 'below the average of the rest',
       same: 'the same as the average of the rest',
-      figureTitle: '{label}. Source: {where}'
+      figureTitle: '{label}. Source: {where}',
+      // US-4.6.3: the full template's lines, shown when the plans hold a strategic plan or a revenue outlook
+      p4: {
+        strategicLine: 'Against the strategic plan, three years',
+        revenueLine: 'Revenue outlook',
+        plan: 'Plan',
+        strategicPlan: 'Strategic plan',
+        variance: 'Variance',
+        year: 'Year {n}'
+      }
     },
     // US-2.4.4: the region's insights and its leader's words
     insights: {
