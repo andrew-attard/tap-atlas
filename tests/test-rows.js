@@ -1,7 +1,7 @@
 /*
  * File: tests/test-rows.js
  * Purpose: Tests for row figures (TAP.rows) and the list builder, checked against the mini fixture by hand.
- * Provides: test cases TPV-TC-281 to 283, 285 to 287, 289, 292, X-rows-*, X-review-DE-4
+ * Provides: test cases TPV-TC-281 to 283, 285 to 287, 289, 292, X-rows-*, X-review-DE-4, X-review-DE-6
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: ENGINE2 stream
@@ -293,6 +293,19 @@
       var ring = bubble({ items: [{ section: 'customerGrowth', regionId: 'alpha', row: 'p1' }] }).option.series
         .filter(function (s) { return s.tapRole === 'highlight'; })[0];
       a.equal(ring && ring.data.length, 1, 'a highlight of a2 rings one bubble');
+    });
+
+    // Review DE-6: list cells used chart rounding, so a list and its copy differed (US-1.2.6: tables are exact).
+    T.test('X-review-DE-6', 'A list shows the exact figure, as its copy does', function (a) {
+      var p = T_FIXTURE('mini');
+      Object.assign(p.regions[0].customerGrowth.accounts[0], { currentArr: 1234.567, growthPct: [0.125, 0, 0] });
+      TAP.data.load(p);
+      var res = build(def({ columns: [{ key: 'name' }, { key: 'currentArr' }, { key: 'growthY1' }], filter: [], sort: null }),
+        { cmp: cmp({ mode: 'set', set: ['alpha'] }) });
+      var tr = html(res).querySelector('tr[data-tap-row="accounts:alpha:10"]');
+      // 1,234.567 thousand = €1,234,567 exactly (chart style would be €1.2M); 0.125 = 12.5% (chart style 13%)
+      a.equal(tr.querySelector('td[data-tap-col="currentArr"]').textContent, '€1,234,567');
+      a.equal(tr.querySelector('td[data-tap-col="growthY1"]').textContent, '12.5%');
     });
 
     T.test('X-rows-empty', 'A scope with no rows is empty and names the regions with none', function (a) {
