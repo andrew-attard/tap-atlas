@@ -246,7 +246,8 @@
       own.push({ key: 'measure', label: t('measure'), kind: 'segmented', value: TAP.prepare.selected(def, { measureId: p.st.measureId }),
         options: ms.map(function (m) { return { value: m.id, label: m.label }; }), onPick: function (k, v) { p.set({ measureId: v }); } });
     }
-    var bds = breakdowns(def, p.st);
+    // A custom chart is named for its dimension, so "None" would remove what the chart is about (#362)
+    var bds = def.custom ? [] : breakdowns(def, p.st);
     if (bds.length) {
       own.push({ key: 'breakdown', label: t('breakdown'), kind: 'segmented', value: p.st.breakdown || 'none',
         options: [{ value: 'none', label: t('breakdownNone') }].concat(bds.map(function (x) { return { value: x, label: t('breakdowns.' + x) }; })),
