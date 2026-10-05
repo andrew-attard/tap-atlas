@@ -7,7 +7,7 @@
  * Provides: window.TAP_RUNNING_ORDER
  * Depends on: nothing
  * Used by: js/ui/present.js, js/ui/present-steps.js
- * Owner: PRESENT stream (#232)
+ * Owner: PRESENT stream
  *
  * Each step names exactly one of these three:
  *   report     the id of a chart, for example 'nb-levers' (the ids are in config/reports-*.js)

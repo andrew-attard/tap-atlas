@@ -7,7 +7,7 @@
  *           fitBreakdown)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
  *             js/engine/shapes.js, js/engine/scope.js, js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js,
- *             js/ui/explain.js, js/panel/panel-insights.js (all read at call time)
+ *             js/ui/explain.js, js/panel/panel-insights.js, js/ui/present.js (Add to running order) (all read at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (state p.st; p.set, p.toggle, p.setType)
  */
 (function (TAP) {
@@ -169,7 +169,7 @@
   /* ---------- the toolbar ---------- */
 
   // The "More" menu: actions used less often.
-  function moreMenu(p, chartOn) {
+  function moreMenu(p, chartOn, b) {
     var box = pop(t('more'), 'menu');
     function item(action, icon, label, fn, off) {
       box.appendChild(el('button', { type: 'button', class: 'tap-panel__item', role: 'menuitem', 'data-action': action,
@@ -181,6 +181,8 @@
     var big = TAP.store.get().expanded === p.id;
     item(big ? 'collapse-menu' : 'expand', big ? 'shrink' : 'expand', t(big ? 'closeExpanded' : 'expand'), function () { p.st.pop = null; p.expand(!big); });
     item('fullscreen', 'fullscreen', t('fullscreen'), function () { p.st.pop = null; p.fullscreen(); p.render(); });
+    // US-3.1.3: keep this chart, as it is on screen, as a step of a running order (js/ui/present-record.js)
+    item('record', 'layers', TAP.content.text('present.add'), function () { p.st.pop = null; p.render(); TAP.dom.text(p.statusEl, TAP.present.fromPanel(p, b)); });
     box.appendChild(el('div', { class: 'tap-panel__sep', role: 'separator' }));
     // Images are of the chart itself, so they are offered on chart views only (US-1.2.10)
     item('save-image', 'download', t('saveImage'), function () { p.image('save'); }, !chartOn);
@@ -221,7 +223,7 @@
     if (b.types) {
       box.appendChild(button('more', null, t('more'), { expanded: open === 'more', menu: true, onclick: function () { p.toggle('more'); } }));
     }
-    if (open === 'more' && b.types) box.appendChild(moreMenu(p, !p.st.table && !!(b.res && b.res.option && !b.res.empty && !b.errors.length)));
+    if (open === 'more' && b.types) box.appendChild(moreMenu(p, !p.st.table && !!(b.res && b.res.option && !b.res.empty && !b.errors.length), b));
     if (open === 'ins' && info.count) {
       var list = pop(t('insightsTitle'));
       TAP.panelInsights.render(list, info, TAP.panelInsights.handlers(p));
