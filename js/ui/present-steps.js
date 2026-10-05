@@ -68,10 +68,16 @@
     var own = (def.measures || []).map(function (m) { return m.id; });
     if (measure != null && own.indexOf(measure) < 0) throw new Skip('measure', measure);
     if (step.type != null && (def.types || []).indexOf(step.type) < 0) throw new Skip('type', step.type);
-    if (step.breakdown != null && TAP.prepare.breakdowns(def, { measureId: measure || null }).indexOf(step.breakdown) < 0) {
-      throw new Skip('breakdown', step.breakdown);
+    var bd = step.breakdown;   // 'none': no breakdown, even on a report that starts with one
+    if (bd != null && bd !== 'none' && TAP.prepare.breakdowns(def, { measureId: measure || null }).indexOf(bd) < 0) {
+      throw new Skip('breakdown', bd);
     }
-    return { type: step.type || def.defaultType, measureId: measure || null, breakdown: step.breakdown || null };
+    var out = { type: step.type || def.defaultType, measureId: measure || null, breakdown: bd || null };
+    if (step.industry != null) {   // the industry a one-industry chart shows (the ratings, for example)
+      if (!TAP.data.industry(step.industry)) throw new Skip('industry', step.industry);
+      out.industryId = step.industry;
+    }
+    return out;
   }
 
   // A report title with a placeholder ("{industry}") depends on the screen, so the progress row leaves it out.

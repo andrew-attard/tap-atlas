@@ -17,8 +17,11 @@
  * and may also set any of these (leave one out to get the chart's usual setting):
  *   title      a short title, shown in the progress row with "Step 3 of 11"
  *   measure    which of the chart's measures to show, for example 'nb.wins'
- *   type       the chart type, for example 'bar', 'dot', 'heatmap' or 'stacked100' (one the chart offers)
- *   breakdown  break the chart down by 'year', 'industry', 'channel', 'motion', 'segment' or 'risk' (if offered)
+ *   type       the chart type, for example 'bar', 'dot', 'heatmap' or 'stacked100' (one the chart offers),
+ *              or 'table' for the table view
+ *   breakdown  break the chart down by 'year', 'industry', 'channel', 'motion', 'segment' or 'risk' (if offered),
+ *              or 'none' for no breakdown on a chart that starts with one
+ *   industry   the industry id a one-industry chart shows (the ratings, for example)
  *   cmp        what to compare, as in the comparison bar:
  *                mode     'all' (all regions), 'one' (one against the rest), 'pair' (one against one),
  *                         'set' (a chosen set) or 'org' (the organization total)
