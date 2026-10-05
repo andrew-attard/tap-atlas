@@ -293,10 +293,10 @@
       a.deepEqual([m('cg.growthY3', 'delta').state, m('cg.growthY3', 'delta').v], ['value', 0]);
       a.equal(m('cg.growthY1', 'charlie').state, 'notProvided');
       a.equal(m('cg.baseArr', 'alpha').v, 880);
-      // Organization, weighted by the accounts' current ARR: (200 + 150 + 180) / (880 + 700 + 1250) = 530 / 2830 = 0.1872792
+      // Organization, summed increments over summed current ARR (D78): (200 + 150 + 180) / (880 + 700 + 1250) = 530 / 2830 = 0.1872792
       var o = TAP.measures.combined('cg.growthY1', org(), {});
       a.near(o.v, 530 / 2830, TOL);
-      a.equal(o.src.weightBy, 'cg.baseArr');
+      a.equal(o.src.how, 'ratio', 'combined from the summed parts, as the growth chart');
       a.deepEqual(o.src.excluded, ['charlie']);
     });
 

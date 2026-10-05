@@ -15,10 +15,7 @@ window.TAP_SETTINGS = {
       'nb.avgDealSize': 'nb.wins',
       'nb.growthY2': 'nb.arr',               // 3-year new business ARR potential
       'nb.growthY3': 'nb.arr',
-      'nb.servicesRatio': 'nb.arr',
-      'cg.growthY1': 'cg.baseArr',
-      'cg.growthY2': 'cg.baseArr',
-      'cg.growthY3': 'cg.baseArr'
+      'nb.servicesRatio': 'nb.arr'
     }
   },
 
