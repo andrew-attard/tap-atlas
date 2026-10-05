@@ -122,7 +122,7 @@ button.tap-panel__crumb {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) 28px;
   padding: var(--tap-sp-3) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink);
 }
-.tap-panel__control { display: flex; align-items: center; gap: 10px; }
+.tap-panel__control { display: flex; align-items: center; gap: 10px; max-width: 100%; }
 .tap-panel__control-label { font-size: var(--tap-fs-body); font-weight: 600; }
 .tap-panel__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); }
 .tap-panel__seg { display: inline-flex; flex-wrap: wrap; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
@@ -215,7 +215,7 @@ button.tap-panel__crumb {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--tap-sp-6);
   padding: 0 var(--tap-sp-6) 14px; font-size: var(--tap-fs-body);
 }
-.tap-panel__legend-item { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
+.tap-panel__legend-item { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
 .tap-panel__key { width: 16px; height: 16px; flex: none; border: var(--tap-control-w) solid var(--tap-ink); }
 .tap-panel__key--num {
   width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;

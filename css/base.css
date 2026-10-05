@@ -32,6 +32,8 @@ h2 { font-size: var(--tap-fs-h2); }
 h3 { font-size: var(--tap-fs-h3); }
 h4 { font-size: var(--tap-fs-lead); }
 p { margin: 0 0 var(--tap-sp-3); }
+/* Names from the workbooks can be one long word: break it rather than push the page sideways (#380) */
+h1, h2, h3, h4, p, li, dd { overflow-wrap: anywhere; }
 small, .tap-small { font-size: var(--tap-fs-label); }
 a { color: var(--tap-ink); text-decoration: underline; text-underline-offset: 3px; }
 a:hover { color: var(--tap-accent-deep); }
@@ -74,6 +76,8 @@ strong, b { font-weight: 800; }
   font: inherit; font-size: var(--tap-fs-label); color: var(--tap-ink);
   background: var(--tap-paper); border: var(--tap-control-w) solid var(--tap-ink); border-radius: var(--tap-radius);
 }
+/* A select is as wide as its longest option, which may be a long name: cap it so it can't push the page sideways */
+select.tap-field { max-width: 100%; min-width: 0; }
 label { font-size: var(--tap-fs-label); font-weight: 600; }
 
 /* Tables: exact figures, numbers right-aligned, headers stay put when the body scrolls */
