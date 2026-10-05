@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # File: scripts/qa/lib-qa.sh
-# Purpose: Shared settings and helpers for the QA scripts: the view and mode matrix, and a headless run that keeps the browser log.
-# Provides: QA_VIEWS, QA_MODES, qa_mode_query, qa_mode_label, qa_regions, qa_run, qa_browsers
+# Purpose: Shared settings and helpers for the QA scripts: the view and mode matrix (every view in the menu, plus two
+#          region profiles), and a headless run that keeps the browser log.
+# Provides: QA_VIEWS, QA_MODES, qa_views, qa_view_query, qa_view_modes, qa_mode_query, qa_mode_label, qa_regions, qa_run, qa_browsers
 # Depends on: scripts/lib-browser.sh (browser paths and file:// URLs), Node
 # Used by: scripts/qa/*.sh (sourced, not run directly)
 #
@@ -12,11 +13,33 @@ QA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib-browser.sh
 . "$QA_DIR/../lib-browser.sh"
 
-QA_VIEWS="${QA_VIEWS:-overview industry insights guide}"
 # Comparison modes as labels; qa_mode_query turns each into the screenshot query.
 QA_MODES="${QA_MODES:-all one-average one-total pair set org}"
 QA_DATA="${QA_DATA:-data/sample-plan-data.js}"
 QA_NODE="$(command -v node || echo "$HOME/.local/bin/node")"
+
+# The views to check: every view in the menu order of config/views.js, so a new view is covered without
+# touching these scripts. "other" is left out when the data file has no extra sections (it is not in the
+# menu then). "profile" and "profile-gaps" stand for two region profiles on the Regions view.
+qa_views() {
+  "$QA_NODE" -e '
+    const vm = require("vm"); const fs = require("fs");
+    const load = (f) => { const ctx = { window: {} }; vm.createContext(ctx); vm.runInContext(fs.readFileSync(f, "utf8"), ctx); return ctx.window; };
+    const order = (load(process.argv[1]).TAP_VIEWS || {}).order || [];
+    let extra = false;
+    try { extra = (((load(process.argv[2]).PLAN_DATA || {}).meta || {}).extraSections || []).length > 0; } catch (e) { extra = false; }
+    const out = [];
+    order.forEach((v) => {
+      if (v === "other" && !extra) return;
+      out.push(v);
+      if (v === "regions") out.push("profile", "profile-gaps");
+    });
+    console.log(out.join(" "));
+  ' "$TAP_ROOT/config/views.js" "$TAP_ROOT/$QA_DATA"
+}
+QA_VIEWS="${QA_VIEWS:-$(qa_views)}"
+# An empty list would make every check pass without looking at anything
+if [ -z "$QA_VIEWS" ]; then echo "QA: no views found in config/views.js" >&2; exit 2; fi
 
 # Region ids in file order, one per line, read from the data file.
 qa_regions() {
@@ -47,6 +70,29 @@ qa_mode_query() {
     set) echo "mode=set&set=$first,$mid,$last" ;;
     org) echo "mode=org" ;;
     *) echo "mode=$1" ;;
+  esac
+}
+
+# qa_view_query <view>: the address values that open a view. "profile" is the first region's profile and
+# "profile-gaps" the profile of the region the one-vs-rest mode focuses on (often the one with gaps).
+qa_view_query() {
+  local r n
+  case "$1" in
+    profile) echo "view=regions&region=$(qa_regions | head -n 1)" ;;
+    profile-gaps)
+      mapfile -t r < <(qa_regions)
+      n=${#r[@]}
+      echo "view=regions&region=${r[$(( n > 4 ? 4 : n - 1 ))]}" ;;
+    *) echo "view=$1" ;;
+  esac
+}
+
+# qa_view_modes <view>: the comparison modes worth checking on a view. The Regions view and its profiles
+# don't follow the comparison bar, so one pass is enough there.
+qa_view_modes() {
+  case "$1" in
+    regions|profile|profile-gaps) echo "all" ;;
+    *) echo "$QA_MODES" ;;
   esac
 }
 

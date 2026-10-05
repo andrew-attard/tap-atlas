@@ -23,8 +23,8 @@ status=0
 for b in $browsers; do
   for w in $widths; do
     for view in $QA_VIEWS; do
-      for mode in $QA_MODES; do
-        q="screenshot=1&view=$view&$(qa_mode_query "$mode")&qa=text"
+      for mode in $(qa_view_modes "$view"); do
+        q="screenshot=1&$(qa_view_query "$view")&$(qa_mode_query "$mode")&qa=text"
         base="$out/$b-$w-$view-$mode"
         qa_run "$b" tests/qa.html "?$q" "$base.html" "$base.log" "--window-size=$w,800" ||
           echo "ERROR  [$b $w $view $mode] browser did not finish"

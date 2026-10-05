@@ -7,6 +7,7 @@
 # Used by: the project owner before each demo; the results go in the execution log
 #
 # The screenshots still need a person to look at them (contact sheet at <outdir>/shots/index.html).
+# Views: every view in the menu order of config/views.js, plus two region profiles (scripts/qa/lib-qa.sh).
 # Real data: QA_DATA=data/plan-data.js changes the regions used for the modes; the console check
 # then also runs on index.html (the checks on tests/qa.html always use the sample data).
 
