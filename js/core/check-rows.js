@@ -118,6 +118,8 @@
     var rctx = { path: at(root, i), region: isStr(r.name) ? r.name : isStr(r.id) ? r.id : null, item: null, out: out };
     fields(r, SPEC().region, rctx, env);
     if (isStr(r.id) && ids[r.id]) err(rctx, 'id', say('expect.uniqueRegion'), r.id);
+    // The combined figures use these ids (js/engine/scope.js), so a region with one would share it
+    if (r.id === 'rest' || r.id === 'org') err(rctx, 'id', say('expect.keptRegionId'), r.id);
     ids[r.id] = true;
     var nctx = sub(rctx, 'source.notes');
     if (isObj(r.source)) fields(r.source, SPEC().source, sub(rctx, 'source'), env);
