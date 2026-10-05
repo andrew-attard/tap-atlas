@@ -142,7 +142,10 @@
   function onStore(state, changed) {
     if (!run || run.busy) return;
     var mine = run.steps[run.i].reportId;
-    if ((changed.indexOf('expanded') >= 0 && state.expanded !== mine) || changed.indexOf('view') >= 0) stop();
+    // The app is changing the view (Show all, Back): the new view wins (#366). Checked on the state, not the change
+    // list, because the app's own listener clears the expanded chart before this one hears of the view change.
+    if (state.view !== run.saved.view) leave(true);
+    else if (changed.indexOf('expanded') >= 0 && state.expanded !== mine) stop();
   }
 
   /*
@@ -194,11 +197,15 @@
 
   // Leaves presentation mode and puts back the view, expanded chart and scroll from before. The comparison and
   // highlight were never changed (D74).
-  function stop() {
+  function stop() { return leave(false); }
+
+  // moved: the view is being changed under the presentation, so the new view stays, with nothing expanded.
+  function leave(moved) {
     if (!run) return false;
     var r = run;
     try { teardown(); } finally { run = null; TAP.panelDrill.keys(true); }
     var s = r.saved;
+    if (moved) { TAP.store.set({ expanded: null }); return true; }
     if (TAP.store.get().view !== s.view) TAP.store.set({ view: s.view });
     TAP.store.set({ expanded: s.expanded });
     window.scrollTo(s.x, s.y);
