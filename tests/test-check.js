@@ -1,7 +1,8 @@
 /*
  * File: tests/test-check.js
- * Purpose: Tests for the contract check on load (TPV-TC-205, 206).
- * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10, X-review-DE-12
+ * Purpose: Tests for the contract check on load (TPV-TC-205, 206) and for its Phase 4 parts (US-4.1.2).
+ * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
+ *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -22,6 +23,15 @@
   function errorList(res) {
     return res.errors.map(function (e) { return e.message; }).join('\n');
   }
+
+  // The mini fixture with every Phase 4 part (valid), then one thing broken
+  function p4(change) {
+    var p = window.TEST_FIXTURES.broken.withP4(T_FIXTURE('mini'));
+    if (change) change(p);
+    return p;
+  }
+  function messages(list) { return list.map(function (x) { return x.message; }); }
+  var BASE = window.TEST_FIXTURES.broken.recorded.base;
 
   T.suite('check', function () {
     T.test('TPV-TC-205', 'The mini fixture passes the contract check with no errors', function (a) {
@@ -226,6 +236,153 @@
       var ok = T_FIXTURE('mini');
       ok.regions[1].id = 'rest-of-world';
       a.deepEqual(TAP.check.run(ok).errors, [], 'an id that only starts with "rest" is fine');
+    });
+
+    /* ---------- Phase 4: the check covers the new parts (US-4.1.2) ---------- */
+
+    window.TEST_FIXTURES.broken.p4Cases.forEach(function (c) {
+      T.test(c.tc, 'Full template: broken file "' + c.id + '" gives a specific ' + (c.level === 'errors' ? 'error' : 'warning'), function (a) {
+        var plan = p4(c.change), res = TAP.check.run(plan);
+        var hit = res[c.level].filter(function (x) { return x.path === c.expect.path; })[0];
+        a.ok(hit, 'an item for ' + c.expect.path + ' in ' + c.level + '; got: ' + messages(res.errors.concat(res.warnings)).join(' | '));
+        if (!hit) return;
+        ['region', 'item', 'expected', 'found'].forEach(function (k) { a.equal(hit[k], c.expect[k], k); });
+        a.equal(hit.message, c.expect.path + ': expected ' + c.expect.expected + ', found ' +
+          (typeof c.expect.found === 'string' && !/^(nothing|a list|a second|an )/.test(c.expect.found) ? JSON.stringify(c.expect.found) : c.expect.found),
+          'the same form as the existing sections: path, expected, found');
+        if (c.expect.message) a.equal(hit.message, c.expect.message, 'exact message');
+        if (c.one) a.deepEqual(messages(res.errors), [hit.message], 'one error, and no other');
+        if (c.level === 'warnings') {
+          a.deepEqual(res.errors, [], 'a likely-wrong value is never an error');
+          a.deepEqual(messages(res.warnings).filter(function (m) { return BASE.indexOf(m) < 0; }), [hit.message], 'one new warning');
+          a.equal(TAP.data.load(plan).ok, true, 'the data still loads');
+        } else {
+          a.equal(TAP.data.load(plan).ok, false, 'the file does not load');
+        }
+      });
+    });
+
+    T.test('TPV-TC-653', 'A missing new part is never an error or a warning, alone or beside other parts', function (a) {
+      var none = TAP.check.run(T_FIXTURE('mini'));
+      a.deepEqual(none.errors, [], 'a file with none of the new parts');
+      a.deepEqual(messages(none.warnings), BASE, 'and no warning about them');
+      // Region B has a strategic plan but no base year, revenue, books value or routes
+      var p = p4(), B = p.regions[1];
+      a.ok(B.strategicPlan && !B.baseYear && !B.revenue && !B.booksValue && !B.routes, 'Region B: a strategic plan only');
+      var res = TAP.check.run(p);
+      a.deepEqual(res.errors, [], errorList(res));
+      a.deepEqual(messages(res.warnings), BASE, 'no warning about the parts Region B lacks');
+      // Each part on its own, in a file whose other regions have none
+      ['revenue', 'booksValue', 'strategicPlan', 'baseYear', 'routes', 'outsourcingPct'].forEach(function (keep) {
+        var one = p4(function (q) {
+          delete q.regions[1].strategicPlan;
+          ['revenue', 'booksValue', 'strategicPlan', 'baseYear', 'routes', 'outsourcingPct'].forEach(function (k) { if (k !== keep) delete q.regions[0][k]; });
+        });
+        var r = TAP.check.run(one);
+        a.deepEqual(messages(r.errors), [], keep + ' alone: no errors');
+        a.deepEqual(messages(r.warnings), BASE, keep + ' alone: no warnings');
+      });
+      // A part left as null or as an empty list reads as not provided
+      var blank = p4(function (q) { q.regions[0].strategicPlan = null; q.regions[0].baseYear = null; q.regions[0].revenue = []; q.regions[0].routes = null; });
+      var rb = TAP.check.run(blank);
+      a.deepEqual(messages(rb.errors), [], 'null or empty parts: no errors');
+      a.deepEqual(messages(rb.warnings), BASE, 'null or empty parts: no warnings');
+    });
+
+    T.test('TPV-TC-656', 'The broken cases from Phases 1 to 3 give the same errors and warnings, in number, level and wording, as before Phase 4', function (a) {
+      var rec = window.TEST_FIXTURES.broken.recorded;
+      a.equal(Object.keys(rec.cases).length, window.TEST_FIXTURES.broken.cases.length, 'every case has a record');
+      window.TEST_FIXTURES.broken.cases.forEach(function (c) {
+        var want = rec.cases[c.id], res = TAP.check.run(broken(c));
+        a.deepEqual(messages(res.errors), want.errors || [], c.id + ': errors');
+        a.deepEqual(messages(res.warnings), want.all || (want.first || []).concat(BASE, want.last || []), c.id + ': warnings');
+      });
+      var extras = T_FIXTURE('mini');
+      window.TEST_FIXTURES.broken.extras(extras);
+      a.deepEqual(messages(TAP.check.run(extras).warnings), BASE, 'unknown fields and sections are still ignored (D47)');
+    });
+
+    T.test('X-p4-check-tolerance', 'Small differences do not warn: a coverage within 5%, a variance within rounding, a direct books value above customer value', function (a) {
+      var res = TAP.check.run(p4(function (p) {
+        p.regions[0].baseYear.items[0].coverage = 2.6;          // 4% above 500 / 200 = 2.5
+        p.regions[0].strategicPlan[0].variance = -20.4;         // books 580 - 600 = -20, within 0.5
+        p.regions[0].strategicPlan[1].variance = null;          // a blank variance is not checked
+      }));
+      a.deepEqual(res.errors, [], errorList(res));
+      a.deepEqual(messages(res.warnings), BASE);
+      // Direct is not a reseller channel: 460 + 50 = 510 against a customer value of 450 is left alone.
+      // The ARR variance follows the books value: 460 + 180 - 600 = 40.
+      var direct = TAP.check.run(p4(function (p) { p.regions[0].booksValue[0].value = 460; p.regions[0].strategicPlan[0].variance = 40; }));
+      a.deepEqual(messages(direct.warnings), BASE, 'no warning for a direct books value');
+    });
+
+    T.test('X-p4-check-not-compared', 'Nothing is compared where a part is missing: no recap, no books value, nothing still to win', function (a) {
+      var res = TAP.check.run(p4(function (p) {
+        var A = p.regions[0];
+        A.recap = A.recap.filter(function (x) { return x.channel !== 'partner'; });   // no partner order intake to compare with
+        A.revenue[1].value = 9999;
+        A.booksValue[2].value = 9999;
+        A.strategicPlan.forEach(function (x) { delete x.variance; });
+        A.strategicPlan[4].variance = 77;                         // 2028: no books items for that year
+        A.baseYear.items[0].actuals = 500;                        // forecast reached: no ratio to compare
+        A.baseYear.items[0].coverage = 9;
+      }));
+      a.deepEqual(res.errors, [], errorList(res));
+      a.deepEqual(messages(res.warnings), BASE);
+    });
+
+    T.test('X-p4-check-tracing', 'A new part without its sourceMap entry, sourceCell or sourceRow, or with an unreadable month, warns', function (a) {
+      var res = TAP.check.run(p4(function (p) {
+        delete p.meta.sourceMap.revenue;
+        delete p.meta.sourceMap.baseYear.sheet;
+        delete p.regions[0].routes[2].sourceCell;
+        delete p.regions[0].baseYear.items[1].sourceRow;
+        p.regions[0].baseYear.actualsThrough = 'August 2026';
+      }));
+      a.deepEqual(res.errors, [], errorList(res));
+      var got = messages(res.warnings).filter(function (m) { return BASE.indexOf(m) < 0; });
+      a.deepEqual(got, [
+        'meta.sourceMap.revenue: expected the template map: a sheet and its columns for each section, found nothing',
+        'meta.sourceMap.baseYear: expected the template map: a sheet and its columns for each section, found an object',
+        'regions[0].baseYear.actualsThrough: expected a year and month, such as "2026-08", found "August 2026"',
+        'regions[0].baseYear.items[1].sourceRow: expected the worksheet row number, found nothing',
+        'regions[0].routes[2].sourceCell: expected the worksheet cell, for example "E5", found nothing']);
+      // A file with no Phase 4 part needs no Phase 4 entry in the map
+      a.deepEqual(messages(TAP.check.run(T_FIXTURE('mini')).warnings), BASE);
+    });
+
+    T.test('X-p4-check-lookups', 'The new lookups are checked like the existing ones; a maturity is free text only without its lookup', function (a) {
+      var res = TAP.check.run(p4(function (p) {
+        p.lookups.partnerTypes = 'see sheet 4';
+        p.lookups.partnerMaturity[4].rank = 6;
+        p.lookups.routes[0].id = 'webshop';
+        delete p.lookups.productCategories[0].name;
+      }));
+      var paths = res.errors.map(function (e) { return e.path; });
+      ['lookups.partnerTypes', 'lookups.partnerMaturity[4].rank', 'lookups.routes[0].id', 'lookups.productCategories[0].name']
+        .forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is an error; got ' + paths.join(', ')); });
+      a.equal(res.errors.filter(function (e) { return e.path === 'lookups.partnerMaturity[4].rank'; })[0].expected, '1, 2, 3, 4 or 5');
+      // Without lookups.partnerMaturity the mini fixture's "Developing" stays valid, as before Phase 4
+      var free = T_FIXTURE('mini');
+      a.equal(free.regions[0].partners[0].maturity, 'Developing');
+      a.deepEqual(TAP.check.run(free).errors, []);
+      // With it, an id, a name in any case, or a blank all pass
+      var ok = p4(function (p) { p.regions[0].partners[0].maturity = ' skill '; p.regions[1].partners[0].maturity = null; p.regions[3].partners[0].maturity = 'ONBOARD'; });
+      a.deepEqual(messages(TAP.check.run(ok).errors), []);
+    });
+
+    T.test('X-p4-check-garbage', 'Malformed Phase 4 parts give errors instead of crashing', function (a) {
+      var res = TAP.check.run(p4(function (p) {
+        var A = p.regions[0];
+        A.revenue = 'none'; A.booksValue = [null, 7]; A.strategicPlan = {}; A.routes = [[]];
+        A.baseYear = { year: '2026', items: 'n/a' };
+        p.lookups.solutions = [null];
+      }));
+      var paths = res.errors.map(function (e) { return e.path; });
+      ['regions[0].revenue', 'regions[0].booksValue[0]', 'regions[0].booksValue[1]', 'regions[0].strategicPlan', 'regions[0].routes[0]',
+        'regions[0].baseYear.year', 'regions[0].baseYear.items', 'lookups.solutions[0]']
+        .forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is named; got ' + paths.join(', ')); });
+      a.equal(TAP.data.load(p4(function (p) { p.regions[0].baseYear = 5; })).reason, 'invalid');
     });
   });
 })(window.TAP);
