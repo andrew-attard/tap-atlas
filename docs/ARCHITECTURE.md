@@ -648,6 +648,8 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
   highlight: { regionIds: ['north'], mark: 'bar' } }          // optional Target
 ```
 
+A step may also set `industry: '<industry id>'` (one-industry reports such as the ratings). `type: 'table'` shows the table view and `breakdown: 'none'` starts with no breakdown; recording writes all three when they apply. `opts.initial` accepts the same: `type: 'table'`, `breakdown: 'none'` and `industryId`.
+
 - `TAP.present.check(steps)` returns `{ok: [...], skipped: [{index, reason}]}`; skipped steps go to `TAP.notes` with source `'presentation'` (a new notes source; the data sources panel lists it, PRESENT adds that).
 - `TAP.present.start(steps?)` saves `{view, expanded}` and the page scroll, then shows each step in the expanded panel. `next()`, `prev()`, `first()`, `stop()`, `current()`. `stop()` restores what was saved. `TAP.keys.unbind()` (and so `TAP.app.stop()`) ends a running presentation.
 - While presenting, `TAP.present.active()` is true and presentation mode owns Space, Right, Left, Backspace, Home and Esc (after a popover's Esc). It turns the panel's own keys off with `TAP.panelDrill.keys(false)` on start and back on at stop (`TAP.panelKeys.enabled` is checked by the drill keys, the panel menu Esc and the expanded-panel keys) (D70).
