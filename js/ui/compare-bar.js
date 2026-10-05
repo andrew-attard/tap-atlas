@@ -118,10 +118,19 @@
     function showSet(on, refocus) {
       ui.setPop.hidden = !on;
       ui.setBtn.setAttribute('aria-expanded', String(!!on));
+      if (on) placeSet();
       if (!on) say();
       if (refocus) ui.setBtn.focus();
     }
     ui.showSet = showSet;
+    // The popover opens under its button; where that would run past the bar's right edge (1024 px at 125%), it moves left.
+    function placeSet() {
+      ui.setPop.style.left = '';
+      var r = ui.setPop.getBoundingClientRect(), box = root.getBoundingClientRect(), pad = parseFloat(getComputedStyle(root).paddingRight) || 0;
+      var over = r.right - (box.right - pad);
+      if (over > 0) ui.setPop.style.left = -Math.min(over, r.left - box.left) + 'px';
+    }
+    ui.placeSet = placeSet;
 
     ui.pickers = {
       focus: field('focus', ui.focusLabel, ui.focus),
@@ -247,12 +256,15 @@
       if (!ui.pop.hidden && !ui.pop.contains(e.target) && !ui.explain.contains(e.target)) ui.showPop(false);
       if (!ui.setPop.hidden && !ui.pickers.set.contains(e.target)) ui.showSet(false);
     }
+    function onResize() { if (!ui.setPop.hidden) ui.placeSet(); }
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
+    window.addEventListener('resize', onResize);
     function stop() {
       offStore();
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('resize', onResize);
       if (active === stop) active = null;
     }
     active = stop;
