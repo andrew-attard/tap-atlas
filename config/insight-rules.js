@@ -60,9 +60,9 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     templates: { little: '{region} rates its {ratings} in {industry} as strong, with little current ARR or pipeline there ({arr} and {pipeline}). Worth discussing what the rating draws on.' },
     attach: QUAD, highlight: 'points' });
   rule({ id: 'weakRating', family: 'judgement',
-    description: 'References, expertise or product fit rated 1 (the unfavourable end) where the industry holds one of the region’s three largest current ARR or pipeline figures.',
+    description: 'References, expertise or product fit rated 1 (the unfavourable end) where the industry holds the region’s largest current ARR or pipeline figure.',
     reads: ['marketCoverage.expertise', 'marketCoverage.currentArr'], params: { rank: 1 },
-    scoring: 'Strength: grows with the number of ratings at 1, and falls for the second or third largest figure. Money: the figure involved.',
+    scoring: 'Strength: grows with the number of ratings at 1. Money: the figure involved.',
     template: '{region} rates its {ratings} in {industry} at 1 of 3, yet {industry} holds {rank} {what} ({amount}). Worth discussing what sits behind the rating.',
     attach: QUAD, highlight: 'points' });
   rule({ id: 'tierVsPipeline', family: 'judgement',
