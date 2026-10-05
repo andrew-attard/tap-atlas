@@ -1181,6 +1181,20 @@
       a.equal(n - before, 0, 'no drawing after the store change');
     }));
 
+    T.test('X-review-PP-12', 'Copied tables paste into a spreadsheet as text: no formulas, quotes kept in their cell', function (a) {
+      function row(id, name, v) {
+        return { entityId: id, src: null, cells: { entity: { v: name, state: 'value' }, 'nb.arr': { v: v, state: 'value', kind: 'DER' } } };
+      }
+      var table = { columns: [{ key: 'entity', label: 'Region', unit: 'text', align: 'left' }, { key: 'nb.arr', label: 'ARR', unit: 'money', align: 'right' }],
+        rows: [row('a', '=SUM(A1:A9)', 5), row('b', '"Quoted" name', 5), row('c', '+44 team', 5), row('d', '@home', 5), row('e', '-dash', -1200)] };
+      var lines = TAP.panelTable.toText(table).split('\n'), cells = lines.slice(1).map(function (l) { return l.split('\t'); });
+      a.equal(lines.length, 6, 'a header and five rows, nothing swallowed');
+      a.deepEqual(cells.map(function (c) { return c[0]; }), ["'=SUM(A1:A9)", '"""Quoted"" name"', "'+44 team", "'@home", "'-dash"],
+        'text starting with = + - @ gets an apostrophe; a quote is doubled inside quotes');
+      a.equal(cells[4][1], TAP.format.cell({ v: -1200, state: 'value' }, { unit: 'money', exact: true }), 'a negative number stays a number');
+      a.ok(cells.every(function (c) { return c.length === 3; }), 'every row keeps its three cells (with Source)');
+    });
+
     T.test('X-review-RI-5', 'Selecting an insight in the panel list switches to the measure its sentence quotes (D79)', scene(function (a, s) {
       s.report(fakeDef({ measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
       TAP.insights = fakeInsights([insight(1, { highlight: { reportId: 'x-fake', regionIds: ['alpha'], mark: 'bar', measureId: 'cg.arr' } })]);
