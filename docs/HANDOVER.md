@@ -108,7 +108,6 @@ These are open on purpose: each needs the real data, the real template or a deci
 4. **Plan years (Data Contract open question 2).** Confirm the plan years and that year 1 is the first forecast year.
 5. **The rest of the template.** Sections the contract doesn't name one by one arrive as extra sections and show as lists only. A chart or view of their own follows `docs/EXTENDING-TEMPLATE.md`.
 6. **Stories not built.** None: every Phase 3 story was built.
-7. **Channel reliance on the New business channels chart (#351).** The insight compares shares of total order intake but also appears on the new business only channels chart, where the bars show different shares. On hold for the owner's full template.
 
 Other limits by design:
 
