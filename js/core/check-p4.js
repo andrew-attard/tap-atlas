@@ -28,6 +28,8 @@
   function categoryOf(type) { return K().has(CATEGORY_OF, type) ? CATEGORY_OF[type] : null; }
   function norm(text) { return String(text).trim().toLowerCase(); }
   function near(found, want) { return Math.abs(found - want) <= Math.max(0.5, Math.abs(want) * 0.005); }
+  // A share above 1.5 is most likely a whole-number percentage (30 for 30%), as in the existing sections
+  function share(v, c, key) { if (K().isNum(v) && Math.abs(v) > 1.5) K().warn(c, key, say('expect.share'), v); }
 
   function oneOf(list, quote) {
     return { ok: function (v) { return list.indexOf(v) !== -1; }, expect: function () {
@@ -118,6 +120,7 @@
   function partner(o, c, env) {
     types();
     optional(o, { type: 'partnerType?', supportPct: 'years3?', distribution: 'years3?', servicesFromPartners: 'years3?' }, c, env);
+    if (Array.isArray(o.supportPct)) o.supportPct.forEach(function (v, i) { share(v, K().sub(c, 'supportPct'), i); });
     var known = env.p4 && env.p4.maturity;
     if (known && K().isStr(o.maturity) && !known[norm(o.maturity)]) K().err(c, 'maturity', say('expect.maturity'), o.maturity);
   }
@@ -191,6 +194,7 @@
     var k = K();
     types();
     optional(r, { outsourcingPct: 'num?' }, rctx, env);
+    share(r.outsourcingPct, rctx, 'outsourcingPct');
     var revenue = items(r, 'revenue', rctx, env, k.SPEC.recap, ['year', 'channel', 'motion', 'type']);
     var books = items(r, 'booksValue', rctx, env, SPEC.booksValue, ['year', 'channel', 'motion', 'type']);
     var plan = items(r, 'strategicPlan', rctx, env, SPEC.strategicPlan, ['year', 'type']);
@@ -198,7 +202,9 @@
     items(r, 'routes', rctx, env, SPEC.routes, ['route', 'year', 'type', 'solution']);
 
     above(totals(revenue, ['year', 'channel', 'motion']), totals(r.recap, ['year', 'channel', 'motion']), function () { return true; }, rctx, 'revenue', 'revenueWithin');
-    above(totals(books, ['year', 'channel']), totals(r.recap, ['year', 'channel']),
+    // Books value against customer value over ARR and services: the recap holds no perpetual software or hardware
+    var both = books.filter(function (o) { return o.type === 'arr' || o.type === 'services'; });
+    above(totals(both, ['year', 'channel']), totals(r.recap, ['year', 'channel']),
       function (key) { return RESELLERS.some(function (ch) { return key.split(', ')[1] === ch; }); }, rctx, 'booksValue', 'booksWithin');
     // The workbook's variance against the books order intake of that year and type minus the strategic plan
     var booked = totals(books, ['year', 'type']);
