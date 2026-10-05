@@ -310,10 +310,17 @@
       }));
       a.deepEqual(res.errors, [], errorList(res));
       a.deepEqual(messages(res.warnings), BASE);
-      // Direct is not a reseller channel: 460 + 50 = 510 against a customer value of 450 is left alone.
+      // Direct is not a reseller channel: 460 against a customer value of 450 is left alone.
       // The ARR variance follows the books value: 460 + 180 - 600 = 40.
       var direct = TAP.check.run(p4(function (p) { p.regions[0].booksValue[0].value = 460; p.regions[0].strategicPlan[0].variance = 40; }));
       a.deepEqual(messages(direct.warnings), BASE, 'no warning for a direct books value');
+      // Perpetual software and hardware have no customer-value counterpart, so they are not compared: partner
+      // hardware of 200 (ARR and services still 180 + 0 of 250) is fine. Its variance follows: 200 - 25 = 175.
+      var hardware = TAP.check.run(p4(function (p) { p.regions[0].booksValue[4].value = 200; p.regions[0].strategicPlan[3].variance = 175; }));
+      a.deepEqual(messages(hardware.warnings), BASE, 'no warning for hardware through a reseller channel');
+      // A support share of up to 150% is unusual but possible, as for the existing shares
+      var share = TAP.check.run(p4(function (p) { p.regions[0].partners[0].supportPct = [1.5, 1, 0]; p.regions[0].outsourcingPct = 1; }));
+      a.deepEqual(messages(share.warnings), BASE, 'no warning for a share of 150% or less');
     });
 
     T.test('X-p4-check-not-compared', 'Nothing is compared where a part is missing: no recap, no books value, nothing still to win', function (a) {

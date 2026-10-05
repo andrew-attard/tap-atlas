@@ -332,12 +332,23 @@ window.TEST_FIXTURES.broken = {
       expect: { path: 'regions[0].revenue', region: 'Region A', item: '2027, partner, newBusiness',
         expected: 'revenue no higher than the order intake for 2027, partner, newBusiness (250)', found: 300,
         message: 'regions[0].revenue: expected revenue no higher than the order intake for 2027, partner, newBusiness (250), found 300' } },
-    // Partner books value 260 + 0 + 20 = 280 against a customer value of 250. The ARR variance follows the
-    // books value (400 + 260 - 600 = 60), so only the books value is reported
+    // Partner books value over ARR and services, the types the recap holds: 260 + 0 against a customer value of 250
+    // (its hardware, 20, has no customer-value counterpart). The ARR variance follows the books value
+    // (400 + 260 - 600 = 60), so only the books value is reported
     { id: 'books-above-customer-value', tc: 'TPV-TC-655', level: 'warnings',
       change: function (p) { p.regions[0].booksValue[2].value = 260; p.regions[0].strategicPlan[0].variance = 60; },
       expect: { path: 'regions[0].booksValue', region: 'Region A', item: '2027, partner',
-        expected: 'a books value no higher than the customer value for 2027, partner (250)', found: 280 } }
+        expected: 'a books value no higher than the customer value for 2027, partner (250)', found: 260 } },
+
+    // A share held as a whole number, as in the existing sections (review DE-12): 30 instead of 0.3
+    { id: 'support-as-whole-number', tc: 'X-p4-check-shares', level: 'warnings',
+      change: function (p) { p.regions[0].partners[0].supportPct = [30, 0.2, 0.1]; },
+      expect: { path: 'regions[0].partners[0].supportPct[0]', region: 'Region A', item: 'Fictional Partner A1 (row 10)',
+        expected: 'a share written as a decimal, for example 0.25 for 25%', found: 30 } },
+    { id: 'outsourcing-as-whole-number', tc: 'X-p4-check-shares', level: 'warnings',
+      change: function (p) { p.regions[0].outsourcingPct = 30; },
+      expect: { path: 'regions[0].outsourcingPct', region: 'Region A', item: null,
+        expected: 'a share written as a decimal, for example 0.25 for 25%', found: 30 } }
   ],
 
   // TPV-TC-656: the errors and warnings of every case in `cases`, recorded before Phase 4 (from the check at
