@@ -149,7 +149,7 @@
       });
     });
 
-    T.test('X-shell-actions', 'The page-wide actions slot sits beside the data date, empty for other streams to fill (D72)', function (a) {
+    T.test('X-shell-actions', 'The page-wide actions slot sits beside the data date, holding Present, for other streams to fill (D72)', function (a) {
       withApp(function () {
         var root = startApp();
         root.style.width = '1280px';
@@ -157,7 +157,8 @@
         a.ok(slot && qs('.tap-cmp__row--sentence', root).contains(slot), 'in the comparison bar, on the sentence row');
         a.ok(!qs('.tap-topbar', root).contains(slot), 'not in the top bar');
         a.ok(slot.classList.contains('tap-topbar__actions'), 'the actions slot');
-        a.equal(slot.children.length, 0, 'empty until another stream adds to it');
+        var others = Array.prototype.filter.call(slot.children, function (c) { return !c.classList.contains('tap-present__start'); });
+        a.equal(others.length, 0, 'only Present (US-3.1.2) until another stream adds to it');
         a.equal(date && date.nextElementSibling, slot, 'right after the data date');
         slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Example action'));
         a.ok(slot.getBoundingClientRect().left >= date.getBoundingClientRect().right - 1, 'right of the data date');

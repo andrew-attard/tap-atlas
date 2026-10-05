@@ -1,8 +1,9 @@
 /*
  * File: config/running-order.js
- * Purpose: The running order for presentation mode: the steps of the meeting, in order (US-3.1.1). "Present" in
- *          the top bar, or the P key, shows them one at a time, full screen. Steps can also be recorded from the
- *          screen ("Add to running order" in a chart's More menu) and copied from the Guide as the text of this file.
+ * Purpose: The running order for presentation mode: the steps of the meeting, in order (US-3.1.1). "Present"
+ *          (beside the data date) or the P key shows them one at a time, full screen. Steps can also be recorded
+ *          from the screen ("Add to running order" in a chart's More menu) and copied from the Guide as the text
+ *          of this file.
  * Provides: window.TAP_RUNNING_ORDER
  * Depends on: nothing
  * Used by: js/ui/present.js, js/ui/present-steps.js

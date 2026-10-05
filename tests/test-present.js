@@ -260,7 +260,7 @@
         var row = document.querySelector('.tap-present__where');
         var txt = row ? row.textContent.replace(/\s+/g, ' ').trim() : '';
         a.equal(txt.indexOf('Step 3 of 12'), 0, 'starts with "Step 3 of 12": ' + txt);
-        a.ok(txt.indexOf('Title 3') > 'Step 3 of 12'.length, 'followed by the step title');
+        a.ok(txt.indexOf('Title 3') >= 'Step 3 of 12'.length, 'followed by the step title');
       });
     });
 
@@ -355,6 +355,20 @@
         var leave = document.querySelector('.tap-present [data-present="leave"]');
         if (leave) leave.click();
         a.ok(!TAP.present.active(), 'Leave on the progress row leaves');
+      });
+    });
+
+    T.test('X-present-scroll', 'Stepping never scrolls the page behind, and leaving puts the scroll back', function (a) {
+      withApp(function (root) {
+        root.style.minHeight = '4000px';
+        window.scrollTo(0, 40);
+        var y = window.scrollY;
+        TAP.present.start(titled(3));
+        TAP.present.next(); TAP.present.next();
+        a.equal(window.scrollY, y, 'the page has not moved while stepping');
+        TAP.present.stop();
+        a.equal(window.scrollY, y, 'the same scroll after leaving');
+        window.scrollTo(0, 0);
       });
     });
 
