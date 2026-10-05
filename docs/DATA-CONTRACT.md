@@ -4,6 +4,7 @@
 
 **Changes since 0.2 (additions only, so the version stays 0.2, D57):**
 - Phase 3 (US-3.2.1): optional **extra sections**, `meta.extraSections` and per region `extra`, for template sections the app has no report for yet. See [Extra sections](#extra-sections). A file without them is still valid.
+- Phase 4 (US-4.1.1): the **full template**. New optional lookups (`productCategories`, `solutions`, `partnerTypes`, `partnerMaturity`, `routes`); per region the optional parts `revenue`, `booksValue`, `strategicPlan`, `baseYear`, `routes` and `outsourcingPct`; a `solution` on New Business rows; `type`, `supportPct`, `distribution` and `servicesFromPartners` on partners; and the risk level `low`. See [The full template](#the-full-template-phase-4). A file without any of them is still valid and reads exactly as before.
 
 The exact shape of the data file the app reads. The import produces it from the regional workbooks; the views only ever read this format. Turning the real workbooks into this shape is the main real-data task, so this is the most important handover document.
 
@@ -81,9 +82,20 @@ sourceMap: {
   partners: { sheet: '4. Partner', columns: {
     name: 'B', channel: 'C', maturity: 'D', expertiseGeo: 'E', expertiseProduct: 'F',
     fteSales: 'G', fteConsultants: 'H', centralSupportPct: 'I', arr: ['J', 'K', 'L'], services: ['M', 'N', 'O'] } },
-  recap: { sheet: '4. Partner' }    // recap items carry their own sourceCell
+  recap: { sheet: '4. Partner' },   // recap items carry their own sourceCell
+
+  // The full template (Phase 4). Each entry is needed only when a region carries that part.
+  revenue: { sheet: '6. Recap' },         // items carry their own sourceCell, as recap items do
+  booksValue: { sheet: '6. Recap' },
+  strategicPlan: { sheet: '6. Recap' },
+  routes: { sheet: '6. Recap' },
+  baseYear: { sheet: '7. Order Intake', columns: {
+    category: 'B', budget: 'C', forecast: 'D', actuals: 'E', pipeline: 'F', coverage: 'G' },
+    cells: { year: 'C4', actualsThrough: 'C5' } }
 }
 ```
+
+The Phase 4 fields of existing sections go in those sections' entries: `newBusiness.columns.solution` (e.g. `'V'`); `partners.columns.type` (`'P'`), `supportPct`, `distribution` and `servicesFromPartners` (one column per plan year each, e.g. `['Q', 'R', 'S']`); and the fixed cell `partners.cells.outsourcingPct` (e.g. `'I3'`).
 
 The column letters above are the sample's; the real template's mapping replaces them. The shape stays the same.
 
@@ -100,6 +112,27 @@ Shared reference lists, so every region uses the same order, labels and colours.
 | `segments` | `{ id, name, description }`: `strategic`, `growth`, `core`, `scaled` |
 | `scales` | The six three-level rating scales from Market Coverage: `{ growthPotential: { levels: [{ score, label }] }, ... }`. **Score 3 is always the favourable end, 1 the unfavourable end**, so higher is better on every chart (competitive intensity included: "we are the recognized leader" scores 3) |
 
+Lookups for the full template (Phase 4). All optional: a file without them is valid.
+
+| Field | Contents | Tag |
+|---|---|---|
+| `productCategories` | `{ id, name }` for the four product categories. The ids are fixed: `swPerpetual` (software perpetual), `recurring`, `hardware`, `services` | IMP |
+| `solutions` | `{ id, name, category }` for each solution a New Business row or a route can name. `category` is a product category id | IMP (names PRE) |
+| `partnerTypes` | `{ id, name }`, e.g. a value-added reseller, a system integrator, a referral partner | IMP (names PRE) |
+| `partnerMaturity` | `{ id, name, rank }` for the five maturity levels, `rank` 1 to 5 in this order: Recruit, Onboard, Enable, Skill, Strategic | IMP |
+| `routes` | `{ id, name }` for the six routes to market. The ids are fixed: `ownSales` (own sales force), `customerSuccess`, `allianceBReseller` (Alliance B as reseller), `otherResellers`, `systemIntegrators`, `partnerExisting` (partner existing business) | IMP |
+
+```js
+lookups: { ...,
+  productCategories: [{ id: 'swPerpetual', name: 'Software perpetual' }, { id: 'recurring', name: 'Recurring' },
+    { id: 'hardware', name: 'Hardware' }, { id: 'services', name: 'Services' }],
+  solutions: [{ id: 'sol1', name: 'Solution 1', category: 'recurring' }, { id: 'sol5', name: 'Solution 5', category: 'swPerpetual' }],
+  partnerTypes: [{ id: 'var', name: 'Value-added reseller' }, { id: 'si', name: 'System integrator' }],
+  partnerMaturity: [{ id: 'recruit', name: 'Recruit', rank: 1 }, { id: 'onboard', name: 'Onboard', rank: 2 },
+    { id: 'enable', name: 'Enable', rank: 3 }, { id: 'skill', name: 'Skill', rank: 4 }, { id: 'strategic', name: 'Strategic', rank: 5 }],
+  routes: [{ id: 'ownSales', name: 'Own sales force' }, { id: 'customerSuccess', name: 'Customer success' }, ...] }
+```
+
 ## `regions[]`
 
 One entry per regional workbook. **File order sets each region's colour.**
@@ -115,6 +148,12 @@ One entry per regional workbook. **File order sets each region's colour.**
 | `partners` | list | | See below |
 | `recap` | list | | See below |
 | `extra` | object, optional | | Rows of the extra sections, keyed by section id. See [Extra sections](#extra-sections) |
+| `revenue` | list, optional | | The revenue outlook. See [The full template](#the-full-template-phase-4) |
+| `booksValue` | list, optional | | Order intake through the organization's books. See the same section |
+| `strategicPlan` | list, optional | | The strategic plan's order intake by year and product category |
+| `baseYear` | object, optional | | The year before the plan, by product category |
+| `routes` | list, optional | | Order intake by route to market and year |
+| `outsourcingPct` | decimal or `null`, optional | IN | The Partner sheet's outsourcing %, one figure per region, e.g. `0.3` |
 
 ### Row references (all lists)
 
@@ -154,6 +193,7 @@ The "Other" and "Unapplied industry" rows are kept for pipeline totals but have 
 | `arrPotential` | list of 3 numbers (by plan year) | DER |
 | `servicesPotential` | list of 3 numbers | DER |
 | `servicesRatio` | decimal | PRE |
+| `solution` | id from `lookups.solutions`, or `null`; optional (Phase 4) | IN |
 
 Formulas: `arrPotential[0]` = targetAccounts × hitRate × avgDealSize; year 2 = year 1 × (1 + growth.year2); year 3 = year 2 × (1 + growth.year3); servicesPotential = arrPotential × servicesRatio.
 
@@ -175,7 +215,7 @@ Formulas: `arrPotential[0]` = targetAccounts × hitRate × avgDealSize; year 2 =
 | `country` | text | PRE | |
 | `productLine` | id from `lookups.productLines` | PRE | |
 | `currentArr` | number | PRE | At customer value |
-| `riskLevel` | `"high"`, `"medium"` or `null` | PRE | |
+| `riskLevel` | `"high"`, `"medium"`, `"low"` or `null` | PRE | `"low"` since Phase 4. Only `high` and `medium` count as at risk |
 | `growthPct` | list of 3 decimals | IN | Or `null` if the multiplier was used |
 | `multiplier3y` | number or `null` | IN | Alternative to `growthPct` |
 | `servicesRatio` | decimal | IN | |
@@ -193,11 +233,15 @@ Formulas: `arrPotential[0]` = targetAccounts × hitRate × avgDealSize; year 2 =
 | `sourceRow` | number | IMP |
 | `name` | text | IN |
 | `channel` | `partner`, `allianceA` or `allianceB` | IN |
-| `maturity` | text | IN (allowed values to be confirmed) |
+| `maturity` | id from `lookups.partnerMaturity`, or `null` | IN. A maturity's name ("Enable") is accepted too and read as its id. In a file without the lookup it is any text, shown as given |
 | `expertiseGeo`, `expertiseProduct` | text | IN |
 | `fteSales`, `fteConsultants` | number | IN |
 | `centralSupportPct` | decimal | IN |
 | `arr`, `services` | list of 3 numbers | IN |
+| `type` | id from `lookups.partnerTypes`, or `null`; optional (Phase 4) | IN |
+| `supportPct` | list of 3 decimals by plan year, `null` allowed; optional (Phase 4) | IN. The Partner sheet's support % for each plan year |
+| `distribution` | list of 3 numbers by plan year, `null` allowed; optional (Phase 4) | IN. What the partner distributes in each plan year, at customer value |
+| `servicesFromPartners` | list of 3 numbers by plan year, `null` allowed; optional (Phase 4) | DER. Services the partner delivers itself in each plan year |
 
 ### `recap[]`: one row per year, channel, motion and type
 
@@ -211,6 +255,103 @@ Formulas: `arrPotential[0]` = targetAccounts × hitRate × avgDealSize; year 2 =
 | `value` | number | DER |
 
 A long, flat list rather than the template's wide grid, so any chart can filter and sum it directly.
+
+The recap is order intake **at customer value**: what customers pay. It keeps that meaning. The revenue outlook and the value through the organization's books are separate lists (`revenue` and `booksValue`, below), never extra items here, so every figure read from `recap` stays what it was.
+
+### The full template (Phase 4)
+
+The parts of the full template the first copy lacked (US-4.1.1). **Every one is optional**, region by region: a region may carry a strategic plan and no base year. A part that is left out, `null` or an empty list reads as "not provided", never as zero.
+
+#### `revenue[]` and `booksValue[]`: the recap item's shape
+
+| Field | Type | Tag |
+|---|---|---|
+| `year` | one of `meta.years` | IMP |
+| `sourceCell` | text, e.g. `"E20"` | IMP |
+| `channel` | id from `lookups.channels` | IMP |
+| `motion` | `"newBusiness"` or `"customerGrowth"` | IMP |
+| `type` | `revenue`: `"arr"` or `"services"`. `booksValue`: also `"swPerpetual"` and `"hardware"` | IMP |
+| `value` | number or `null` | DER |
+
+- **`revenue`** is the revenue outlook at customer value: the revenue the template releases in each plan year from the order intake of that year.
+- **`booksValue`** is the same order intake as it runs through the organization's own books. It is lower than the customer value where a reseller keeps a margin or a partner delivers the services itself.
+- The four `type` values are the product categories: `arr` is the **recurring** category (`recurring` in `lookups.productCategories`); `services`, `swPerpetual` and `hardware` carry their own names.
+
+```js
+revenue: [{ year: 2027, sourceCell: 'E5', channel: 'direct', motion: 'newBusiness', type: 'arr', value: 200 }],
+booksValue: [{ year: 2027, sourceCell: 'E20', channel: 'direct', motion: 'newBusiness', type: 'arr', value: 400 },
+  { year: 2027, sourceCell: 'E22', channel: 'direct', motion: 'newBusiness', type: 'swPerpetual', value: 50 }]
+```
+
+#### `strategicPlan[]`: one item per year and product category
+
+| Field | Type | Tag | Notes |
+|---|---|---|---|
+| `year` | one of `meta.years` | IMP | |
+| `sourceCell` | text, e.g. `"E47"` | IMP | The cell of `value` |
+| `type` | `"arr"`, `"services"`, `"swPerpetual"` or `"hardware"` | IMP | As in `booksValue` |
+| `value` | number or `null` | PRE | The strategic plan's order intake, on the same basis as `booksValue` |
+| `variance` | number or `null`; optional | DER | The workbook's own variance: the plan's books order intake for that year and type minus `value`. The app works its variance out itself; this field is only checked on load |
+
+```js
+strategicPlan: [{ year: 2027, sourceCell: 'E47', type: 'arr', value: 600, variance: -20 }]
+```
+
+#### `baseYear`: the year before the plan
+
+| Field | Type | Tag | Notes |
+|---|---|---|---|
+| `year` | number | PRE | The calendar year before the first plan year, e.g. `2026` |
+| `actualsThrough` | text `"YYYY-MM"`, or `null`; optional | PRE | The last month the actuals cover, e.g. `"2026-08"` |
+| `items` | list | | One per product category, below |
+
+`items[]`
+
+| Field | Type | Tag | Notes |
+|---|---|---|---|
+| `sourceRow` | number | IMP | |
+| `category` | `"swPerpetual"`, `"recurring"`, `"hardware"` or `"services"` | IMP | A product category id |
+| `budget` | number or `null` | PRE | The order intake budget for the year |
+| `forecast` | number or `null` | PRE | The current forecast for the full year |
+| `actuals` | number or `null` | PRE | Order intake won so far |
+| `pipeline` | number or `null` | PRE | Unweighted pipeline for the rest of the year |
+| `coverage` | number or `null`; optional | PRE | The workbook's coverage ratio, when it gives one: pipeline over the order intake still to win (forecast minus actuals). Left out or `null`, the app works the ratio out itself |
+
+```js
+baseYear: { year: 2026, actualsThrough: '2026-08', items: [
+  { sourceRow: 8, category: 'recurring', budget: 520, forecast: 500, actuals: 300, pipeline: 500, coverage: 2.5 },
+  { sourceRow: 9, category: 'services', budget: 100, forecast: 90, actuals: 50, pipeline: 100 }] }
+```
+
+#### `routes[]`: order intake by route to market
+
+| Field | Type | Tag | Notes |
+|---|---|---|---|
+| `route` | `"ownSales"`, `"customerSuccess"`, `"allianceBReseller"`, `"otherResellers"`, `"systemIntegrators"` or `"partnerExisting"` | IMP | A route id, as in `lookups.routes` |
+| `year` | one of `meta.years` | IMP | |
+| `sourceCell` | text, e.g. `"E56"` | IMP | |
+| `type` | `"arr"`, `"services"`, `"swPerpetual"` or `"hardware"` | IMP | As in `booksValue` |
+| `value` | number or `null` | DER | Where a template takes part of this grid as leader input, the figure is still shown as calculated in the workbook |
+| `solution` | id from `lookups.solutions`, or `null`; optional | IMP | For a route split by solution. Left out or `null`: the item is not tied to one solution |
+
+```js
+routes: [{ route: 'ownSales', year: 2027, sourceCell: 'E56', type: 'arr', value: 400, solution: 'sol1' },
+  { route: 'customerSuccess', year: 2027, sourceCell: 'E63', type: 'arr', value: 0 }]
+```
+
+#### Fields added to existing sections
+
+- New Business rows: `solution`, in the [`newBusiness[]`](#newbusiness-one-per-sub-industry-and-market) table.
+- Partners: `type`, `supportPct`, `distribution` and `servicesFromPartners`, and `maturity` as an id from `lookups.partnerMaturity`, in the [`partners[]`](#partners) table.
+- Accounts: `riskLevel` also takes `"low"`.
+- Per region: `outsourcingPct`, in the [`regions[]`](#regions) table.
+
+```js
+regions: [{ id: 'north', ..., outsourcingPct: 0.3,
+  newBusiness: [{ sourceRow: 20, ..., solution: 'sol1' }],
+  partners: [{ sourceRow: 10, name: 'Fictional Partner A1', ..., type: 'var', maturity: 'enable',
+    supportPct: [0.3, 0.2, 0.1], distribution: [100, 150, 200], servicesFromPartners: [6, 9, 12] }] }]
+```
 
 ### Extra sections
 
@@ -263,11 +404,11 @@ Every figure the app shows is a *cell* carrying a source reference, `src` (ARCHI
 src: { regionId, section, field, row, year, cell, kind }
 ```
 
-- `section`: `marketCoverage`, `newBusiness`, `customerGrowth`, `partners` or `recap`, or `extra:<section id>` for an extra section.
+- `section`: `marketCoverage`, `newBusiness`, `customerGrowth`, `partners` or `recap`; `revenue`, `booksValue`, `strategicPlan`, `routes` or `baseYear` for the full template's parts; or `extra:<section id>` for an extra section.
 - `field`: the contract field, dotted for nested fields (`channelSplit.direct`, `thresholds.strategicArr`); for an extra section, the column key.
 - `row`: the item's `sourceRow`.
 - `year`: the **plan year 1, 2 or 3** for fields held by year (never a calendar year).
-- `cell`: a fixed cell when there is one, e.g. a recap item's `sourceCell`.
+- `cell`: a fixed cell when there is one, e.g. the `sourceCell` of a recap, revenue, books value, strategic plan or route item.
 - `kind`: `IN`, `PRE`, `DER` or `APP`.
 
 `TAP.sources.address(src)` turns it into **file › sheet › cell**: the file from `source.fileName`, the sheet from `meta.sourceMap[section].sheet`, and the cell from the field's column (or its per-year column for `year`) plus `row`, or from `cells` / `cell` for fixed cells. For an extra section, the sheet is the section's `title` and the cell is the column's `column` letter plus `sourceRow` (e.g. `North America plan.xlsx › 5. Events › F10`).
@@ -285,12 +426,13 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 
 **Errors stop the app from opening** (the list can be copied in one click):
 - a required field or section is missing, or has the wrong type;
-- a value outside its allowed set: ratings and tiers 1 to 3, New Business tier 1 or 2, segment ids, channel ids, `riskLevel`, recap `motion`, `type` and `year`;
+- a value outside its allowed set: ratings and tiers 1 to 3, New Business tier 1 or 2, segment ids, channel ids, `riskLevel` (`high`, `medium` or `low`), recap `motion`, `type` and `year`;
 - a broken reference between sections: an `industryId` or `productLine` not in `lookups`, a New Business row whose industry has no Market Coverage row or whose tier differs from it;
 - `meta.years` not exactly three different plan years, or a by-year list without three values (or with a value that is not a number);
 - a New Business `channelSplit` missing one of the four channels;
 - duplicate region ids, duplicate industries in a region's Market Coverage, duplicate account ids;
-- a region id of `rest` or `org`: the app keeps these two ids for combined figures (the rest of the regions, the organization total).
+- a region id of `rest` or `org`: the app keeps these two ids for combined figures (the rest of the regions, the organization total);
+- in the full template's parts (Phase 4), the same kinds of problem: a wrong type (text in a strategic plan figure or in `outsourcingPct`, a number where a solution id belongs, a `baseYear` that is not an object), a field of an item that is missing, an id that is not known (a `solution`, a product `category`, a partner `type`, a `maturity`, a `route`, or a `type`, `channel`, `motion` or `year` of a revenue, books value, strategic plan or route item), and the same id twice in one of the new lookups. **A part that is left out is never an error**, and neither is a region that has one part without another.
 
 **Warnings load anyway** and are listed in the data sources panel:
 - a channel split not adding up to 100% (within 1 point);
@@ -302,6 +444,13 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a date (`meta.generatedAt`, `source.fileModified`, `source.importedAt`) that is not an ISO date such as `"2026-10-02T09:00:00Z"` or `"2026-10-02"`. The app never guesses at other forms (`"02/10/2026"` could be day first or month first), so such a date shows as not provided;
 - a share held as a decimal (`hitRate`, `servicesRatio`, `growth.year2` and `year3`, `growthPct`, `centralSupportPct`) above 1.5, which is most likely a whole-number percentage (25 for 25%); a negative `targetAccounts`, `fteSales` or `fteConsultants`; two recap items with the same `year`, `channel`, `motion` and `type`, which would both be added up;
 - a rating on an industry that is not rated;
+- in the full template's parts (Phase 4), values that are likely wrong:
+  - revenue above the order intake of the same year, channel and motion (the `recap` figure it is released from);
+  - a books value above the customer value of the same year for a reseller channel (`partner`, `allianceA`, `allianceB`);
+  - a `coverage` more than 5% away from pipeline over the order intake still to win (forecast minus actuals);
+  - a strategic plan `variance` that is not the plan's books order intake for that year and type minus the strategic plan;
+  - the same item twice: a year, channel, motion and type in `revenue` or `booksValue`, a year and type in `strategicPlan`, a category in `baseYear.items`, or a route, year, type and solution in `routes`;
+  - a missing `sourceCell` or `sourceRow`, an `actualsThrough` that is not a year and month such as `"2026-08"`, or a `sourceMap` entry missing for a part that a region carries;
 - anything wrong in an extra section: `meta.extraSections` not a list, a section without an id, title or usable column, a section id with a colon, a duplicate id or column key, an unknown `unit` or `kind`, a column letter that isn't one, a region's `extra` naming a section that isn't listed, a row without `sourceRow`, two rows of a section from the same worksheet row, a row naming a column the section doesn't have, or a value of the wrong type for its unit. **Extra sections never stop the app**: every problem in them is a warning naming the section and the field. On screen, a section with a colon in its id or no usable column, and an unusable column, are left out, of two sections with one id or two rows from one worksheet row the first is kept, and a value of the wrong type for its unit shows as not provided.
 
 The import itself also records anything worth checking as a note in `source.notes`, with its sheet and cell.
@@ -316,7 +465,7 @@ The import itself also records anything worth checking as a note in `source.note
 
 1. **Account names:** shown for now (D14, provisional). Possibly anonymous labels in a copy shared with all leaders.
 2. **Year labels:** confirm the plan years and whether Year 1 is the first forecast year.
-3. **Partner maturity values:** not present in the copy reviewed.
+3. **Partner maturity values:** settled in Phase 4. The full template gives five levels (Recruit, Onboard, Enable, Skill, Strategic), carried in `lookups.partnerMaturity`.
 4. **The rest of the template:** sections not covered above go in as [extra sections](#extra-sections) (US-3.2.1); a section that needs its own charts later gets fields of its own, added to this contract.
 
 ## Changes
@@ -329,3 +478,4 @@ Each version of this contract and what it added. The version (`meta.schemaVersio
 | 0.2 | 2026-10-03 | Phase 1, `v0.1.0` | Source tracing (D26): `sourceRow` on every list item and `meta.sourceMap`, the field-to-column map per template version, so every figure traces to file › sheet › cell. Missing values in three states: a number, `null` for not provided, and not applicable from the template's rules (D48). Fields and sections the contract doesn't name are ignored (D47). The contract check on load, with errors and warnings |
 | 0.2, unchanged | 2026-10-05 | Phase 2, `v0.2.0` | Nothing added to the file's shape. The New business, Customer growth and Partners views, the region profile and the lists read fields already in 0.2: `newBusiness[]`, `customerGrowth`, `partners[]` and `recap[]` |
 | 0.2, additions only | 2026-10-05 | Phase 3, `v0.3.0` | Optional extra sections (US-3.2.1, D66): `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows with `sourceRow`. Checked with warnings only; a file without them stays valid. See [Extra sections](#extra-sections) |
+| 0.2, additions only | 2026-10-05 | Phase 4, `v0.4.0` | The full template (US-4.1.1, D84, D87): optional lookups `productCategories`, `solutions`, `partnerTypes`, `partnerMaturity` and `routes`; per region the optional `revenue` and `booksValue` lists (the recap item's shape; `recap` keeps its meaning, customer value), `strategicPlan`, `baseYear`, `routes` and `outsourcingPct`; `solution` on New Business rows; `type`, `supportPct`, `distribution` and `servicesFromPartners` on partners, with `maturity` as an id from the lookup; and the risk level `low`. Checked on load: wrong types and unknown ids stop the app, likely-wrong values warn. A file without any of them stays valid. See [The full template](#the-full-template-phase-4) |

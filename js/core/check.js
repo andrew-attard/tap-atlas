@@ -49,7 +49,7 @@
     rating: oneOf([1, 2, 3]),
     tier: oneOf([1, 2, 3]),
     nbTier: oneOf([1, 2]),
-    risk: oneOf(['high', 'medium'], true),
+    risk: oneOf(['high', 'medium', 'low'], true),
     segment: oneOf(SEGMENTS, true),
     channelId: oneOf(CHANNELS, true),
     partnerChannel: oneOf(['partner', 'allianceA', 'allianceB'], true),
