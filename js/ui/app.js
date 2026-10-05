@@ -12,41 +12,63 @@
   var root = null;
   var unsubscribe = null;
   var hashBound = false;
+  var correcting = false;   // the address bar is being brought in line with what it asked for (no new history entry)
+
+  // Only views in the menu are reachable by address or screenshot query (D76); anything else opens the first view.
+  function known(id) { return TAP.views.order().indexOf(id) >= 0; }
+  function firstView() { return TAP.views.order()[0] || 'overview'; }
+  function knownRegion(id) { return id != null && !!TAP.data.region(id); }
 
   // Opening state for screenshots only (?screenshot=1&view=industry&mode=one&focus=north). Ignored otherwise.
+  // Unknown values are left out; unknown region ids in the comparison are repaired by the comparison bar.
   function screenshotState() {
     var q = new URLSearchParams(window.location.search);
     if (q.get('screenshot') !== '1') return null;
     var cmp = {};
-    if (q.get('mode')) cmp.mode = q.get('mode');
+    if (['all', 'one', 'pair', 'set', 'org'].indexOf(q.get('mode')) >= 0) cmp.mode = q.get('mode');
     if (q.get('focus')) cmp.focus = q.get('focus');
     if (q.get('second')) cmp.second = q.get('second');
     if (q.get('set')) cmp.set = q.get('set').split(',');
-    if (q.get('rest')) cmp.restAgg = q.get('rest');
+    if (['average', 'total'].indexOf(q.get('rest')) >= 0) cmp.restAgg = q.get('rest');
     var patch = { cmp: cmp };
-    if (q.get('view')) patch.view = q.get('view');
-    if (q.get('region')) patch.region = q.get('region');
+    if (known(q.get('view'))) patch.view = q.get('view');
+    if (knownRegion(q.get('region'))) patch.region = q.get('region');
     return patch;
   }
 
-  // '#industry' gives the view; '#regions/north' also gives the region for the profile (US-2.4.1).
+  // '#industry' gives the view; '#regions/north' also gives the region for the profile (US-2.4.1). An address naming
+  // no view in the menu, or one that can't be read, gives the first view; a region the data lacks gives the picker.
   function fromHash() {
-    var parts = (window.location.hash || '').replace(/^#\/?/, '').split('/');
-    var id = TAP.views.get(parts[0]) ? parts[0] : null;
-    return { view: id, region: id === 'regions' && parts[1] ? decodeURIComponent(parts[1]) : null };
+    var parts = (window.location.hash || '').replace(/^#\/?/, '').split('/'), region = null;
+    if (!known(parts[0])) return { view: firstView(), region: null };
+    if (parts[0] === 'regions' && parts[1]) {
+      try { region = decodeURIComponent(parts[1]); } catch (e) { return { view: firstView(), region: null }; }
+    }
+    return { view: parts[0], region: knownRegion(region) ? region : null };
   }
   function hashFor(state) {
     return state.view + (state.view === 'regions' && state.region ? '/' + encodeURIComponent(state.region) : '');
   }
+  function hashIs(h) { return window.location.hash.replace(/^#\/?/, '') === h; }
+  // replaceState keeps a corrected address out of the back-button history
+  function replaceHash(h) { history.replaceState(null, '', window.location.pathname + window.location.search + '#' + h); }
 
-  // Shows a view in the shell's view area, removing the previous one.
+  // Shows a view in the shell's view area, removing the previous one. A view that throws shows its error there,
+  // and still counts as mounted, so the menu can leave it.
   function mountView(id) {
-    if (!TAP.views.get(id)) id = TAP.views.order()[0];
+    if (!known(id)) id = firstView();
     if (mounted && mounted.id === id) return;
-    if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
+    var old = mounted;
+    mounted = null;
+    if (old && old.handle && old.handle.destroy) old.handle.destroy();
     var el = shellViewEl();
     TAP.dom.clear(el);
-    mounted = { id: id, handle: TAP.views.get(id).mount(el) };
+    mounted = { id: id, handle: null };
+    try { mounted.handle = TAP.views.get(id).mount(el); } catch (e) {
+      TAP.dom.clear(el);
+      el.appendChild(TAP.dom.el('p', { class: 'tap-stub', role: 'alert' }, TAP.content.text('screens.viewFailed', { message: e.message })));
+      console.error(e);
+    }
   }
 
   function shellViewEl() {
@@ -58,7 +80,9 @@
     var viewChanged = changed.indexOf('view') >= 0;
     if (!viewChanged && changed.indexOf('region') < 0) return;
     if (viewChanged && state.expanded) TAP.store.set({ expanded: null });   // an expanded chart belongs to the view it was on
-    if (window.location.hash.replace(/^#\/?/, '') !== hashFor(state)) window.location.hash = hashFor(state);
+    if (!hashIs(hashFor(state))) {
+      if (correcting) replaceHash(hashFor(state)); else window.location.hash = hashFor(state);
+    }
     if (viewChanged) mountView(state.view);
   }
 
@@ -81,7 +105,7 @@
     // Always open on Overview with All regions, whatever was used last time (US-1.1.3).
     TAP.store.reset();
     var shot = screenshotState();
-    TAP.store.set(Object.assign({ view: TAP.views.order()[0] || 'overview' }, shot || {}));
+    TAP.store.set(Object.assign({ view: firstView() }, shot || {}));
 
     try {
       TAP.shell.mount(root, { warnings: res.warnings });
@@ -99,15 +123,17 @@
       window.addEventListener('hashchange', function () {
         if (!unsubscribe) return;   // the app isn't running (error screen or not started)
         var h = fromHash(), s = TAP.store.get();
-        if (h.view && (h.view !== s.view || h.region !== s.region)) TAP.store.set({ view: h.view, region: h.region });
+        correcting = true;
+        try {
+          if (h.view !== s.view || h.region !== s.region) TAP.store.set({ view: h.view, region: h.region });
+        } finally { correcting = false; }
+        // An address the app could not follow as written (#foo, #other without extra sections) is corrected
+        if (!hashIs(hashFor(TAP.store.get()))) replaceHash(hashFor(TAP.store.get()));
       });
     }
 
     var first = TAP.store.get().view, firstHash = hashFor(TAP.store.get());
-    if (window.location.hash.replace('#', '') !== firstHash) {
-      // replaceState keeps the opening view out of the back-button history
-      history.replaceState(null, '', window.location.pathname + window.location.search + '#' + firstHash);
-    }
+    if (!hashIs(firstHash)) replaceHash(firstHash);   // keeps the opening view out of the back-button history
     // Insights are worked out afresh for this data (they are cached per plan)
     if (TAP.insights && !TAP.insights.__stub) TAP.insights.reset();
     mountView(first);
