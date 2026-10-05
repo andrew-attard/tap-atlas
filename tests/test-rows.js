@@ -1,7 +1,7 @@
 /*
  * File: tests/test-rows.js
  * Purpose: Tests for row figures (TAP.rows) and the list builder, checked against the mini fixture by hand.
- * Provides: test cases TPV-TC-281 to 283, 285 to 287, 289, 292, X-rows-*
+ * Provides: test cases TPV-TC-281 to 283, 285 to 287, 289, 292, X-rows-*, X-review-DE-4
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: ENGINE2 stream
@@ -237,6 +237,62 @@
       a.deepEqual(res.target({ data: { row: 'accounts:br:avo:11' } }).items, [{ section: 'customerGrowth', regionId: 'br:avo', row: 11 }]);
       a.equal(html(res).querySelector('tr[data-tap-row="accounts:alpha:13"] td[data-tap-col="multiplier3y"]').textContent, '2.25');
       a.equal(res.table.columns[1].decimals, 2, 'the table column says so too, for copies');
+    });
+
+    // Review DE-4: rows were identified by "<region>:<sourceRow>", which a repeated or missing row number breaks.
+    T.test('X-review-DE-4', 'Two accounts with one row number stay apart: list, click, details and highlight', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].customerGrowth.accounts[1].sourceRow = 10;   // a2 repeats a1's row 10
+      TAP.data.load(p);
+      var only = { cmp: cmp({ mode: 'set', set: ['alpha'] }) };
+      // a1 keeps row 10; a2, the second item in the file (position 1), is identified by its position
+      a.deepEqual(TAP.rows.list('accounts', ['alpha']).map(function (e) { return e.id; }), ['alpha:10', 'alpha:p1', 'alpha:12', 'alpha:13']);
+      var res = build(def(), only), trs = html(res).querySelectorAll('tr[data-tap-row]');
+      var keys = Array.prototype.map.call(trs, function (tr) { return tr.getAttribute('data-tap-row'); });
+      a.equal(keys.length, 4);
+      a.ok(keys.indexOf('accounts:alpha:p1') >= 0, 'a2 has its own row reference');
+      var t = res.target({ data: { row: 'accounts:alpha:p1' } });
+      a.ok(t, 'a click on a2 names a row');
+      a.deepEqual(t.accountIds, ['a2']);
+      a.deepEqual(t.items, [{ section: 'customerGrowth', regionId: 'alpha', row: 'p1' }]);
+      a.match(TAP.details.build(t).title, /Fictional Account A2/, 'details open a2, not a1');
+      var hl = build(def(), Object.assign({ highlight: { items: [{ section: 'customerGrowth', regionId: 'alpha', row: 10 }] } }, only));
+      var on = html(hl).querySelectorAll('tr.is-hl');
+      a.equal(on.length, 1, 'a highlight of row 10 marks one row');
+      a.equal(on[0] && on[0].getAttribute('data-tap-row'), 'accounts:alpha:10');
+    });
+
+    T.test('X-review-DE-4', 'Accounts with no row number can still be clicked, by their position', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].customerGrowth.accounts.forEach(function (acc) { delete acc.sourceRow; });
+      TAP.data.load(p);
+      a.deepEqual(TAP.rows.list('accounts', ['alpha']).map(function (e) { return e.id; }), ['alpha:p0', 'alpha:p1', 'alpha:p2', 'alpha:p3']);
+      var res = build(def(), { cmp: cmp({ mode: 'set', set: ['alpha'] }) });
+      var t = res.target({ data: { row: 'accounts:alpha:p2' } });
+      a.deepEqual(t && t.accountIds, ['a3'], 'the third account in the file');
+      var text = html(res).textContent;
+      a.ok(text.indexOf('undefined') < 0 && text.indexOf('{row}') < 0, 'the source column names no missing row');
+    });
+
+    T.test('X-review-DE-4', 'A row bubble keeps two accounts with one row number apart', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].customerGrowth.accounts[1].sourceRow = 10;
+      TAP.data.load(p);
+      var d = TAP.reports.get('cg-bubble');
+      function bubble(highlight) {
+        return TAP.builders.get('rowBubble')({ def: d, type: d.defaultType, cmp: cmp({ mode: 'set', set: ['alpha'] }), opts: {},
+          highlight: highlight || null, size: { w: 800, h: 500 } });
+      }
+      var points = [];
+      bubble().option.series.forEach(function (s) { if (s.tapRole === 'value') points = points.concat(s.data); });
+      var a2 = points.filter(function (pt) { return pt.rowId === 'alpha:p1'; })[0];
+      a.ok(a2, 'a2 is drawn as its own bubble');
+      var t = bubble().target({ data: a2 });
+      a.deepEqual(t.items, [{ section: 'customerGrowth', regionId: 'alpha', row: 'p1' }], 'a click opens a2');
+      a.match(TAP.details.build(t).title, /Fictional Account A2/);
+      var ring = bubble({ items: [{ section: 'customerGrowth', regionId: 'alpha', row: 'p1' }] }).option.series
+        .filter(function (s) { return s.tapRole === 'highlight'; })[0];
+      a.equal(ring && ring.data.length, 1, 'a highlight of a2 rings one bubble');
     });
 
     T.test('X-rows-empty', 'A scope with no rows is empty and names the regions with none', function (a) {

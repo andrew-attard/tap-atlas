@@ -1,7 +1,7 @@
 /*
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206).
- * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*
+ * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -152,6 +152,21 @@
       p.regions[0].newBusiness[0].arrPotential = [null, null, null];
       var res = TAP.check.run(p);
       a.deepEqual(res.errors, [], errorList(res));
+    });
+
+    // Review DE-4: a worksheet row number used twice in a section was not reported.
+    T.test('X-review-DE-4', 'A worksheet row number used twice in one section is a warning, in every list section', function (a) {
+      var p = T_FIXTURE('mini'), r = p.regions[0];
+      r.newBusiness[1].sourceRow = 20;                                            // row 20 twice
+      r.customerGrowth.accounts[1].sourceRow = 10;                                // row 10 twice
+      r.partners.push(Object.assign(copy(r.partners[0]), { name: 'Fictional Partner A2' }));   // row 10 twice
+      var res = TAP.check.run(p), paths = res.warnings.map(function (w) { return w.path; });
+      a.deepEqual(res.errors, [], errorList(res));
+      ['regions[0].newBusiness[1].sourceRow', 'regions[0].customerGrowth.accounts[1].sourceRow', 'regions[0].partners[1].sourceRow']
+        .forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is warned about'); });
+      a.ok(paths.indexOf('regions[0].customerGrowth.accounts[0].sourceRow') < 0, 'the first use of the number is fine');
+      var w = res.warnings.filter(function (x) { return x.path === 'regions[0].customerGrowth.accounts[1].sourceRow'; })[0];
+      a.ok(w && /row/.test(w.expected) && w.found === 10, 'says what it expected and what it found');
     });
   });
 })(window.TAP);
