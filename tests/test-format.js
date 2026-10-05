@@ -138,6 +138,10 @@
       a.equal(F.pct(1e21), '100,000,000,000,000,000,000,000%');
       // 5e20 shifted by two decimals passes 1e21 while rounding: 21 digits, "500" and six groups
       a.equal(F.num(5e20, { decimals: 2 }), '500,000,000,000,000,000,000');
+      // A whole number written out from 1e21 keeps its zeros when decimals are asked for:
+      // 2e21 is 22 digits, "2" and seven groups; 1e19 as an exact share is 1e21 percent, "1" and seven groups
+      a.equal(F.num(2e21, { decimals: 1 }), '2,000,000,000,000,000,000,000');
+      a.equal(F.pct(1e19, { exact: true }), '1,000,000,000,000,000,000,000%');
       a.equal(F.pct(0.2345, { exact: true }), '23.5%', 'decimal rounding still half up');
       a.equal(F.money(1234.5 * 1000, U), '€1.2M');
     });
