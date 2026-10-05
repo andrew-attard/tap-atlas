@@ -360,7 +360,10 @@
         });
         var opts = TAP.custom.options();
         // Customer value is offered with the books value it is compared with, not on its own
-        IDS.forEach(function (id) { a.ok(!byId(opts, id), name + ': Build a chart does not offer ' + id); });
+        IDS.forEach(function (id) {
+          a.ok(!byId(opts, id), name + ': Build a chart does not offer ' + id);
+          a.equal(TAP.measures.available(id), false, name + ': ' + id + ' is not available');
+        });
         a.ok(!!byId(opts, 'nb.arr') && !!byId(opts, 'rc.all.oi'), name + ': the existing measures are still offered');
         a.deepEqual(TAP.rows.columns('partners').map(function (c) { return c.key; }), ['region', 'name', 'channel', 'maturity', 'expertiseGeo',
           'expertiseProduct', 'fteSales', 'fteConsultants', 'fte', 'centralSupportPct', 'arr3', 'services3', 'oiPerFte', 'alsoNamed'],
@@ -380,6 +383,10 @@
       TAP.data.load(p);
       var opts = TAP.custom.options();
       a.ok(!byId(opts, 'rt.oi'), 'no region has routes: not offered');
+      a.equal(TAP.measures.available('rt.oi'), false, 'and the registry says so');
+      a.equal(TAP.measures.available('sp.oi'), true);
+      a.equal(TAP.measures.available('nb.arr'), true, 'an earlier measure is always available');
+      a.equal(TAP.measures.available('no.such'), false);
       a.ok(!!byId(opts, 'sp.oi') && !!byId(opts, 'sp.variancePct'), 'one region has a strategic plan: offered');
       a.ok(!byId(opts, 'sp.swPerpetual'), 'no region’s strategic plan gives software perpetual: not offered');
       a.ok(!!byId(opts, 'rv.all.oi'), 'the other parts stay');
