@@ -73,18 +73,23 @@
   function yearSum(field) { return function (ctx) { return function (row) { return byYear(row[field], ctx.year); }; }; }
   function plain(field) { return function () { return function (row) { return row[field]; }; }; }
 
-  // A rate averaged over rows, weighted by each row's size. With no weight at all, rows count equally.
+  // A rate averaged over rows, weighted by each row's size (D78). Rows with a value but a blank weight are left out
+  // and the cell is partly provided; when no row has a weight, the rows count equally. A weighted cell keeps its
+  // sums (ratio {num, den}), so a combined figure weighs each region by the rows its own figure used.
   function weightedRows(regionId, section, field, kind, rows, ctx, val, wt) {
-    var used = [], sv = 0, sw = 0, sp = 0;
-    rows.forEach(function (row) {
-      var v = val(row), w = wt(row);
-      if (!isNum(v) || !isNum(w) || w < 0) return;
-      used.push(row.sourceRow);
+    var given = rows.filter(function (row) { return isNum(val(row)); });
+    var weighted = given.filter(function (row) { var w = wt(row); return isNum(w) && w >= 0; });
+    var used = weighted.length ? weighted : given, sv = 0, sw = 0, sp = 0;
+    used.forEach(function (row) {
+      var v = val(row), w = weighted.length ? wt(row) : 1;
       sv += v * w; sw += w; sp += v;
     });
-    var s = src(regionId, section, field, used.length ? used : rowNums(rows), ctx.year, kind);
+    var s = src(regionId, section, field, rowNums(used.length ? used : rows), ctx.year, kind);
     if (!used.length) return blank(kind, s);
-    return cell(sw > 0 ? sv / sw : sp / used.length, kind, s);
+    if (!weighted.length) return cell(sp / used.length, kind, s);
+    var extra = { ratio: { num: sv, den: sw } };
+    if (weighted.length < given.length) { extra.partial = true; extra.note = TAP.content.text('measures.partialWeights'); }
+    return cell(sw > 0 ? sv / sw : sp / used.length, kind, s, extra);
   }
 
   /*
@@ -139,6 +144,7 @@
   sums('cg.baseArr', amount('PRE', ROWS), accounts, 'customerGrowth', 'currentArr', plain('currentArr'));
 
   function rates(id, m, section, field, val, wt) {
+    m.combine = 'rowWeights';
     define(id, m, function (r, ctx) {
       ctx = ctx || {};
       return gap(section, r, ctx, m.kind, field) || weightedRows(r, section, field, m.kind, nbRows(r, ctx), ctx, val, wt);
@@ -154,24 +160,11 @@
   });
   rates('nb.servicesRatio', rate('PRE', 'nb.arr', ROWS), 'newBusiness', 'servicesRatio', function (row) { return row.servicesRatio; }, arr3);
 
-  // Customer growth % for a plan year: incremental ARR over the accounts' current ARR, so accounts planned with
-  // the 3-year multiplier count too. Partial only when an account's figure is truly blank.
+  // Customer growth % for a plan year is cg.growth.all for that year (js/engine/measures-p2.js): incremental ARR over
+  // the accounts' current ARR, combined from the summed parts. One rule, so an insight and its chart agree (D78).
   [1, 2, 3].forEach(function (y) {
-    define('cg.growthY' + y, rate('APP', 'cg.baseArr', ROWS), function (r, ctx) {
-      ctx = ctx || {};
-      var none = cgGap(r, ctx, 'APP', 'incrementalArr');
-      if (none) { none.src.year = y; return none; }
-      var rows = accounts(r, ctx), used = [], inc = 0, base = 0;
-      rows.forEach(function (a) {
-        var v = Array.isArray(a.incrementalArr) ? a.incrementalArr[y - 1] : null;
-        if (!isNum(v) || !isNum(a.currentArr)) return;
-        used.push(a.sourceRow);
-        inc += v;
-        base += a.currentArr;
-      });
-      var s = src(r, 'customerGrowth', 'incrementalArr', used.length ? used : rowNums(rows), y, 'APP');
-      if (!used.length || !(base > 0)) return blank('APP', s);
-      return cell(inc / base, 'APP', s, used.length < rows.length ? { partial: true, note: TAP.content.text('measures.partialAccounts') } : null);
+    define('cg.growthY' + y, Object.assign(rate('APP', 'cg.baseArr', ROWS), { combine: 'ratioOfSums' }), function (r, ctx) {
+      return get('cg.growth.all')(r, Object.assign({}, ctx || {}, { year: y }));
     });
   });
 
@@ -249,7 +242,19 @@
     var items = entity.regionIds.map(function (r) { return { regionId: r, cell: get(id)(r, ctx) }; });
     // Shares and ratios: the summed numerators over the summed denominators, never a mean of ratios (17.5)
     if (m.combine === 'ratioOfSums') return TAP.agg.ratio(items);
+    if (m.combine === 'rowWeights' && !(ctx.weights && ctx.weights[id])) return rowWeighted(id, items, how, ctx);
     return TAP.agg.combine(items, m.valueKind, how, { measureId: id, weights: ctx.weights, ctx: ctx });
+  }
+
+  // Row-weighted rates (D78): each region weighs the summed weight of the rows its own figure used, so the result
+  // is the ratio of the summed rows. A region whose rows had no weight is named as "weight missing"; when no region
+  // has a weight, the regions count equally.
+  function rowWeighted(id, items, how, ctx) {
+    var any = items.some(function (it) { return it.cell.state === 'value' && it.cell.ratio; });
+    items.forEach(function (it) { it.weight = !any ? 1 : it.cell.ratio ? it.cell.ratio.den : null; });
+    var out = TAP.agg.combine(items, 'rate', how, { measureId: id, ctx: ctx });
+    if (!any && out.state === 'value') out.src.weightFallback = true;
+    return out;
   }
 
   function combinedParts(id, entity, how, ctx) {

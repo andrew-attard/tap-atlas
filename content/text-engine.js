@@ -63,6 +63,7 @@ Object.assign(window.TAP_CONTENT.text, {
     partialYears: 'Some plan years were left blank',
     partNotProvided: '{parts} not provided',
     partialAccounts: 'Some accounts left this year blank',
+    partialWeights: 'Some rows have no figure to weight by and are not included',
     nb: {
       arr: { label: 'New business ARR potential', short: 'New business' },
       services: { label: 'New business services potential', short: 'New business services' },
