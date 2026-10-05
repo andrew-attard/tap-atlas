@@ -3,7 +3,7 @@
  * File: tools/check-docs3.js
  * Purpose: File checks for the handover pack and the portfolio edition, which the browser test page can't make:
  *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
- *          the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
+ *          the README's file guide against the folder, the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
  * Depends on: Node 18+; tools/check-docs3-files.js (the screenshot and package checks)
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
@@ -158,8 +158,48 @@ function checkHandover(root) {
   return { problems, checked: HANDOVER_PARTS.length + 2 };
 }
 
+/* ---------- TPV-TC-602: the README's file guide lists every shipped file ---------- */
+
+const SHIPPED = ['index.html', 'index-sample.html', 'js', 'css', 'config', 'content', 'data', 'vendor', 'docs'];
+
+// Files under the shipped folders, ignoring what .gitignore keeps out (the real data and organization files).
+function shippedFiles(root) {
+  const ignored = new Set(['data/plan-data.js', 'content/organization.js']);
+  const out = [];
+  (function walk(rel) {
+    const abs = path.join(root, rel);
+    if (!fs.existsSync(abs)) return;
+    if (fs.statSync(abs).isDirectory()) fs.readdirSync(abs).sort().forEach((n) => { if (!n.startsWith('.')) walk(rel + '/' + n); });
+    else if (!ignored.has(rel)) out.push(rel);
+  })('.');
+  return out.map((f) => f.replace(/^\.\//, '')).filter((f) => SHIPPED.some((s) => f === s || f.startsWith(s + '/')));
+}
+
+// True when a README path names the file: the same path, a folder it sits in, or a pattern with "*" in one level.
+function covers(named, file) {
+  if (named.endsWith('/')) return file.startsWith(named);
+  if (named.indexOf('*') < 0) return named === file;
+  const re = new RegExp('^' + named.replace(/[.+^${}()[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*') + '$');
+  return re.test(file);
+}
+
+function checkReadmeFiles(root) {
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  // Only the file guide: from "What each file does" to the next level-2 heading.
+  const guide = (/^## What each file does[\s\S]*?(?=^## )/m.exec(readme) || [''])[0];
+  // A file counts as listed when the first cell of a table row names it, so each has a line saying its job.
+  const firstCells = guide.split(/\r?\n/).filter((l) => /^\|/.test(l)).map((l) => l.split('|')[1] || '');
+  const named = [];
+  firstCells.forEach((c) => (c.match(/`[^`]+`/g) || []).forEach((m) => named.push(m.slice(1, -1).trim())));
+  const files = shippedFiles(root);
+  const problems = files.filter((f) => !named.some((n) => covers(n, f)))
+    .map((f) => 'README.md file guide: ' + f + ' is not listed');
+  return { problems, checked: files.length };
+}
+
 const CHECKS = [
   { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb },
+  { id: 'TPV-TC-602', label: 'README file guide lists every shipped file (paths named are checked by check-docs.js)', run: checkReadmeFiles },
   { id: 'X-docs3-handover', label: 'handover guide: its parts, the import brief, and first in the README', run: checkHandover },
   { id: 'TPV-TC-606', label: 'package.sh: refuses on a failed verify, else one dated copy without tests or tools (606, 607, 609, 610, 611)', run: (root) => files.checkPackage(root, HANDOVER) },
   { id: 'TPV-TC-615', label: 'landing page: relative links to files that exist, 3 or 4 screenshots, the sample button', run: checkLanding },
