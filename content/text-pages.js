@@ -144,6 +144,7 @@ Object.assign(window.TAP_CONTENT.text, {
       capability: { name: 'Attractive but not yet winnable', line: 'Industries rated attractive where the ability to win is rated lower.' },
       plan: { name: 'Plan make-up and channels', line: 'How each plan splits between new business and existing customers, and across channels.' },
       shared: { name: 'Shared targets and partners', line: 'Sub-industries and partners named by several regions, and partners planned to bring much more per person.' },
+      outlook: { name: 'Strategy and outlook', line: 'Plans against the strategic plan and the current year, pipeline coverage, and what runs through the organization’s books.' },
       themes: { name: 'Recurring themes', line: 'Themes that come up in several regions’ commentary and success factors.' }
     }
   }

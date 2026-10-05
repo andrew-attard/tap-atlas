@@ -79,6 +79,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/core/check-rows.js` | The contract check for each region: its fields and the rows of its sections |
 | `js/core/data.js` | Loads and checks the data file, then gives everything else simple ways to read it |
 | `js/core/extra.js` | Extra template sections: the sections the data file declares, their columns and cells, sources, and their warnings |
+| `js/core/check-p4.js` | Checks the Phase 4 parts of the data file: strategic plan, base year, revenue, books value, routes, solutions, partner types and maturity |
 
 ### `js/engine/`
 
@@ -96,6 +97,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/build-xy.js` | Generic builder: two measures against each other (scatter, bubble) |
 | `js/engine/measures-p2.js` | The Phase 2 measures: recap by channel and motion, new business by tier, customer growth by segment, exposure |
 | `js/engine/measures-pt.js` | The Phase 2 partner measures and the plan make-up share |
+| `js/engine/measures-p4.js` | The Phase 4 measures: strategic plan and variance, base year and coverage, revenue, books value, solutions, product categories, routes and partner maturity |
 | `js/engine/rows.js` | Figures for single rows (a new business row, an account, a partner), each with its source, for lists, bubbles and details |
 | `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and a filter |
 | `js/engine/custom.js` | Custom charts: which measure and dimension pairs each measure allows, the report definition for a choice, the session list |
@@ -117,6 +119,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |
 | `js/insights/util.js` | The helpers every rule gets as `ctx.util`: names, catalogue figures, the other regions' combined figure, phrases, strength and money at stake |
+| `js/insights/rules-outlook.js` | Insight rules on the Phase 4 figures: strategic plan gap, year 1 jump, pipeline coverage, books value gap, solution reliance |
 | `js/insights/rules-*.js` | One file per rule family: priorities, judgement, assumptions, realism, exposure, capability, plan (channel reliance, plan make-up), shared (shared targets, partner capacity), themes (recurring themes) |
 | `js/panel/panel.js` | The report panel: title, takeaway, chart or table, legend, source line, controls |
 | `js/panel/panel-build.js` | What a panel draws: checks the report and runs its builder |
@@ -156,6 +159,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/regions-parts.js` | The profile's lower parts: the plan at a glance, the region's insights and what its leader wrote |
 | `js/views/insights.js` | The Insights page: every insight, ranked and grouped |
 | `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
+| `js/views/outlook.js` | Outlook: the plans against the strategic plan and the base year, pipeline coverage, revenue and product categories |
 | `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (running order, Build a chart), glossary |
 
 ### `config/`
@@ -171,6 +175,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/reports-customers.js` | Report definitions for Customer growth |
 | `config/reports-partners.js` | Report definitions for Partners |
 | `config/reports-themes.js` | The recurring themes report |
+| `config/reports-outlook.js` | Report definitions for the Outlook view |
 | `config/profile.js` | The reports a region profile shows, in order |
 | `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, on/off switch, where it attaches |
@@ -181,12 +186,12 @@ vendor/           ECharts, the Archivo fonts and their licences
 | File | What it does |
 |---|---|
 | `content/ui-text.js` | General wording: app name, tour, Guide and glossary screens |
-| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections) |
+| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections), outlook (the Outlook view) |
 | `content/glossary.js` | The general glossary: every term in plain English |
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |
-| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes, present, custom |
+| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes, present, custom, outlook |
 | `css/view-head.css` | The shared header and two-panel layout of the newer views |
 
 ### `data/` and `docs/`
