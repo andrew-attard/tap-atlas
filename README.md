@@ -39,9 +39,9 @@ js/engine/        figures and charts: measures, combining regions, scope, row fi
 js/reports/       the dedicated charts (tier grid, quadrant, industry grid, levers, row bubbles, themes) and the details content
 js/insights/      the insight engine and one rule file per family
 js/panel/         the report panel every chart sits in
-js/ui/            the page frame, comparison bar, side panels, start-up screens, tour
-js/views/         the eight views: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights, Guide
-config/           settings, views, report definitions, insight rules (no code, only values)
+js/ui/            the page frame, comparison bar, side panels, start-up screens, tour, presentation mode, Build a chart
+js/views/         the views: Overview, Industry priorities, New business, Customer growth, Partners, Other sections, Regions, Insights, Guide
+config/           settings, views, report definitions, insight rules, the running order (no code, only values)
 content/          every word on screen: glossary, Guide text, wording files, organization starter
 css/              one base stylesheet and one per area
 data/             the data files
@@ -77,6 +77,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/core/sources.js` | Turns a figure's source into file › sheet › cell; summarises each region's import |
 | `js/core/check.js` | The contract check: checks the data file and lists problems in plain words |
 | `js/core/data.js` | Loads and checks the data file, then gives everything else simple ways to read it |
+| `js/core/extra.js` | Extra template sections: the sections the data file declares, their columns and cells, sources, and their warnings |
 
 ### `js/engine/`
 
@@ -95,6 +96,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/measures-p2.js` | The Phase 2 measures: recap by channel and motion, new business by tier, customer growth by segment, exposure, partners |
 | `js/engine/rows.js` | Figures for single rows (a new business row, an account, a partner), each with its source, for lists, bubbles and details |
 | `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and a filter |
+| `js/engine/custom.js` | Custom charts: which measure and dimension pairs each measure allows, the report definition for a choice, the session list |
 
 ### `js/reports/`, `js/insights/`, `js/panel/`
 
@@ -138,6 +140,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/tour.js` | The optional welcome tour |
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
+| `js/ui/present*.js` | Presentation mode: steps through the running order full screen, and records a running order from the screen |
+| `js/ui/custom-builder.js` | "Build a chart" on the Guide: pickers for measure, dimension and chart type, the custom chart and the session list |
 | `js/views/overview.js` | The Overview: headline, top insights, region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards |
 | `js/views/industry.js` | Industry priorities: tier grid, quadrant, ratings, commentary |
@@ -147,7 +151,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/regions.js` | Regions: pick a region, then its profile with the main reports for that region against the rest |
 | `js/views/regions-parts.js` | The profile's lower parts: the plan at a glance, the region's insights and what its leader wrote |
 | `js/views/insights.js` | The Insights page: every insight, ranked and grouped |
-| `js/views/guide.js` | The Guide page: how to use the app, planning explained, glossary |
+| `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
+| `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (running order, Build a chart), glossary |
 
 ### `config/`
 
@@ -165,18 +170,19 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/profile.js` | The reports a region profile shows, in order |
 | `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, on/off switch, where it attaches |
+| `config/running-order.js` | The running order for presentation mode: the meeting's steps, in order |
 
 ### `content/` and `css/`
 
 | File | What it does |
 |---|---|
 | `content/ui-text.js` | General wording: app name, tour, Guide and glossary screens |
-| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips) |
+| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections) |
 | `content/glossary.js` | The general glossary: every term in plain English |
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |
-| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes |
+| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes, present, custom |
 | `css/view-head.css` | The shared header and two-panel layout of the newer views |
 
 ### `data/` and `docs/`
@@ -189,13 +195,14 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/DATA-CONTRACT.md` | The exact shape of the data file. The only interface between data and views |
 | `docs/ARCHITECTURE.md` | How the parts fit and the contract each one codes against |
 | `docs/IMPORT-BRIEF.md` | What the import must do, for building it in Copilot |
+| `docs/EXTENDING-TEMPLATE.md` | How to bring another template section into the app: an extra section, a measure and report, or a new view |
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
 | `docs/index.html` | The portfolio landing page: the problem, what the app does, screenshots, how it was built, and a button that opens the sample edition |
 | `docs/screenshots/*.png` | One screenshot per view of the sample edition at 1440 x 900, for the landing page and case study. Made by `scripts/portfolio-shots.sh`: never edit by hand |
 | `docs/PUBLISHING.md` | How to put the sample edition on the web with GitHub Pages, and what to check after (Pages is not switched on) |
-| `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md` | How the builds were organized (background only) |
+| `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md`, `docs/build-plan-phase3.md` | How the builds were organized (background only) |
 
 ### `tests/`, `tools/`, `scripts/`, `vendor/`
 
@@ -225,7 +232,9 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `scripts/portfolio-shots.sh` | Retakes the portfolio screenshots in `docs/screenshots/`, one per view, with names that never change |
 | `scripts/check-text.sh`, `scripts/open-pr.sh` | Checks text against the private word list; opens a pull request after that check |
 | `scripts/qa/*` | The QA checks (`scripts/qa/run-all.sh` runs them all): console errors, text sizes, offline, smoke test, screenshot matrix |
-| `vendor/echarts.min.js` | The chart library (Apache ECharts 5.6.0); fonts are in `vendor/fonts/` |
+| `vendor/echarts.min.js` | The chart library (Apache ECharts 5.6.0) |
+| `vendor/fonts/archivo-*.woff2`, `vendor/fonts/OFL.txt` | The Archivo font in three weights, and its licence (SIL Open Font Licence) |
+| `vendor/LICENSE-*.txt` | The licences of ECharts and of the line icons the app draws |
 
 ## How data, content and theme fit together
 
@@ -267,6 +276,9 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | Organization wording | `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and the `content/text-*.js` file that holds the phrase (prompt 3) | The data sources panel in `index.html` shows no organization message |
 | A data file error | `docs/DATA-CONTRACT.md`, `js/core/check.js`, `content/text-data.js`, the import's files, and the copied problem list (prompt 6) | `index.html` opens; read the data sources panel |
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
+| The running order for a meeting | `config/running-order.js`, `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | **Present** in `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
+| Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or the Guide's "Build a chart" |
+| Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, the import's files (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |
 | A general wording change | The `content/text-*.js` file or `content/ui-text.js` that holds the phrase | The screen that shows it |
 
 **Adding a new code file** also means adding its `<script>` line to all three pages in the same place. Either add the file to the list in `tools/build-pages.js` and run `node tools/build-pages.js`, or add the same line by hand to each page. Prefer adding to an existing file when it stays under about 300 lines.

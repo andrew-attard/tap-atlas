@@ -27,11 +27,14 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Measures | `js/engine/measures.js`, `js/engine/measures-p2.js` (the Phase 2 measures), `js/engine/scores.js` (per-industry measures and the two scores), `js/engine/rows.js` (figures for single rows on lists) |
 | Charts and lists | `js/engine/build-compare.js`, `js/engine/build-parts.js`, `js/engine/build-xy.js`, `js/engine/build-list.js` (lists), `js/reports/*.js` (the dedicated charts) |
 | Insights | `config/insight-rules.js` (rules, thresholds, wording), `config/comment-themes.js` (recurring theme keywords), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
-| Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/ui/view-head.js` (the newer views' header and tips), `js/views/*.js` (the eight views), `js/panel/*.js` (the report panel, drill-down, expanded charts) |
-| Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages) |
+| Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/ui/view-head.js` (the newer views' header and tips), `js/views/*.js` (the views, including `js/views/other.js` for extra sections), `js/panel/*.js` (the report panel, drill-down, expanded charts) |
+| Presenting | `config/running-order.js` (the running order), `js/ui/present*.js` (presentation mode) |
+| Custom charts | `js/engine/custom.js` (which measures and dimensions can be combined), `js/ui/custom-builder.js` ("Build a chart" on the Guide) |
+| Extra sections | `js/core/extra.js` (reading and checking them), `js/views/other.js` (the Other sections view), `docs/EXTENDING-TEMPLATE.md` (how to add one) |
+| Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages, present, custom, extra) |
 | Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, internal copy only, never committed) |
 | Tests | `tests.html`, `tests/test-*.js`, `tests/fixtures/mini-data.js` (a small valid data file) |
-| Handover | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/EXTENDING-TEMPLATE.md` (adding more of the template) |
+| Handover | `docs/HANDOVER.md` (start here), `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/EXTENDING-TEMPLATE.md` (adding more of the template) |
 
 ## 1. Orientation
 
@@ -245,3 +248,44 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 ```
 
 **Expect:** one view file, one test file, small changes to `config/views.js`, a wording file and `tools/build-pages.js`. Check: run `node tools/build-pages.js`, open `tests.html` (all pass), then `index-sample.html` at 1280 px wide and at 125% and 150% zoom: the menu still fits, the number keys follow the menu order, and the view's reports switch charts, show tables and name their sources.
+
+## Presenting and building charts in the meeting
+
+Phase 3 added presentation mode, which steps through a meeting's running order full screen, and "Build a chart" on the Guide, which makes a chart from any measure that allows it. Prompts 14 and 15 help with both.
+
+## 14. Set the running order for a meeting
+
+Use before a meeting, to fix the steps "Present" plays: which report, measure, chart type, comparison and highlight each step shows, in order.
+
+**Attach:** `config/running-order.js` (the current order), `docs/ARCHITECTURE.md` (section 18.2 explains every field of a step), `config/views.js` and the definitions files of the reports you want (for example `config/reports-newbusiness.js`). If you recorded steps from the screen with "Add to running order", paste the file text the Guide gives you into the chat.
+
+```
+Write config/running-order.js for this app's presentation mode. Keep its header comment and set window.TAP_RUNNING_ORDER = { steps: [...] }, with each step in the shape described in section 18.2 of the attached ARCHITECTURE.md.
+The meeting runs in this order:
+1. <what to show, e.g. "the new business by industry heatmap, all regions">
+2. <e.g. "the same report, <region id> against the average of the rest, highlighting <region id>">
+3. <e.g. "the insight about <topic>">
+<more steps>
+Use only report ids from the attached definitions files and measure ids those reports list; for an insight step, use the insight id I give you. If I pasted recorded steps, start from them and change only what I ask. Give each step a short title. If a step asks for something the reports can't show, say so instead of inventing an id.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** one file to save over `config/running-order.js`. Check: open `index-sample.html` (or `index.html`) and start presentation mode with **Present** or the P key: the progress row shows "Step 1 of n" and the first title, and the arrow keys step through. A step that can't be shown is skipped and listed in the data sources panel with the reason; fix it and try again. Esc returns to the view you were on, with your comparison as it was.
+
+## 15. Keep a custom chart as a report, or offer a measure in "Build a chart"
+
+Use when a chart someone built in the meeting should stay (custom charts last for the session only), or when a measure is missing from the "Build a chart" lists.
+
+**Attach:** `js/engine/custom.js` (how the choices and the definition are made), `config/reports.js` (the schema), the target view's definitions file (for example `config/reports-customers.js`), `config/views.js`, and the measure files: `js/engine/measures.js`, `js/engine/measures-p2.js`, `js/engine/scores.js`. In the chat, give the chart's measure, "by" and chart type as its panel shows them.
+
+```
+In this app, "Build a chart" makes a custom report definition from a measure, a dimension ("by") and a chart type, as js/engine/custom.js shows; custom charts last for the session only.
+Task A, to keep a chart: turn the custom chart <measure id> by <entity | industry | channel | segment | year> as <chart type> into a permanent report on the <view> view. Write one definition in the view's file following config/reports.js, with an id that doesn't start with "custom:", the title phrased as the question "<question>", the three explanation texts, the same measure and breakdown, and the chart type as the default. Add its id to the view's list in config/views.js.
+Task B, to offer a measure: the measure <measure id> doesn't appear in "Build a chart" (or not by <dimension>). Explain from its metadata (unit, valueKind, dims) why, and propose the smallest change to its dims, only if that combination makes sense for the measure (a rate must never be summed).
+Do only the task I name: <A | B>.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** for A, one definition and a one-line change to `config/views.js`; for B, an explanation and a one-line change to the measure's `dims`, or a reason to leave it. Check: open `tests.html` (all pass), then the view, or the Guide's "Build a chart": the measure appears with the new choice, and a chart built from it shows the "Custom chart" badge and the same figures as its table.
