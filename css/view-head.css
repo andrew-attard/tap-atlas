@@ -8,7 +8,7 @@
  */
 
 /* The page column every Phase 2 view uses, matching the Industry view */
-.tap-vh-page { display: flex; flex-direction: column; gap: var(--tap-sp-4); padding: 0 var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
+.tap-vh-page { display: flex; flex-direction: column; gap: var(--tap-sp-4); padding: 0 0 var(--tap-sp-12); max-width: var(--tap-max-w); }
 
 .tap-vh { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 75rem; }
 .tap-vh__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
