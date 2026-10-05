@@ -161,7 +161,6 @@
       TAP.app.start({ root: root, plan: sample() });
       TAP.insights.reset();
       try { return fn(root); } finally {
-        try { TAP.present.stop(); } catch (e) { /* not running */ }
         window.TAP_RUNNING_ORDER.steps = file;
         try { TAP.layers.close(); } catch (e) { /* none open */ }
         TAP.app.stop();
@@ -176,6 +175,8 @@
       return e;
     }
     function layer() { return document.querySelector('.tap-present'); }
+    function click(node) { if (node) node.click(); return node; }
+    function choose(sel, value) { if (sel) { sel.value = value; sel.dispatchEvent(new Event('change')); } }
     function shown() { return document.querySelector('.tap-present .tap-panel'); }
     function n() { var c = TAP.present.current(); return c ? c.n : null; }
     function titled(k) { var out = []; for (var i = 1; i <= k; i++) out.push({ report: i % 2 ? 'ov-ambition' : 'cg-growth', title: 'Title ' + i }); return out; }
@@ -222,8 +223,7 @@
         a.ok(type && type.textContent.indexOf(TAP.shapes.label('dot')) >= 0, 'chart type: dot');
         a.equal(pressed(p, 'measure'), 'nb.avgDealSize', 'measure: average deal size');
         a.equal(pressed(p, 'breakdown'), 'industry', 'broken down by industry');
-        var c = TAP.store.get().cmp;
-        a.deepEqual([c.mode, c.focus, c.second], ['pair', 'na', 'seu'], 'comparison: one vs one');
+        a.deepEqual(TAP.store.get().cmp, TAP.store.defaults().cmp, 'the shared comparison is left alone (D74)');
         var sentence = p && p.querySelector('.tap-panel__expand-sentence');
         a.equal(sentence && sentence.textContent, TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, cmp)), 'the comparison sentence on screen');
       });
@@ -266,10 +266,12 @@
 
     T.test('TPV-TC-532', 'A step without a comparison does not carry the previous step comparison', function (a) {
       withApp(function () {
-        TAP.present.start([{ report: 'ov-ambition', cmp: { mode: 'one', focus: 'seu', restAgg: 'total' } }, { report: 'cg-growth' }]);
-        a.equal(TAP.store.get().cmp.mode, 'one', 'step 1: one vs the rest');
+        function said() { var n = document.querySelector('.tap-present .tap-panel__expand-sentence'); return n ? n.textContent : ''; }
+        var one = { mode: 'one', focus: 'seu', restAgg: 'total' };
+        TAP.present.start([{ report: 'ov-ambition', cmp: one }, { report: 'cg-growth' }]);
+        a.equal(said(), TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, one)), 'step 1: one vs the rest');
         TAP.present.next();
-        a.deepEqual(TAP.store.get().cmp, TAP.store.defaults().cmp, 'step 2: the default comparison, all regions');
+        a.equal(said(), TAP.scope.sentence(TAP.store.defaults().cmp), 'step 2: the default comparison, all regions');
       });
     });
 
@@ -369,6 +371,65 @@
         TAP.present.stop();
         a.equal(window.scrollY, y, 'the same scroll after leaving');
         window.scrollTo(0, 0);
+      });
+    });
+
+    T.test('X-present-behind', 'Charts behind the layer keep their drill level, own comparison, breakdown and measure (D74)', function (a) {
+      withApp(function () {
+        var host = T.dom.mount();
+        var A = TAP.panel.create(host, 'nb-industries', {}), B = TAP.panel.create(host, 'cg-growth', {}), C = TAP.panel.create(host, 'nb-levers', {});
+        try {
+          click(A.el.querySelector('[data-tap-region]'));
+          a.ok(A.el.querySelector('.tap-panel__crumbs'), 'A: one drill level down');
+          click(B.el.querySelector('[data-control="breakdown"] [data-value="year"]'));
+          click(B.el.querySelector('[data-action="more"]'));
+          click(B.el.querySelector('[data-action="compare"]'));
+          choose(B.el.querySelector('select[data-control="cmp-mode"]'), 'one');
+          a.ok(B.el.querySelector('.tap-panel__custom'), 'B: its own comparison');
+          click(C.el.querySelector('[data-control="measure"] [data-value="nb.hitRate"]'));
+          var before = JSON.stringify(TAP.store.get().cmp);
+          TAP.present.start([{ report: 'ov-ambition', cmp: { mode: 'one', focus: 'seu' } }, { insight: 'winsVsPeers:na' }]);
+          TAP.present.next();
+          TAP.present.stop();
+          a.equal(JSON.stringify(TAP.store.get().cmp), before, 'the shared comparison never changed');
+          a.ok(A.el.querySelector('.tap-panel__crumbs'), 'A: still at its drill level');
+          a.ok(B.el.querySelector('.tap-panel__custom'), 'B: still its own comparison');
+          a.equal(pressed(B.el, 'breakdown'), 'year', 'B: still broken down by year');
+          a.equal(pressed(C.el, 'measure'), 'nb.hitRate', 'C: still on hit rate, though the insight step showed wins');
+        } finally { A.destroy(); B.destroy(); C.destroy(); }
+      });
+    });
+
+    T.test('X-present-app-stop', 'Stopping the app ends a running presentation and turns the panel keys back on', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: sample() });
+      try {
+        TAP.present.start(titled(2));
+        a.ok(TAP.present.active(), 'presenting');
+      } finally { TAP.app.stop(); TAP.data.load(T_FIXTURE('mini')); TAP.insights.reset(); }
+      a.ok(!TAP.present.active(), 'ended by TAP.app.stop()');
+      a.ok(!document.querySelector('.tap-present'), 'the layer is gone');
+      a.ok(TAP.panelKeys.enabled, 'panel keys on');
+    });
+
+    T.test('X-present-start-error', 'A step that fails to draw ends presentation cleanly', function (a) {
+      withApp(function () {
+        var create = TAP.panel.create;
+        TAP.panel.create = function () { throw new Error('test failure'); };
+        var res;
+        try { res = TAP.present.start(titled(2)); } catch (e) { a.ok(false, 'start threw: ' + e.message); } finally { TAP.panel.create = create; }
+        a.deepEqual(res && [res.started, res.reason], [false, 'error'], 'not started, reason error');
+        a.ok(!TAP.present.active() && !document.querySelector('.tap-present'), 'no layer left behind');
+        a.ok(TAP.panelKeys.enabled, 'panel keys on');
+      });
+    });
+
+    T.test('X-present-esc-typing', 'Esc typed in a field does not leave presentation mode', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(2));
+        var field = document.querySelector('.tap-present').appendChild(document.createElement('input'));
+        press('Escape', field);
+        a.ok(TAP.present.active(), 'still presenting');
       });
     });
 
