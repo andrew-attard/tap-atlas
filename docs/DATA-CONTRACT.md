@@ -2,6 +2,9 @@
 
 **Version:** 0.2 (`meta.schemaVersion: "0.2"`). Version 0.2 adds source tracing (D26): a row reference on every list item and a field-to-column map per template version.
 
+**Changes since 0.2 (additions only, so the version stays 0.2, D57):**
+- Phase 3 (US-3.2.1): optional **extra sections**, `meta.extraSections` and per region `extra`, for template sections the app has no report for yet. See [Extra sections](#extra-sections). A file without them is still valid.
+
 The exact shape of the data file the app reads. The import produces it from the regional workbooks; the views only ever read this format. Turning the real workbooks into this shape is the main real-data task, so this is the most important handover document.
 
 The app checks every data file against this contract when it opens (US-1.8.2, `js/core/check.js`). See [Validation on load](#validation-on-load) for what stops the app and what is only listed.
@@ -24,7 +27,7 @@ window.PLAN_DATA = { meta: {...}, lookups: {...}, regions: [...] };
   - a number (including `0`) means the leader entered it;
   - `null` means the cell was left blank ("not provided"), never converted to `0` or an empty string;
   - not applicable is not stored as a value: it follows from the template's rules. Industries marked `rated: false` in `lookups.industries` have no ratings, and Tier 3 industries have no New Business rows.
-- **Extra fields and sections are allowed (D47).** The check ignores anything this contract doesn't name, so an import can add sections for the template's extra sheets before the contract is extended for them. `meta.schemaVersion` changes only when an existing field changes meaning or shape.
+- **Extra fields and sections are allowed (D47).** The check ignores anything this contract doesn't name, so an import can add sections for the template's extra sheets before the contract is extended for them. To have the app show such a sheet, describe it as an [extra section](#extra-sections). `meta.schemaVersion` changes only when an existing field changes meaning or shape.
 
 ## Where each value comes from
 
@@ -52,6 +55,7 @@ Figures the app calculates itself (totals, averages of the rest, scores) have ki
 | `years` | list of 3 numbers | IMP | The plan years, e.g. `[2027, 2028, 2029]` |
 | `isSample` | true/false | IMP | `true` for fictional data. The app shows a "Sample data" banner when true |
 | `sourceMap` | object | IMP | Where each field lives in the template, so any figure can be traced to a cell (D26). Shape below |
+| `extraSections` | list, optional | IMP | Template sections the app shows as plain lists, one entry per section. See [Extra sections](#extra-sections) |
 
 ### `meta.sourceMap`
 
@@ -110,6 +114,7 @@ One entry per regional workbook. **File order sets each region's colour.**
 | `customerGrowth` | object | | See below |
 | `partners` | list | | See below |
 | `recap` | list | | See below |
+| `extra` | object, optional | | Rows of the extra sections, keyed by section id. See [Extra sections](#extra-sections) |
 
 ### Row references (all lists)
 
@@ -207,6 +212,47 @@ Formulas: `arrPotential[0]` = targetAccounts × hitRate × avgDealSize; year 2 =
 
 A long, flat list rather than the template's wide grid, so any chart can filter and sum it directly.
 
+### Extra sections
+
+For a template section the app doesn't know yet (US-3.2.1). The import describes the section once in `meta.extraSections` and puts its rows under each region's `extra`. The app then shows it as a list on the **Other sections** view, with sorting, the comparison scope and file › sheet › cell for every value, without any code change. Optional: a file without extra sections is valid, and the view only appears when there is at least one.
+
+`meta.extraSections[]`: one per section, in the order the view shows them.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text | Short stable key, e.g. `"events"`. Unique among the extra sections |
+| `title` | text | The worksheet name, e.g. `"5. Events"`. It is the list's title on screen and the sheet in every source address |
+| `intro` | text | One or two sentences shown under the title: what the section holds |
+| `columns` | list | `{ key, label, unit, kind, column }` per column, in the order the list shows them |
+
+`columns[]`
+
+| Field | Type | Notes |
+|---|---|---|
+| `key` | text | The field name used in the rows. Unique in the section; not `region` or `sourceRow` (the list adds the region itself) |
+| `label` | text | The column heading |
+| `unit` | `"money"`, `"pct"`, `"count"` or `"text"` | How values are shown and sorted. Money in thousands of `meta.currency`; percentages as decimals |
+| `kind` | `"IN"`, `"PRE"` or `"DER"` | The value's source type, as in [Where each value comes from](#where-each-value-comes-from) |
+| `column` | text, optional | The worksheet column letter, e.g. `"D"`. With it, a value's address names the cell (`F10`); without it, the row (`row 10`) |
+
+`regions[].extra`: an object with one list per section id. Each row carries `sourceRow` (the worksheet row) and one field per column key; a blank cell is `null`. A region with nothing in the section has an empty list or no entry.
+
+```js
+meta: { ..., extraSections: [
+  { id: 'events', title: '5. Events', intro: 'Field events each region plans over the three years.',
+    columns: [
+      { key: 'event', label: 'Event', unit: 'text', kind: 'IN', column: 'B' },
+      { key: 'invited', label: 'Accounts invited', unit: 'count', kind: 'IN', column: 'E' },
+      { key: 'budget', label: 'Budget', unit: 'money', kind: 'IN', column: 'F' },
+      { key: 'perAccount', label: 'Budget per account', unit: 'money', kind: 'DER', column: 'G' } ] } ] }
+
+regions: [{ id: 'north', ..., extra: { events: [
+  { sourceRow: 8, event: 'Customer innovation day', invited: 60, budget: 45, perAccount: 0.75 },
+  { sourceRow: 9, event: 'Healthcare roundtable', invited: 15, budget: null, perAccount: null } ] } }]
+```
+
+The example is the sample's fictional section, shortened. Extra sections are for data only: anything the app should calculate, chart or compare needs a measure and a report definition.
+
 ---
 
 ## Source references in the app
@@ -217,14 +263,14 @@ Every figure the app shows is a *cell* carrying a source reference, `src` (ARCHI
 src: { regionId, section, field, row, year, cell, kind }
 ```
 
-- `section`: `marketCoverage`, `newBusiness`, `customerGrowth`, `partners` or `recap`.
-- `field`: the contract field, dotted for nested fields (`channelSplit.direct`, `thresholds.strategicArr`).
+- `section`: `marketCoverage`, `newBusiness`, `customerGrowth`, `partners` or `recap`, or `extra:<section id>` for an extra section.
+- `field`: the contract field, dotted for nested fields (`channelSplit.direct`, `thresholds.strategicArr`); for an extra section, the column key.
 - `row`: the item's `sourceRow`.
 - `year`: the **plan year 1, 2 or 3** for fields held by year (never a calendar year).
 - `cell`: a fixed cell when there is one, e.g. a recap item's `sourceCell`.
 - `kind`: `IN`, `PRE`, `DER` or `APP`.
 
-`TAP.sources.address(src)` turns it into **file › sheet › cell**: the file from `source.fileName`, the sheet from `meta.sourceMap[section].sheet`, and the cell from the field's column (or its per-year column for `year`) plus `row`, or from `cells` / `cell` for fixed cells.
+`TAP.sources.address(src)` turns it into **file › sheet › cell**: the file from `source.fileName`, the sheet from `meta.sourceMap[section].sheet`, and the cell from the field's column (or its per-year column for `year`) plus `row`, or from `cells` / `cell` for fixed cells. For an extra section, the sheet is the section's `title` and the cell is the column's `column` letter plus `sourceRow` (e.g. `North America plan.xlsx › 5. Events › F10`).
 
 - **A sum over several rows** has `row: null` and `rows: [...]`; its address is the cell range, e.g. `G10:G14` (with "(n rows)" when the rows are not next to each other). A three-year total of a by-year field (`year: null`) spans the three year columns, e.g. `O20:Q20`.
 - **A combined figure** has `src = { combined: true, how, regionIds, excluded, notApplicable, weightBy }`. `excluded` lists regions with no value (not provided), `notApplicable` the regions it doesn't apply to; the regions used are `regionIds` minus both. It is described as combined by the app, naming the regions used.
@@ -251,7 +297,8 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a segment that doesn't match the thresholds rule;
 - a missing `sourceRow` (or `sourceCell` on recap items), or a `sourceMap` entry missing for a section;
 - an empty section;
-- a rating on an industry that is not rated.
+- a rating on an industry that is not rated;
+- anything wrong in an extra section: `meta.extraSections` not a list, a section without an id, title or columns, a duplicate id or column key, an unknown `unit` or `kind`, a column letter that isn't one, a region's `extra` naming a section that isn't listed, a row without `sourceRow`, a row naming a column the section doesn't have, or a value of the wrong type for its unit. **Extra sections never stop the app**: every problem in them is a warning naming the section and the field, and the broken part is left out of the view.
 
 The import itself also records anything worth checking as a note in `source.notes`, with its sheet and cell.
 
@@ -266,4 +313,4 @@ The import itself also records anything worth checking as a note in `source.note
 1. **Account names:** shown for now (D14, provisional). Possibly anonymous labels in a copy shared with all leaders.
 2. **Year labels:** confirm the plan years and whether Year 1 is the first forecast year.
 3. **Partner maturity values:** not present in the copy reviewed.
-4. **The rest of the template:** extra sections will extend this contract in the real-data phase (allowed early under D47).
+4. **The rest of the template:** sections not covered above go in as [extra sections](#extra-sections) (US-3.2.1); a section that needs its own charts later gets fields of its own, added to this contract.

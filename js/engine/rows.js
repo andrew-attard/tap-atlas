@@ -2,7 +2,7 @@
  * File: js/engine/rows.js
  * Purpose: Row-level figures for lists, bubbles and details: one cell per new business row, account or partner, with its source (US-2.7.2).
  * Provides: TAP.rows (list, cell, columns, matchKey, section, rowSrc)
- * Depends on: js/core/data.js, js/core/content.js, js/core/format.js (at call time)
+ * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/core/extra.js (row sources "extra:<id>") (at call time)
  * Used by: js/engine/build-list.js, js/reports/row-bubble.js, js/reports/details-rows.js, js/insights/rules-shared.js
  * Owner: ENGINE2 stream (#194)
  */
@@ -16,6 +16,8 @@
   var NAME_FIELD = { newBusiness: 'subVertical', accounts: 'name', partners: 'name' };
   var NA = { notApplicable: true };
 
+  // Extra template sections (US-3.2.1) are row sources named "extra:<section id>", served by js/core/extra.js
+  function extra(source) { return !!TAP.extra && TAP.extra.is(source); }
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function sum(list) { return list.reduce(function (t, v) { return t + v; }, 0); }
   function t(key, vars) { return TAP.content.text(key, vars); }
@@ -30,6 +32,7 @@
 
   // [{id, regionId, source, sourceRow, item}] in region file order, then source row order.
   function list(source, regionIds) {
+    if (extra(source)) return TAP.extra.list(source, regionIds);
     source = SOURCE[source];
     var out = [];
     if (!source) return out;
@@ -123,6 +126,7 @@
   function spec(source, key) { return (COLS[source] || []).filter(function (c) { return c[0] === key; })[0] || null; }
 
   function columns(source) {
+    if (extra(source)) return TAP.extra.columns(source);
     source = SOURCE[source];
     return (COLS[source] || []).map(function (c) {
       var out = { key: c[0], unit: c[1], kind: c[2], label: t('rows.' + source + '.' + c[0]) };
@@ -143,10 +147,15 @@
     return { regionId: regionId, section: SECTION[source], field: fieldName, row: sourceRow, rows: [sourceRow], year: null, cell: null, kind: kind };
   }
   // The whole row's source: its name column, so the address names the file, sheet and row.
-  function rowSrc(source, regionId, sourceRow) { source = SOURCE[source]; return src(source, regionId, NAME_FIELD[source], sourceRow, 'IN'); }
+  function rowSrc(source, regionId, sourceRow) {
+    if (extra(source)) return TAP.extra.rowSrc(source, regionId, sourceRow);
+    source = SOURCE[source];
+    return src(source, regionId, NAME_FIELD[source], sourceRow, 'IN');
+  }
 
   // A full cell (ARCHITECTURE section 7) for one column of one row.
   function cell(source, key, row) {
+    if (extra(source)) return TAP.extra.cell(source, key, row);
     source = SOURCE[source];
     var c = spec(source, key), it = find(source, row), n = it ? it.sourceRow : (row && (row.sourceRow != null ? row.sourceRow : row.row));
     var s = src(source, row && row.regionId, c ? c[3] : key, n, c ? c[2] : 'IN'), y = /^growthY(\d)$/.exec(key);
@@ -166,5 +175,5 @@
     return out;
   }
 
-  TAP.rows = { list: list, cell: cell, columns: columns, matchKey: matchKey, section: function (s) { return SECTION[SOURCE[s]]; }, rowSrc: rowSrc };
+  TAP.rows = { list: list, cell: cell, columns: columns, matchKey: matchKey, section: function (s) { return extra(s) ? s : SECTION[SOURCE[s]]; }, rowSrc: rowSrc };
 })(window.TAP);

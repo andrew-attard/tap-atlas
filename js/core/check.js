@@ -8,7 +8,7 @@
  * run(plan) returns {errors, warnings}. Each item is {path, region, item, expected, found, message}.
  * Errors would break views, so loading stops. Warnings load anyway and go to the data sources panel.
  * null (a blank, "not provided") is allowed for every leader input and system figure.
- * Fields and sections the contract doesn't name are ignored, so imports can add them early (D47).
+ * Fields and sections the contract doesn't name are ignored (D47). Extra sections are checked by js/core/extra.js, warnings only.
  */
 (function (TAP) {
   'use strict';
@@ -290,6 +290,7 @@
       else if (!plan.regions.length) err(top, 'regions', say('expect.someRegions'), plan.regions);
       else plan.regions.forEach(function (r, i) { checkRegion(r, i, out, env, ids); });
     }
+    if (isObj(plan) && TAP.extra) out.warnings = out.warnings.concat(TAP.extra.check(plan));
     if (out.dropped) out.errors.push({ path: '', region: null, item: null, expected: '', found: out.dropped, message: say('more', { n: out.dropped }) });
     return { errors: out.errors, warnings: out.warnings };
   }
