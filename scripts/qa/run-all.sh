@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # File: scripts/qa/run-all.sh
 # Purpose: Runs every automated cross-cutting check of US-1.9.3 in order and prints one PASS/FAIL line each:
-#          console, text sizes, offline, smoke test, denylist search and the screenshot matrix.
+#          console, text sizes, offline, smoke test, imperfect-data runs, denylist search and the screenshot matrix.
 # Provides: CLI `scripts/qa/run-all.sh [chrome|edge|both] [outdir]`; exit 1 if any check failed
 # Depends on: scripts/qa/*.sh, scripts/check-text.sh, git, Node, Chrome and/or Edge
 # Used by: the project owner before each demo; the results go in the execution log
@@ -48,6 +48,7 @@ step "text sizes (D24)" text "$here/text-size.sh" "$which" "$out/text"
 step "offline" offline "$here/offline-check.sh" "$which" "$out/offline"
 step "smoke test" smoke "$here/smoke.sh" "$which" "$out/smoke"
 step "organization names and colours (denylist)" denylist denylist
+step "imperfect data (one browser)" variants "$here/variants.sh" chrome "$out/variants"
 step "screenshot matrix" shots "$here/shot-matrix.sh" index-sample.html "$out/shots" "$which"
 
 echo "Review the screenshots by eye: $out/shots/index.html"

@@ -235,7 +235,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `scripts/package.sh` | Runs every check, then makes a known-good copy for presenting in `dist/tap-atlas-<version>-<date>/` (no tests or tools; `dist/` is gitignored) |
 | `scripts/portfolio-shots.sh` | Retakes the portfolio screenshots in `docs/screenshots/`, one per view, with names that never change |
 | `scripts/check-text.sh`, `scripts/open-pr.sh` | Checks text against the private word list; opens a pull request after that check |
-| `scripts/qa/*` | The QA checks (`scripts/qa/run-all.sh` runs them all): console errors, text sizes, offline, smoke test, screenshot matrix |
+| `scripts/qa/*` | The QA checks (`scripts/qa/run-all.sh` runs them all): console errors, text sizes, offline, smoke test, imperfect data (`scripts/qa/variants.sh`), screenshot matrix |
 | `vendor/echarts.min.js` | The chart library (Apache ECharts 5.6.0) |
 | `vendor/fonts/archivo-*.woff2`, `vendor/fonts/OFL.txt` | The Archivo font in three weights, and its licence (SIL Open Font Licence) |
 | `vendor/LICENSE-*.txt` | The licences of ECharts and of the line icons the app draws |
