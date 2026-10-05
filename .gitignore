@@ -28,3 +28,7 @@ node_modules/
 
 # Known-good copies made by scripts/package.sh
 dist/
+
+# Imperfect-data QA copies written by scripts/qa/variants.js
+tests/qa-variants/
+tests/qa-variant-*.html

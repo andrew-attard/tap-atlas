@@ -58,7 +58,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | After any change | Double-click `tests.html` | The summary shows no failures. **Copy results** gives a summary for the run log |
 | After a data refresh | Open `index.html`, then the data sources panel | The app opens; no errors; any warnings understood |
 | Before a pull request (terminal, Node 18+, Chrome or Edge) | `scripts/verify.sh` | `verify: PASS`: lint, the private word list scan, the ignored-files guard, the docs paths check, the handover and portfolio checks, and the tests in both browsers |
-| Before a demo | `scripts/qa/run-all.sh` | Every line PASS: no console errors, text sizes for a shared screen, no web requests, the smoke test, the screenshot matrix |
+| Before a demo | `scripts/qa/run-all.sh` | Every line PASS: no console errors, text sizes for a shared screen, no web requests, the smoke test, the imperfect-data runs, the screenshot matrix |
 | Before a demo, to keep a copy to present from | `scripts/package.sh` | It runs `scripts/verify.sh` first and stops if anything fails. Otherwise it prints the folder of a dated copy, `dist/tap-atlas-<version>-<date>/`, with the pages, app files, data and `docs/`, and no tests or tools. It also works in the internal copy, which is not a git folder: there the two git-based checks are skipped, and verify says so |
 | Before a release | `scripts/verify.sh --release` | No stubs left, no warnings, every automated test case has a test |
 
