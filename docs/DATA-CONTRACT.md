@@ -314,3 +314,14 @@ The import itself also records anything worth checking as a note in `source.note
 2. **Year labels:** confirm the plan years and whether Year 1 is the first forecast year.
 3. **Partner maturity values:** not present in the copy reviewed.
 4. **The rest of the template:** sections not covered above go in as [extra sections](#extra-sections) (US-3.2.1); a section that needs its own charts later gets fields of its own, added to this contract.
+
+## Changes
+
+Each version of this contract and what it added. The version (`meta.schemaVersion`, matched by `TAP.schemaVersion` in `js/core/namespace.js`) changes only when a field is removed, renamed or changes meaning or shape. Additions keep the version, so an import built for an earlier release keeps working (D57), and the check ignores fields it doesn't know (D47).
+
+| Version | Date | Release | What it added |
+|---|---|---|---|
+| 0.1 | 2026-10-02 | Draft, before the build | The first version: one JavaScript file setting `PLAN_DATA`, with `meta`, `lookups` and `regions[]` holding the template's sections. Every field tagged as leader input, pre-fill, derived or added by the import. Ratings scored so higher is always favourable. Personal names left out. The validation rules |
+| 0.2 | 2026-10-03 | Phase 1, `v0.1.0` | Source tracing (D26): `sourceRow` on every list item and `meta.sourceMap`, the field-to-column map per template version, so every figure traces to file › sheet › cell. Missing values in three states: a number, `null` for not provided, and not applicable from the template's rules (D48). Fields and sections the contract doesn't name are ignored (D47). The contract check on load, with errors and warnings |
+| 0.2, unchanged | 2026-10-05 | Phase 2, `v0.2.0` | Nothing added to the file's shape. The New business, Customer growth and Partners views, the region profile and the lists read fields already in 0.2: `newBusiness[]`, `customerGrowth`, `partners[]` and `recap[]` |
+| 0.2, additions only | 2026-10-05 | Phase 3, `v0.3.0` | Optional extra sections (US-3.2.1, D66): `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows with `sourceRow`. Checked with warnings only; a file without them stays valid. See [Extra sections](#extra-sections) |
