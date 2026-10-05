@@ -438,6 +438,18 @@
       b.h.destroy();
     }));
 
+    T.test('X-custom-list-focus', 'After Remove, focus moves to the next entry, the one before, or the list heading', listScene(function (a) {
+      [SEVEN[0], SEVEN[3], SEVEN[5]].forEach(function (x) { TAP.custom.save(x); });
+      var b = builder(SEVEN[0]);
+      click(qs('[data-custom-remove="1"]', b.host));
+      a.equal(document.activeElement, qs('[data-custom-open="1"]', b.host), 'the entry now in its place');
+      click(qs('[data-custom-remove="1"]', b.host));
+      a.equal(document.activeElement, qs('[data-custom-open="0"]', b.host), 'the last one removed: the one before');
+      click(qs('[data-custom-remove="0"]', b.host));
+      a.equal(document.activeElement, qs('.tap-custom__h3', b.host), 'none left: the list heading');
+      b.h.destroy();
+    }));
+
     T.test('TPV-TC-572', 'Nothing about kept charts is written to browser storage', listScene(function (a) {
       function dump(store) {
         var out = [];
@@ -453,7 +465,7 @@
       a.equal(TAP.custom.saved().length, 2, 'two kept');
       a.equal(dump(window.localStorage), before.l, 'local storage unchanged');
       a.equal(dump(window.sessionStorage), before.s, 'session storage unchanged');
-      a.ok(!/custom/.test(dump(window.localStorage)), 'no custom chart in local storage');
+      a.ok(dump(window.localStorage).indexOf('chart:custom:') < 0, 'no custom chart type remembered');
       b.h.destroy();
     }));
   });

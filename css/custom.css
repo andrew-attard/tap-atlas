@@ -25,3 +25,17 @@
 
 /* The "Custom chart" badge in a panel's toolbar (drawn by js/panel/panel-menus.js) */
 .tap-custom__badge { font-size: var(--tap-fs-body); white-space: nowrap; }   /* body size: it must read over a screen share (D24) */
+
+/* Keep this chart, and the message beside it (kept, or the seventh refused) */
+.tap-custom__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-4); }
+.tap-custom__keep { font-size: var(--tap-fs-body); }
+.tap-custom__status { margin: 0; font-size: var(--tap-fs-body); font-weight: 600; }
+
+/* The session list: one row per kept chart, reopened with one click */
+.tap-custom__kept { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
+.tap-custom__h3 { margin: 0; font-size: var(--tap-fs-h3); }
+.tap-custom__note { margin: 0; font-size: var(--tap-fs-body); }
+.tap-custom__list { margin: 0; padding-left: var(--tap-sp-6); display: flex; flex-direction: column; gap: var(--tap-sp-2); }
+.tap-custom__item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3); }
+.tap-custom__open { font-size: var(--tap-fs-body); text-align: left; text-decoration: underline; }   /* reads as a link to the chart */
+.tap-custom__remove { font-size: var(--tap-fs-body); }

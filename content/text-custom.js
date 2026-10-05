@@ -21,6 +21,18 @@ Object.assign(window.TAP_CONTENT.text, {
     groups: { amount: 'Amounts', count: 'Counts', rate: 'Rates, shares and averages', rating: 'Ratings and scores' },
     failed: 'This chart can’t be drawn',
     none: 'No measure in the data can be charted.',
+    // The session list (US-3.5.3)
+    list: {
+      keep: 'Keep this chart',
+      heading: 'Charts kept for this session',
+      intro: 'Up to six charts are kept while this tab is open. Nothing is kept after it closes.',
+      empty: 'No charts kept yet.',
+      open: '{title}, {type}',
+      remove: 'Remove',
+      removeLabel: 'Remove {title}, {type}',
+      kept: 'Kept: {title}.',
+      full: 'Six charts are kept already. Remove one first, then keep this chart.'
+    },
     // The badge on every custom chart's panel (js/panel/panel-menus.js)
     badge: 'Custom chart',
     // A custom chart's title and its "About this chart" text (js/engine/custom.js)

@@ -99,6 +99,23 @@
     if (to && to.focus) to.focus({ preventScroll: true });
   }
 
+  // The session list: one button to reopen each kept chart, one to remove it (US-3.5.3).
+  function keptList(box, onOpen, onRemove) {
+    var items = TAP.custom.saved();
+    TAP.dom.clear(box);
+    TAP.dom.append(box, [el('h3', { class: 'tap-custom__h3', tabindex: '-1' }, t('list.heading')), el('p', { class: 'tap-custom__note' }, t('list.intro'))]);
+    if (!items.length) { box.appendChild(el('p', { class: 'tap-custom__note' }, t('list.empty'))); return; }
+    box.appendChild(el('ol', { class: 'tap-custom__list' }, items.map(function (s, i) {
+      var d = TAP.custom.definition(s), words = { title: d.title || s.measure, type: lower(TAP.shapes.label(s.type)) };
+      return el('li', { class: 'tap-custom__item' }, [
+        el('button', { type: 'button', class: 'tap-btn tap-btn--ghost tap-custom__open', 'data-custom-open': String(i),
+          onclick: function () { onOpen(i); } }, t('list.open', words)),
+        el('button', { type: 'button', class: 'tap-btn tap-custom__remove', 'data-custom-remove': String(i),
+          'aria-label': t('list.removeLabel', words), onclick: function () { onRemove(i); } }, t('list.remove'))
+      ]);
+    })));
+  }
+
   /*
    * Draws the section into host. opts.spec starts from a given choice ({measure, by, type}); without it the
    * session's last choice, or the story's example. Returns {el, spec(), destroy()}; the Guide calls destroy on unmount.
@@ -109,11 +126,31 @@
     cur = fit(cur, list);
     var panel = null, gone = false;
     var pickers = el('div', { class: 'tap-custom__pickers' }), slot = el('div', { class: 'tap-custom__panel' });
-    var root = el('div', { class: 'tap-custom' }, [el('p', { class: 'tap-custom__lead' }, t('lead')), pickers, slot]);
+    var status = el('p', { class: 'tap-custom__status', role: 'status' }), listBox = el('div', { class: 'tap-custom__kept' });
+    var actions = el('div', { class: 'tap-custom__actions' }, [
+      el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-custom__keep', 'data-action': 'custom-keep', onclick: keep }, t('list.keep')), status]);
+    var root = el('div', { class: 'tap-custom' }, [el('p', { class: 'tap-custom__lead' }, t('lead')), pickers, actions, slot, listBox]);
     host.appendChild(root);
     if (!cur) { TAP.dom.text(pickers, t('none')); return { el: root, spec: function () { return null; }, destroy: function () {} }; }
 
     function choose(patch) { cur = fit(Object.assign({}, cur, patch), list); drawPickers(); drawPanel(); }
+
+    // Keep, reopen and remove (US-3.5.3). A seventh chart is refused with the message from TAP.custom.save.
+    function keep() {
+      var r = TAP.custom.save(cur), d = TAP.custom.definition(cur);
+      TAP.dom.text(status, r.ok ? t('list.kept', { title: d.title || cur.measure }) : r.message);
+      drawList();
+    }
+    function reopen(i) { TAP.dom.text(status, ''); choose(TAP.custom.saved()[i]); }
+    // After a removal, focus moves to the entry now in its place (or the one before), else to the list heading
+    function drop(i) {
+      TAP.custom.remove(i);
+      TAP.dom.text(status, '');
+      drawList();
+      var n = TAP.custom.saved().length, to = n ? TAP.dom.qs('[data-custom-open="' + Math.min(i, n - 1) + '"]', listBox) : TAP.dom.qs('.tap-custom__h3', listBox);
+      if (to && to.focus) to.focus({ preventScroll: true });
+    }
+    function drawList() { keptList(listBox, reopen, drop); }
 
     function drawPickers() {
       var m = list.filter(function (c) { return c.id === cur.measure; })[0], seg = TAP.panelMenus.seg, f = focusOf(pickers);
@@ -151,6 +188,7 @@
     });
 
     drawPickers();
+    drawList();
     // The Guide draws its sections before they are on the page. The panel waits until the section is, so a Guide
     // drawn and dropped without ever being shown leaves no panel listening to the store behind it.
     if (slot.isConnected) drawPanel();
