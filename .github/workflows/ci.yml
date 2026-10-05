@@ -31,6 +31,9 @@ jobs:
       - name: Docs name only files that exist
         run: node tools/check-docs.js
 
+      - name: Handover and portfolio checks
+        run: node tools/check-docs3.js
+
       - name: Sample data matches the generator
         run: |
           if [ -f tools/generate-sample-data.js ]; then node tools/generate-sample-data.js --check; fi
