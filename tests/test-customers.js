@@ -86,7 +86,10 @@
       try {
         var line = root.querySelector('.tap-vh__headline');
         a.ok(line, 'the header has a headline slot');
-        if (best) a.equal(line.querySelector('.tap-vh__headline-text').textContent, best.sentence, 'the top insight');
+        // D83: the line is left out when it would repeat the first panel's takeaway word for word
+        var lead = best && TAP.panelInsights.get(c, window.TAP_VIEWS[o.view].reports[0]).top;
+        if (best && lead && lead.sentence === best.sentence) a.ok(line.hidden, 'the top insight is the first panel\'s takeaway: no headline line (D83)');
+        else if (best) a.equal(line.querySelector('.tap-vh__headline-text').textContent, best.sentence, 'the top insight');
         else a.ok(line.hidden, 'no insight attached: no headline line');
       } finally { v.destroy(); }
       var keep = TAP.insights.ranked;
