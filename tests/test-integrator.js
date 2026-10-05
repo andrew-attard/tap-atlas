@@ -398,6 +398,25 @@
       });
     });
 
+    // Debt #369 (PP-15): the keys use the panel's shared helpers rather than copies of their own
+    T.test('X-review-PP-15-keys', 'The view keys ask TAP.panelKeys.typing and close an expanded chart with TAP.panelExpand.collapse', function (a) {
+      withKeys(function () {
+        var realTyping = TAP.panelKeys.typing, realCollapse = TAP.panelExpand.collapse, collapsed = 0;
+        TAP.panelKeys.typing = function () { return true; };
+        TAP.panelExpand.collapse = function () { collapsed++; return realCollapse.apply(this, arguments); };
+        try {
+          press('2');
+          a.equal(TAP.store.get().view, TAP.views.order()[0], 'a key the shared helper says is typed text switches nothing');
+          TAP.panelKeys.typing = realTyping;
+          // A chart not on this view, so no panel takes the Esc first and the view keys close it
+          TAP.store.set({ expanded: 'ind-tiers' });
+          press('Escape');
+          a.equal(collapsed, 1, 'Esc closes the expanded chart through the shared helper');
+          a.equal(TAP.store.get().expanded, null, 'and it is closed');
+        } finally { TAP.panelKeys.typing = realTyping; TAP.panelExpand.collapse = realCollapse; }
+      });
+    });
+
     T.test('X-int-keys-unbind', 'After unbind, the digits do nothing; bind twice listens once', function (a) {
       withKeys(function () {
         TAP.keys.bind();
