@@ -2,7 +2,8 @@
 /*
  * File: tools/check-docs3.js
  * Purpose: File checks for the handover pack and the portfolio edition, which the browser test page can't make:
- *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://).
+ *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
+ *          and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
  * Depends on: Node 18+ only
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
@@ -12,6 +13,8 @@
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
+const { spawnSync } = require('child_process');
 
 function rootDir() {
   const i = process.argv.indexOf('--root');
@@ -118,8 +121,84 @@ function checkWeb(root) {
   return { problems, checked };
 }
 
+
+/* ---------- TPV-TC-627 and 628: one screenshot per view, stable names ---------- */
+
+const SHOTS = 'docs/screenshots';
+const SHOT_SIZE = { width: 1440, height: 900 };
+// Shown only with some data, so its picture may or may not be there.
+const CONDITIONAL_VIEWS = ['other'];
+
+// The same rule as scripts/portfolio-shots.sh: newBusiness -> new-business.png.
+function shotName(viewId) {
+  return viewId.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase() + '.png';
+}
+
+function viewOrder(root) {
+  const ctx = { window: {} };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(root, 'config/views.js'), 'utf8'), ctx);
+  return ((ctx.window.TAP_VIEWS || {}).order || []).slice();
+}
+
+// Width and height from a PNG's header, or null when the file isn't a PNG.
+function pngSize(file) {
+  const b = fs.readFileSync(file);
+  if (b.length < 24 || b.toString('latin1', 1, 4) !== 'PNG') return null;
+  return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
+}
+
+function checkShots(root) {
+  const problems = [];
+  const dir = path.join(root, SHOTS);
+  if (!fs.existsSync(dir)) return { problems: [SHOTS + ' is missing: run scripts/portfolio-shots.sh'], checked: 0 };
+  const views = viewOrder(root);
+  const allowed = views.map(shotName);
+  const files = fs.readdirSync(dir).filter((f) => !f.startsWith('.'));
+  views.filter((v) => CONDITIONAL_VIEWS.indexOf(v) < 0).forEach((v) => {
+    if (files.indexOf(shotName(v)) < 0) problems.push(SHOTS + ': no screenshot of the ' + v + ' view (' + shotName(v) + ')');
+  });
+  files.forEach((f) => {
+    if (allowed.indexOf(f) < 0) { problems.push(SHOTS + '/' + f + ' is not named after a view'); return; }
+    const size = pngSize(path.join(dir, f));
+    if (!size) problems.push(SHOTS + '/' + f + ' is not a PNG image');
+    else if (size.width !== SHOT_SIZE.width || size.height !== SHOT_SIZE.height) {
+      problems.push(SHOTS + '/' + f + ' is ' + size.width + ' x ' + size.height + ', not 1440 x 900');
+    }
+  });
+  return { problems, checked: files.length };
+}
+
+// The pages that show screenshots name only files the script writes, and the script names them as the checker does.
+function checkShotNames(root) {
+  const problems = [];
+  let checked = 0;
+  const script = path.join(root, 'scripts/portfolio-shots.sh');
+  if (!fs.existsSync(script)) return { problems: ['scripts/portfolio-shots.sh is missing'], checked: 0 };
+  viewOrder(root).forEach((v) => {
+    checked++;
+    const r = spawnSync('bash', [script, '--name', v], { encoding: 'utf8' });
+    const got = (r.stdout || '').trim();
+    if (got !== shotName(v)) problems.push('scripts/portfolio-shots.sh names the ' + v + ' view "' + got + '", expected "' + shotName(v) + '"');
+  });
+  ['docs/index.html', 'docs/CASE-STUDY.md'].forEach((doc) => {
+    const file = path.join(root, doc);
+    if (!fs.existsSync(file)) return;
+    const text = fs.readFileSync(file, 'utf8');
+    const re = /screenshots\/([^"')\s]+)/g;
+    let m;
+    while ((m = re.exec(text))) {
+      checked++;
+      if (!existsExact(root, SHOTS + '/' + m[1])) problems.push(doc + ': names screenshots/' + m[1] + ', which the script does not write');
+    }
+  });
+  return { problems, checked };
+}
+
 const CHECKS = [
-  { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb }
+  { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb },
+  { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: checkShots },
+  { id: 'TPV-TC-628', label: 'screenshot names are stable and every page names an existing one', run: checkShotNames }
 ];
 
 function runAll(root) {
@@ -141,4 +220,4 @@ if (require.main === module) {
   process.exit(failed ? 1 : 0);
 }
 
-module.exports = { runAll, existsExact, isRelative, htmlRefs, refProblem, codeLines };
+module.exports = { runAll, existsExact, isRelative, htmlRefs, refProblem, codeLines, shotName, pngSize };
