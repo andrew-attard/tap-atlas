@@ -10,7 +10,7 @@
 (function (TAP) {
   'use strict';
 
-  var open = null;        // {el, anchor, termId, pinned}
+  var open = null;        // {el, anchor, termId, pinned, off}
   var hoverTimer = null;
   var GAP = 6;            // space between the term and its popover
 
@@ -21,6 +21,7 @@
   function close() {
     clearTimeout(hoverTimer);
     if (!open) return;
+    if (open.off) open.off();
     if (open.anchor && open.anchor.setAttribute) open.anchor.setAttribute('aria-expanded', 'false');
     if (open.el.parentNode) open.el.parentNode.removeChild(open.el);
     open = null;
@@ -67,7 +68,16 @@
       place(pop, anchorEl);
     }
     open = { el: pop, anchor: anchorEl, termId: termId, pinned: !(opts && opts.hover) };
+    open.off = TAP.store.on(function (s, changed) { followPage(pop, changed); });
     return pop;
+  }
+
+  // A popover never outlives its view, or the term it points at (a panel redrawn under it).
+  function followPage(pop, changed) {
+    function gone() { return open && open.el === pop && open.anchor && open.anchor.nodeType === 1 && !open.anchor.isConnected; }
+    if (open && open.el === pop && changed.indexOf('view') >= 0) { close(); return; }
+    if (gone()) { close(); return; }
+    setTimeout(function () { if (gone()) close(); }, 0);   // other listeners may redraw the panel after this one
   }
 
   // A short pause lets the pointer move from the term onto the popover without it closing.
@@ -102,11 +112,13 @@
     if (btn && open && open.anchor === btn && !open.pinned && !open.el.contains(e.relatedTarget)) closeSoon();
   });
 
-  // Esc closes the popover first, before any side panel underneath (capture phase).
+  // Esc closes the popover first, before any side panel or the tour underneath (capture phase). preventDefault marks
+  // it as handled (ARCHITECTURE section 11), so the tour, side panels and expanded charts leave it alone.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || !open) return;
     var anchor = open.pinned ? open.anchor : null;
     close();
+    e.preventDefault();
     e.stopPropagation();
     if (anchor && anchor.focus && document.contains(anchor)) anchor.focus();
   }, true);

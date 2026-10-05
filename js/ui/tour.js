@@ -52,6 +52,7 @@
   function onKey(e) {
     if (!cur) return;
     var k = e.key;
+    if (k === 'Escape' && e.defaultPrevented) return;   // a glossary popover took this Esc
     if (k === 'Escape') stop();
     else if (cur.n == null) return;
     else if (k === 'ArrowRight') go(cur.n + 1);
@@ -66,9 +67,11 @@
     if (!cur) return;
     var back = cur.back;
     if (cur.node.parentNode) cur.node.parentNode.removeChild(cur.node);
+    if (cur.off) cur.off();
     cur = null;
     document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('resize', onMove);
+    window.removeEventListener('scroll', onMove, true);
     remember();
     if (back && back.isConnected && back.focus) back.focus();
   }
@@ -80,6 +83,9 @@
     document.body.appendChild(node);
     document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', onMove);
+    window.addEventListener('scroll', onMove, true);   // the spotlight follows the page (capture: inner scrolls too)
+    // The steps point at the view they started on: a view change (the back button) ends them
+    cur.off = TAP.store.on(function (s, changed) { if (cur && cur.n != null && changed.indexOf('view') >= 0) stop(); });
   }
 
   /* ---------- the welcome card ---------- */
