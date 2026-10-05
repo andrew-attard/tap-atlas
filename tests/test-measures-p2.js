@@ -2,7 +2,7 @@
  * File: tests/test-measures-p2.js
  * Purpose: Tests for Phase 2 measures and breakdowns, checked against the hand calculations in
  *          tests/fixtures/mini-p2-expected.js (never against the measures' own output).
- * Provides: test cases TPV-TC-299 to 302, X-measures-p2-*
+ * Provides: test cases TPV-TC-299 to 302, X-measures-p2-*, X-review-DE-9
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: ENGINE2 stream
@@ -131,6 +131,34 @@
       var c = TAP.measures.combined('cg.top3Share', org(), {});
       a.near(c.v, 438 / 738, TOL, 'd1 168 + a4 150 + b1 120 of 738');
       a.ok(Math.abs(c.v - (0.9375 + 1 + 1) / 3) > 0.1, 'not the mean of the regions’ shares');
+    });
+
+    // Review DE-9, D77: one planned decline pushed the top 3 share over 100% and the risk share below zero.
+    T.test('X-review-DE-9', 'Exposure shares are taken over planned increases; declines are named in the note', function (a) {
+      var p = window.T_FIXTURE('mini'), acc = p.regions[0].customerGrowth.accounts;
+      acc[0].incrementalArr = [50, 0, 0];    // a1, no risk
+      acc[1].incrementalArr = [30, 0, 0];    // a2, high risk
+      acc[2].incrementalArr = [20, 0, 0];    // a3, no risk
+      acc[3].incrementalArr = [-40, 0, 0];   // a4, medium risk, a planned decline
+      TAP.data.load(p);
+      // Increases only: 50 + 30 + 20 = 100. Top 3: 100 / 100 = 100% (net, 100 / 60 was 167%)
+      var t = TAP.measures.get('cg.top3Share')('alpha', {});
+      a.near(t.v, 1, TOL);
+      // At risk: a2's 30 / 100 = 30%; a4's decline is left out (net, (30 - 40) / 60 was -17%)
+      var r = TAP.measures.get('cg.riskShare')('alpha', {});
+      a.near(r.v, 0.3, TOL);
+      a.match(r.note || '', /Fictional Account A4/, 'the note names the account with a decline');
+      a.ok(!r.partial, 'a decline is not a blank: the figure is not partly provided');
+      // Organization, pooled increases: A 50, 30, 20; B 120, 30; D 168, 100 (and d3's 0) -> 518.
+      //   Top 3: 168 + 120 + 100 = 388 / 518; at risk: a2 30 + b2 30 + d2 100 = 160 / 518
+      a.near(TAP.measures.combined('cg.top3Share', org(), {}).v, 388 / 518, TOL);
+      var o = TAP.measures.combined('cg.riskShare', org(), {});
+      a.near(o.v, 160 / 518, TOL);
+      a.match(o.note || '', /Fictional Account A4/, 'the combined figure names it too');
+      // The note reaches the chart: under it, and in the tooltip
+      var d = TAP.reports.get('cg-exposure'), k = cmp({ mode: 'all' });
+      var res = TAP.builders.get(d.builder)({ def: d, type: d.defaultType, cmp: k, entities: TAP.scope.entities(k), measureId: 'cg.riskShare' });
+      a.ok(res.notes.some(function (n) { return /Fictional Account A4/.test(n); }), 'a note under the chart: ' + res.notes.join(' | '));
     });
 
     T.test('TPV-TC-302', 'Partner FTE, ARR, services and order intake per FTE equal the hand calculations', function (a) {
