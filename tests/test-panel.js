@@ -1228,6 +1228,86 @@
       a.equal(document.activeElement && document.activeElement.getAttribute('data-value'), odd, 'focus is back on it after a redraw');
     }));
 
+    /* ---------- polish (#370) ---------- */
+
+    T.test('X-review-PP-18', 'Hints that do not apply are hidden: Backspace while the panel keys are off, the drill hint in table view', scene(function (a, s) {
+      var p = s.panel('nb-industries');
+      a.ok(!!qs('.tap-panel__drill-hint', p.el), 'the chart says a click steps down');
+      click(qs('[data-action="table"]', p.el));
+      a.equal(qs('.tap-panel__drill-hint', p.el), null, 'the table view does not drill: no drill hint');
+      click(qs('[data-action="table"]', p.el));
+      var cell = qs('[data-tap-region="bravo"][data-tap-industry="ind1"]', p.el);
+      click(cell);
+      a.ok(!!qs('.tap-panel__crumb-keys', p.el), 'drilled: the Backspace hint shows');
+      TAP.panelKeys.enabled = false;   // as while presenting (D70)
+      try {
+        p.refresh();
+        a.equal(qs('.tap-panel__crumb-keys', p.el), null, 'keys off: no Backspace hint');
+      } finally { TAP.panelKeys.enabled = true; }
+    }));
+
+    T.test('X-review-PP-18', 'The panel status line clears itself after a few seconds', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake'), saved = TAP.panel.statusMs;
+      TAP.panel.statusMs = 30;
+      click(qs('[data-action="more"]', p.el));
+      click(qs('[data-action="record"]', p.el));
+      var line = qs('.tap-panel__status', p.el), said = txt(line);
+      TAP.present.clearRecorded();
+      a.ok(said.length > 0, 'the panel says the step was added');
+      return new Promise(function (done) { setTimeout(done, 120); }).then(function () {
+        TAP.panel.statusMs = saved;
+        a.equal(txt(qs('.tap-panel__status', p.el)), '', 'and the line is empty again');
+      });
+    }));
+
+    T.test('X-review-PP-18', 'After choosing a chart type or a More item, focus goes back to the button that opened the menu', scene(function (a, s) {
+      s.report(fakeDef());
+      var p = s.panel('x-fake');
+      click(qs('[data-action="type"]', p.el));
+      var item = qs('[data-type="dot"]', p.el);
+      item.focus();
+      click(item);
+      a.equal(document.activeElement && document.activeElement.getAttribute('data-action'), 'type', 'the chart type button');
+      click(qs('[data-action="more"]', p.el));
+      var rec = qs('[data-action="record"]', p.el);
+      rec.focus();
+      click(rec);
+      TAP.present.clearRecorded();
+      a.equal(document.activeElement && document.activeElement.getAttribute('data-action'), 'more', 'the More button');
+    }));
+
+    T.test('X-review-PP-18', 'A saved image draws a legend key with no colour as an outline, not a solid square', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { legend: [{ label: 'Region A', color: TH.regions[0], role: 'region' }, { label: 'Plan line', color: null, role: 'note' }] }; };
+      var p = s.panel('x-fake'), proto = window.CanvasRenderingContext2D.prototype, fill = proto.fillRect, squares = [];
+      proto.fillRect = function (x, y, w, h) { if (w === h && w < 100) squares.push(String(this.fillStyle)); return fill.apply(this, arguments); };
+      return TAP.panelExport.compose(TAP.panelExport.specOf(p.el)).then(function (out) {
+        proto.fillRect = fill;
+        a.ok(out.texts.indexOf('Plan line') >= 0, 'the key with no colour is named');
+        a.equal(squares.length, 1, 'only the coloured key is filled');
+      }, function (e) { proto.fillRect = fill; throw e; });
+    }));
+
+    T.test('X-review-PP-18', 'List headings keep the kind glyph with its word, and the list Source column is body size', scene(function (a, s) {
+      var p = s.panel('nb-rows'), src = qs('.tap-list__src', p.el), kind = qs('th .tap-panel__colkind .tap-kind', p.el);
+      a.ok(src && kind, 'a list with kinds and sources');
+      a.equal(getComputedStyle(src).fontSize, getComputedStyle(document.documentElement).getPropertyValue('--tap-fs-body').trim(), 'Source at body size (D24)');
+      a.equal(getComputedStyle(kind).whiteSpace, 'nowrap', 'glyph and word on one line');
+    }));
+
+    T.test('X-review-PP-18', 'In a half-width panel More stays on the line of the chart type button', scene(function (a, s) {
+      s.report(fakeDef({ defaultType: 'bar' }));
+      var host = T.dom.mount();
+      host.style.width = '470px';
+      var p = TAP.panel.create(host, 'x-fake', {});
+      try {
+        var type = qs('[data-action="type"]', p.el), more = qs('[data-action="more"]', p.el);
+        TAP.dom.qs('span', type).textContent = '100% stacked bar';   // the longest chart type name
+        a.equal(more.offsetTop, type.offsetTop, 'More is beside the chart type, not alone on a line');
+      } finally { p.destroy(); }
+    }));
+
     T.test('X-review-RI-5', 'Selecting an insight in the panel list switches to the measure its sentence quotes (D79)', scene(function (a, s) {
       s.report(fakeDef({ measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
       TAP.insights = fakeInsights([insight(1, { highlight: { reportId: 'x-fake', regionIds: ['alpha'], mark: 'bar', measureId: 'cg.arr' } })]);
