@@ -851,30 +851,35 @@
       return false;
     }
 
+    // The shell and each view are mounted directly, not through the app, so the test never writes to the address bar
+    // (Chrome throttles frequent address changes, which would starve later routing tests of their hashchange).
     T.test('X-review-SV-L', 'Long names without spaces: no view scrolls sideways at 1280, 1024 and 853 px', function (a) {
-      var root = T.dom.mount();
-      TAP.app.start({ root: root, plan: longNames() });
-      var found = [];
+      var root = T.dom.mount(), found = [];
+      a.ok(TAP.data.load(longNames()).ok, 'the data with long names loads');
+      TAP.shell.mount(root, { warnings: [] });
       try {
         [1280, 1024, 853].forEach(function (w) {
           root.style.width = w + 'px';
           [['overview'], ['industry'], ['newBusiness'], ['customers'], ['partners'], ['regions', 'alpha']].forEach(function (v) {
             TAP.store.set({ view: v[0], region: v[1] || null, industry: v[0] === 'industry' ? 'ind1' : null });
-            window.dispatchEvent(new Event('resize'));
-            var wide = qsa('*', root).filter(function (n) {
-              var r = n.getBoundingClientRect(), box = root.getBoundingClientRect();
-              return r.width > 0 && r.right > box.right + 1 && !n.closest('canvas, svg') && !clipped(n);
-            }).map(function (n) { return n.tagName.toLowerCase() + '.' + String(n.className).split(' ')[0]; });
-            if (root.scrollWidth > root.clientWidth + 1 || wide.length) {
-              found.push(w + ' px ' + v.join('/') + ': ' + root.scrollWidth + ' wide; ' + wide.slice(0, 6).join(' '));
-            }
+            var area = TAP.shell.viewEl(), handle = TAP.views.get(v[0]).mount(area);
+            try {
+              window.dispatchEvent(new Event('resize'));
+              var box = root.getBoundingClientRect();
+              var wide = qsa('*', root).filter(function (n) {
+                var r = n.getBoundingClientRect();
+                return r.width > 0 && r.right > box.right + 1 && !n.closest('canvas, svg') && !clipped(n);
+              }).map(function (n) { return n.tagName.toLowerCase() + '.' + String(n.className).split(' ')[0]; });
+              if (root.scrollWidth > root.clientWidth + 1 || wide.length) {
+                found.push(w + ' px ' + v.join('/') + ': ' + root.scrollWidth + ' wide; ' + wide.slice(0, 6).join(' '));
+              }
+            } finally { handle.destroy(); TAP.dom.clear(area); }
           });
         });
         a.deepEqual(found, [], 'no sideways scroll, and nothing runs past the right edge');
       } finally {
-        TAP.app.start({ root: T.dom.mount(), plan: null });
+        TAP.dom.clear(root);
         TAP.data.load(T_FIXTURE('mini'));
-        history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     });
   });
