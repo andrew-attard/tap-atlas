@@ -24,13 +24,22 @@
   function lookupName(list, id) { var x = (list || []).filter(function (l) { return l.id === id; })[0]; return x ? x.name : id; }
   function regionName(id) { return TAP.content.regionName(TAP.data.region(id)); }
 
-  function itemsOf(regionId, source) {
-    var r = TAP.data.region(regionId) || {};
+  function isRow(v) { return isNum(v) && v % 1 === 0; }
+  // A section's items in row order, each with its key: its worksheet row, or, when that is missing, not a whole
+  // number or already used by an earlier item, "p<position in the file>", so every row stays its own (review DE-4).
+  function keyed(regionId, source) {
+    var r = TAP.data.region(regionId) || {}, seen = {};
     var list = source === 'newBusiness' ? r.newBusiness : source === 'accounts' ? (r.customerGrowth || {}).accounts : r.partners;
-    return (list || []).slice().sort(function (a, b) { return a.sourceRow - b.sourceRow; });
+    var out = (list || []).map(function (it, i) {
+      var n = it.sourceRow, own = isRow(n) && !seen[n];
+      if (own) seen[n] = true;
+      return { it: it, i: i, key: own ? n : 'p' + i, at: isRow(n) ? n : Infinity };
+    });
+    return out.sort(function (a, b) { return a.at === b.at ? a.i - b.i : a.at < b.at ? -1 : 1; });
   }
+  function itemsOf(regionId, source) { return keyed(regionId, source).map(function (x) { return x.it; }); }
 
-  // [{id, regionId, source, sourceRow, item}] in region file order, then source row order.
+  // [{id, regionId, source, sourceRow, key, item}] in region file order, then source row order. id is <regionId>:<key>.
   function list(source, regionIds) {
     if (extra(source)) return TAP.extra.list(source, regionIds);
     source = SOURCE[source];
@@ -38,8 +47,8 @@
     if (!source) return out;
     TAP.data.regions().forEach(function (reg) {
       if (regionIds && regionIds.indexOf(reg.id) < 0) return;
-      itemsOf(reg.id, source).forEach(function (it) {
-        out.push({ id: reg.id + ':' + it.sourceRow, regionId: reg.id, source: source, sourceRow: it.sourceRow, item: it });
+      keyed(reg.id, source).forEach(function (x) {
+        out.push({ id: reg.id + ':' + x.key, regionId: reg.id, source: source, sourceRow: x.it.sourceRow, key: x.key, item: x.it });
       });
     });
     return out;
@@ -135,12 +144,13 @@
     });
   }
 
-  // The item a row reference names: a list entry, or {regionId, sourceRow} / {regionId, row} (a details item).
+  // The item a row reference names: a list entry, or {regionId, sourceRow} / {regionId, row} (a details item, whose
+  // row is the entry's key).
   function find(source, row) {
     if (!row) return null;
     if (row.item) return row.item;
-    var n = row.sourceRow != null ? row.sourceRow : row.row;
-    return itemsOf(row.regionId, source).filter(function (it) { return it.sourceRow === n; })[0] || null;
+    var n = String(row.sourceRow != null ? row.sourceRow : row.row);
+    return (keyed(row.regionId, source).filter(function (x) { return String(x.key) === n; })[0] || {}).it || null;
   }
 
   function src(source, regionId, fieldName, sourceRow, kind) {

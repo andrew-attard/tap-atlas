@@ -71,7 +71,7 @@
     if (!hl) return false;
     var items = hl.items || [], regs = hl.regionIds || [];
     if (items.length) {
-      return items.some(function (i) { return (!i.section || i.section === section) && i.regionId === p.regionId && i.row === p.row.sourceRow; });
+      return items.some(function (i) { return (!i.section || i.section === section) && i.regionId === p.regionId && String(i.row) === String(p.row.key); });
     }
     return regs.length > 0 && regs.indexOf(p.regionId) >= 0;
   }
@@ -161,7 +161,7 @@
           var d = p.d, on = isMarked(ctx.highlight, p, SECTION[source]);
           if (on) ring.push({ value: [p.x.v, p.y.v], entityId: e.id, size: d });
           return { value: [p.x.v, p.y.v], raw: [p.x.v, p.y.v, p.s ? p.s.v : null], keys: [def.x, def.y, sizeKey],
-            entityId: e.id, regionId: p.regionId, row: p.row.sourceRow, rowId: p.row.id, name: p.label, symbolSize: d,
+            entityId: e.id, regionId: p.regionId, row: p.row.key, rowId: p.row.id, name: p.label, symbolSize: d,
             itemStyle: styleOf(p, e, th),
             label: labelOf(p, e, th) };
         }),

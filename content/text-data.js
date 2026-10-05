@@ -58,6 +58,7 @@ Object.assign(window.TAP_CONTENT.text, {
       mcTier: 'the Market Coverage tier for this industry ({tier})',
       mcRow: 'an industry with a row in Market Coverage',
       sourceRow: 'the worksheet row number',
+      uniqueRow: 'a worksheet row number not already used in this section',
       sourceCell: 'the worksheet cell, for example "E5"',
       sourceMap: 'the template map: a sheet and its columns for each section',
       splitSum: 'channel shares adding up to 100%',

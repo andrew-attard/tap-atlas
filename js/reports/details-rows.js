@@ -40,7 +40,7 @@
   /* ---------- one row: an account, a partner or a new business row ---------- */
 
   function find(source, regionId, row) {
-    return TAP.rows.list(source, [regionId]).filter(function (r) { return r.sourceRow === row; })[0] || null;
+    return TAP.rows.list(source, [regionId]).filter(function (r) { return String(r.key) === String(row); })[0] || null;
   }
 
   function titleOf(source, r) {
