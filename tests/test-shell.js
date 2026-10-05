@@ -504,6 +504,23 @@
       });
     });
 
+    // Review fix #378 (SV-13): the regions of a chosen set open inside the bar at 1280, 1024 (125%) and 853 px (150%)
+    T.test('X-review-SV-13', 'The "Chosen set" popover stays inside the comparison bar at every width', function (a) {
+      run(function () {
+        var root = startApp(), bar = qs('.tap-cmp', root), out = [];
+        clickMode(root, 'set');
+        [1280, 1024, 853].forEach(function (w) {
+          root.style.width = w + 'px';
+          var btn = qs('.tap-cmp__setbtn', root);
+          btn.click();
+          var pop = qs('.tap-cmp__setpop', root), r = pop.getBoundingClientRect(), b = bar.getBoundingClientRect();
+          if (pop.hidden || r.right > b.right + 1 || r.left < b.left - 1) out.push(w + ' px: ' + Math.round(r.left) + ' to ' + Math.round(r.right) + ' in ' + Math.round(b.left) + ' to ' + Math.round(b.right));
+          btn.click();
+        });
+        a.deepEqual(out, [], 'inside the bar');
+      });
+    });
+
     T.test('TPV-TC-015', 'The explanation icon shows for combined figures and explains them in plain words', function (a) {
       run(function () {
         var root = startApp();
