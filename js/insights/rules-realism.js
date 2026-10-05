@@ -17,7 +17,7 @@
       if (!(u.value(nb) > 0) || u.value(pipe) == null) return null;
       var none = pipe.v === 0, ratio = none ? null : nb.v / pipe.v;
       if (!none && ratio < min) return null;
-      return { key: r, regionIds: [r], variant: none ? 'none' : null,
+      return { key: r, regionIds: [r], variant: none ? 'none' : null, measureId: 'amb.arr',
         vars: { region: u.name(r), nb: u.money(nb.v), pipeline: u.money(pipe.v), ratio: none ? '' : u.ratio(ratio) },
         figures: [u.fig('nb.arr', u.phrase('year1'), nb), u.fig('base.pipeline12m', u.name(r), pipe)],
         strength: none ? 1 : u.ratioStrength(ratio, min), money: u.moneyShare(nb.v, 'arr') };

@@ -49,7 +49,7 @@
       });
       if (!best || Math.abs(best.gap) < p.gap - SLACK) return null;
       var amount = u.value(u.m('rc.all.oi.' + best.channel, r)) || 0;
-      return { key: r + ':' + best.channel, regionIds: [r], provided: ids.length,
+      return { key: r + ':' + best.channel, regionIds: [r], provided: ids.length, measureId: 'rc.all.oi',
         vars: { region: u.name(r), share: u.pct(best.mine.v), channel: channelWords(u, best.channel), avg: u.pct(best.rest.v) },
         figures: figures(u, best, r, ids.length - 1),
         strength: u.clamp(Math.abs(best.gap) / (2 * p.gap)), money: u.moneyShare(amount, 'arr') };
@@ -65,7 +65,7 @@
       var x = compare(u, 'amb.nbShare', r, ids);
       if (!x || Math.abs(x.gap) < p.gap - SLACK) return null;
       var amb = u.m('amb.arr', r);
-      return { key: r, regionIds: [r], provided: ids.length,
+      return { key: r, regionIds: [r], provided: ids.length, measureId: 'amb.arr',
         vars: { region: u.name(r), share: u.pct(x.mine.v), avg: u.pct(x.rest.v) },
         figures: figures(u, x, r, ids.length - 1).concat([u.fig('nb.arr', u.name(r), u.m('nb.arr', r)),
           u.fig('cg.arr', u.name(r), u.m('cg.arr', r))]),
