@@ -4,7 +4,7 @@
  *          combined figures and the data date (which opens the data sources panel). It writes only state.cmp.
  *          Two rows (D50): the mode and its pickers on one line, then the sentence, the data date and the page-wide
  *          actions the shell hands over (opts.actions: Take the tour, Present; D72).
- * Provides: TAP.compareBar (mount)
+ * Provides: TAP.compareBar (mount: returns a function that removes the bar's listeners)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js,
  *             js/core/format.js, js/core/sources.js (dataDate), js/engine/scope.js (sentence, colorOf),
  *             js/ui/layers.js (opens the data sources panel)
@@ -268,6 +268,7 @@
       if (active === stop) active = null;
     }
     active = stop;
+    return stop;
   }
 
   TAP.compareBar = { mount: mount };
