@@ -1,10 +1,10 @@
 /*
  * File: config/reports-partners.js
  * Purpose: Report definitions for the Partners view.
- * Provides: adds to window.TAP_REPORTS
- * Depends on: config/reports.js (schema)
+ * Provides: adds to window.TAP_REPORTS (pt-reliance, pt-capacity, pt-books, pt-list)
+ * Depends on: config/reports.js (schema); builders 'rowBubble', 'list' and 'ptBooks' (js/reports/pt-books.js)
  * Used by: js/engine/registry.js, js/views/partners.js
- * Owner: CGP stream
+ * Owner: CGP stream; the Phase 4 reports: NBPT stream (#453)
  */
 window.TAP_REPORTS = window.TAP_REPORTS || {};
 
@@ -62,6 +62,30 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     breakdowns: [],
     sources: ['IN', 'APP'],
     options: { label: 'all' }
+  };
+
+  // US-4.5.1: order intake at customer value next to the value through the organization's books. The builder draws
+  // two bars per region and offers the plan year and the split (channel or product category) as its own options.
+  // Its figures are fixed (cv.oi, bk.oi, bk.gap, bk.gapShare, in js/reports/pt-books.js), so there is no measure
+  // switch and no measures list, as for pt-capacity.
+  window.TAP_REPORTS['pt-books'] = {
+    id: 'pt-books',
+    view: 'partners',
+    title: 'How much of each plan runs through the organization’s own books?',
+    explain: {
+      shows: 'Each region’s order intake twice: at customer value, the price the customer pays, and at books value, the part that runs through the organization’s own books. Both are split by channel, with the difference in money and as a share of customer value.',
+      read: 'Two bars per region, customer value above books value, the channels as shades of the region’s colour. The two differ for three reasons. Resellers keep a margin, so less than the customer price reaches the books. Some services are delivered by partners, who invoice them. And the outsourcing % a region sets moves that share of its services from its own delivery to partners. The difference compares ARR and services, the two types both values hold: software perpetual and hardware appear in the books value only. Pick one plan year or the three years together, and switch the split to product category.',
+      lookFor: 'Regions where a large share of customer value does not run through the books, the channels that difference comes from, and whether it changes from year to year.'
+    },
+    shape: 'parts',
+    builder: 'ptBooks',
+    dimension: 'entity',
+    measures: [],
+    defaultType: 'stackedBar',
+    types: ['stackedBar', 'table'],
+    breakdowns: [],
+    sources: ['DER', 'APP'],
+    options: {}
   };
 
   // US-2.3.4: every named partner, as a sortable list.

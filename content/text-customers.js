@@ -1,6 +1,6 @@
 /*
  * File: content/text-customers.js
- * Purpose: Wording for the Customer growth and Partners views.
+ * Purpose: Wording for the Customer growth and Partners views, and the customer value against books value report.
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
  * Used by: the matching js files
@@ -23,6 +23,19 @@ Object.assign(window.TAP_CONTENT.text, {
     title: 'Which partners carry each plan?',
     lead: 'How much each plan relies on partners and alliances, and the people the named partners have behind their planned contribution.',
     label: 'Partner reports'
+  },
+
+  // US-4.5.1: customer value against books value
+  ptBooks: {
+    customer: 'Customer value',
+    books: 'Books value',
+    year: 'Plan year',
+    allYears: 'Three years together',
+    split: 'Split by',
+    all: { channel: 'All channels', category: 'All product categories' },
+    after: 'difference {gap} ({share})',
+    afterGap: 'difference {gap}',
+    booksOnly: 'Software perpetual and hardware appear in the books value only: the customer value figures hold ARR and services. The difference compares ARR and services.'
   },
 
   // US-2.2.3: the note under the growth chart

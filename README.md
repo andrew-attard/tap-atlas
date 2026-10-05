@@ -120,6 +120,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
 | `js/reports/dim-stack.js` | A figure split by one dimension (solution, route, category, maturity): stacked bars, a heatmap grid and a table |
 | `js/reports/stack-draw.js` | Draws those stacked bars, with each part numbered and keyed, and the heatmap grid |
+| `js/reports/pt-books.js` | Customer value next to books value: two bars per region by channel or product category, with the difference |
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |
 | `js/insights/util.js` | The helpers every rule gets as `ctx.util`: names, catalogue figures, the other regions' combined figure, phrases, strength and money at stake |
 | `js/insights/rules-outlook.js` | Insight rules on the Phase 4 figures: strategic plan gap, year 1 jump, pipeline coverage, books value gap, solution reliance |

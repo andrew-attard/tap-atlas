@@ -443,7 +443,7 @@ js/core/content.js
 js/core/sources.js  check.js  check-rows.js  extra.js  check-p4.js  data.js
 js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  measures-pt.js  measures-p4.js  measures-p4b.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
 config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js
-js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js  stack-draw.js  dim-stack.js
+js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js  stack-draw.js  dim-stack.js  pt-books.js
 js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
 js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js

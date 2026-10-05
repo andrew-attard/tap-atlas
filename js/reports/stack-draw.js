@@ -6,17 +6,19 @@
  * Provides: TAP.stackDraw (bars, legend, grid, gridLegend, tone)
  * Depends on: js/engine/shapes.js (drawing kit), js/engine/aggregate.js (describe), js/core/dom.js, js/core/format.js,
  *             js/core/content.js, js/theme.js (all at call time)
- * Used by: js/reports/dim-stack.js
+ * Used by: js/reports/dim-stack.js, js/reports/pt-books.js
  * Owner: NBPT stream (#449)
  *
  * What it draws, d:
  *   label, unit      the figure's name and unit
  *   parts            [{key, value, label}] in stacking order
- *   rows             [{id, entityId, entity, label, group, cells: {<part key>: cell}, total: cell, after}]; one per bar.
- *                    group is the breakdown value the row stands for, or null; after is text for the end of the bar
+ *   rows             [{id, entityId, entity, label, group, cells: {<part key>: cell}, total: cell, after, keys}]; one per
+ *                    bar. group is the breakdown value the row stands for, or null; after is text for the end of the
+ *                    bar; keys, when a row's figures have their own, maps a part key to the figure key a click names
  *   entities, groups the scope entities, and the breakdown values [{value, label}] (empty without a breakdown): the grid
  *   numbered         true: segments and key carry each part's number, so many parts are told apart without colour
  *   highlight        a Target; by: the dimension the parts are values of
+ *   right, tip       optional: room right of the bars (px) for long closing texts; tip(row, part) gives more tooltip lines
  */
 (function (TAP) {
   'use strict';
@@ -43,6 +45,7 @@
     lines.push([kit.t('chart.total'), kit.exact(row.total, col)]);
     var how = TAP.agg.describe(row.total);
     if (how) lines.push([kit.t('chart.how'), how]);
+    if (d.tip) lines = lines.concat(d.tip(row, part) || []);
     return kit.tip(row.label, lines);
   }
 
@@ -76,7 +79,7 @@
           var c = r.cells[p.key], tot = totals[i].state === 'value' ? totals[i].v : 0;
           if (!c || c.state !== 'value') return { value: null };
           var on = kit.highlighted(r.entity, d.highlight), dark = tone(pi, n) < 0.4 && r.entity.role !== 'muted';
-          return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: p.key, part: p.value, entityId: r.entityId, rowId: r.id,
+          return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: (r.keys || {})[p.key] || p.key, part: p.value, entityId: r.entityId, rowId: r.id,
             name: r.label, mark: 'bar',
             itemStyle: { color: shade(r.entity.color, pi, n), borderColor: on ? hl.color : th.ground, borderWidth: on ? hl.width : th.border.control },
             label: { color: dark ? th.onColour : th.ink } };
@@ -91,7 +94,7 @@
     if (np.length) series.push(kit.npSeries(np));
     var vax = pct ? { type: 'value', max: 100, axisLabel: { fontSize: th.type.chart, formatter: function (v) { return TAP.format.pct(v / 100); } } }
       : kit.valueAxis({ unit: d.unit });
-    return { grid: kit.grid({ right: th.space[12] * 2 }), tooltip: { trigger: 'item' }, xAxis: vax,
+    return { grid: kit.grid({ right: d.right || th.space[12] * 2 }), tooltip: { trigger: 'item' }, xAxis: vax,
       yAxis: { type: 'category', inverse: true, data: d.rows.map(function (r) { return r.label; }),
         axisLabel: { fontSize: th.type.chart, interval: 0 } },
       series: series };

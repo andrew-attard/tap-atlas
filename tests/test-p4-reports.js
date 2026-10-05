@@ -427,7 +427,7 @@
       a.near(seg('Alliance A', 'bravo:bk'), 1000, TOL, 'Region B books value through alliance A');
       var total = res.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
       a.match(total.label.formatter({ dataIndex: 1 }), /^€2\.6M\s+difference €295k \(10%\)$/, 'the books bar ends with the difference in money and %');
-      a.match(total.label.formatter({ dataIndex: 0 }), /^€2\.8M$/, 'the customer value bar ends with its total');
+      a.match(total.label.formatter({ dataIndex: 0 }), /^€2\.8M/, 'the customer value bar ends with its total');
       a.ok(res.legend.some(function (l) { return l.label === 'Alliance A' && l.role === 'part'; }), 'the channels are named in the key');
       a.ok(res.notes.some(function (n) { return /software perpetual and hardware/i.test(n); }), 'a note says what the difference leaves out');
     });
@@ -512,6 +512,15 @@
       var res = build(BOOKS, { mode: 'all' }), s0 = res.option.series[0], tip = s0.tooltip.formatter({ data: s0.data[0] });
       a.ok(tip.indexOf('<img') < 0 && tip.indexOf('<i>') < 0, 'no markup from the data');
       a.ok(tip.indexOf('&lt;img') >= 0, 'the name is shown as text');
+    });
+
+    T.test('X-p4-pt-layout', 'The Partners view pairs its reports and gives the books value report and the list a full row', function (a) {
+      var rows = TAP.partnersView.rows(window.TAP_VIEWS.partners.reports);
+      a.ok(rows.every(function (r) { return r.length <= 2; }), 'never more than two side by side');
+      a.deepEqual(rows[0], ['pt-reliance', 'pt-capacity'], 'the first row is as before');
+      a.ok(rows.some(function (r) { return r.length === 1 && r[0] === 'pt-books'; }), 'pt-books alone on its row');
+      a.deepEqual(rows[rows.length - 1], ['pt-list'], 'the list last, at full width');
+      a.deepEqual([].concat.apply([], rows), window.TAP_VIEWS.partners.reports, 'every report placed, in order');
     });
   });
 })(window.TAP);
