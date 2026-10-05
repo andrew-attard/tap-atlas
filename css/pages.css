@@ -16,7 +16,7 @@
 /* ---------- Guide page (US-1.6.1): one reading column, contents at the top ---------- */
 .tap-guide {
   display: flex; flex-direction: column; gap: var(--tap-sp-6);
-  max-width: 80ch; padding: 0 var(--tap-gutter) var(--tap-sp-12);
+  max-width: 80ch; padding: 0 0 var(--tap-sp-12);
   font-size: var(--tap-fs-body); line-height: 1.6;
 }
 .tap-guide__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
@@ -62,7 +62,7 @@
 /* ---------- Insights page (US-1.7.3): filters, then one block per family ---------- */
 .tap-ins {
   display: flex; flex-direction: column; gap: var(--tap-sp-6);
-  max-width: var(--tap-max-w); padding: 0 var(--tap-gutter) var(--tap-sp-12); font-size: var(--tap-fs-body);
+  max-width: var(--tap-max-w); padding: 0 0 var(--tap-sp-12); font-size: var(--tap-fs-body);
 }
 .tap-ins__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 80ch; }
 .tap-ins__kicker { margin: 0; font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }

@@ -66,7 +66,7 @@
 
 /* ---------- the view (US-1.5.2) ---------- */
 
-.tap-ov { display: flex; flex-direction: column; gap: var(--tap-sp-6); padding: 0 var(--tap-gutter); }   /* the same side gutter as every other view */
+.tap-ov { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
 .tap-ov__sechead {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-4);
   margin-bottom: var(--tap-sp-3); padding-bottom: var(--tap-sp-1); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
