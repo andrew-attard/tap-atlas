@@ -76,6 +76,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/core/content.js` | Hands out the wording, with the organization layer laid over the general one |
 | `js/core/sources.js` | Turns a figure's source into file › sheet › cell; summarises each region's import |
 | `js/core/check.js` | The contract check: checks the data file and lists problems in plain words |
+| `js/core/check-rows.js` | The contract check for each region: its fields and the rows of its sections |
 | `js/core/data.js` | Loads and checks the data file, then gives everything else simple ways to read it |
 | `js/core/extra.js` | Extra template sections: the sections the data file declares, their columns and cells, sources, and their warnings |
 
