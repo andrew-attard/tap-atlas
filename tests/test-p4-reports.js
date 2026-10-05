@@ -2,7 +2,7 @@
  * File: tests/test-p4-reports.js
  * Purpose: Tests for the Phase 4 reports on the New business and Partners views, checked against figures worked by
  *          hand from tests/fixtures/mini-p4.js (never against the builders' own output).
- * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733 and X-p4-*; window.P4R_T (shared helpers)
+ * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733, 734, 735 and X-p4-*; window.P4R_T (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: NBPT stream
@@ -521,6 +521,104 @@
       a.ok(rows.some(function (r) { return r.length === 1 && r[0] === 'pt-books'; }), 'pt-books alone on its row');
       a.deepEqual(rows[rows.length - 1], ['pt-list'], 'the list last, at full width');
       a.deepEqual([].concat.apply([], rows), window.TAP_VIEWS.partners.reports, 'every report placed, in order');
+    });
+
+    /* ---------- US-4.5.2 route to market ---------- */
+
+    /*
+     * Order intake by route on miniP4, worked by hand from the route lines in tests/fixtures/mini-p4.js (year 1 / 2 / 3):
+     *   A: own sales force ARR 400 / 400 / 500 + services 80 / 80 / 100 = 480 / 480 / 600 = 1560
+     *      customer success ARR 100 / 50 / 50 + services 20 / 10 / 10 = 120 / 60 / 60 = 240
+     *      other resellers ARR 150 / 225 / 225 = 600                                  total 750 / 765 / 885 = 2400
+     *   B: own sales force 600 / 600 / 800 = 2000; customer success 100 / 0 / 0 = 100
+     *      system integrators ARR 300 x 3 + services 20 x 3 = 320 x 3 = 960            total 1020 / 920 / 1120 = 3060
+     *   D: own sales force 200 / 300 / 400 = 900; Alliance B as reseller 50 / 75 / 100 = 225; other resellers
+     *      100 / 150 / 200 = 450; partner existing business 30 / 30 / blank = 60        total 380 / 555 / 700 = 1635
+     *   C: no route lines: not provided. A route with no line in a region is not provided there, never zero.
+     *   Together: own sales force 4460, customer success 340, Alliance B as reseller 225, other resellers 1050,
+     *      system integrators 960, partner existing business 60                         total 7095
+     *   Shares of Region A's 2400: 1560 = 65%, 240 = 10%, 600 = 25%
+     */
+    var ROUTES = 'pt-routes', RT = ['ownSales', 'customerSuccess', 'allianceBReseller', 'otherResellers', 'systemIntegrators', 'partnerExisting'];
+    var ROUTE_NAMES = ['Own sales force', 'Customer success', 'Alliance B as reseller', 'Other resellers', 'System integrators', 'Partner existing business'];
+    var BY_ROUTE = {
+      alpha: [1560, 240, null, 600, null, null, 2400], bravo: [2000, 100, null, null, 960, null, 3060], charlie: [null, null, null, null, null, null, null],
+      delta: [900, null, 225, 450, null, 60, 1635], org: [4460, 340, 225, 1050, 960, 60, 7095]
+    };
+    // Per plan year: [own sales force, customer success, Alliance B as reseller, other resellers, system integrators, partner existing business, total]
+    var ROUTE_YEARS = {
+      alpha: [[480, 120, null, 150, null, null, 750], [480, 60, null, 225, null, null, 765], [600, 60, null, 225, null, null, 885]],
+      bravo: [[600, 100, null, null, 320, null, 1020], [600, 0, null, null, 320, null, 920], [800, 0, null, null, 320, null, 1120]],
+      delta: [[200, null, 50, 100, null, 30, 380], [300, null, 75, 150, null, 30, 555], [400, null, 100, 200, null, null, 700]]
+    };
+    function rkey(v) { return 'rt.oi@route:' + v; }
+    function routeCells(a, cells, want, what) {
+      RT.forEach(function (v, i) { expectCell(a, cells[rkey(v)], want[i], what + ' ' + v); });
+      expectCell(a, cells['rt.oi'], want[6], what + ' total');
+    }
+
+    T.test('TPV-TC-734', 'Order intake per region by the six routes to market equals the hand-worked figures', function (a) {
+      load();
+      var def = TAP.reports.get(ROUTES), list = window.TAP_VIEWS.partners.reports;
+      a.ok(def && def.view === 'partners', 'pt-routes is a Partners report');
+      a.ok(list.indexOf(ROUTES) > list.indexOf('pt-capacity') && list.indexOf(ROUTES) < list.indexOf('pt-list'), 'after pt-capacity, before the list');
+      a.deepEqual(TAP.reports.validate(def), [], 'the definition is valid');
+      var res = build(ROUTES, { mode: 'all' }, { type: 'table' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(labels(res), ['Region'].concat(ROUTE_NAMES).concat(['Total']), 'the six routes, in the lookup’s order');
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) { routeCells(a, row(res, r).cells, BY_ROUTE[r], r); });
+      routeCells(a, row(build(ROUTES, { mode: 'org' }, { type: 'table' }), 'org').cells, BY_ROUTE.org, 'together');
+      a.deepEqual(res.missing, ['Region C'], 'Region C is named as not provided');
+    });
+
+    T.test('TPV-TC-735', '100% stacked bars and a table, with a plan year breakdown whose values add up to the three years', function (a) {
+      var def = TAP.reports.get(ROUTES);
+      a.equal(def.defaultType, 'stacked100', '100% stacked bars first');
+      [1, 4, 7].forEach(function (n) {
+        var types = TAP.shapes.types(def, n);
+        a.ok(types.indexOf('stacked100') >= 0 && types.indexOf('table') >= 0, n + ' regions: 100% stacked bars and a table');
+      });
+      load();
+      a.deepEqual(TAP.prepare.breakdowns(def, {}), ['year'], 'the plan year breakdown is offered');
+      var res = build(ROUTES, { mode: 'all' }, { type: 'table', breakdown: 'year' });
+      Object.keys(ROUTE_YEARS).forEach(function (r) {
+        var sums = [0, 0, 0, 0, 0, 0, 0];
+        [1, 2, 3].forEach(function (y) {
+          var cells = row(res, r, y).cells;
+          routeCells(a, cells, ROUTE_YEARS[r][y - 1], r + ' year ' + y);
+          RT.concat(['total']).forEach(function (v, i) { var c = cells[i < 6 ? rkey(v) : 'rt.oi']; if (c.state === 'value') sums[i] += c.v; });
+        });
+        sums.forEach(function (s, i) { a.near(s, BY_ROUTE[r][i] || 0, TOL, r + ' ' + (RT[i] || 'total') + ': the years add up to the three-year figure'); });
+      });
+      a.equal(row(res, 'alpha', 1).cells.group.v, '2027', 'each line names its plan year');
+      var bars = build(ROUTES, { mode: 'all' }, { breakdown: 'year' });
+      a.equal(bars.option.yAxis.data.length, 12, 'a 100% bar per region and year');
+    });
+
+    T.test('X-p4-routes-bars', '100% bars: each route a numbered part, shares of the region’s total', function (a) {
+      load();
+      var res = build(ROUTES, { mode: 'all' }), ss = series(res);
+      a.deepEqual(ss.map(function (s) { return s.name; }), ROUTE_NAMES, 'the six routes, in order');
+      a.deepEqual(res.legend.filter(function (l) { return l.mark != null; }).map(function (l) { return [l.mark, l.label]; }),
+        ROUTE_NAMES.map(function (n, i) { return [i + 1, n]; }), 'every route named in the key with its number');
+      // Region A: 1560, 240 and 600 of 2400
+      function pct(i) { var s = res.option.series[i], d = s.data[0]; return { v: d.value, text: s.label.formatter({ data: d, value: d.value }) }; }
+      a.near(pct(0).v, 65, TOL, 'own sales force 65%');
+      a.near(pct(1).v, 10, TOL, 'customer success 10%');
+      a.near(pct(3).v, 25, TOL, 'other resellers 25%');
+      a.match(pct(0).text, /^\{n\|1\} 65%$/, 'a wide part carries its number and share');
+      a.match(pct(1).text, /^\{n\|2\}$/, 'a narrow part carries its number alone');
+      a.equal(res.option.series[2].data[0].value, null, 'no part for a route the region gives no figure for');
+      a.equal(res.option.xAxis.max, 100, 'the axis runs to 100%');
+    });
+
+    T.test('X-p4-routes-no-data', 'A file without routes: the report says so for every region', function (a) {
+      MODES.forEach(function (m) {
+        var res = build(ROUTES, m);
+        a.equal(res.error, null, m.mode + ': builds');
+        a.ok(res.empty, m.mode + ': the panel’s own empty state');
+      });
+      a.deepEqual(build(ROUTES, { mode: 'all' }).missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region is named');
     });
   });
 })(window.TAP);

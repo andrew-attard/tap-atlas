@@ -16,7 +16,7 @@
 
     H.viewChecks({ view: 'partners', menu: 'Partners', title: 'Which partners carry each plan?',
       after: 'Customer growth', afterId: 'customers', emptyRegion: 'charlie', needs: [194, 196, 206, 208],
-      reports: ['pt-reliance', 'pt-capacity', 'pt-books', 'pt-list'],
+      reports: ['pt-reliance', 'pt-capacity', 'pt-books', 'pt-routes', 'pt-list'],
       ids: { menu: 'TPV-TC-411', headline: 'TPV-TC-413', layout: 'X-pt-layout', modes: 'TPV-TC-414', empty: 'TPV-TC-416', explain: 'TPV-TC-417', guide: 'X-pt-guide' } });
 
     /* ---------- US-2.3.2 reliance on partners and alliances ---------- */
