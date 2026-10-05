@@ -46,11 +46,15 @@
         a.equal(o.valueKind, m.valueKind, o.measureId + ' value kind');
         a.equal(o.label, m.label, o.measureId + ' label');
       });
-      // Every measure that is not text or category is offered (ARCHITECTURE 18.3)
+      // Every measure that is not text or category is offered (ARCHITECTURE 18.3), except the two per-industry
+      // figures whose dims ['year'] leave nothing to show them by (section 17.5: ind.nb.services, ind.nb.oi)
+      var none = ['ind.nb.services', 'ind.nb.oi'];
       TAP.measures.list().forEach(function (id) {
         var vk = TAP.measures.meta(id).valueKind;
-        if (vk !== 'text' && vk !== 'category') a.ok(!!byId(opts, id), id + ' is offered');
+        if (vk === 'text' || vk === 'category') return;
+        a.equal(!!byId(opts, id), none.indexOf(id) < 0, id + (none.indexOf(id) < 0 ? ' is offered' : ' is not offered'));
       });
+      opts.forEach(function (o) { a.ok(o.by.length > 0, o.measureId + ' can be shown by something'); });
     });
 
     T.test('TPV-TC-561', 'The "by" choices follow the catalogue: regions, then each breakdown the measure lists', function (a) {
@@ -67,19 +71,25 @@
 
     T.test('TPV-TC-562', 'A measure defined at run time is offered with its dimensions, with no code change', function (a) {
       a.ok(!byId(TAP.custom.options(), 'xCustomProbe'), 'not there before');
-      TAP.measures.define('xCustomProbe', { unit: 'money', valueKind: 'amount', kind: 'IN', dims: ['year', 'channel'],
-        words: function () { return { label: 'Probe amount', short: 'Probe' }; } }, function (r) {
-        return { v: 1, state: 'value', kind: 'IN', src: { regionId: r, section: 'recap', field: 'value', row: null, year: null, cell: null, kind: 'IN' } };
+      // The probe lives in a copy of the registry for this test only, so it never reaches later tests
+      var real = TAP.measures, probe = { id: 'xCustomProbe', label: 'Probe amount', short: 'Probe', unit: 'money',
+        valueKind: 'amount', kind: 'IN', dims: ['year', 'channel'] };
+      TAP.measures = Object.assign({}, real, {
+        list: function () { return real.list().concat(['xCustomProbe']); },
+        meta: function (id) { return id === 'xCustomProbe' ? Object.assign({}, probe) : real.meta(id); }
       });
-      var o = byId(TAP.custom.options(), 'xCustomProbe');
-      a.ok(!!o, 'listed');
-      a.deepEqual(o.dims, ['year', 'channel']);
-      a.deepEqual(o.by, ['entity', 'year', 'channel']);
-      a.equal(o.unit, 'money');
-      a.equal(o.label, 'Probe amount');
-      var def = TAP.custom.definition({ measure: 'xCustomProbe', by: 'channel' });
-      a.ok(!def.errors, 'a definition can be built for it');
-      a.deepEqual(def.breakdowns, ['channel']);
+      try {
+        var o = byId(TAP.custom.options(), 'xCustomProbe');
+        a.ok(!!o, 'listed');
+        a.deepEqual(o.dims, ['year', 'channel']);
+        a.deepEqual(o.by, ['entity', 'year', 'channel']);
+        a.equal(o.unit, 'money');
+        a.equal(o.label, 'Probe amount');
+        var def = TAP.custom.definition({ measure: 'xCustomProbe', by: 'channel' });
+        a.ok(!def.errors, 'a definition can be built for it');
+        a.deepEqual(def.breakdowns, ['channel']);
+      } finally { TAP.measures = real; }
+      a.ok(!byId(TAP.custom.options(), 'xCustomProbe'), 'gone again after the test');
     });
 
     T.test('TPV-TC-563', 'A rate with the rest as a total is the weighted mean of the rest, never a sum', scene(function (a) {
@@ -170,6 +180,16 @@
       a.deepEqual(d1.measures.map(function (m) { return m.id; }), ['nb.hitRate']);
       a.equal(d1.title, 'Hit rate by industry');
       a.deepEqual(TAP.custom.definition({ measure: 'nb.arr', by: 'entity' }).breakdowns, []);
+    });
+
+    T.test('X-custom-explain', 'About this chart says how combined figures are made, by the measure’s own rule', function (a) {
+      function look(id) { return TAP.custom.definition({ measure: id, by: 'entity' }).explain.lookFor; }
+      a.equal(look('nb.arr'), TAP.content.text('custom.explain.combine.sum'), 'an amount');
+      a.equal(look('nb.hitRate'), TAP.content.text('custom.explain.combine.rate'), 'a rate: weighted mean');
+      a.equal(look('amb.nbShare'), TAP.content.text('custom.explain.combine.ratio'), 'a share: parts added up, then divided');
+      a.match(look('amb.nbShare'), /added up first, then divided/);
+      a.equal(TAP.custom.definition({ measure: 'ind.growthPotential', by: 'industry' }).explain.lookFor,
+        TAP.content.text('custom.explain.combine.rating'), 'a rating');
     });
 
     T.test('X-custom-all-valid', 'Every offered combination gives a definition that passes validation', function (a) {

@@ -20,6 +20,7 @@ Object.assign(window.TAP_CONTENT.text, {
       combine: {
         sum: 'Combined figures add up the regions as a total, or average them, as the comparison says.',
         rate: 'Rates are never added up: combined figures are weighted averages of the regions.',
+        ratio: 'Shares and ratios are never averaged: the regions’ parts are added up first, then divided.',
         rating: 'Ratings are never added up: combined figures are the average rating, with the range.'
       }
     },

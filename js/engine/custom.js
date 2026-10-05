@@ -38,7 +38,7 @@
     }).map(function (m) {
       return { measureId: m.id, label: m.label, short: m.short, dims: (m.dims || []).slice(), unit: m.unit,
         valueKind: m.valueKind, kind: m.kind, by: byOf(m) };
-    });
+    }).filter(function (o) { return o.by.length > 0; });   // nothing to show it by: not offered
   }
 
   // The chart types for a choice of "by", from the compare shape's list and the D18 rules in TAP.shapes.types.
@@ -52,6 +52,11 @@
 
   function byLabel(by) {
     return by === 'entity' ? t('by.entity') : TAP.content.text('panel.breakdowns.' + by);
+  }
+  // How combined figures are made, in the words of the measure's own US-1.2.5 rule.
+  function combineWord(m) {
+    if (m.combine === 'ratioOfSums') return 'ratio';
+    return m.valueKind === 'rate' || m.valueKind === 'rating' ? m.valueKind : 'sum';
   }
   function typeLabel(type) { return TAP.reports.TYPES.indexOf(type) >= 0 ? TAP.shapes.label(type) : String(type); }
 
@@ -77,7 +82,7 @@
       explain: {
         shows: t('explain.shows', { measure: lower(m.label), by: lower(byLabel(by)) }),
         read: t(by === 'entity' ? 'explain.readEntity' : 'explain.readBy', { by: lower(byLabel(by)) }),
-        lookFor: t('explain.combine.' + (m.valueKind === 'rate' || m.valueKind === 'rating' ? m.valueKind : 'sum'))
+        lookFor: t('explain.combine.' + combineWord(m))
       },
       shape: 'compare', builder: null, dimension: 'entity', measures: [{ id: m.id, label: m.label }],
       defaultType: type, types: list, breakdowns: bd, defaultBreakdown: bd[0] || null,
