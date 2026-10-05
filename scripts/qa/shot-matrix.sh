@@ -22,7 +22,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 page="${1:-index-sample.html}"
 outdir="${2:-/tmp/tap-qa/shots}"
 browsers="$(qa_browsers "${3:-both}")" || exit 2
-sizes="${QA_SIZES:-1280x800@1.25 1280x800@1.5 1536x864@1.25 1536x864@1.5 853x533@1.5}"
+sizes="${QA_SIZES:-1280x800@1.25 1280x800@1.5 1536x864@1.25 1536x864@1.5 1024x640@1.25 853x533@1.5}"
 [ "${QA_TALL:-0}" = "1" ] && sizes="$sizes 1280x4000@1"
 jobs="${QA_JOBS:-3}"
 
