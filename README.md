@@ -4,9 +4,11 @@
 
 TAP Atlas is a small app that runs in the browser. Each regional leader fills in the same planning template. TAP Atlas reads those plans from one data file and shows them together, so leadership can play each region's plan back, compare regions and spot what is worth discussing.
 
+**Start here: [the handover guide](docs/HANDOVER.md)** (`docs/HANDOVER.md`). It says what the app is, how to refresh the data, which checks to run, which document to read for each job, and the known limits and open questions.
+
 This README is for the maintainer working with a chat assistant such as Microsoft 365 Copilot. It says what every file does, and which files to share for each kind of change. Detail lives in `docs/`.
 
-> **Status:** Phase 1 is released as `v0.1.0`. Phase 2 adds the New business, Customer growth and Partners views, region profiles, list reports, drill-down and more insights, for `v0.2.0`. The sample edition runs end to end. The internal edition needs the real data file from the import.
+> **Status:** Phase 1 is released as `v0.1.0` and Phase 2 (the New business, Customer growth and Partners views, region profiles, list reports, drill-down and more insights) as `v0.2.0`. Phase 3 adds presentation mode, custom charts, extra template sections, the handover pack and the portfolio edition, for `v0.3.0`. The sample edition runs end to end. The internal edition needs the real data file from the import.
 
 ## Open it
 
@@ -183,6 +185,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 |---|---|
 | `data/sample-plan-data.js` | Fictional sample data. Generated: never edit by hand |
 | `data/plan-data.js` | Real data from the import. Internal copy only, gitignored |
+| `docs/HANDOVER.md` | The handover guide: start here. What the app is, refreshing the data, the checks, which document for which job, known limits |
 | `docs/DATA-CONTRACT.md` | The exact shape of the data file. The only interface between data and views |
 | `docs/ARCHITECTURE.md` | How the parts fit and the contract each one codes against |
 | `docs/IMPORT-BRIEF.md` | What the import must do, for building it in Copilot |
