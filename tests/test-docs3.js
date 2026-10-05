@@ -2,7 +2,8 @@
  * File: tests/test-docs3.js
  * Purpose: Tests for the handover pack and portfolio pages. Most of these are file checks, which the browser
  *          can't make from the test page, so they run in tools/check-docs3.js and are listed here as skipped.
- * Provides: test cases TPV-TC-596, TPV-TC-602, TPV-TC-605, TPV-TC-606, TPV-TC-607, TPV-TC-609, TPV-TC-610, TPV-TC-611, TPV-TC-615, TPV-TC-617, TPV-TC-621, TPV-TC-623, TPV-TC-627, TPV-TC-628, X-docs3-handover
+ * Provides: test cases TPV-TC-596, 598, 599, 602, 605, 606, 607, 609, 610, 611, 615, 617, 621, 623, 627, 628
+ *           (each as TPV-TC-nnn), X-docs3-handover, X-docs3-contract-history
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js, index-sample.html
  * Used by: tests.html
  * Owner: DOCS3 stream
@@ -50,6 +51,16 @@
       FILE_CHECK);
     T.skip('TPV-TC-596', 'Every file path the handover guide names exists', 'Checked by tools/check-docs.js in scripts/verify.sh');
     T.skip('X-docs3-handover', 'The handover guide has its parts and is the first document the README links to', FILE_CHECK);
+    T.skip('TPV-TC-598', 'Every field the contract check reads is named in docs/DATA-CONTRACT.md', FILE_CHECK);
+    T.skip('X-docs3-contract-history', 'docs/DATA-CONTRACT.md has a "Changes" section with each version and phase', FILE_CHECK);
+
+    // The Phase 2 release (v0.2.0) read and shipped schema version "0.2"; Phase 3 only adds fields (D57).
+    T.test('TPV-TC-599', 'The app\'s schema version and the sample data\'s are unchanged since the Phase 2 release', function (a) {
+      var PHASE2 = '0.2';
+      a.equal(TAP.schemaVersion, PHASE2, 'TAP.schemaVersion');
+      a.equal(window.PLAN_DATA && window.PLAN_DATA.meta && window.PLAN_DATA.meta.schemaVersion, PHASE2, 'sample meta.schemaVersion');
+    });
+
     T.skip('TPV-TC-602', 'The README file guide lists every shipped file and every path it names exists', FILE_CHECK);
     T.skip('TPV-TC-605', 'With the Phase 3 build, the docs paths check passes', 'Checked by tools/check-docs.js in scripts/verify.sh');
     T.skip('TPV-TC-606', 'package.sh copies the pages, js, css, config, content, vendor, data and docs into a dated folder', FILE_CHECK);

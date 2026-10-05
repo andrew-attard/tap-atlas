@@ -3,7 +3,7 @@
  * File: tools/check-docs3.js
  * Purpose: File checks for the handover pack and the portfolio edition, which the browser test page can't make:
  *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
- *          the README's file guide against the folder, the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
+ *          the README's file guide against the folder, the Data Contract's fields and change history, the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
  * Depends on: Node 18+; tools/check-docs3-files.js (the screenshot and package checks)
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
@@ -197,10 +197,23 @@ function checkReadmeFiles(root) {
   return { problems, checked: files.length };
 }
 
+/* ---------- US-3.3.2: the Data Contract's change history ---------- */
+
+function checkContractHistory(root) {
+  const text = fs.readFileSync(path.join(root, 'docs/DATA-CONTRACT.md'), 'utf8');
+  const part = (/^## Changes\s*$[\s\S]*?(?=^## |(?![\s\S]))/m.exec(text) || [''])[0];
+  if (!part) return { problems: ['docs/DATA-CONTRACT.md has no "## Changes" section'], checked: 0 };
+  const want = [/0\.1/, /0\.2/, /Phase 1/, /Phase 2/, /Phase 3/, /extraSections/];
+  const problems = want.filter((re) => !re.test(part)).map((re) => 'docs/DATA-CONTRACT.md "Changes": nothing matches ' + re);
+  return { problems, checked: want.length };
+}
+
 const CHECKS = [
   { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb },
   { id: 'TPV-TC-602', label: 'README file guide lists every shipped file (paths named are checked by check-docs.js)', run: checkReadmeFiles },
   { id: 'X-docs3-handover', label: 'handover guide: its parts, the import brief, and first in the README', run: checkHandover },
+  { id: 'TPV-TC-598', label: 'every field the contract check reads is named in docs/DATA-CONTRACT.md', run: files.checkContractFields },
+  { id: 'X-docs3-contract-history', label: 'docs/DATA-CONTRACT.md has a "Changes" section with each version and phase', run: checkContractHistory },
   { id: 'TPV-TC-606', label: 'package.sh: refuses on a failed verify, else one dated copy without tests or tools (606, 607, 609, 610, 611)', run: (root) => files.checkPackage(root, HANDOVER) },
   { id: 'TPV-TC-615', label: 'landing page: relative links to files that exist, 3 or 4 screenshots, the sample button', run: checkLanding },
   { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: files.checkShots },
