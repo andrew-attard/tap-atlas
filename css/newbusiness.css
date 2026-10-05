@@ -1,6 +1,6 @@
 /*
  * File: css/newbusiness.css
- * Purpose: Styles for the New business view: its page rows, the industry grid and the success factors panel.
+ * Purpose: Styles for the New business view: its page rows, the industry and solution grids and the success factors panel.
  * Provides: styles for .tap-nb, .tap-nbg and .tap-nbf only
  * Depends on: css/base.css, css/view-head.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
@@ -54,6 +54,14 @@
 .tap-nbg__cell.is-focus { border-color: var(--tap-ink); }
 .tap-nbg__cell.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; z-index: 2; }
 .tap-nbg__cell:hover { outline: var(--tap-focus-w) solid var(--tap-ink); outline-offset: 1px; }
+/* The solution grid (US-4.4.1): plain row names, zeros set back, and each region's total under a rule */
+.tap-nbg__name--plain { display: flex; align-items: center; cursor: default; }
+.tap-nbg__name--plain:hover .tap-nbg__label { text-decoration: none; }
+.tap-nbg__cell--zero { color: var(--tap-muted); font-weight: 600; }
+.tap-nbg__row--total { padding-top: var(--tap-sp-1); border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-nbg__row--total .tap-nbg__name { font-weight: 800; }
+.tap-nbg__cell--total { font-weight: 800; }
+.tap-nbg__row--total.tap-nbg__row--year { padding-top: 0; border-top: 0; }
 .tap-nbg__tier { padding: 0 var(--tap-sp-1); font-size: var(--tap-fs-chartMin); font-weight: 700; line-height: 1.4; }
 .tap-nbg__tier--t1 { background: var(--tap-tier1); color: var(--tap-tier1-fg); }
 .tap-nbg__tier--t2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); }

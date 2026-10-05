@@ -138,7 +138,7 @@
       var keys = res.legend.filter(function (l) { return l.mark != null; });
       a.deepEqual(keys.map(function (l) { return [l.mark, l.label]; }), [[1, 'Solution 1'], [2, 'Solution 2'], [3, 'Solution 3'], [4, 'No solution named']]);
       var s0 = res.option.series[0];
-      a.match(s0.label.formatter({ data: s0.data[1], value: s0.data[1].value }), /^1\b/, 'a segment carries its part’s number');
+      a.match(s0.label.formatter({ data: s0.data[1], value: s0.data[1].value }), /^\{n\|1\} /, 'a segment carries its part’s number, as a badge');
       var np = res.option.series.filter(function (s) { return s.tapRole === 'notProvided'; })[0];
       a.ok(np && np.data.some(function (d) { return d.entityId === 'charlie'; }), 'Region C carries the not-provided mark');
       a.deepEqual(res.missing, ['Region C'], 'and is named under the chart');
@@ -196,7 +196,7 @@
       a.equal(def.drill && def.drill.next, 'nb-rows', 'the next level is the list of rows');
       a.deepEqual(TAP.panelDrill.levels(def).errors, [], 'the levels are sound');
       function rowsFor(target) {
-        return build('nb-rows', { mode: 'all' }, { drill: target }).table.rows.map(function (r) { return r.id; });
+        return build('nb-rows', { mode: 'all' }, { drill: target }).table.rows.map(function (r) { return r.id; }).sort();
       }
       // The rows and the solution each names: tests/fixtures/mini-p4.js (SOLUTIONS)
       var cases = [['alpha', 'sol1', ['alpha:20']], ['alpha', 'sol2', ['alpha:21']], ['bravo', 'sol1', ['bravo:20']],
@@ -303,7 +303,8 @@
       a.ok(html.indexOf('&lt;img') >= 0, 'the name is shown as text');
       var bars = build(SOL, { mode: 'all' }, { type: 'stackedBar' }), s0 = bars.option.series[0];
       var tip = s0.tooltip.formatter({ data: s0.data[0] });
-      a.ok(tip.indexOf('<img') < 0 && tip.indexOf('<b>') < 0, 'no markup from the data in the tooltip');
+      a.ok(tip.indexOf('<img') < 0 && tip.indexOf('<b>Region A') < 0, 'no markup from the data in the tooltip');
+      a.ok(tip.indexOf('&lt;b&gt;Region A') >= 0 && tip.indexOf('&lt;img') >= 0, 'the names are shown as text');
     });
 
     T.test('X-p4-sol-layout', 'The view gives the solution heatmap a full row, straight under the industry grid', function (a) {
