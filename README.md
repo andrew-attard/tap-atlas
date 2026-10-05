@@ -94,7 +94,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/build-compare.js` | Generic builder: one value per region (bar, dot, radar) |
 | `js/engine/build-parts.js` | Generic builder: parts of a whole (stacked bars, treemap, bubble) |
 | `js/engine/build-xy.js` | Generic builder: two measures against each other (scatter, bubble) |
-| `js/engine/measures-p2.js` | The Phase 2 measures: recap by channel and motion, new business by tier, customer growth by segment, exposure, partners |
+| `js/engine/measures-p2.js` | The Phase 2 measures: recap by channel and motion, new business by tier, customer growth by segment, exposure |
+| `js/engine/measures-pt.js` | The Phase 2 partner measures and the plan make-up share |
 | `js/engine/rows.js` | Figures for single rows (a new business row, an account, a partner), each with its source, for lists, bubbles and details |
 | `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and a filter |
 | `js/engine/custom.js` | Custom charts: which measure and dimension pairs each measure allows, the report definition for a choice, the session list |
