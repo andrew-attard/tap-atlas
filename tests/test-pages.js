@@ -769,6 +769,58 @@
       });
     });
 
+    /* ---------- review fix #377 (SV-11, SV-12): the tour against popovers, scrolling and view changes ---------- */
+
+    T.test('X-review-SV-12', 'With a popover open during the tour, one Esc closes the popover only', function (a) {
+      withTour(function () {
+        withApp(function () {
+          TAP.tour.start();
+          press('ArrowRight');
+          var term = TAP.dom.el('button', { type: 'button', class: 'tap-term', 'data-term': 'arr' }, 'ARR');
+          document.body.appendChild(term);
+          try {
+            TAP.glossary.popover('arr', term);
+            press('Escape');
+            a.equal(document.querySelector('.tap-popover'), null, 'the popover closed');
+            a.ok(callout(), 'the tour is still on');
+            press('Escape');
+            a.ok(!callout(), 'the next Esc ends the tour');
+          } finally { term.remove(); TAP.glossary.close(); }
+        });
+      });
+    });
+
+    T.test('X-review-SV-12', 'The tour ends when the view changes under it (the back button)', function (a) {
+      withTour(function () {
+        withApp(function () {
+          TAP.tour.start();
+          press('ArrowRight');
+          a.ok(callout(), 'the tour is on');
+          TAP.store.set({ view: 'industry' });
+          a.ok(!callout() && !document.querySelector('.tap-tour'), 'the tour ended with the view change');
+        });
+      });
+    });
+
+    T.test('X-review-SV-12', 'The spotlight follows its part of the screen when the page scrolls', function (a) {
+      var spacer = TAP.dom.el('div', { style: 'height:3000px' });
+      document.body.appendChild(spacer);
+      var y = window.pageYOffset;
+      try {
+        withTour(function () {
+          withApp(function () {
+            TAP.tour.start();
+            press('ArrowRight');   // the menu step
+            var menu = qsa('[data-tour="menu"]').filter(function (m) { return m.getBoundingClientRect().width > 0; })[0];
+            window.scrollBy(0, 40);
+            window.dispatchEvent(new Event('scroll'));
+            var hole = document.querySelector('.tap-tour__hole').getBoundingClientRect(), r = menu.getBoundingClientRect();
+            a.ok(Math.abs(hole.top - (r.top - 6)) < 2, 'the spotlight moved with the page (' + Math.round(hole.top) + ' against ' + Math.round(r.top - 6) + ')');
+          });
+        });
+      } finally { spacer.remove(); window.scrollTo(0, y); }
+    });
+
     T.test('X-pages-insights-engine', 'Without the insight engine the page shows a plain message', function (a) {
       var old = TAP.insights, root = T.dom.mount();
       TAP.insights = { __stub: 44, ranked: function () { throw new Error('Not built yet (#44): TAP.insights.ranked'); } };

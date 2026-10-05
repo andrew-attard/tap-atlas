@@ -238,6 +238,36 @@
       a.equal(TAP.glossary.popover('noSuchTerm', box), null);
       a.equal(document.querySelector('.tap-popover'), null);
     });
+
+    /* ---------- review fix #377 (SV-11): the popover never outlives its view, and follows the Esc contract ---------- */
+
+    T.test('X-review-SV-11', 'A pinned popover closes when the view changes', function (a) {
+      var box = T.dom.mount();
+      TAP.dom.html(box, TAP.content.mark('Hit rate', {}));
+      box.querySelector('.tap-term').click();
+      a.ok(document.querySelector('.tap-popover'), 'pinned open');
+      TAP.store.set({ view: 'industry' });
+      a.equal(document.querySelector('.tap-popover'), null, 'gone after the view change');
+    });
+
+    T.test('X-review-SV-11', 'A popover whose term has left the page closes at the next change', function (a) {
+      var box = T.dom.mount();
+      TAP.dom.html(box, TAP.content.mark('Hit rate', {}));
+      box.querySelector('.tap-term').click();
+      TAP.dom.clear(box);   // the panel holding the term was redrawn
+      TAP.store.set({ expanded: 'ov-ambition' });
+      a.equal(document.querySelector('.tap-popover'), null, 'closed');
+    });
+
+    T.test('X-review-SV-11', 'The popover handles Esc with preventDefault, so nothing else acts on the same Esc', function (a) {
+      var box = T.dom.mount();
+      TAP.dom.html(box, TAP.content.mark('Hit rate', {}));
+      box.querySelector('.tap-term').click();
+      var e = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      document.dispatchEvent(e);
+      a.equal(document.querySelector('.tap-popover'), null, 'closed');
+      a.ok(e.defaultPrevented, 'the Esc is marked as handled');
+    });
   });
 
   T.suite('glossary list', function () {
