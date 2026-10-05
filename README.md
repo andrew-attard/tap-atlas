@@ -189,6 +189,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
+| `docs/screenshots/*.png` | One screenshot per view of the sample edition at 1440 x 900, for the landing page and case study. Made by `scripts/portfolio-shots.sh`: never edit by hand |
 | `docs/PUBLISHING.md` | How to put the sample edition on the web with GitHub Pages, and what to check after (Pages is not switched on) |
 | `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md` | How the builds were organized (background only) |
 
@@ -216,6 +217,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `scripts/verify.sh` | Runs every check and the headless tests |
 | `scripts/test-headless.sh`, `scripts/lib-browser.sh` | Runs a test page in headless Chrome or Edge; finding the browser |
 | `scripts/screenshot.sh` | Screenshots of a page at a given size and zoom |
+| `scripts/portfolio-shots.sh` | Retakes the portfolio screenshots in `docs/screenshots/`, one per view, with names that never change |
 | `scripts/check-text.sh`, `scripts/open-pr.sh` | Checks text against the private word list; opens a pull request after that check |
 | `scripts/qa/*` | The QA checks (`scripts/qa/run-all.sh` runs them all): console errors, text sizes, offline, smoke test, screenshot matrix |
 | `vendor/echarts.min.js` | The chart library (Apache ECharts 5.6.0); fonts are in `vendor/fonts/` |
