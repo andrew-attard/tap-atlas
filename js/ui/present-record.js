@@ -74,10 +74,12 @@
   /*
    * The step for panel p as it is on screen (b: its build): the report, or a custom chart's spec with its type
    * (CUSTOM keeps def.spec); the measure, chart type and breakdown; and the panel's comparison, its own when it has
-   * one. Below the top drill level only the report and comparison are kept: the level depends on the click above.
+   * one. Below the top drill level only the report and comparison are kept (no title either): the level depends on
+   * the click above.
    */
   function stepOf(p, b) {
-    var def = b.def, step = { title: b.title || undefined }, top = !p.drill || !p.drill.depth();
+    var def = b.def, top = !p.drill || !p.drill.depth();
+    var step = top && b.title ? { title: b.title } : {};   // a lower level's title names the click above it
     if (def.custom && def.spec) step.custom = Object.assign({}, def.spec, top ? { type: b.ctx.type } : {});
     else step.report = p.id;
     if (top && !def.custom) {
