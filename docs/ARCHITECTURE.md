@@ -618,3 +618,59 @@ All return cells as in section 9; ids other streams may rely on:
 | PROFILE (wave B) | `js/views/regions.js`, `js/views/regions-parts.js`, `config/profile.js`, `content/text-profile.js`, `css/profile.css`, `tests/test-profile.js`; also the "Open profile" links in `js/views/overview-cards.js` and `js/reports/details.js` |
 | PAGES2 (wave B) | `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, `content/text-pages.js`, `js/ui/tour.js`, `js/ui/keys.js`, `js/views/guide.js`, the tip line in `js/ui/view-head.js` (by request), `README.md`, `docs/*` except ARCHITECTURE and AGENT-BRIEF, `tests/test-pages-p2.js` |
 | lead | as section 16, plus `js/ui/view-head.js`, `css/view-head.css` |
+
+## 18. Phase 3 additions
+
+Phase 3 adds presentation mode, custom charts, extra template sections, the handover pack and the portfolio edition. Everything above still holds. Decisions: D65 to D68 and D70.
+
+### 18.1 Views
+
+- Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`.
+- `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
+- "Build a chart" (US-3.5.1) is a section of the Guide, not a view.
+- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, US-3.1.3; Build a chart, US-3.5.1). `js/views/guide.js` draws them before the glossary; one that throws shows its error in its own section.
+
+### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)
+
+**`config/running-order.js`** sets `window.TAP_RUNNING_ORDER = { steps: [...] }`. A step:
+
+```js
+{ title: 'Where the money sits',          // optional; an insight step uses the insight sentence
+  report: 'nb-industries',                // or insight: '<insight id>', or custom: {measure, by, type}
+  measure: 'nb.arr', type: 'heatmap', breakdown: null,
+  cmp: { mode: 'one', focus: 'north', restAgg: 'average' },   // optional; merged over the defaults
+  highlight: { regionIds: ['north'], mark: 'bar' } }          // optional Target
+```
+
+- `TAP.present.check(steps)` returns `{ok: [...], skipped: [{index, reason}]}`; skipped steps go to `TAP.notes` with source `'presentation'` (a new notes source; the data sources panel lists it, PRESENT adds that).
+- `TAP.present.start(steps?)` saves `{view, cmp, expanded}`, then shows each step in the expanded panel. `next()`, `prev()`, `first()`, `stop()`, `current()`. `stop()` restores what was saved.
+- While presenting, `TAP.present.active()` is true and presentation mode owns Space, Right, Left, Backspace, Home and Esc (after a popover's Esc). It turns the panel's own keys off with `TAP.panelDrill.keys(false)` on start and back on at stop (`TAP.panelKeys.enabled` is checked by the drill keys, the panel menu Esc and the expanded-panel keys) (D70).
+- A step shows its report in a full-screen presentation layer of its own (`TAP.panel.create` in that layer, with `opts.cmp` and `opts.initial`), not in the view's panels.
+- A step's comparison is applied with `TAP.store.set({cmp})` and is not kept after `stop()`.
+- Progress row: "Step n of m" and the step title, at least 16 px.
+- **Recording (US-3.1.3):** `TAP.present.record(step)`, `recorded()`, `move(i, d)`, `remove(i)`, `clearRecorded()`, `asFileText()`; kept through `TAP.storage` key `runningOrder.recorded`. The panel menu's "Add to running order" calls `record` with the panel's current state.
+
+### 18.3 Custom charts (Epic 3.5, CUSTOM)
+
+- `TAP.custom.options()` returns `[{measureId, label, dims: [...], unit, valueKind}]` for measures whose `valueKind` is not `text` or `category`.
+- `TAP.custom.definition({measure, by, type})` returns a report definition (`id: 'custom:<measure>:<by>'`, `custom: true`, shape from the pair: `compare` by entity, `compare` with a breakdown for `industry`/`channel`/`segment`/`year`), or `{errors}`. It passes `TAP.reports.validate` before use.
+- The panel accepts a definition object instead of an id: `TAP.panel.create(el, def, opts)` registers it in `TAP_REPORTS` under `def.id` first (`TAP.panelDrill.reportOf`). The "Custom chart" badge when `def.custom` is drawn by the panel (CUSTOM asks PANEL-file changes through the lead, or makes them under "Files outside ownership" when small).
+- `opts.initial: {type, measureId, breakdown}` sets a panel's starting choices (`TAP.panelDrill.initial`); presentation steps use it.
+- Session list: `TAP.custom.saved()`, `save(spec)` (refuses a seventh), `remove(i)`; held in memory only.
+
+### 18.4 Extra sections (Epic 3.2, EXTRA)
+
+- Data Contract addition: `meta.extraSections: [{id, title, intro, columns: [{key, label, unit, kind}]}]`; per region `extra: {<sectionId>: [{sourceRow, <key>: value}]}`.
+- `TAP.check.run` checks them and only warns.
+- `TAP.rows` gains the row source `extra:<sectionId>` with the section's columns; `TAP.sources.address` names the section title as the sheet.
+- The `other` view builds one `list` definition per section at mount time.
+
+### 18.5 Ownership (Phase 3)
+
+| Stream | Owns |
+|---|---|
+| PRESENT | `config/running-order.js`, `js/ui/present*.js`, `css/present.css`, `content/text-present.js`, `tests/test-present.js`; small additions to `js/ui/keys.js` (P), `js/ui/shell.js` (Present button in the actions slot), `js/ui/sources-panel.js` (the `presentation` notes) and the panel menu ("Add to running order") under "Files outside ownership" |
+| CUSTOM | `js/engine/custom.js`, `js/ui/custom-builder.js`, `css/custom.css`, `content/text-custom.js`, `tests/test-custom.js`; the "Custom chart" badge in the panel under "Files outside ownership" |
+| EXTRA | `js/views/other.js`, `content/text-extra.js`, the extra-section parts of `js/core/check.js`, `js/core/sources.js` and `js/engine/rows.js`, `docs/DATA-CONTRACT.md`, a new docs file EXTENDING-TEMPLATE.md, the sample generator (`tools/sample-*.js`, `tools/generate-sample-data.js`, `data/sample-plan-data.js`, `tests/fixtures/sample-expected.js`), `tests/test-extra.js` |
+| DOCS3 | new in the docs folder: HANDOVER.md, CASE-STUDY.md, PUBLISHING.md, index.html and a screenshots folder; new scripts package.sh and portfolio-shots.sh; `README.md`, `docs/COPILOT-PROMPTS.md`, `tests/test-docs3.js` |
+| lead | as before; Wave 0 added registry `available()`, Guide extras and the panel's definition and starting-choice helpers |

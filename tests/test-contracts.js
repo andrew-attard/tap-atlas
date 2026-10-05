@@ -51,7 +51,11 @@
     rows: ['list', 'cell', 'columns', 'matchKey'],
     detailsRows: ['build'],
     panelDrill: ['create'],
-    themes: ['all', 'match']
+    themes: ['all', 'match'],
+    // Phase 3 (docs/ARCHITECTURE.md section 18)
+    present: ['check', 'start', 'stop', 'next', 'prev', 'first', 'current', 'active', 'record', 'recorded', 'move', 'remove', 'clearRecorded', 'asFileText'],
+    custom: ['options', 'definition', 'saved', 'save', 'remove'],
+    customBuilder: ['render']
   };
 
   var GLOBALS = ['TAP_THEME', 'TAP_SETTINGS', 'TAP_VIEWS', 'TAP_REPORTS', 'TAP_RULES', 'TAP_CONTENT'];

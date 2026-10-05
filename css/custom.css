@@ -1,0 +1,8 @@
+/*
+ * File: css/custom.css
+ * Purpose: Styles for the Build a chart section.
+ * Provides: styles for this area only
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Owner: CUSTOM stream. Colours and font sizes come from theme variables only.
+ */

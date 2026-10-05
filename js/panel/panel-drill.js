@@ -157,5 +157,14 @@
     };
   }
 
-  TAP.panelDrill = { create: create, levels: levels, keys: keys };
+  // Phase 3 helpers for TAP.panel.create (ARCHITECTURE 18.3, 18.2): a custom chart arrives as a definition object
+  // and is registered under its id; opts.initial {type, measureId, breakdown} sets a panel's starting choices.
+  function reportOf(r) { if (r && typeof r === 'object') { window.TAP_REPORTS[r.id] = r; return r.id; } return r; }
+  function initial(o) {
+    var out = {};
+    ['type', 'measureId', 'breakdown'].forEach(function (k) { if (o && o[k] != null) out[k] = o[k]; });
+    return out;
+  }
+
+  TAP.panelDrill = { create: create, levels: levels, keys: keys, reportOf: reportOf, initial: initial };
 })(window.TAP);
