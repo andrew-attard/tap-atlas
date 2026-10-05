@@ -196,14 +196,15 @@
 
     T.test('TPV-TC-674', 'A new breakdown is offered only for a measure that lists it, and follows the measure switch', function (a) {
       load();
-      var d = def(['nb.arr.sol', 'oi.cat', 'rt.oi', 'pt.count.maturity', 'rv.all.oi', 'nb.arr']);
+      var d = def(['nb.arr.sol', 'oi.cat', 'rt.oi', 'pt.count.maturity', 'rv.all.oi', 'nb.arr', 'cg.arr']);
       function offered(id) { return TAP.prepare.breakdowns(d, { measureId: id }); }
       a.deepEqual(offered('nb.arr.sol'), ['year', 'solution']);
       a.deepEqual(offered('oi.cat'), ['year', 'category']);
       a.deepEqual(offered('rt.oi'), ['year', 'solution', 'route']);
       a.deepEqual(offered('pt.count.maturity'), ['maturity', 'partnerType']);
       a.deepEqual(offered('rv.all.oi'), ['year', 'channel', 'motion'], 'a measure without them is offered none of the five');
-      a.deepEqual(offered('nb.arr'), ['year', 'industry'], 'an existing measure keeps its own');
+      a.deepEqual(offered('cg.arr'), ['year', 'industry'], 'an existing measure keeps its own');
+      a.deepEqual(offered('nb.arr'), ['year', 'industry', 'solution'], 'new business ARR can be split by solution too');
       a.deepEqual(TAP.prepare.breakdowns(def(['rt.oi'], ['route']), {}), ['route'], 'and only those the report allows');
       var ds = TAP.prepare.run(d, { entities: [org()], measureId: 'rv.all.oi', breakdown: 'solution' });
       a.equal(ds.columns.filter(function (c) { return c.breakdown; }).length, 0, 'an unsupported breakdown adds no columns');
@@ -331,6 +332,52 @@
       TAP.data.load(p);
       a.deepEqual(bdCols('pt.count.maturity', 'maturity', 'org').cols.map(function (c) { return c.breakdown.value; }),
         ['recruit', 'onboard', 'enable', 'skill', 'strategic', 'none']);
+    });
+
+    T.test('X-p4-nb-solution', 'The existing new business figures are unchanged, and their solution columns add up to them', function (a) {
+      load();
+      var M1 = window.TEST_EXPECT.mini, M2 = window.TEST_EXPECT.miniP2;
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) {
+        a.ok('nb.arr' in M1.region[r], r + ' has a hand figure for nb.arr');
+        ['nb.arr', 'nb.services', 'nb.targetAccounts', 'nb.hitRate'].forEach(function (id) {
+          if (id in M1.region[r]) expectCell(a, TAP.measures.get(id)(r, {}), M1.region[r][id], r + ' ' + id + ' as in mini-expected');
+        });
+      });
+      a.near(TAP.measures.get('nb.oi')('alpha', {}).v, M2.region.alpha['nb.oi'], TOL, 'nb.oi as in mini-p2-expected');
+      a.near(TAP.measures.combined('nb.arr', org(), {}).v, M1.combined.orgTotal['nb.arr'], TOL, 'the organization total as in mini-expected');
+      ['nb.arr', 'nb.services', 'nb.oi'].forEach(function (id) {
+        a.ok(TAP.measures.meta(id).dims.indexOf('solution') >= 0, id + ' lists solution');
+        a.deepEqual(TAP.measures.meta(id).dims.slice(0, 2), ['year', 'industry'], id + ' keeps year and industry');
+      });
+      ['cg.arr', 'amb.arr', 'nb.hitRate'].forEach(function (id) { a.ok(TAP.measures.meta(id).dims.indexOf('solution') < 0, id + ' does not'); });
+      X.nbBySolution.forEach(function (b) {
+        var x = bdCols(b.id, 'solution', b.entity), sum = 0, what = b.id + ' by solution for ' + b.entity;
+        a.deepEqual(x.cols.map(function (c) { return c.breakdown.value; }), Object.keys(b.values), what + ': the columns');
+        x.cols.forEach(function (c) {
+          expectCell(a, x.row.cells[c.key], b.values[c.breakdown.value], what + ' ' + c.breakdown.value);
+          sum += x.row.cells[c.key].v;
+        });
+        a.near(sum, b.total, TOL, what + ': the columns add up');
+        a.near(x.row.cells[b.id].v, b.total, TOL, what + ': to the figure without a breakdown');
+      });
+      X.nbSolutionContext.forEach(function (x) {
+        expectCell(a, TAP.measures.get(x.id)(x.region, x.ctx), x.v, x.region + ' ' + x.id + ' ' + JSON.stringify(x.ctx));
+      });
+    });
+
+    T.test('X-p4-nb-solution', 'On a file that names no solution, new business is not offered by solution', function (a) {
+      ['mini', 'miniP2'].forEach(function (name) {
+        load(name);
+        a.deepEqual(byId(TAP.custom.options(), 'nb.arr').by, ['entity', 'year', 'industry'], name + ': Build a chart');
+        a.deepEqual(TAP.prepare.breakdowns(def(['nb.arr', 'nb.oi']), { measureId: 'nb.oi' }), ['year', 'industry'], name + ': the breakdown menu');
+      });
+      load();
+      a.deepEqual(byId(TAP.custom.options(), 'nb.arr').by, ['entity', 'year', 'industry', 'solution'], 'miniP4 names solutions: offered');
+      var p = window.T_FIXTURE('miniP4');
+      p.regions.forEach(function (r) { (r.newBusiness || []).forEach(function (row) { row.solution = null; }); });
+      TAP.data.load(p);   // the lookup is there, but no row names a solution
+      a.deepEqual(byId(TAP.custom.options(), 'nb.arr').by, ['entity', 'year', 'industry'], 'a lookup alone is not data');
+      a.deepEqual(byId(TAP.custom.options(), 'rt.oi').by, ['entity', 'year', 'route', 'solution'], 'routes still name solutions');
     });
 
     T.test('X-p4-against', 'A report passes its choice of base-year figure to the growth measure', function (a) {

@@ -13,6 +13,8 @@
  * Customer value (the recap, from mini-p2-expected.js), year 1 / 2 / 3 and by channel:
  *   A 900 / 900 / 1020 = 2820 (direct 1800, partner 1020)        B 1260 / 1100 / 1320 = 3680 (direct 2310, aA 1370)
  *   D 1000 / 1235 / 1500 = 3735 (direct 1485, partner 1125, aA 565, aB 560)                  together 10235
+ * The difference between customer value and books value compares the types both hold, ARR and services: software
+ * perpetual and hardware are in the books value only, so they stay out of it.
  * Books value, from the grids in mini-p4.js (year 1 / 2 / 3):
  *   A: recurring NB 550 / 625 / 725 + CG 140 / 50 / 50 = 690 / 675 / 775 = 2140; services NB 100 / 110 / 130 + CG 25 / 10 / 10
  *      = 125 / 120 / 140 = 385; software perpetual 50 / 0 / 0 = 50; hardware 20 / 20 / 10 = 50
@@ -62,8 +64,9 @@ window.TEST_EXPECT.miniP4 = {
       'bk.oi.direct': 1900, 'bk.oi.partner': 725, 'bk.oi.allianceA': 0, 'bk.oi.allianceB': 0,
       'bk.oi.direct.y1': 670,        // 400 + 80 + 50 + 20 + 100 + 20
       'cv.oi': 2820, 'cv.oi.y1': 900,
-      'bk.gap': 195, 'bk.gap.y1': 15,           // 2820 - 2625; 900 - 885
-      'bk.gapShare': 0.0691489,      // 195 / 2820
+      // ARR and services only: books 2140 + 385 = 2525 (year 1: 690 + 125 = 815)
+      'bk.gap': 295, 'bk.gap.y1': 85,           // 2820 - 2525; 900 - 815
+      'bk.gapShare': 0.1046099,      // 295 / 2820
       'sp.oi': 2700, 'sp.oi.y1': 900, 'sp.arr': 2200, 'sp.services': 450, 'sp.swPerpetual': 50, 'sp.hardware': null,
       'sp.plan': 2575, 'sp.plan.y1': 865,       // 690 + 125 + 50
       'sp.variance': -125, 'sp.variance.y1': -35,   // 2575 - 2700; 865 - 900
@@ -88,7 +91,7 @@ window.TEST_EXPECT.miniP4 = {
       'bk.oi': 3310, 'bk.oi.y1': 1130, 'bk.arr': 3040, 'bk.services': 270, 'bk.swPerpetual': null, 'bk.hardware': null,
       'bk.oi.direct': 2310, 'bk.oi.allianceA': 1000, 'bk.oi.partner': 0,
       'cv.oi': 3680,
-      'bk.gap': 370,                 // 3680 - 3310
+      'bk.gap': 370,                 // 3680 - (3040 + 270)
       'bk.gapShare': 0.1005435,      // 370 / 3680
       'sp.oi': 3200, 'sp.arr': 2900, 'sp.services': 300, 'sp.swPerpetual': null, 'sp.hardware': null,
       'sp.plan': 3310, 'sp.variance': 110,
@@ -118,8 +121,8 @@ window.TEST_EXPECT.miniP4 = {
       'bk.oi': 2835, 'bk.oi.y1': 805, 'bk.arr': 2068, 'bk.services': 667, 'bk.swPerpetual': null, 'bk.hardware': 100,
       'bk.oi.direct': 1485, 'bk.oi.partner': 675, 'bk.oi.allianceA': 340, 'bk.oi.allianceB': 335,
       'cv.oi': 3735,
-      'bk.gap': 900,                 // 3735 - 2835
-      'bk.gapShare': 0.2409639,      // 900 / 3735
+      'bk.gap': 1000,                // 3735 - (2068 + 667); the hardware 100 stays out
+      'bk.gapShare': 0.2677376,      // 1000 / 3735
       'sp.oi': 3100, 'sp.oi.y3': 950, 'sp.arr': 2500, 'sp.services': 450, 'sp.swPerpetual': null, 'sp.hardware': 150,
       'sp.plan': 2585, 'sp.plan.y3': 840,       // year 3: recurring 800 + hardware 40; services has no strategic plan figure
       'sp.variance': -515, 'sp.variance.y3': -110,
@@ -149,8 +152,8 @@ window.TEST_EXPECT.miniP4 = {
       'bk.hardware': 150,            // A 50 + D 100
       'bk.oi.direct': 5695, 'bk.oi.partner': 1400, 'bk.oi.allianceA': 1340, 'bk.oi.allianceB': 335,
       'cv.oi': 10235,
-      'bk.gap': 1465,                // 195 + 370 + 900
-      'bk.gapShare': 0.1431363,      // 1465 / 10235 (the mean of the three shares would be 0.1368854)
+      'bk.gap': 1665,                // 295 + 370 + 1000
+      'bk.gapShare': 0.1626771,      // 1665 / 10235 (the mean of the three shares would be 0.1576303)
       'sp.oi': 9000, 'sp.plan': 8470,           // 2700 + 3200 + 3100; 2575 + 3310 + 2585
       'sp.variance': -530,
       'sp.variancePct': -0.0588889,  // -530 / 9000 (the mean of the three would be -0.0593501)
@@ -167,8 +170,8 @@ window.TEST_EXPECT.miniP4 = {
     },
     restOfAlphaAverage: {            // Regions B and D (C has nothing)
       'bk.oi': 3072.5,               // (3310 + 2835) / 2
-      'bk.gap': 635,                 // (370 + 900) / 2
-      'bk.gapShare': 0.1712744,      // (370 + 900) / (3680 + 3735) = 1270 / 7415
+      'bk.gap': 685,                 // (370 + 1000) / 2
+      'bk.gapShare': 0.1847606,      // (370 + 1000) / (3680 + 3735) = 1370 / 7415
       'sp.oi': 3150, 'sp.plan': 2947.5,
       'sp.variance': -202.5,         // (110 - 515) / 2
       'sp.variancePct': -0.0642857,  // (110 - 515) / (3200 + 3100) = -405 / 6300
@@ -191,11 +194,13 @@ window.TEST_EXPECT.miniP4 = {
     { id: 'bk.arr', region: 'delta', ctx: { channel: 'allianceA', year: 2 }, v: 75 },
     { id: 'bk.oi.direct', region: 'alpha', ctx: { motion: 'nb' }, v: 1660 },     // 1300 + 260 + 50 + 50
     { id: 'cv.oi', region: 'delta', ctx: { channel: 'partner' }, v: 1125 },
-    // Books above customer value on Region A's direct channel: books also holds software perpetual and hardware
-    { id: 'bk.gap', region: 'alpha', ctx: { channel: 'direct' }, v: -100 },      // 1800 - 1900
+    // Region A's direct books value is 1900 with software perpetual and hardware; ARR and services are 1500 + 300
+    { id: 'bk.gap', region: 'alpha', ctx: { channel: 'direct' }, v: 0 },         // 1800 - 1800
     { id: 'bk.gap', region: 'alpha', ctx: { channel: 'partner' }, v: 295 },      // 1020 - 725
     { id: 'bk.gapShare', region: 'alpha', ctx: { channel: 'partner' }, v: 0.2892157 },   // 295 / 1020
-    { id: 'bk.gapShare', region: 'delta', ctx: { channel: 'partner' }, v: 0.4 },         // (1125 - 675) / 1125
+    { id: 'bk.gapShare', region: 'alpha', ctx: { channel: 'direct' }, v: 0 },
+    // Region D's partner books value is 675 with hardware; ARR and services are 450 + 125 = 575
+    { id: 'bk.gapShare', region: 'delta', ctx: { channel: 'partner' }, v: 0.4888889 },   // (1125 - 575) / 1125
     { id: 'bk.gapShare', region: 'bravo', ctx: { channel: 'direct' }, v: 0 },            // 2310 both ways
     { id: 'sp.oi', region: 'alpha', ctx: { category: 'recurring' }, v: 2200 },
     { id: 'sp.oi', region: 'alpha', ctx: { category: 'hardware' }, v: null },
@@ -227,6 +232,7 @@ window.TEST_EXPECT.miniP4 = {
     { id: 'nb.arr.sol', region: 'bravo', ctx: { solution: 'none' }, v: 600 },    // row 21 names no solution
     { id: 'nb.oi.sol', region: 'alpha', ctx: { solution: 'sol1' }, v: 1986 },    // 1655 + 331
     { id: 'nb.oi.sol', region: 'delta', ctx: { solution: 'sol3', year: 1 }, v: 750 },    // 600 + 150
+    { id: 'nb.arr.sol', region: 'charlie', ctx: { solution: 'none' }, v: null },  // the region names no solution at all
     { id: 'oi.cat', region: 'alpha', ctx: { category: 'recurring' }, v: 2140 },
     { id: 'oi.cat', region: 'bravo', ctx: { category: 'hardware' }, v: null },
     { id: 'rt.oi', region: 'alpha', ctx: { route: 'ownSales' }, v: 1560 },
@@ -248,14 +254,14 @@ window.TEST_EXPECT.miniP4 = {
     { id: 'by.growth', entity: 'orgTotal', ctx: { against: 'budget' }, v: 0.1522634 },             // (2800 - 2430) / 2430
     { id: 'by.coverage', entity: 'orgTotal', ctx: { category: 'recurring' }, v: 1.2857143 },       // (480 + 500 + 100) / (240 + 400 + 200)
     { id: 'rv.share', entity: 'orgTotal', ctx: { channel: 'direct' }, v: 0.7971403 },              // (1460 + 1830 + 1170) / 5595
-    { id: 'bk.gapShare', entity: 'orgTotal', ctx: { channel: 'partner' }, v: 0.3473193 },          // (295 + 0 + 450) / (1020 + 0 + 1125)
+    { id: 'bk.gapShare', entity: 'orgTotal', ctx: { channel: 'partner' }, v: 0.3939394 },          // (295 + 0 + 550) / (1020 + 0 + 1125)
     { id: 'pt.count.maturity', entity: 'orgTotal', ctx: { maturity: 'enable' }, v: 2 },            // A1 and B2
     { id: 'pt.oi.maturity', entity: 'orgTotal', ctx: { partnerType: 'si' }, v: 360 }               // A2 180 + B1 180
   ],
 
   // The mean of the regions' own ratios, which a combined ratio must never be
   meanOfRatios: { 'sp.variancePct': -0.0593501, 'by.growth': 0.0729558, 'by.coverage': 1.2238848, 'rv.share': 0.7930601,
-    'bk.gapShare': 0.1368854 },
+    'bk.gapShare': 0.1576303 },
 
   // The kind of value: the workbook's own coverage is a system figure, a worked-out one is calculated by this app
   kinds: [
@@ -300,6 +306,31 @@ window.TEST_EXPECT.miniP4 = {
     { id: 'bk.oi', dim: 'channel', entity: 'org', total: 8770, values: { direct: 5695, partner: 1400, allianceA: 1340, allianceB: 335 } },
     { id: 'rv.all.oi', dim: 'motion', entity: 'alpha', total: 2210, values: { nb: 2000, cg: 210 } }
   ],
+  // The existing new business measures split by solution (rows are read by their solution). Their own figures are
+  // those of mini-expected.js and mini-p2-expected.js, unchanged; a row that names no solution counts under "none",
+  // so the columns always add up. Region C names none: its row 21 (100 x 3, services 20 x 3) is all "none".
+  nbBySolution: [
+    { id: 'nb.arr', entity: 'alpha', total: 2255, values: { sol1: 1655, sol2: 600, sol3: 0 } },
+    { id: 'nb.arr', entity: 'bravo', total: 4000, values: { sol1: 3400, sol2: 0, sol3: 0, none: 600 } },
+    { id: 'nb.arr', entity: 'charlie', total: 300, values: { sol1: 0, sol2: 0, sol3: 0, none: 300 } },
+    { id: 'nb.arr', entity: 'delta', total: 2850, values: { sol1: 0, sol2: 0, sol3: 2850 } },
+    { id: 'nb.arr', entity: 'org', total: 9405, values: { sol1: 5055, sol2: 600, sol3: 2850, none: 900 } },
+    { id: 'nb.services', entity: 'org', total: 1623.5, values: { sol1: 671, sol2: 120, sol3: 712.5, none: 120 } },   // 451 + 400 + 60 + 712.5
+    { id: 'nb.oi', entity: 'org', total: 11028.5, values: { sol1: 5726, sol2: 720, sol3: 3562.5, none: 1020 } },
+    { id: 'nb.oi', entity: 'alpha', total: 2706, values: { sol1: 1986, sol2: 720, sol3: 0 } },
+    // (4000 + 300 + 2850) / 3 = 2383.33: B's sol1 3400, D's sol3 2850, B's and C's rows without one 600 + 300, each over 3
+    { id: 'nb.arr', entity: 'restOfAlphaAverage', total: 2383.3333333, values: { sol1: 1133.3333333, sol2: 0, sol3: 950, none: 300 } }
+  ],
+  // With an industry as well (D48 still decides an industry without a row)
+  nbSolutionContext: [
+    { id: 'nb.arr', region: 'alpha', ctx: { industryId: 'ind1', solution: 'sol1' }, v: 1655 },
+    { id: 'nb.arr', region: 'alpha', ctx: { industryId: 'ind1', solution: 'sol2' }, v: 0 },      // ind1's row is sol1
+    { id: 'nb.arr', region: 'alpha', ctx: { industryId: 'ind2', solution: 'sol1' }, v: null },   // Tier 2 with no row
+    { id: 'nb.arr', region: 'alpha', ctx: { industryId: 'ind3', solution: 'sol1' }, v: 'na' },   // Tier 3
+    { id: 'nb.oi', region: 'bravo', ctx: { solution: 'none', year: 1 }, v: 220 },                // row 21: 200 + 20
+    { id: 'nb.services', region: 'charlie', ctx: { solution: 'none' }, v: 60 }
+  ],
+
   // The values a breakdown lists when no row is without one: no "none" column
   noNone: [{ id: 'nb.arr.sol', dim: 'solution', entity: 'alpha', values: ['sol1', 'sol2', 'sol3'] },
     { id: 'oi.cat', dim: 'category', entity: 'org', values: ['swPerpetual', 'recurring', 'hardware', 'services'] }],
