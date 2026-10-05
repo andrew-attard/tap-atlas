@@ -32,7 +32,7 @@ Object.assign(window.TAP_CONTENT.text, {
       kickerCombined: '◇ Calculated by this app',
       openDetails: '{name}: open details',
       openSources: '{name}: where each figure comes from',
-      figureTitle: '{label}: {value}. {kind}. Source: {where}',      shareLabel: 'Share of the 3-year ARR ambition'
+      figureTitle: '{label}: {value}. {kind}. Source: {where}'
     },
     // Headline (US-1.5.3). {amb}, {nbShare}, {cgShare}, {rest} and {n} in the Tier 2 sentences are figures, shown in
     // bold and listed with their sources behind the Sources button.
@@ -76,7 +76,6 @@ Object.assign(window.TAP_CONTENT.text, {
     // The side panel a figure opens
     source: {
       title: 'Where this figure comes from',
-      cardTitle: 'Where these figures come from',
       combinedHow: 'How it was combined',
       regions: 'Regions included',
       note: 'Note'

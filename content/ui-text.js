@@ -11,7 +11,7 @@
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = Object.assign(window.TAP_CONTENT.text || {}, {
-  app: { name: 'TAP Atlas', subtitle: 'Territory Account Plan Atlas' },
+  app: { name: 'TAP Atlas' },
 
   // The term popover and the A to Z glossary list (US-1.6.3, US-1.6.4)
   glossary: {
