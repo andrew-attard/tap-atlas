@@ -17,7 +17,7 @@
     var keys = cats ? ds.primary : ds.primary.slice(0, 1);
     // Breakdown columns of the measure shown (US-2.7.5): one per year, industry, channel, motion, segment or risk
     var bd = cats ? [] : ds.columns.filter(function (c) { return c.breakdown && c.measureId === keys[0]; }).map(function (c) { return c.key; });
-    var rows = k.visibleRows(ds, keys);
+    var rows = k.visibleRows(ds, keys.concat(bd));   // a per-industry figure has values in its breakdown only (#361)
     var res = k.result(def, ds, { table: k.table(ds, keys.concat(bd), rows), legend: k.legendOf({ entities: rows.map(function (r) { return r.entity; }) }),
       notes: k.notes({ rows: rows, columns: ds.columns }, keys) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
