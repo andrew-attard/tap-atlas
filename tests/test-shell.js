@@ -61,8 +61,8 @@
         var ids = menuItems(root).map(function (b) { return b.getAttribute('data-view'); });
         a.deepEqual(ids, TAP.views.order(), 'menu order is TAP.views.order()');
         a.deepEqual(menuItems(root).map(txt), TAP.views.order().map(TAP.views.title), 'titles from TAP.views.title');
-        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Industry priorities', 'New business', 'Customer growth', 'Partners', 'Regions',
-          'Insights', 'Guide'], 'Phase 1 and Phase 2 views');
+        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Industry priorities', 'New business', 'Customer growth', 'Partners', 'Outlook', 'Regions',
+          'Insights', 'Guide'], 'Phase 1, Phase 2 and Phase 4 views');
       });
     });
 
@@ -169,7 +169,7 @@
       });
     });
 
-    // Nine views in the menu, as with extra sections (Other sections, US-3.2.2), for the checks below.
+    // Ten views in the menu, as with extra sections (Other sections, US-3.2.2), for the checks below.
     function withNine(fn) {
       var other = TAP.views.get('other'), was = other && other.available;
       try {
@@ -178,11 +178,11 @@
       } finally { if (other) other.available = was; }
     }
 
-    T.test('X-shell-menu-nine', 'Nine views at 1280, 1024 (125%) and 853 px (150%): every menu item fully visible, no sideways scroll (D72)', function (a) {
+    T.test('X-shell-menu-nine', 'Ten views at 1280, 1024 (125%) and 853 px (150%): every menu item fully visible, no sideways scroll (D72)', function (a) {
       withNine(function () {
         var root = startApp();
         ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
-        a.equal(menuItems(root).length, 9, 'nine views in the menu');
+        a.equal(menuItems(root).length, 10, 'ten views in the menu');
         [1280, 1024, 853].forEach(function (w) {
           root.style.width = w + 'px';
           window.dispatchEvent(new Event('resize'));   // charts follow the window's size, as on a real zoom change

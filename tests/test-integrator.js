@@ -284,11 +284,12 @@
     T.test('X-int-keys-views', 'Number keys switch views in menu order; other digits and modifier keys do nothing', function (a) {
       withKeys(function () {
         var order = TAP.views.order();
-        // Nine with the sample: its extra section adds Other sections (Phase 3, US-3.2.2)
-        a.equal(order.length, 9, 'nine views');
-        order.slice().reverse().forEach(function (id, i) {
-          press(String(order.length - i));
-          a.equal(TAP.store.get().view, id, String(order.length - i) + ' opens ' + id);
+        // Ten with the sample: its extra section adds Other sections (Phase 3, US-3.2.2) and Phase 4 adds Outlook.
+        // The keys are 1 to 9, so the first nine views have one each.
+        a.equal(order.length, 10, 'ten views');
+        order.slice(0, 9).reverse().forEach(function (id, i) {
+          press(String(9 - i));
+          a.equal(TAP.store.get().view, id, String(9 - i) + ' opens ' + id);
         });
         press('0');
         a.equal(TAP.store.get().view, order[0], '0 does nothing');
