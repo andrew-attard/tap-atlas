@@ -8,7 +8,7 @@
  */
 
 /* The page column every Phase 2 view uses, matching the Industry view */
-.tap-vh-page { display: flex; flex-direction: column; gap: var(--tap-sp-6); padding: 0 var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
+.tap-vh-page { display: flex; flex-direction: column; gap: var(--tap-sp-4); padding: 0 var(--tap-gutter) var(--tap-sp-12); max-width: var(--tap-max-w); }
 
 .tap-vh { display: flex; flex-direction: column; gap: var(--tap-sp-2); max-width: 75rem; }
 .tap-vh__kicker { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
@@ -19,9 +19,11 @@
 .tap-vh__tip[hidden] { display: none; }
 .tap-vh__tiptext { padding-left: var(--tap-sp-3); border-left: var(--tap-rule-w) solid var(--tap-accent); line-height: 1.5; }
 .tap-vh__tiphide { min-height: 0; padding: 0 var(--tap-sp-2); font-size: var(--tap-fs-body); font-weight: 400; text-decoration: underline; }
-.tap-vh__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-2) var(--tap-sp-4); }
+.tap-vh__headline { margin: 0; }
 .tap-vh__headline[hidden] { display: none; }
-.tap-vh__headline-text { margin: 0; font-size: var(--tap-fs-h3); font-weight: 600; line-height: 1.4; }
+/* "Show me" follows the sentence on its last line, so the headline takes no row of its own */
+.tap-vh__headline-text { display: inline; margin: 0; font-size: var(--tap-fs-h3); font-weight: 600; line-height: 1.4; }
+.tap-vh__showme { min-height: 0; margin-left: var(--tap-sp-3); padding: 2px var(--tap-sp-3); font-size: var(--tap-fs-body); vertical-align: baseline; }
 
 /* At most two panels side by side (D24); one column on narrow screens */
 .tap-vh-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-6); align-items: start; }
