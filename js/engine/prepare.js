@@ -136,15 +136,29 @@
       }
     });
 
-    var gaps = missing(def, ctx, entities, mctx, industries);
+    var gaps = missing(def, ctx, entities, mctx, industries, cols);
     return { def: def, dimension: dim, entities: entities, rows: rows, columns: cols, primary: primaryIds(def, ctx),
       missing: gaps.names, missingIds: gaps.ids, empty: gaps.empty, ctx: mctx };
   }
 
+  // The contexts a figure is looked at in: the report's own, then each breakdown value drawn. A figure that exists
+  // only per industry (ind.*, broken down by industry) has a value in the breakdown alone (#361).
+  function patches(cols) {
+    var out = [{}], seen = {};
+    (cols || []).forEach(function (c) {
+      var b = c.breakdown, k = b && b.dim + ':' + b.value, x = {};
+      if (!b || seen[k]) return;
+      seen[k] = true;
+      x[CTX_KEY[b.dim]] = b.value;
+      out.push(x);
+    });
+    return out;
+  }
+
   // A region is missing when none of the report's main figures has a value and at least one is blank.
   // Not applicable never makes a region missing. Empty means no region in scope has any value.
-  function missing(def, ctx, entities, mctx, industries) {
-    var keys = primaryIds(def, ctx), seen = {}, ids = [], any = false;
+  function missing(def, ctx, entities, mctx, industries, cols) {
+    var keys = primaryIds(def, ctx), seen = {}, ids = [], any = false, more = patches(cols);
     entities.forEach(function (e) { e.regionIds.forEach(function (r) { seen[r] = true; }); });
     var inds = industries ? industries.map(function (d) { return d.id; }) : [mctx.industryId];
     TAP.data.regions().forEach(function (reg) {
@@ -153,7 +167,9 @@
       keys.forEach(function (k) {
         var fn = TAP.measures.get(k);
         if (!fn) return;
-        inds.forEach(function (ind) { states.push(fn(reg.id, Object.assign({}, mctx, { industryId: ind })).state); });
+        inds.forEach(function (ind) {
+          more.forEach(function (x) { states.push(fn(reg.id, Object.assign({}, mctx, { industryId: ind }, x)).state); });
+        });
       });
       if (states.indexOf('value') >= 0) any = true;
       else if (states.indexOf('notProvided') >= 0) ids.push(reg.id);
