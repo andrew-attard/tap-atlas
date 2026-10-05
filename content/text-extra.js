@@ -37,5 +37,15 @@ Object.assign(window.TAP_CONTENT.text, {
       number: 'a number, or null for a blank',
       text: 'text, or null for a blank'
     }
+  },
+
+  // US-3.2.2: the Other sections view. Each list's title and intro come from the data file.
+  otherView: {
+    kicker: 'Other sections',
+    title: 'What else is in the plans?',
+    lead: 'The template sections without a report of their own, one list per section, for the regions in the comparison.',
+    shows: 'Every row the regions filled in for this template section.',
+    read: 'One row per entry, for the regions in the comparison; the focus region comes first. Sort by any column, and click a row for its details and the workbook cell of each value.',
+    lookFor: 'Entries several regions share, and regions with no entries in the section.'
   }
 });

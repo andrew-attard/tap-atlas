@@ -63,7 +63,8 @@
     }
     if (!def.builder && def.shape !== 'list' && (!Array.isArray(def.measures) || !def.measures.length)) e.push('"measures" must list at least one measure.');
     if (def.shape === 'list') {
-      if (['newBusiness', 'accounts', 'partners'].indexOf(def.rows) < 0) e.push('A list needs "rows": newBusiness, accounts or partners.');
+      var extraRows = TAP.extra && !TAP.extra.__stub && TAP.extra.is(def.rows);   // an extra template section (US-3.2.2)
+      if (['newBusiness', 'accounts', 'partners'].indexOf(def.rows) < 0 && !extraRows) e.push('A list needs "rows": newBusiness, accounts, partners or extra:<section id>.');
       if (!Array.isArray(def.columns) || !def.columns.length) e.push('A list needs "columns".');
     }
     if (def.builder && !TAP.builders.get(def.builder)) e.push('No chart builder called "' + def.builder + '".');
