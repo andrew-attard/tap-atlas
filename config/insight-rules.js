@@ -180,8 +180,8 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{n} regions name {partner} as a partner: {regions}.',
     attach: ['pt-list'], highlight: null });
   rule({ id: 'partnerCapacity', family: 'shared',
-    description: 'A partner whose planned three-year order intake per person (sales and consultant staff, counted as full-time equivalents) is at least twice the average across partners (total order intake over total staff). Not computed when fewer than 5 partners in the data give staff figures.',
-    reads: ['partners.fteSales', 'partners.fteConsultants'], params: { multiple: 2, minPartners: 5 },
+    description: 'A partner whose planned three-year order intake per person (sales and consultant staff, counted as full-time equivalents) is at least 2.5 times the average across partners (total order intake over total staff). Not computed when fewer than 5 partners in the data give staff figures.',
+    reads: ['partners.fteSales', 'partners.fteConsultants'], params: { multiple: 2.5, minPartners: 5 },
     scoring: 'Strength: how far the multiple is past 1, against twice the threshold’s distance. Money: the partner’s planned three-year ARR.',
     template: '{partner} ({region}) is planned at {amount} per person, {multiple} the average across partners ({avg}).',
     attach: ['pt-capacity'], highlight: 'points' });
@@ -190,7 +190,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   rule({ id: 'recurringTheme', family: 'themes',
     description: 'A theme from the keyword lists in config/comment-themes.js that comes up (whole words, any case) in the success factors or commentary of at least 3 regions (TAP_COMMENT_THEMES.minRegions). Counted by this app, not tagged in the workbooks.',
     reads: ['newBusiness.successFactors', 'marketCoverage.commentary'], params: {},
-    scoring: 'Strength: grows from the threshold to every region, up to 0.2, so a theme ranks below the rules that compare figures. Money: none.',
+    scoring: 'Strength: grows from the threshold to every region, up to 0.2. Money: none. Whatever the score, theme insights are listed after every insight that compares figures.',
     template: '{theme} {verb} up in the {where} of {n} regions.',
     attach: ['nb-themes'], highlight: 'bar' });
 

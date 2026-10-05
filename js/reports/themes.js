@@ -22,10 +22,11 @@
   function t(key, vars) { return TAP.content.text('themes.' + key, vars); }
   function esc(s) { return TAP.dom.esc(s); }
 
-  // A keyword as a whole word or phrase: letters or digits may not run on at either end; spaces may vary.
+  // A keyword as a whole word or phrase: no letter (accented ones too) or digit may run on at either end; the words
+  // of a phrase may be joined by any spaces or a hyphen ("case-study").
   function pattern(keyword) {
-    var words = String(keyword).trim().split(/\s+/).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
-    return new RegExp('(^|[^A-Za-z0-9])' + words.join('\\s+') + '($|[^A-Za-z0-9])', 'i');
+    var words = String(keyword).trim().split(/[\s-]+/).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    return new RegExp('(^|[^\\p{L}\\p{N}])' + words.join('[\\s-]+') + '($|[^\\p{L}\\p{N}])', 'iu');
   }
   function mentions(text, theme) {
     return (theme.keywords || []).some(function (k) { return pattern(k).test(text); });
