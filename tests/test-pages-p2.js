@@ -365,7 +365,12 @@
           var text = root.querySelector('.tap-vh__headline-text'), btn = root.querySelector('.tap-vh__showme');
           a.equal(text.textContent, x.sentence, 'the sentence as the insight says it');
           var t = text.getClientRects(), last = t[t.length - 1], b = btn.getBoundingClientRect();
-          a.ok(b.top < last.bottom && b.bottom > last.top, 'Show me shares the last line of the sentence');
+          var box = text.parentNode.getBoundingClientRect();
+          a.equal(getComputedStyle(text).display, 'inline', 'the sentence flows inline, so Show me can follow it');
+          a.ok(t.length > 1, 'the test sentence wraps');
+          // Where the last line still has room, Show me sits on it; otherwise it starts the very next line
+          if (box.right - last.right > b.width + 24) a.ok(b.top < last.bottom && b.bottom > last.top, 'Show me shares the last line of the sentence');
+          else a.ok(b.top >= last.top && b.top < last.bottom + b.height, 'Show me starts the line after the sentence');
           a.ok(parseFloat(getComputedStyle(btn).fontSize) >= 16, 'at body text size (D24)');
         } finally { h.destroy(); }
       });
