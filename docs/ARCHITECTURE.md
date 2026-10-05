@@ -297,7 +297,7 @@ TAP_REPORTS['ov-ambition'] = {
 | `TAP.shapes.kit` | Shared drawing helpers for builders (sizes, shades, rings, tooltips). `TAP.shapes.types(def, n, {breakdown})` offers `groupedBar` only when a breakdown is chosen |
 | `TAP.builders.register(name, fn)` / `get(name)` | The builder registry |
 
-**ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme, opts, size}`. `ctx.size` is the chart's real `{width, height}` in pixels when known. `ctx.opts` holds the report option values chosen in the panel, e.g. `sort` (tier grid), `everyRegion` and `industryFilter` (quadrant). The panel keeps them per panel and resets them when `scopeEpoch` changes, like the comparison override.
+**ctx** (passed to `prepare.run` and builders): `{def, type, measureId, sizeId, breakdown, cmp, entities, year, industryId, highlight, expanded, theme, opts, size}`. `ctx.size` is the chart's real `{w, h}` in pixels when known. `ctx.opts` holds the report option values chosen in the panel, e.g. `sort` (tier grid), `everyRegion` and `industryFilter` (quadrant). The panel keeps them per panel and resets them when `scopeEpoch` changes, like the comparison override.
 
 **Builder result** (pure functions; no DOM access except to build the returned `html`):
 
@@ -358,7 +358,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 |---|---|
 | `TAP.shell.mount(root, {warnings})` | Draws the banner, menu, comparison bar area and an empty view area into `root` |
 | `TAP.shell.viewEl()` | The element views mount into |
-| `TAP.shell.actionsEl()` | An actions slot at the right of the top bar (PAGES puts "Take the tour" there) |
+| `TAP.shell.actionsEl()` | An actions slot beside the data date, at the right end of the comparison bar's sentence row (D72): "Take the tour" and "Present". `TAP.compareBar.mount(el, {actions})` places it |
 | `TAP.shell.label()` | The data status label: `{kind: 'sample'|'internal', text}`, or null. Image and table exports carry it (US-1.1.8, US-1.2.10) |
 | `TAP.app.stop()` | Unmounts the running app and drops its listeners (for tests) |
 | `TAP.showme.go({insightId, target})` (also `bind`, `unbind`, `widen(target, cmp, regionIds)`; a Target may carry `widened: true`) | Handles "Show me": opens the report's view, switches the comparison to All regions if the insight's regions are out of scope, sets `state.highlight`, and highlights the data; falls back to details (INTEGRATOR) |
@@ -426,6 +426,8 @@ Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'tex
 - `TAP.content.mark(text, seen)` returns safe HTML with the **first** occurrence of each glossary term marked. `seen` is a per-panel object, so a term is marked once per panel.
 
 ## 14. Script order (all three pages; lint compares them)
+
+The master list is `APP` in `tools/build-pages.js`, which writes every page's script tags; run `node tools/build-pages.js` after adding or removing a script. The block below is the Phase 1 order, kept for orientation; Phase 2 and 3 files sit next to their Phase 1 neighbours (for example `js/core/extra.js` after `check.js`, `js/engine/measures-p2.js` and `rows.js` after `scores.js`, the `js/ui/present*.js` files after `view-head.js`).
 
 ```
 vendor/echarts.min.js
@@ -657,6 +659,7 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 - The panel accepts a definition object instead of an id: `TAP.panel.create(el, def, opts)` registers it in `TAP_REPORTS` under `def.id` first (`TAP.panelDrill.reportOf`). The "Custom chart" badge when `def.custom` is drawn by the panel (CUSTOM asks PANEL-file changes through the lead, or makes them under "Files outside ownership" when small).
 - `opts.initial: {type, measureId, breakdown}` sets a panel's starting choices (`TAP.panelDrill.initial`); presentation steps use it.
 - Session list: `TAP.custom.saved()`, `save(spec)` (refuses a seventh), `remove(i)`; held in memory only.
+- As built: options also carry `by`, `kind` and `short`; `TAP.custom` also gives `types(by)` and `byLabel(by)`; definitions carry `spec: {measure, by, type}` (what a running-order step stores) and the id `custom:<measure>:<by>`; `by` may be any of `TAP.reports.BREAKDOWNS` the measure lists; per-industry figures are recognised by the `ind.` id prefix; panels for custom charts are created with `opts.initial.type` from the spec.
 
 ### 18.4 Extra sections (Epic 3.2, EXTRA)
 
