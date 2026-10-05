@@ -126,7 +126,8 @@
   // The clicked measure (and, for a stacked part, its total), for the region or the combined bar, as the chart has it.
   function chartGroup(target) {
     var f = target.figure, def = target.reportId && TAP.reports.get(target.reportId), regs = target.regionIds || [];
-    if (!f || !f.key || !def || !regs.length) return null;
+    // Row targets (the segment thresholds, list rows) keep their own details
+    if (!f || !f.key || !def || !regs.length || (target.items || []).length) return null;
     var fig = figureOf(f.key, (target.industryIds || [])[0]);
     if (!TAP.measures.meta(fig.id)) return null;
     if ((def.options || {}).weights) fig.ctx.weights = def.options.weights;
