@@ -400,6 +400,18 @@
       });
     });
 
+    T.test('X-review-PP-8', 'A view change while presenting (Show all, the Back button) leaves presentation on the new view', function (a) {
+      withApp(function () {
+        TAP.store.set({ view: 'customers' });
+        TAP.present.start([{ report: 'nb-levers' }]);
+        TAP.store.set({ view: 'insights' });
+        a.ok(!TAP.present.active(), 'presentation has ended');
+        a.equal(TAP.store.get().view, 'insights', 'the view asked for stays');
+        a.equal(TAP.app.current(), 'insights', 'and is the one on screen');
+        a.equal(TAP.store.get().expanded, null, 'no chart left expanded');
+      });
+    });
+
     T.test('X-present-app-stop', 'Stopping the app ends a running presentation and turns the panel keys back on', function (a) {
       var root = T.dom.mount();
       TAP.app.start({ root: root, plan: sample() });
