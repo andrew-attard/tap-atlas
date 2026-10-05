@@ -1,7 +1,7 @@
 /*
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206).
- * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4
+ * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -167,6 +167,21 @@
       a.ok(paths.indexOf('regions[0].customerGrowth.accounts[0].sourceRow') < 0, 'the first use of the number is fine');
       var w = res.warnings.filter(function (x) { return x.path === 'regions[0].customerGrowth.accounts[1].sourceRow'; })[0];
       a.ok(w && /row/.test(w.expected) && w.found === 10, 'says what it expected and what it found');
+    });
+
+    // Review DE-5: a region with the id of a combined figure ("rest", "org") shared its id with that figure.
+    T.test('X-review-DE-5', 'The region ids "rest" and "org" are refused with a plain message', function (a) {
+      ['rest', 'org'].forEach(function (id) {
+        var p = T_FIXTURE('mini');
+        p.regions[1].id = id;
+        var res = TAP.check.run(p), e = res.errors.filter(function (x) { return x.path === 'regions[1].id'; })[0];
+        a.ok(e, '"' + id + '" is an error at regions[1].id');
+        a.ok(e && e.found === id && /rest/.test(e.expected) && /org/.test(e.expected), 'names both kept ids: ' + (e && e.message));
+        a.equal(TAP.data.load(p).ok, false, 'the file does not load');
+      });
+      var ok = T_FIXTURE('mini');
+      ok.regions[1].id = 'rest-of-world';
+      a.deepEqual(TAP.check.run(ok).errors, [], 'an id that only starts with "rest" is fine');
     });
   });
 })(window.TAP);
