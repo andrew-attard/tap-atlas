@@ -784,6 +784,14 @@
       a.equal(qsa('.tap-menu, .tap-cmp', root).length, 0, 'no menu or comparison bar');
     });
 
+    T.test('X-shell-missing-sample-link', 'The no-data screen links to the sample edition (D67, published site)', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: null });
+      var link = qs('[data-action="open-sample"]', root);
+      a.ok(link, 'a link is offered');
+      a.equal(link && link.getAttribute('href'), 'index-sample.html', 'it opens the sample edition, by a relative path');
+    });
+
     T.test('TPV-TC-006', 'A data file that fails to load (for example cut off mid-way) gets the same message, not a blank page', function (a) {
       var saved = window.PLAN_DATA, root = T.dom.mount(), res;
       try {

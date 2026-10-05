@@ -69,6 +69,7 @@ Object.assign(window.TAP_CONTENT.text, {
     missingTitle: 'No plan data found',
     missingBody: 'The data file is missing or could not be read. Run the import to create data/plan-data.js, then reopen this page.',
     missingLooked: 'Looked for: data/plan-data.js, next to index.html. To look around with fictional figures, open index-sample.html.',
+    openSample: 'Open the sample data edition',
     versionTitle: 'The data file doesn’t match this version of the app',
     versionBody: 'The data file says version {found}; this app reads version {expected}. Re-run the import, or use the matching app folder.',
     invalidTitle: 'The data file has problems that stop the app from opening',
