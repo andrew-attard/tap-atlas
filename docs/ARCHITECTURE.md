@@ -708,7 +708,7 @@ Phase 4 adds the parts of the full template the first copy lacked (D84): the pla
 |---|---|---|---|
 | `revenue` | `[{year, channel, motion, type, value, sourceCell}]`, `type` `arr` or `services` | DER | Recap, revenue outlook at customer value |
 | `booksValue` | as `revenue`; `type` also `swPerpetual`, `hardware` (`arr` is recurring) | DER | Recap, value through the organization's books |
-| `strategicPlan` | `[{year, type, value, sourceCell}]`, `type` `arr`, `services`, `swPerpetual`, `hardware` | PRE | Recap, order intake against the strategic plan |
+| `strategicPlan` | `[{year, type, value, variance, sourceCell}]`, `type` `arr`, `services`, `swPerpetual`, `hardware`; `variance` (optional, DER) is the workbook's own variance cell | PRE | Recap, order intake against the strategic plan |
 | `baseYear` | `{year, actualsThrough, items: [{category, budget, forecast, actuals, pipeline, coverage, sourceRow}]}` | PRE | Order intake sheet; `actualsThrough` is "YYYY-MM"; `coverage` only when the workbook gives one |
 | `routes` | `[{route, year, type, value, solution, sourceCell}]`, `solution` optional | DER (some IN) | Recap, order intake by route to market |
 | `outsourcingPct` | number or null | IN | Partner sheet, outsourcing % |
@@ -720,7 +720,7 @@ Phase 4 adds the parts of the full template the first copy lacked (D84): the pla
 
 `meta.sourceMap` gains entries `revenue`, `booksValue`, `strategicPlan`, `routes` (fixed cells by item) and `baseYear` (sheet and columns), so every new figure traces to its cell (D26).
 
-**Check (`js/core/check-rows.js` and a new `js/core/check-p4.js`, DATA4):** types and lookup ids are errors as for the existing sections; repeated items (same year, channel, motion, type) are warnings; likely-wrong values only warn: revenue above the order intake of the same year, channel and motion; a books value above the customer value for `allianceA`, `allianceB` or `partner`; a coverage that disagrees with pipeline over the remaining target by more than 5%.
+**Check (`js/core/check-rows.js` and a new `js/core/check-p4.js`, DATA4):** types and lookup ids are errors as for the existing sections; repeated items (same year, channel, motion, type) are warnings; likely-wrong values only warn: revenue above the order intake of the same year, channel and motion; a books value above the customer value for `allianceA`, `allianceB` or `partner`; a coverage that disagrees with pipeline over the remaining target by more than 5%; a stored strategic plan `variance` that disagrees with books value minus the strategic plan.
 
 ### 19.2 Measures (`js/engine/measures-p4.js`, ENGINE4)
 
@@ -731,7 +731,7 @@ All return cells as in section 9. Money sums; shares and ratios combine as a rat
 | `bk.oi`, `bk.<type>` (`type`: `arr`, `services`, `swPerpetual`, `hardware`) | Order intake through the organization's books | amount / DER | year, channel, motion |
 | `bk.oi.<channel>` | The same for one channel (stack parts) | amount / DER | year, motion |
 | `cv.oi` | Order intake at customer value (the same figure as `rc.all.oi`) | amount / DER | year, channel, motion |
-| `bk.gap`, `bk.gapShare` | Customer value minus books value, and that difference as a share of customer value | amount / APP, rate / APP | year, channel |
+| `bk.gap`, `bk.gapShare` | Customer value minus books value over the types both sides hold (ARR and services), and that difference as a share of customer value | amount / APP, rate / APP | year, channel |
 | `sp.oi`, `sp.<type>` | Strategic plan order intake | amount / PRE | year, category |
 | `sp.plan` | The plan's books order intake on the same basis as the strategic plan | amount / DER | year, category |
 | `sp.variance`, `sp.variancePct` | `sp.plan - sp.oi`, and that over `sp.oi` | amount / APP, rate / APP | year, category |
@@ -740,10 +740,12 @@ All return cells as in section 9. Money sums; shares and ratios combine as a rat
 | `by.coverage` | Pipeline over the order intake still to win (forecast minus actuals); the workbook's ratio when given (kind PRE), else APP | rate | category |
 | `rv.<m>.<t>` (`m` `nb`, `cg`, `all`; `t` `arr`, `services`, `oi`) | Revenue outlook | amount / DER | year, channel (+ motion for `all`) |
 | `rv.share` | Revenue in a year over order intake of the same year (`rc.all.oi`) | rate / APP | year, channel |
-| `nb.<t>.sol` (`t` `arr`, `services`, `oi`) | New business by solution | amount / DER | year, solution |
+| `nb.<t>.sol` (`t` `arr`, `services`, `oi`) | New business by solution (`oi` is a derived sum, kind APP). The existing `nb.arr`, `nb.services` and `nb.oi` also list `solution` in their dims | amount / DER | year, solution |
 | `oi.cat` | Books order intake by product category | amount / DER | year, category |
 | `rt.oi` | Order intake by route to market | amount / DER | year, route, solution |
 | `pt.count.maturity`, `pt.oi.maturity` | Partners and their planned order intake by maturity | count / IN, amount / IN | maturity, partnerType |
+
+**As built (ENGINE4):** `TAP.measures.available(id)` is false when no region has a value for a Phase 4 measure (`meta.optional`); Build a chart and the Outlook view's "no data" line use it. `by.coverage` cells are kind PRE only when one base-year item carries the workbook's ratio; several categories together are worked out by the app (APP). A `sp.<type>` measure asked for another category is not applicable. A list with no item for a channel, type, route or category is "not provided"; a row-based figure (solutions, partner maturity) with no row in the group is zero. The partner list's `type` and `distribution` columns appear only when the file has them (`TAP.rows.optional`); a cell may carry `rank`, which lists sort by (maturity in the lookup's order).
 
 **Breakdowns:** `TAP.reports.BREAKDOWNS` gains `solution`, `category`, `route`, `maturity` and `partnerType`; context keys `{solution, category, route, maturity, partnerType}`; values come from the lookups in their order, plus "not named" (`none`) for rows with no value. The Build a chart dimensions follow (US-3.5.2).
 
