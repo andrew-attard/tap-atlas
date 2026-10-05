@@ -332,9 +332,10 @@ window.TEST_FIXTURES.broken = {
       expect: { path: 'regions[0].revenue', region: 'Region A', item: '2027, partner, newBusiness',
         expected: 'revenue no higher than the order intake for 2027, partner, newBusiness (250)', found: 300,
         message: 'regions[0].revenue: expected revenue no higher than the order intake for 2027, partner, newBusiness (250), found 300' } },
-    // Partner books value 260 + 0 + 20 = 280 against a customer value of 250
+    // Partner books value 260 + 0 + 20 = 280 against a customer value of 250. The ARR variance follows the
+    // books value (400 + 260 - 600 = 60), so only the books value is reported
     { id: 'books-above-customer-value', tc: 'TPV-TC-655', level: 'warnings',
-      change: function (p) { p.regions[0].booksValue[2].value = 260; },
+      change: function (p) { p.regions[0].booksValue[2].value = 260; p.regions[0].strategicPlan[0].variance = 60; },
       expect: { path: 'regions[0].booksValue', region: 'Region A', item: '2027, partner',
         expected: 'a books value no higher than the customer value for 2027, partner (250)', found: 280 } }
   ],

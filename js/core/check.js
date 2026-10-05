@@ -3,7 +3,7 @@
  * Purpose: Checks the plan data file against the Data Contract (docs/DATA-CONTRACT.md) and lists anything wrong in plain words.
  * Provides: TAP.check (run, kit: the shared helpers for js/core/check-rows.js)
  * Depends on: js/core/namespace.js, js/core/content.js and content/text-data.js (message wording),
- *             js/core/check-rows.js (the regions, at call time)
+ *             js/core/check-rows.js (the regions, at call time), js/core/check-p4.js (the Phase 4 parts, at call time)
  * Used by: js/core/data.js (on load)
  *
  * run(plan) returns {errors, warnings}. Each item is {path, region, item, expected, found, message}.
@@ -183,6 +183,7 @@
     else {
       checkMeta(plan.meta, out, env);
       checkLookups(plan.lookups, out, env);
+      if (TAP.checkP4) TAP.checkP4.run(plan, out, env);   // the Phase 4 lookups, before the regions that name them
       if (!Array.isArray(plan.regions)) err(top, 'regions', say('expect.regions'), plan.regions);
       else if (!plan.regions.length) err(top, 'regions', say('expect.someRegions'), plan.regions);
       else plan.regions.forEach(function (r, i) { TAP.checkRows.region(r, i, out, env, ids); });
