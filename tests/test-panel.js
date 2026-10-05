@@ -1153,6 +1153,34 @@
       } finally { TAP.present.stop(); TAP.store.set({ highlight: null }); }
     }));
 
+    T.test('X-review-PP-11', 'A definition without a title shows its error in its own panel, and later changes do not throw', scene(function (a, s) {
+      var def = fakeDef({ id: 'x-untitled' });
+      delete def.title;
+      s.report(def);
+      var p;
+      try { p = s.panel('x-untitled'); } catch (e) { a.ok(false, 'creating the panel threw: ' + e.message); return; }
+      a.ok(!!qs('.tap-panel__error', p.el), 'the panel shows the error');
+      try {
+        TAP.store.set({ cmp: { mode: 'org' } });
+        TAP.store.set({ industry: 'ind1' });
+        a.ok(true, 'store changes afterwards do not throw');
+      } catch (e) { a.ok(false, 'a store change threw: ' + e.message); }
+      finally { TAP.store.reset(); }
+    }));
+
+    T.test('X-review-PP-11', 'A panel whose first drawing throws is released, so later changes reach no half-made panel', scene(function (a, s) {
+      s.report(fakeDef());
+      var saved = TAP.panelMenus.tools, n = 0, threw = false;
+      // A builder that throws is caught as a panel error; a drawing step that throws is not, so one is made to
+      TAP.panelMenus.tools = function () { n += 1; throw new Error('broken tools'); };
+      try { s.panel('x-fake'); } catch (e) { threw = true; }
+      a.ok(threw, 'the first drawing threw');
+      var before = n;
+      try { TAP.store.set({ cmp: { mode: 'org' } }); } catch (e) { /* the store reports listener errors itself */ }
+      finally { TAP.panelMenus.tools = saved; TAP.store.reset(); }
+      a.equal(n - before, 0, 'no drawing after the store change');
+    }));
+
     T.test('X-review-RI-5', 'Selecting an insight in the panel list switches to the measure its sentence quotes (D79)', scene(function (a, s) {
       s.report(fakeDef({ measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
       TAP.insights = fakeInsights([insight(1, { highlight: { reportId: 'x-fake', regionIds: ['alpha'], mark: 'bar', measureId: 'cg.arr' } })]);
