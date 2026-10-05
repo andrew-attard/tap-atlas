@@ -211,7 +211,11 @@
       el('p', { class: 'tap-ro__intro' }, t('guide.intro')),
       n ? el('ol', { class: 'tap-ro__list' }, steps.map(function (s, i) {
         return el('li', { class: 'tap-ro__step' }, [
-          el('div', { class: 'tap-ro__what' }, [el('span', { class: 'tap-ro__name' }, nameOf(s)), el('span', { class: 'tap-ro__meta' }, meta(s))]),
+          el('div', { class: 'tap-ro__what' }, [
+            el('span', { class: 'tap-ro__n' }, t('stepN', { n: i + 1 })),
+            el('span', { class: 'tap-ro__name' }, nameOf(s)),
+            el('span', { class: 'tap-ro__meta' }, meta(s))
+          ]),
           el('div', { class: 'tap-ro__btns' }, [
             btn('up', t('guide.up'), function () { move(i, -1); }, i === 0),
             btn('down', t('guide.down'), function () { move(i, 1); }, i === n - 1),
