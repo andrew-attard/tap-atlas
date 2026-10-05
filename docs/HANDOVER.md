@@ -76,6 +76,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | Understand how the parts fit, or a module's contract | `docs/ARCHITECTURE.md` |
 | Tune or check an insight rule against the sample data | `docs/PLANTED-CASES.md` |
 | Put the sample edition on the web | `docs/PUBLISHING.md` |
+| Explain how the app was planned and built | `docs/CASE-STUDY.md`, and the landing page `docs/index.html` |
 | Branches, commits and pull requests | `CONTRIBUTING.md` |
 | How the build was organized (background only) | `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md`, `docs/build-plan-phase3.md` |
 
