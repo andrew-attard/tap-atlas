@@ -212,6 +212,25 @@
       });
     });
 
+    T.test('X-shell-actions-narrow', 'The sentence shares its row with the data date and the actions: one action at 853 px, two at 1024 px', function (a) {
+      withApp(function () {
+        var root = startApp(), slot = TAP.shell.actionsEl(), date = qs('.tap-cmp__date', root);
+        TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });   // a long sentence
+        function sameLine() {
+          var s = slot.getBoundingClientRect(), d = date.getBoundingClientRect();
+          return s.top < d.bottom && s.bottom > d.top;
+        }
+        slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Present'));
+        root.style.width = '853px';
+        a.ok(sameLine(), '853 px: the action stays beside the data date');
+        slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Take the tour'));
+        root.style.width = '1024px';
+        a.ok(sameLine(), '1024 px: both actions stay beside the data date');
+        var say = qs('.tap-cmp__say', root).getBoundingClientRect(), d = date.getBoundingClientRect();
+        a.ok(say.top < d.bottom && say.bottom > d.top, '1024 px: the sentence on the same row');
+      });
+    });
+
     T.test('X-shell-logo', 'The logo slot shows the theme logo, and leaves no gap when there is none', function (a) {
       var saved = TAP_THEME.logo;
       try {
