@@ -44,6 +44,22 @@
     return isNum(o.sourceRow) ? say('item.row', { name: name, row: o.sourceRow }) : name;
   }
 
+  // Fields held as decimals (0.25 for 25%), and counts, per section: a share above 1.5 is most likely a whole-number
+  // percentage, and a negative count a slip (review DE-12). Both only warn.
+  var SHARES = { newBusiness: ['hitRate', 'servicesRatio', 'growth.year2', 'growth.year3'], accounts: ['servicesRatio', 'growthPct'],
+    partners: ['centralSupportPct'] };
+  var COUNTS = { newBusiness: ['targetAccounts'], partners: ['fteSales', 'fteConsultants'] };
+  function figures(key, o, c) {
+    (SHARES[key] || []).forEach(function (f) {
+      var path = f.split('.'), v = path.length > 1 ? (isObj(o[path[0]]) ? o[path[0]][path[1]] : null) : o[f];
+      if (Array.isArray(v)) v.forEach(function (x, i) { if (isNum(x) && Math.abs(x) > 1.5) warn(sub(c, f), i, say('expect.share'), x); });
+      else if (isNum(v) && Math.abs(v) > 1.5) warn(c, f, say('expect.share'), v);
+    });
+    (COUNTS[key] || []).forEach(function (f) { if (isNum(o[f]) && o[f] < 0) warn(c, f, say('expect.notNegative'), o[f]); });
+  }
+  // A recap item repeats when another has the same year, channel, motion and type: both would be added up.
+  function recapKey(o) { return [o.year, o.channel, o.motion, o.type].join('|'); }
+
   function checkSection(r, key, rctx, env, extra) {
     var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map(), rows = map();
     var list = key === 'accounts' ? r.customerGrowth.accounts : r[key];
@@ -52,8 +68,11 @@
     each(list, lctx, env, function (o, i) {
       var c = sub(lctx, i, itemName(key, o, env));
       fields(o, SPEC()[key], c, env);
+      figures(key, o, c);
       if (key === 'recap') {
         if (!isStr(o.sourceCell)) warn(c, 'sourceCell', say('expect.sourceCell'), o.sourceCell);
+        if (seen[recapKey(o)]) warn(c, null, say('expect.uniqueRecap'), say('found.repeatRecap'), true);
+        seen[recapKey(o)] = true;
       } else if (o.sourceRow === undefined || !(isNum(o.sourceRow) && o.sourceRow % 1 === 0)) {
         warn(c, 'sourceRow', say('expect.sourceRow'), o.sourceRow);
       } else if (rows[o.sourceRow]) {
