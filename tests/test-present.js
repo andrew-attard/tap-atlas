@@ -1,7 +1,7 @@
 /*
  * File: tests/test-present.js
  * Purpose: Tests for presentation mode and the running order.
- * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1)
+ * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js,
  *             config/running-order.js
  * Used by: tests.html
@@ -151,6 +151,224 @@
         a.equal(res.ok[0] && res.ok[0].reportId, 'custom:test:exposure', 'under its own id');
         a.deepEqual(res.skipped.map(function (s) { return s.reason; }), ['custom'], 'a definition that does not validate is skipped');
         a.ok(!TAP_REPORTS['custom:test:exposure'], 'checking registers nothing');
+      });
+    });
+    /* ---------- US-3.1.2: presenting ---------- */
+
+    // The app on the sample data, keys bound; presentation always left and the mini fixture back afterwards.
+    function withApp(fn) {
+      var root = T.dom.mount(), file = window.TAP_RUNNING_ORDER.steps;
+      TAP.app.start({ root: root, plan: sample() });
+      TAP.insights.reset();
+      try { return fn(root); } finally {
+        try { TAP.present.stop(); } catch (e) { /* not running */ }
+        window.TAP_RUNNING_ORDER.steps = file;
+        try { TAP.layers.close(); } catch (e) { /* none open */ }
+        TAP.app.stop();
+        TAP.notes.clear('presentation');
+        TAP.data.load(T_FIXTURE('mini'));
+        TAP.insights.reset();
+      }
+    }
+    function press(key, target, opts) {
+      var e = new KeyboardEvent('keydown', Object.assign({ key: key, bubbles: true, cancelable: true }, opts || {}));
+      (target || document.body).dispatchEvent(e);
+      return e;
+    }
+    function layer() { return document.querySelector('.tap-present'); }
+    function shown() { return document.querySelector('.tap-present .tap-panel'); }
+    function n() { var c = TAP.present.current(); return c ? c.n : null; }
+    function titled(k) { var out = []; for (var i = 1; i <= k; i++) out.push({ report: i % 2 ? 'ov-ambition' : 'cg-growth', title: 'Title ' + i }); return out; }
+    function pressed(panel, key) {
+      var b = panel && panel.querySelector('[data-control="' + key + '"] [aria-pressed="true"]');
+      return b ? b.getAttribute('data-value') : null;
+    }
+
+    T.test('TPV-TC-518', 'Presenting a running order with four unknown names shows only the valid steps, in order', function (a) {
+      withApp(function () {
+        var res;
+        try { res = TAP.present.start(MIXED); } catch (e) { a.ok(false, 'start threw: ' + e.message); return; }
+        a.ok(res.started && TAP.present.active(), 'presentation mode starts');
+        var seen = [];
+        for (var i = 0; i < 5; i++) { seen.push(TAP.present.current().reportId); TAP.present.next(); }
+        a.deepEqual(seen, ['ov-ambition', 'nb-levers', 'cg-growth', 'pt-reliance', 'ind-tiers'], 'the five valid steps, in order');
+        a.equal(TAP.present.current().total, 5, 'five steps in all');
+        a.equal(TAP.notes.list('presentation').length, 4, 'the four skipped steps are noted');
+      });
+    });
+
+    T.test('TPV-TC-524', 'P starts presentation mode at step 1, but not while typing in a field', function (a) {
+      withApp(function (root) {
+        var field = root.appendChild(document.createElement('input'));
+        field.focus();
+        press('p', field);
+        a.ok(!TAP.present.active(), 'P typed in a field does nothing');
+        field.blur();
+        press('p');
+        a.ok(TAP.present.active(), 'P starts presentation mode');
+        a.equal(n(), 1, 'at step 1');
+        a.equal(TAP.present.current().reportId, window.TAP_RUNNING_ORDER.steps[0].report, 'the first step of the file');
+      });
+    });
+
+    T.test('TPV-TC-525', 'A step with measure, chart type, breakdown and comparison shows exactly those settings', function (a) {
+      withApp(function () {
+        var cmp = { mode: 'pair', focus: 'na', second: 'seu' };
+        TAP.present.start([{ report: 'nb-levers', measure: 'nb.avgDealSize', type: 'dot', breakdown: 'industry', cmp: cmp }]);
+        var p = shown();
+        a.equal(p && p.getAttribute('data-report'), 'nb-levers', 'the step report');
+        a.ok(p && p.classList.contains('tap-panel--expanded'), 'in the expanded panel');
+        var type = p && p.querySelector('[data-action="type"]');
+        a.ok(type && type.textContent.indexOf(TAP.shapes.label('dot')) >= 0, 'chart type: dot');
+        a.equal(pressed(p, 'measure'), 'nb.avgDealSize', 'measure: average deal size');
+        a.equal(pressed(p, 'breakdown'), 'industry', 'broken down by industry');
+        var c = TAP.store.get().cmp;
+        a.deepEqual([c.mode, c.focus, c.second], ['pair', 'na', 'seu'], 'comparison: one vs one');
+        var sentence = p && p.querySelector('.tap-panel__expand-sentence');
+        a.equal(sentence && sentence.textContent, TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, cmp)), 'the comparison sentence on screen');
+      });
+    });
+
+    T.test('TPV-TC-527', 'Space and Right step forward; Left and Backspace step back', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(5));
+        TAP.present.next();
+        a.equal(n(), 2, 'at step 2');
+        press(' '); a.equal(n(), 3, 'Space: step 3');
+        press('ArrowRight'); a.equal(n(), 4, 'Right: step 4');
+        press('ArrowLeft'); a.equal(n(), 3, 'Left: step 3');
+        press('Backspace'); a.equal(n(), 2, 'Backspace: step 2');
+      });
+    });
+
+    T.test('TPV-TC-528', 'Home goes to step 1; Esc leaves presentation mode', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(5));
+        TAP.present.next(); TAP.present.next();
+        a.equal(n(), 3, 'at a middle step');
+        press('Home'); a.equal(n(), 1, 'Home: step 1');
+        press('Escape');
+        a.ok(!TAP.present.active(), 'Esc: presentation mode ends');
+        a.ok(!layer(), 'and its layer is gone');
+      });
+    });
+
+    T.test('TPV-TC-530', 'The progress row reads "Step 3 of 12" followed by the step title', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(12));
+        TAP.present.next(); TAP.present.next();
+        var row = document.querySelector('.tap-present__where');
+        var txt = row ? row.textContent.replace(/\s+/g, ' ').trim() : '';
+        a.equal(txt.indexOf('Step 3 of 12'), 0, 'starts with "Step 3 of 12": ' + txt);
+        a.ok(txt.indexOf('Title 3') > 'Step 3 of 12'.length, 'followed by the step title');
+      });
+    });
+
+    T.test('TPV-TC-532', 'A step without a comparison does not carry the previous step comparison', function (a) {
+      withApp(function () {
+        TAP.present.start([{ report: 'ov-ambition', cmp: { mode: 'one', focus: 'seu', restAgg: 'total' } }, { report: 'cg-growth' }]);
+        a.equal(TAP.store.get().cmp.mode, 'one', 'step 1: one vs the rest');
+        TAP.present.next();
+        a.deepEqual(TAP.store.get().cmp, TAP.store.defaults().cmp, 'step 2: the default comparison, all regions');
+      });
+    });
+
+    T.test('TPV-TC-533', 'Leaving restores the view and comparison exactly as before', function (a) {
+      withApp(function () {
+        TAP.store.set({ view: 'customers', cmp: { mode: 'one', focus: 'seu' } });
+        var before = JSON.stringify({ view: TAP.store.get().view, cmp: TAP.store.get().cmp, expanded: TAP.store.get().expanded });
+        TAP.present.start();
+        TAP.present.next(); TAP.present.next(); TAP.present.next(); TAP.present.next(); TAP.present.next();
+        TAP.present.stop();
+        var s = TAP.store.get();
+        a.equal(JSON.stringify({ view: s.view, cmp: s.cmp, expanded: s.expanded }), before, 'view, comparison and expanded chart as before');
+        a.equal(TAP.app.current(), 'customers', 'the Customer growth view is on screen');
+        a.ok(TAP.panelKeys.enabled, 'the panel keys are on again');
+      });
+    });
+
+    T.test('TPV-TC-534', 'Every step of the starter order draws its chart with animation off', function (a) {
+      withApp(function () {
+        TAP.present.start();
+        var total = TAP.present.current().total, charts = 0;
+        for (var i = 0; i < total; i++) {
+          var box = document.querySelector('.tap-present .tap-panel__chart'), chart = box && window.echarts.getInstanceByDom(box);
+          if (chart) { charts++; a.equal(chart.getOption().animation, false, 'step ' + (i + 1) + ': animation off'); }
+          a.ok(!document.querySelector('.tap-present .tap-panel__error'), 'step ' + (i + 1) + ' draws without an error');
+          TAP.present.next();
+        }
+        a.ok(charts >= 6, 'charts checked: ' + charts);
+      });
+    });
+
+    T.test('TPV-TC-536', 'An empty or fully invalid running order does not start and the button says why', function (a) {
+      withApp(function (root) {
+        var btn = root.querySelector('.tap-topbar__actions .tap-present__button');
+        a.ok(btn, 'a Present button in the top bar');
+        window.TAP_RUNNING_ORDER.steps = [];
+        if (btn) btn.click();
+        a.ok(!TAP.present.active(), 'empty: does not start');
+        var msg = root.querySelector('.tap-present__msg');
+        a.equal(msg && msg.textContent, TAP.content.text('present.empty'), 'empty: the button says so');
+        window.TAP_RUNNING_ORDER.steps = [{ report: 'no-such-report' }, { insight: 'noSuchRule:x' }];
+        if (btn) btn.click();
+        a.ok(!TAP.present.active(), 'fully invalid: does not start');
+        a.equal(msg && msg.textContent, TAP.content.text('present.noneValid', { n: 2 }), 'fully invalid: the button says so');
+      });
+    });
+
+    T.test('X-present-button', 'The Present button starts the file order at step 1', function (a) {
+      withApp(function (root) {
+        var btn = root.querySelector('.tap-topbar__actions .tap-present__button');
+        a.ok(btn && btn.textContent.indexOf(TAP.content.text('present.button')) >= 0, 'labelled Present');
+        if (btn) btn.click();
+        a.ok(TAP.present.active() && n() === 1, 'presentation mode at step 1');
+        a.ok(shown() && shown().classList.contains('tap-panel--expanded'), 'the report fills the expanded panel');
+      });
+    });
+
+    T.test('X-present-keys-owned', 'While presenting, number keys, drill and panel Esc are off; Esc closes a popover first', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(3));
+        a.ok(!TAP.panelKeys.enabled, 'the panel keys are off');
+        press('3');
+        a.equal(TAP.store.get().view, 'overview', 'a number key does not switch views');
+        var more = document.querySelector('.tap-present [data-action="more"]');
+        if (more) more.click();
+        a.ok(document.querySelector('.tap-present .tap-panel__pop'), 'a chart menu is open');
+        press('Escape');
+        a.ok(!document.querySelector('.tap-present .tap-panel__pop'), 'Esc closes the menu first');
+        a.ok(TAP.present.active(), 'and presentation mode stays');
+        press('Escape');
+        a.ok(!TAP.present.active(), 'the next Esc leaves');
+        a.ok(TAP.panelKeys.enabled, 'the panel keys are on again');
+      });
+    });
+
+    T.test('X-present-close', 'Close on the expanded strip, or the progress row button, leaves presentation mode', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(3));
+        var close = document.querySelector('.tap-present [data-action="collapse"]');
+        if (close) close.click();
+        a.ok(!TAP.present.active(), 'Close on the strip leaves');
+        TAP.present.start(titled(3));
+        var leave = document.querySelector('.tap-present [data-present="leave"]');
+        if (leave) leave.click();
+        a.ok(!TAP.present.active(), 'Leave on the progress row leaves');
+      });
+    });
+
+    T.test('X-present-bounds', 'Next stops at the last step and Back at the first; first() returns to step 1', function (a) {
+      withApp(function () {
+        TAP.present.start(titled(2));
+        a.equal(TAP.present.prev(), false, 'no step before the first');
+        TAP.present.next();
+        a.equal(TAP.present.next(), false, 'no step after the last');
+        a.equal(n(), 2, 'stays on the last step');
+        TAP.present.first();
+        a.equal(n(), 1, 'first() goes to step 1');
+        TAP.present.stop();
+        a.equal(TAP.present.current(), null, 'current() is null once left');
       });
     });
   });
