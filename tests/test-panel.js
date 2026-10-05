@@ -1195,6 +1195,39 @@
       a.ok(cells.every(function (c) { return c.length === 3; }), 'every row keeps its three cells (with Source)');
     });
 
+    T.test('X-review-PP-15', 'Expanding one chart redraws that chart only, not every chart on the page', scene(function (a, s) {
+      s.report(fakeDef());
+      s.report(fakeDef({ id: 'x-fake-2' }));
+      s.panel('x-fake');
+      s.panel('x-fake-2');
+      function drawn() { return calls.map(function (c) { return c.def.id; }); }
+      try {
+        calls = [];
+        TAP.store.set({ expanded: 'x-fake' });
+        a.deepEqual(drawn(), ['x-fake'], 'opening: only the expanded chart redraws');
+        calls = [];
+        TAP.store.set({ expanded: null });
+        a.deepEqual(drawn(), ['x-fake'], 'closing: only the chart that was expanded redraws');
+      } finally { TAP.store.set({ expanded: null }); }
+    }));
+
+    T.test('X-review-PP-15', 'Keyboard focus comes back after a redraw even when a value holds a quote', scene(function (a, s) {
+      var odd = 'say "hi" \\ there';
+      s.report(fakeDef());
+      FAKE = function () {
+        return { controls: [{ key: 'pick', label: 'Pick', kind: 'segmented', value: 'one', options: [{ value: 'one', label: 'One' }, { value: odd, label: 'Odd' }] }] };
+      };
+      var p = s.panel('x-fake'), btn = qsa('[data-control="pick"] button', p.el)[1];
+      btn.focus();
+      var key;
+      try { key = TAP.panelChart.focusKey(p.el); } catch (e) { a.ok(false, 'focusKey threw: ' + e.message); return; }
+      var back;
+      try { back = qs(key, p.el); } catch (e) { a.ok(false, 'the selector does not parse: ' + e.message); return; }
+      a.equal(back, btn, 'the selector finds the focused button');
+      p.refresh();
+      a.equal(document.activeElement && document.activeElement.getAttribute('data-value'), odd, 'focus is back on it after a redraw');
+    }));
+
     T.test('X-review-RI-5', 'Selecting an insight in the panel list switches to the measure its sentence quotes (D79)', scene(function (a, s) {
       s.report(fakeDef({ measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
       TAP.insights = fakeInsights([insight(1, { highlight: { reportId: 'x-fake', regionIds: ['alpha'], mark: 'bar', measureId: 'cg.arr' } })]);
