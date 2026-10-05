@@ -59,7 +59,7 @@ const TESTS = [
   'tests/test-shell.js', 'tests/test-content.js', 'tests/test-panel.js',
   'tests/test-overview.js', 'tests/test-industry.js', 'tests/test-insights.js', 'tests/test-rules.js', 'tests/test-ranking.js', 'tests/test-guardrails.js', 'tests/test-pages.js', 'tests/test-integrator.js',
   'tests/test-measures-p2.js', 'tests/test-rows.js', 'tests/test-list.js', 'tests/test-newbusiness.js', 'tests/test-customers.js',
-  'tests/test-partners.js', 'tests/test-insights-p2.js', 'tests/test-profile.js', 'tests/test-pages-p2.js', 'tests/test-present.js', 'tests/test-custom.js', 'tests/test-extra.js', 'tests/test-docs3.js',
+  'tests/test-partners.js', 'tests/test-insights-p2.js', 'tests/test-profile.js', 'tests/test-pages-p2.js', 'tests/test-present.js', 'tests/test-custom.js', 'tests/test-extra.js', 'tests/test-extra-view.js', 'tests/test-docs3.js',
   'tests/test-meta.js'
 ];
 
