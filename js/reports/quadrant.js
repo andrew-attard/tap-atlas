@@ -45,7 +45,7 @@
       if (!oneVsRest) return ents.slice();
       var rest = ents.filter(function (e) { return e.role === 'combined'; })[0];
       var others = ids.filter(function (id) { return id !== focus.id; });
-      return [focus, rest || average('rest', others, t('combined.restAverage', { n: others.length, regions: regionsWord(others.length) }))];
+      return [focus, rest || average('rest', others, t(others.length === 1 ? 'combined.restAverageOne' : 'combined.restAverage', { n: others.length, regions: regionsWord(others.length) }))];
     }
     if (ents.length === 1) return ents.slice();
     return [average('avg', ids, t('quadrant.average', { n: ids.length, regions: regionsWord(ids.length) }))];
