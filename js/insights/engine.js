@@ -14,7 +14,7 @@
   var code = {};                      // rule id -> fn(ctx)
   var cache = null;                   // {key, plan, list, failures}
   // Vars holding names from the workbooks. They are the data's words, not ours, so the banned-word check skips them.
-  var NAME_VARS = ['region', 'industry', 'industries', 'accounts', 'segment', 'regions', 'partner', 'subIndustry'];
+  var NAME_VARS = ['region', 'industry', 'industries', 'accounts', 'segment', 'regions', 'partner', 'subIndustry', 'channel'];
   // Words that only reach a sentence when a figure went missing on the way.
   var GAP_WORDS = ['NaN', 'undefined', 'null', 'Infinity'];
 
@@ -80,11 +80,15 @@
       if (!code[rule.id]) { if (!stubbed(rule.family)) fail(out, rule, ph.noCode); return; }
       try {
         if (!hasInput(rule)) { fail(out, rule, fill(ph.noData, { fields: (rule.reads || []).join(', ') })); return; }
-        var found = code[rule.id](context(rule)), bad = malformed(rule, found), mine = [];
+        var found = code[rule.id](context(rule)), bad = malformed(rule, found), mine = [], seen = {};
         if (bad) { fail(out, rule, bad); return; }
         found.forEach(function (f) {
           var x = build(rule, f, out);
-          if (x) mine.push(x);
+          if (!x) return;
+          // Two findings with one key (two partners on one row number) each keep an id of their own, so hiding works
+          seen[x.id] = (seen[x.id] || 0) + 1;
+          if (seen[x.id] > 1) x.id += ':' + seen[x.id];
+          mine.push(x);
         });
         out.list = out.list.concat(mine);
       } catch (e) {
@@ -116,13 +120,14 @@
     var esc = String(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp('(^|[^A-Za-z])' + esc + '([^A-Za-z]|$)', flags).test(text);
   }
-  // The first banned word (any case), or the first word that shows a figure went missing (exact case).
+  // The first banned word (any case), or the first word that shows a figure or a phrase went missing (exact case):
+  // a phrase not found in the wording guide comes back as its path in brackets, "[rank.4]".
   function bannedWord(text) {
     return (wording().banned || []).filter(function (w) { return wordIn(text, w, 'i'); })[0] || null;
   }
   function gapWord(text) {
     var missing = TAP.content.text('states.notProvided');
-    return GAP_WORDS.concat([missing]).filter(function (w) { return wordIn(text, w, ''); })[0] || null;
+    return GAP_WORDS.concat([missing]).filter(function (w) { return wordIn(text, w, ''); })[0] || (/\[\w+(\.\w+)*\]/.exec(text) || [null])[0];
   }
 
   // The "Show me" target. Phase 2 findings may also name list rows (items, 17.4), a theme (the themes report) or the
@@ -140,8 +145,10 @@
     if (rule.compare && f.provided < min) return null;                   // too few regions to compare
     var template = (f.variant && rule.templates && rule.templates[f.variant]) || rule.template;
     var sentence = fill(template, f.vars), own = ownWords(template, f.vars);
-    var gap = /\{(\w+)\}/.exec(sentence), lost = gapWord(own);
-    if (gap || lost) { fail(out, rule, fill(ph.unfilled, { gap: gap ? gap[0] : lost })); return null; }
+    // A gap is a placeholder the finding left unfilled; braces inside a name from the workbook are the name's own
+    var gap = (String(template).match(/\{\w+\}/g) || []).filter(function (m) { return !f.vars || f.vars[m.slice(1, -1)] == null; })[0];
+    var lost = gapWord(own);
+    if (gap || lost) { fail(out, rule, fill(ph.unfilled, { gap: gap || lost })); return null; }
     var word = bannedWord(own);
     if (word) { fail(out, rule, fill(ph.banned, { word: word })); return null; }
 

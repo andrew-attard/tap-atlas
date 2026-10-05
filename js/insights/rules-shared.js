@@ -67,6 +67,8 @@
     if (!(u.value(avg) > 0)) return [];
     return staffed.map(function (x) {
       var multiple = x.cell.v / avg.v, r = x.row.regionId, name = String(x.row.item.name || '').trim().replace(/\s+/g, ' ');
+      // A partner with no name is named by its row, as on the capacity chart
+      if (!name) name = TAP.content.text('rowBubble.noName', { row: x.row.sourceRow });
       if (multiple < p.multiple - SLACK) return null;
       var fte = TAP.rows.cell('partners', 'fte', x.row), arr = TAP.rows.cell('partners', 'arr3', x.row);
       return { key: r + ':' + x.row.sourceRow, regionIds: [r], items: [item('partners', x.row)],

@@ -129,6 +129,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     reads: ['customerGrowth.accounts.riskLevel'], params: { share: 0.25, levels: ['high', 'medium'] },
     scoring: 'Strength: the share against twice the threshold. Money: the growth in those accounts.',
     template: '{share} of {region}’s planned customer growth is in accounts flagged at risk ({amount} across {n} accounts).',
+    templates: { one: '{share} of {region}’s planned customer growth is in one account flagged at risk ({amount}).' },
     attach: ['cg-exposure'], highlight: 'bar' });
   rule({ id: 'segmentMix', family: 'exposure',
     description: 'A region drawing at least 60% of its three-year order intake from existing customers from one segment, at least 20 points above every other region’s share for that segment. Regions whose accounts carry no segment are left out.',
