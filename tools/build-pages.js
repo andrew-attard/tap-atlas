@@ -25,7 +25,7 @@ const APP = [
   'ORG',
   'js/core/content.js',
   'DATA',
-  'js/core/sources.js', 'js/core/check.js', 'js/core/extra.js', 'js/core/data.js',
+  'js/core/sources.js', 'js/core/check.js', 'js/core/check-rows.js', 'js/core/extra.js', 'js/core/data.js',
   'js/engine/registry.js', 'js/engine/aggregate.js', 'js/engine/scope.js', 'js/engine/measures.js', 'js/engine/scores.js',
   'js/engine/measures-p2.js', 'js/engine/rows.js',
   'js/engine/shapes.js', 'js/engine/prepare.js',

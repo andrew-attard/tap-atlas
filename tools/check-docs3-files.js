@@ -7,7 +7,7 @@
  * Provides: module.exports ({checkShots, checkShotNames, checkPackage, checkContractFields, fieldsTheCheckReads,
  *           shotName, pngSize})
  * Depends on: Node 18+; tools/check-docs3.js (existsExact, read at call time); bash and git for the package check;
- *             js/core/namespace.js, check.js, extra.js and data/sample-plan-data.js, run in a Node sandbox
+ *             js/core/namespace.js, check.js, check-rows.js, extra.js and data/sample-plan-data.js, run in a Node sandbox
  * Used by: tools/check-docs3.js
  * Owner: DOCS3 stream
  */
@@ -185,7 +185,7 @@ function checkPackage(root, handover) {
 const BUILTIN = ['length', 'forEach', 'map', 'filter', 'some', 'every', 'indexOf', 'slice', 'concat', 'join', 'keys',
   'hasOwnProperty', 'constructor', 'toString', 'valueOf', 'push', 'reduce', 'find', 'includes', 'sort', 'toJSON', 'then'];
 
-// Runs the app's contract check (js/core/check.js and js/core/extra.js) on the sample data and records every
+// Runs the app's contract check (js/core/check.js, check-rows.js and extra.js) on the sample data and records every
 // property it reads. Only names the check's own code spells out count as fields, so data values used as keys
 // (region ids, extra section ids and columns) are left out.
 function fieldsTheCheckReads(root) {
@@ -193,7 +193,7 @@ function fieldsTheCheckReads(root) {
   ctx.window = ctx;
   vm.createContext(ctx);
   const code = {};
-  ['js/core/namespace.js', 'js/core/check.js', 'js/core/extra.js', 'data/sample-plan-data.js'].forEach((f) => {
+  ['js/core/namespace.js', 'js/core/check.js', 'js/core/check-rows.js', 'js/core/extra.js', 'data/sample-plan-data.js'].forEach((f) => {
     code[f] = fs.readFileSync(path.join(root, f), 'utf8');
     if (f === 'js/core/check.js') {
       vm.runInContext('window.TAP.content = { text: function (k) { return k; }, regionName: function (r) { return r && r.name; },' +
@@ -208,7 +208,7 @@ function fieldsTheCheckReads(root) {
   });
   ctx.TAP.check.run(wrap(ctx.PLAN_DATA));
   // Code only: comments could mention a data value in passing.
-  const src = (code['js/core/check.js'] + code['js/core/extra.js']).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+  const src = (code['js/core/check.js'] + code['js/core/check-rows.js'] + code['js/core/extra.js']).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
   return [...reads].filter((k) => !/^\d+$/.test(k) && BUILTIN.indexOf(k) < 0 &&
     new RegExp('(^|[^A-Za-z0-9_$])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9_$])').test(src)).sort();
 }
