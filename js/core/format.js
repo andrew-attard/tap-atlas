@@ -39,7 +39,7 @@
   // Fixed decimals, dropping a trailing ".0" ("2.0" -> "2"). Numbers from 1e21 are always whole.
   function fixed(v, decimals) {
     var r = round(v, decimals), s = r >= 1e21 ? expand(r) : r.toFixed(decimals);
-    if (decimals > 0) s = s.replace(/\.?0+$/, '');
+    if (decimals > 0 && s.indexOf('.') >= 0) s = s.replace(/\.?0+$/, '');   // only decimals: a written-out 1e21 keeps its zeros
     var parts = s.split('.');
     return group(parts[0]) + (parts[1] ? '.' + parts[1] : '');
   }
