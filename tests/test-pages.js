@@ -116,8 +116,9 @@
       TAP.data.load(T_FIXTURE('mini'));
     }
   }
-  // US-2.6.3 added the Phase 2 views and the region profile after the menu step (at most 10 steps, TPV-TC-507)
-  var STEPS = ['purpose', 'menu', 'views', 'profile', 'compare', 'panel', 'freshness', 'glossary', 'guide'];
+  // US-2.6.3 added the Phase 2 views and the region profile after the menu step, US-4.6.1 the Outlook view
+  // (at most 10 steps, TPV-TC-507)
+  var STEPS = ['purpose', 'menu', 'views', 'outlook', 'profile', 'compare', 'panel', 'freshness', 'glossary', 'guide'];
 
   /* ---------- US-1.6.5: an explanation for every report (#41) ---------- */
   T.suite('pages', function () {
@@ -607,7 +608,7 @@
 
     T.test('TPV-TC-234', 'Steps of one or two sentences, in the order of the stories', function (a) {
       var ids = TAP.tour.steps().map(function (s) { return s.id; });
-      a.deepEqual(ids, STEPS, 'purpose, menu, the Phase 2 views, the profile, comparison bar, report panel, data freshness, glossary, then the Guide');
+      a.deepEqual(ids, STEPS, 'purpose, menu, the Phase 2 views, Outlook, the profile, comparison bar, report panel, data freshness, glossary, then the Guide');
       a.ok(ids.length <= 10, 'no more than 10 steps (US-2.6.3)');
       ids.forEach(function (id) {
         var s = TAP.content.text('tour.' + id, { app: 'X' });

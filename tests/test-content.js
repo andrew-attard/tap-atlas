@@ -336,9 +336,11 @@
     });
 
     T.test('X-content-guide-links', 'Every template section links to a view that exists; links are null or {view}', function (a) {
-      var p = TAP.content.guide().planning || {}, order = (window.TAP_VIEWS || {}).order || [];
+      var p = TAP.content.guide().planning || {}, views = window.TAP_VIEWS || {}, order = views.order || [];
       (p.sections || []).forEach(function (s) {
-        a.ok(s.link === null || (s.link && order.indexOf(s.link.view) >= 0), s.id + ': link is null or an existing view');
+        // A view defined in config/views.js but not in the menu yet (Outlook while it is built) draws no link
+        var known = s.link && (order.indexOf(s.link.view) >= 0 || (views[s.link.view] && TAP.views.get(s.link.view)));
+        a.ok(s.link === null || known, s.id + ': link is null or an existing view');
         if (TEMPLATE_SECTIONS.indexOf(s.id) >= 0) a.ok(s.link && s.link.view, s.id + ' links to its view');
       });
       a.ok((p.sections || []).length > 0, 'sections found');
