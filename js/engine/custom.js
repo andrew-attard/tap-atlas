@@ -4,7 +4,8 @@
  *          Everything is read from measure metadata (D68), so a new measure is offered without code. The definition
  *          depends only on {measure, by, type}, so a running-order step can carry it (D70).
  * Provides: TAP.custom (options, definition, types, byLabel, saved, save, remove)
- * Depends on: js/engine/measures.js, measures-p4.js (available), js/engine/registry.js, js/engine/shapes.js, js/core/content.js (at call time)
+ * Depends on: js/engine/measures.js, measures-p4.js (available), js/engine/prepare.js (dimHasData), js/engine/registry.js,
+ *             js/engine/shapes.js, js/core/content.js (at call time)
  * Used by: js/ui/custom-builder.js, js/ui/present.js (custom steps)
  * Owner: CUSTOM stream (#250)
  */
@@ -26,7 +27,8 @@
 
   // What a measure can be shown by: regions, then each breakdown dimension it lists in meta.dims.
   function byOf(m) {
-    var dims = (m.dims || []).filter(function (d) { return TAP.reports.BREAKDOWNS.indexOf(d) >= 0; });
+    // A Phase 4 dimension only when the file has data under it for this measure (e.g. new business by solution)
+    var dims = (m.dims || []).filter(function (d) { return TAP.reports.BREAKDOWNS.indexOf(d) >= 0 && TAP.prepare.dimHasData(m.id, d); });
     if (perIndustry(m)) return dims.indexOf('industry') >= 0 ? ['industry'] : [];
     return ['entity'].concat(dims);
   }

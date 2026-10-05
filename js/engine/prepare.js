@@ -2,7 +2,7 @@
  * File: js/engine/prepare.js
  * Purpose: Runs a report's measures over the comparison scope into one dataset for the chart and the table, so
  *          both always read the same cells (US-1.2.4), and works out which regions have no data (US-1.2.11).
- * Provides: TAP.prepare (run, primaryIds, selected, breakdowns)
+ * Provides: TAP.prepare (run, primaryIds, selected, breakdowns, dimHasData)
  * Depends on: js/engine/registry.js (measureIds), js/engine/measures.js, measures-p4.js (kit4), js/engine/scope.js, js/core/data.js,
  *             js/core/content.js, js/core/store.js
  * Used by: the generic builders (build-compare, build-parts, build-xy), js/panel/panel-menus.js
@@ -62,7 +62,21 @@
     if (!ids.length || (def.options || {}).measuresAs === 'categories') return [];
     return (def.breakdowns || []).filter(function (d) {
       if ((TAP.reports.BREAKDOWNS || []).indexOf(d) < 0 || (d === 'industry' && def.dimension === 'industry')) return false;
+      if (!ids.some(function (id) { return dimHasData(id, d); })) return false;
       return (d === 'year' ? ids.slice(0, 1) : ids).every(function (id) { return supports(id, d); });
+    });
+  }
+
+  // A Phase 4 dimension has data for a measure when some region has a figure other than zero under one of the
+  // lookup's values. Without it the dimension is not offered, so a file from before Phase 4 reads as it did.
+  // Every earlier dimension always counts as having data.
+  function dimHasData(id, dim) {
+    var fn = LOOKUP[dim] ? TAP.measures.get(id) : null;
+    if (!LOOKUP[dim]) return true;
+    return !!fn && TAP.measures.kit4.lookup(LOOKUP[dim]).some(function (v) {
+      var x = {};
+      x[CTX_KEY[dim]] = v.id;
+      return TAP.data.regions().some(function (r) { var c = fn(r.id, x); return c.state === 'value' && c.v !== 0; });
     });
   }
 
@@ -198,5 +212,5 @@
       names: ids.map(function (id) { return TAP.content.regionName(TAP.data.region(id)); }) };
   }
 
-  TAP.prepare = { run: run, primaryIds: primaryIds, selected: selected, breakdowns: breakdowns };
+  TAP.prepare = { run: run, primaryIds: primaryIds, selected: selected, breakdowns: breakdowns, dimHasData: dimHasData };
 })(window.TAP);

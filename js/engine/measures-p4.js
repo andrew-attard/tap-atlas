@@ -86,11 +86,12 @@
     return { regionId: r, section: null, field: id, row: null, rows: [], year: ctx.year || null, cell: null, kind: 'APP',
       parts: parts.map(function (p) { return { measureId: p[0], src: p[1].src }; }) };
   }
-  // One measure minus another: blank if either is blank, partly provided if either is
-  function difference(id, a, b, dims) {
+  // One measure minus another: blank if either is blank, partly provided if either is. minus, when given, reads
+  // the figure taken off in place of measure b's own.
+  function difference(id, a, b, dims, minus) {
     M.define(id, p4(k.amount('APP', dims)), function (r, ctx) {
       ctx = ctx || {};
-      var x = M.get(a)(r, ctx), y = M.get(b)(r, ctx), s = made(r, id, ctx, [[a, x], [b, y]]);
+      var x = M.get(a)(r, ctx), y = (minus || M.get(b))(r, ctx), s = made(r, id, ctx, [[a, x], [b, y]]);
       if (x.state !== 'value' || y.state !== 'value') return k.blank('APP', s);
       return k.cell(x.v - y.v, 'APP', s, x.partial || y.partial ? { partial: true, note: x.note || y.note } : null);
     });
@@ -131,7 +132,9 @@
   M.define('oi.cat', p4(k.amount('DER', YC)), books(TYPES));
   // Customer value is the recap: the same figure as rc.all.oi. Offered in Build a chart with the books value.
   M.define('cv.oi', p4(k.amount('DER', YCM), 'bk.oi'), function (r, ctx) { return M.get('rc.all.oi')(r, ctx || {}); });
-  difference('bk.gap', 'cv.oi', 'bk.oi', ['year', 'channel']);
+  // Like for like: customer value holds ARR and services, so only those two types of books value are taken off.
+  // Software perpetual and hardware run through the books only; they show in oi.cat and their own measures.
+  difference('bk.gap', 'cv.oi', 'bk.oi', ['year', 'channel'], books(RV.oi));
   ratio('bk.gapShare', 'bk.gap', 'cv.oi', ['year', 'channel']);
 
   /* ---------- the strategic plan ---------- */
