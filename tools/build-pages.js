@@ -38,7 +38,7 @@ const APP = [
   'js/insights/rules-realism.js', 'js/insights/rules-exposure.js', 'js/insights/rules-capability.js',
   'js/insights/rules-plan.js', 'js/insights/rules-shared.js', 'js/insights/rules-themes.js',
   'js/panel/panel-chart.js', 'js/panel/panel-table.js', 'js/panel/panel-menus.js', 'js/panel/panel-export.js',
-  'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel.js',
+  'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel-build.js', 'js/panel/panel.js',
   'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present.js',

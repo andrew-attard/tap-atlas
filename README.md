@@ -116,6 +116,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |
 | `js/insights/rules-*.js` | One file per rule family: priorities, judgement, assumptions, realism, exposure, capability, plan (channel reliance, plan make-up), shared (shared targets, partner capacity), themes (recurring themes) |
 | `js/panel/panel.js` | The report panel: title, takeaway, chart or table, legend, source line, controls |
+| `js/panel/panel-build.js` | What a panel draws: checks the report and runs its builder |
 | `js/panel/panel-chart.js` | Draws the chart, legend and notes inside a panel |
 | `js/panel/panel-table.js` | The table view, sortable, with a source column, copyable into Excel |
 | `js/panel/panel-menus.js` | The panel's toolbar, menus and controls |
