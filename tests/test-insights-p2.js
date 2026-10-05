@@ -411,10 +411,28 @@
 
     when(PLAN, 'TPV-TC-489', 'The plan make-up sentence follows the story’s pattern, with no banned word', function (a) {
       I().sample();
+      // Central Europe gives no customer growth (G2), so the sentence says the others are the regions giving both (D79)
       var x = I().ofRule('planMakeup')[0];
       a.equal(x.sentence, pct(X.q02.share) + ' of Asia Pacific’s ARR ambition comes from new business, against ' +
-        pct(X.q02.others) + ' on average elsewhere.');
+        pct(X.q02.others) + ' on average in the other regions that give both parts.');
       a.deepEqual(banned(x.sentence), [], 'no banned word');
+    });
+
+    when(PLAN, 'X-review-RI-4', 'Plan make-up says "elsewhere" only when every other region takes part', function (a) {
+      mini(function (p) { p.regions.forEach(function (r) { if (r.id === 'alpha') makeup(p, r, 90, 10); else makeup(p, r, 50, 50); }); });
+      var x = I().ofRule('planMakeup').filter(function (i) { return i.regionIds[0] === 'alpha'; })[0];
+      a.ok(x, 'every region gives both parts: compared');
+      if (x) a.ok(/, against 50% on average elsewhere\.$/.test(x.sentence), 'the plain wording: ' + x.sentence);
+      mini(function (p) {
+        makeup(p, rg(p, 'alpha'), 90, 10);
+        makeup(p, rg(p, 'bravo'), 50, 50);
+        makeup(p, rg(p, 'charlie'), 50, null);
+        makeup(p, rg(p, 'delta'), 30, 70);
+      });
+      x = I().ofRule('planMakeup').filter(function (i) { return i.regionIds[0] === 'alpha'; })[0];
+      a.ok(x, 'charlie gives no customer growth: still compared over the others');
+      // Hand-worked: bravo and delta, 80 of 200 = 40%
+      if (x) a.ok(/, against 40% on average in the other regions that give both parts\.$/.test(x.sentence), 'says so: ' + x.sentence);
     });
 
     when(PLAN, 'TPV-TC-490', 'Plan make-up attaches to the ambition report and highlights the region’s bar', function (a) {
