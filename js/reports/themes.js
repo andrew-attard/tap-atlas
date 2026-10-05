@@ -73,9 +73,13 @@
   function address(src) { try { return TAP.sources.address(src).text || ''; } catch (e) { return ''; } }
   function focusOf(cmp) { return cmp && (cmp.mode === 'one' || cmp.mode === 'pair') ? cmp.focus : null; }
 
+  function hlTheme(ctx) { return ctx.highlight && ctx.highlight.reportId === ctx.def.id ? ctx.highlight.theme || null : null; }
+  // A pick's value names the theme highlighted when it was made ("partners@references"), so the newer of the two
+  // wins: a theme highlighted after the pick replaces it, and a pick made while it was highlighted replaces it.
+  function pickValue(id, hl) { return hl ? id + '@' + hl : id; }
   function selected(ctx, list) {
-    var hl = ctx.highlight && ctx.highlight.reportId === ctx.def.id ? ctx.highlight.theme : null;
-    var want = (ctx.opts && ctx.opts.theme) || hl;
+    var hl = hlTheme(ctx), parts = String((ctx.opts && ctx.opts.theme) || '').split('@'), under = parts[1] || null;
+    var want = parts[0] && (!hl || hl === under) ? parts[0] : hl;
     var hit = list.filter(function (x) { return x.id === want; })[0];
     return hit || list.filter(function (x) { return x.regions.length; })[0] || list[0] || null;
   }
@@ -84,7 +88,7 @@
     return '<ol class="tap-themes__bars" aria-label="' + esc(t('barsLabel')) + '">' + list.map(function (x) {
       var on = pick && x.id === pick.id, n = x.regions.length;
       return '<li><button type="button" class="tap-themes__bar' + (on ? ' is-selected' : '') + (hl === x.id ? ' is-hl' : '') +
-        '" data-tap-opt="theme" data-tap-value="' + esc(x.id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+        '" data-tap-opt="theme" data-tap-value="' + esc(pickValue(x.id, hl)) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
         '<span class="tap-themes__label">' + esc(x.label) + '</span>' +
         '<span class="tap-themes__track"><span class="tap-themes__fill" style="width:' + (total ? Math.round(100 * n / total) : 0) + '%"></span></span>' +
         '<span class="tap-themes__n">' + esc(t('regions', { n: n, total: total })) + '</span></button></li>';
@@ -132,11 +136,11 @@
     var K = TAP.shapes.kit, ids = TAP.scope.regionIds(ctx.cmp), list = all(ids), pick = selected(ctx, list);
     var none = !list.length || !TAP.data.regions().some(function (r) { return ids.indexOf(r.id) >= 0 && texts(r).length; });
     var unmentioned = list.filter(function (x) { return !x.regions.length; }).map(function (x) { return x.label; });
-    var hl = ctx.highlight && ctx.highlight.reportId === ctx.def.id ? ctx.highlight.theme : null;
+    var hl = hlTheme(ctx);
     var res = K.result(ctx.def, null, { empty: none, missing: silentRegions(ids), table: table(list, ids),
       notes: [t('counted')].concat(unmentioned.length ? [t('notMentioned', { list: TAP.format.list(unmentioned) })] : []),
-      controls: [{ key: 'theme', label: t('pick'), kind: 'select', value: pick ? pick.id : null,
-        options: list.map(function (x) { return { value: x.id, label: x.label }; }) }] });
+      controls: [{ key: 'theme', label: t('pick'), kind: 'select', value: pick ? pickValue(pick.id, hl) : null,
+        options: list.map(function (x) { return { value: pickValue(x.id, hl), label: x.label }; }) }] });
     if ((ctx.type || ctx.def.defaultType) !== 'table' && !none) {
       res.html = '<div class="tap-themes">' + bars(list, ids.length, pick, hl) + quotes(pick, focusOf(ctx.cmp)) + '</div>';
     }

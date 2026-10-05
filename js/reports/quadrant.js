@@ -217,14 +217,15 @@
     return { label: t('quadrant.sizeLegend', { measure: k().lower(col.label) }), kind: TAP.format.kind(col.kind).text,
       items: [max, max / 4, max / 16].map(function (v) { return { d: Math.round(f(v)), text: TAP.format.cell({ v: v, state: 'value' }, { unit: col.unit }) }; }) };
   }
-  function table(def, rows, sizeCol) {
+  // With one industry filtered, the bubbles carry their region's number, so the table does too.
+  function table(def, rows, sizeCol, filtered) {
     var C = function (key, label, unit, align) { return { key: key, label: label, unit: unit, align: align }; };
     var cols = [C('entity', t('chart.entityColumn'), 'text', 'left'), C('num', t('quadrant.numberColumn'), 'text', 'right'), C('industry', t('chart.industryColumn'), 'text', 'left'),
       C(def.y, TAP.measures.meta(def.y).label, 'score', 'right'), C(def.x, TAP.measures.meta(def.x).label, 'score', 'right')]
       .concat(sizeCol ? [C(sizeCol.key, sizeCol.label, sizeCol.unit, 'right')] : [], [C('quadrant', t('quadrant.area'), 'text', 'left')]);
     return { columns: cols, rows: rows.map(function (r) {
       var q = TAP.scores.quadrant(r.y, r.x), cells = { entity: { v: r.g.label, state: 'value', kind: null },
-        industry: { v: r.ind.name, state: 'value', kind: null }, num: { v: String(industryNo(r.ind.id)), state: 'value', kind: null },
+        industry: { v: r.ind.name, state: 'value', kind: null }, num: { v: String(filtered ? regionNo(r.g) : industryNo(r.ind.id)), state: 'value', kind: null },
         quadrant: q ? { v: areaLabel(q), state: 'value', kind: 'APP' } : { v: null, state: 'notProvided', kind: 'APP' } };
       cells[def.y] = r.y; cells[def.x] = r.x;
       if (sizeCol) cells[sizeCol.key] = r.s;
@@ -284,7 +285,7 @@
     var sizeId = type === 'scatter' ? null : (ctx.sizeId || (def.size && def.size.default) || null);
     var sm = sizeId && TAP.measures.meta(sizeId), sizeCol = sm ? { key: sizeId, label: sm.label, unit: sm.unit, kind: sm.kind } : null;
     var rows = collect(def, gs, filter ? [filter] : all, sizeId), drawn = chart(ctx, rows, gs, sizeCol, perRegion, !!filter), gap = missing(ctx, def);
-    var res = K.result(def, null, { table: table(def, rows, sizeCol), notes: notes(def, rows, perRegion, gs, drawn.paired), missing: gap.names, empty: gap.empty,
+    var res = K.result(def, null, { table: table(def, rows, sizeCol, !!filter), notes: notes(def, rows, perRegion, gs, drawn.paired), missing: gap.names, empty: gap.empty,
       legend: legend(gs, all, drawn.pts, !!filter),
       sizeLegend: drawn.sizeLegend, controls: controls(opts, all, gs, perRegion), takeaway: takeaway(gs, drawn.pts, perRegion),
       target: function (prm) {
