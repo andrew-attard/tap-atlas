@@ -189,6 +189,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
+| `docs/PUBLISHING.md` | How to put the sample edition on the web with GitHub Pages, and what to check after (Pages is not switched on) |
 | `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md` | How the builds were organized (background only) |
 
 ### `tests/`, `tools/`, `scripts/`, `vendor/`
@@ -208,6 +209,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `tools/generate-sample-data.js` | Rebuilds the sample data from `tools/sample-settings.js` (helpers: `tools/sample-*.js`) |
 | `tools/lint.js` | Checks the house rules: headers, file size, no web calls, no stray colours |
 | `tools/check-docs.js` | Checks every path the docs name exists |
+| `tools/check-docs3.js` | Checks the handover and portfolio files: the sample edition uses relative paths and exact file names, so it also works from a web host |
 | `tools/build-pages.js` | Writes the script list into the three pages |
 | `tools/build-auto-cases.js` | Writes `tests/auto-cases.js` from the Test Plan |
 | `tools/parse-results.js` | Reads a headless test run and reports the results |

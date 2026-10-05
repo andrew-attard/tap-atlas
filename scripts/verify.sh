@@ -2,7 +2,7 @@
 # File: scripts/verify.sh
 # Purpose: Runs every local check in order (lint, denylist, ignored files, docs paths, browser tests) before a pull request.
 # Provides: CLI `scripts/verify.sh [--release] [--browser chrome|edge|both]`; exit 1 if any step fails
-# Depends on: tools/lint.js, tools/check-docs.js, scripts/check-text.sh, scripts/test-headless.sh, git, Node
+# Depends on: tools/lint.js, tools/check-docs.js, tools/check-docs3.js, scripts/check-text.sh, scripts/test-headless.sh, git, Node
 # Used by: developers and agents before opening a pull request (see CONTRIBUTING.md)
 
 set -u
@@ -73,6 +73,8 @@ if [ -f scripts/qa/make-qa-page.js ]; then
 fi
 # Every path the README and docs name must exist (TPV-TC-204)
 step "docs paths" "$node_bin" tools/check-docs.js
+# Handover and portfolio file checks (Phase 3)
+step "handover and portfolio" "$node_bin" tools/check-docs3.js
 # The committed sample data must be exactly what the generator writes (US-1.3.3)
 if [ -f tools/generate-sample-data.js ]; then
   step "sample data reproducible" "$node_bin" tools/generate-sample-data.js --check
