@@ -297,6 +297,25 @@
       });
     });
 
+    // Review fix #376 (SV-10): the Regions key opens the region picker, as the menu does (US-2.4.1)
+    T.test('X-review-SV-10', 'The Regions number key opens the region picker, not the last profile', function (a) {
+      withKeys(function (root) {
+        var key = String(TAP.views.order().indexOf('regions') + 1), first = TAP.data.regions()[0].id;
+        TAP.store.set({ view: 'regions', region: first });
+        press('1');
+        a.equal(TAP.store.get().view, TAP.views.order()[0], '1 leaves the profile');
+        press(key);
+        a.equal(TAP.store.get().view, 'regions', key + ' opens Regions');
+        a.equal(TAP.store.get().region, null, 'on the picker');
+        TAP.store.set({ region: first });
+        press(key);
+        a.equal(TAP.store.get().region, null, 'from a profile, the Regions key goes back to the picker, as the menu does');
+        TAP.store.set({ view: 'overview' });
+        root.querySelector('.tap-menu__item[data-view="regions"]').click();
+        a.equal(TAP.store.get().region, null, 'the menu opens the picker too');
+      });
+    });
+
     T.test('X-int-keys-typing', 'Digits typed in a field never switch views', function (a) {
       withKeys(function (root) {
         var input = TAP.dom.el('input', { type: 'text' }), sel = TAP.dom.el('select', null, [TAP.dom.el('option', null, 'x')]);
