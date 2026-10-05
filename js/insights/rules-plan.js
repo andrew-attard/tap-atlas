@@ -65,7 +65,8 @@
       var x = compare(u, 'amb.nbShare', r, ids);
       if (!x || Math.abs(x.gap) < p.gap - SLACK) return null;
       var amb = u.m('amb.arr', r);
-      return { key: r, regionIds: [r], provided: ids.length, measureId: 'amb.arr',
+      // A region left out is said in the sentence, since the chart's rest bar still counts it (D79)
+      return { key: r, regionIds: [r], provided: ids.length, measureId: 'amb.arr', variant: ids.length < u.regions().length ? 'gaps' : null,
         vars: { region: u.name(r), share: u.pct(x.mine.v), avg: u.pct(x.rest.v) },
         figures: figures(u, x, r, ids.length - 1).concat([u.fig('nb.arr', u.name(r), u.m('nb.arr', r)),
           u.fig('cg.arr', u.name(r), u.m('cg.arr', r))]),
