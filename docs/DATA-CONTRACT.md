@@ -251,7 +251,7 @@ regions: [{ id: 'north', ..., extra: { events: [
   { sourceRow: 9, event: 'Healthcare roundtable', invited: 15, budget: null, perAccount: null } ] } }]
 ```
 
-The example is the sample's fictional section, shortened. Extra sections are for data only: anything the app should calculate, chart or compare needs a measure and a report definition.
+The example is the sample's fictional section, shortened. Extra sections are for data only: anything the app should calculate, chart or compare needs a measure and a report definition: see `docs/EXTENDING-TEMPLATE.md`.
 
 ---
 
