@@ -41,7 +41,7 @@ const APP = [
   'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel.js',
   'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/explain.js', 'js/ui/tour.js',
-  'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/present.js',
+  'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/present-steps.js', 'js/ui/present.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
   'js/views/customers.js', 'js/views/partners.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/ui/custom-builder.js', 'js/views/guide.js',
   'js/ui/app.js'

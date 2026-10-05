@@ -1,7 +1,8 @@
 /*
  * File: js/ui/sources-panel.js
  * Purpose: The data sources panel body: per region the file, its saved date, the import date and the import notes;
- *          whether import dates differ; then other notes worth checking and insight rules that were skipped.
+ *          whether import dates differ; then other notes worth checking, insight rules that were skipped and running
+ *          order steps that were left out (US-3.1.1).
  *          Import notes appear here and nowhere else (US-1.1.5).
  * Provides: TAP.sourcesPanel (render)
  * Depends on: js/core/sources.js (imports, datesDiffer, dataDate), js/core/store.js (TAP.notes), js/core/data.js,
@@ -53,7 +54,7 @@
 
   // Notes from the app itself (data checks, colours, the organization file, insights), placed by region if given.
   function otherNotes(imports) {
-    var list = TAP.notes.list();
+    var list = TAP.notes.list().filter(function (n) { return n.source !== 'presentation'; });   // listed on their own
     if (!list.length) return null;
     var files = {};
     imports.forEach(function (i) { files[i.regionId] = i.fileName; });
@@ -79,6 +80,17 @@
     ]);
   }
 
+  // Running order steps left out when presentation mode started (US-3.1.1), under their own heading.
+  function presentNotes() {
+    var list = TAP.notes.list('presentation');
+    if (!list.length) return null;
+    return el('section', { class: 'tap-src__notes tap-src__present' }, [
+      el('h3', null, t('present.sourcesTitle')),
+      el('p', null, t('present.sourcesIntro')),
+      el('ul', null, list.map(function (n) { return note(n.message, ''); }))
+    ]);
+  }
+
   function render(root) {
     TAP.dom.clear(root);
     var imports = TAP.sources.imports();
@@ -92,7 +104,7 @@
         : null
     ]);
     imports.forEach(function (imp) { root.appendChild(region(imp)); });
-    TAP.dom.append(root, [otherNotes(imports), failures()]);
+    TAP.dom.append(root, [otherNotes(imports), failures(), presentNotes()]);
     return root;
   }
 
