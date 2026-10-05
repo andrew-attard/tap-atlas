@@ -215,6 +215,28 @@
       a.ok(div.querySelector('[data-tap-value="marketing"]').classList.contains('is-selected'), 'the bar shows as selected');
     });
 
+    when(THEMES, 'X-review-RI-12', 'A theme highlighted after a pick wins; a pick made while it is highlighted wins over it', function (a) {
+      themeSample();
+      var def = TAP.reports.get('nb-themes'), c = TAP.store.defaults().cmp, HL = { reportId: 'nb-themes', theme: 'references', mark: 'bar' };
+      var run = function (opts, hl) {
+        var res = TAP.builders.get('themes')({ def: def, type: 'bar', cmp: c, entities: TAP.scope.entities(c), opts: opts, highlight: hl });
+        var div = document.createElement('div');
+        TAP.dom.html(div, res.html);
+        var title = div.querySelector('.tap-themes__title');
+        return { res: res, div: div, title: title ? title.textContent : '' };
+      };
+      var valueOf = function (r, label) { return r.res.controls[0].options.filter(function (o) { return o.label === label; })[0].value; };
+      // 1. Partners picked first, then the References insight highlighted from the panel: References wins
+      var first = run({}, null), picked = valueOf(first, 'Partners');
+      var after = run({ theme: picked }, HL);
+      a.equal(after.title, 'References: what leaders wrote', 'the quotes follow the highlighted theme');
+      a.ok(after.div.querySelector('.tap-themes__bar.is-hl').classList.contains('is-selected'), 'the outlined bar is the selected one');
+      // 2. While References is highlighted, Partners is picked: the viewer's pick wins
+      var again = run({ theme: valueOf(after, 'Partners') }, HL);
+      a.equal(again.title, 'Partners: what leaders wrote', 'a pick made while highlighted shows its quotes');
+      a.equal(run({ theme: picked }, null).title, 'Partners: what leaders wrote', 'with no highlight, the pick holds');
+    });
+
     when(THEMES, 'TPV-TC-468', 'Themes in 3 and 4 regions give insights, one in 2 does not; at a threshold of 2 all three do', function (a) {
       var C = window.TAP_COMMENT_THEMES, was = C.minRegions;
       // references: alpha, bravo, charlie; product gaps: bravo, delta; partners: all four
