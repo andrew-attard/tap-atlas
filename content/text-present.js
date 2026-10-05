@@ -28,6 +28,29 @@ Object.assign(window.TAP_CONTENT.text, {
     leave: 'Leave',
     leaveKeys: 'Esc',
 
+    // Recording from the screen (US-3.1.3)
+    add: 'Add to running order',
+    added: 'Added as step {n} of the running order you are recording. The Guide lists it.',
+    guide: {
+      title: 'Running order',
+      intro: 'Steps you added with "Add to running order" in a chart’s More menu, kept in this browser only. Try them, then copy them as the text of config/running-order.js and paste it over that file, so "Present" plays them on any laptop.',
+      none: 'No steps recorded yet. Open a chart’s More menu and choose "Add to running order".',
+      up: 'Move up',
+      down: 'Move down',
+      remove: 'Remove',
+      try: 'Try this order',
+      copy: 'Copy running order',
+      clear: 'Remove all',
+      cleared: 'The recorded steps are removed.',
+      presentFile: 'Present the running order file',
+      copied: 'Copied. Paste it over config/running-order.js in the app folder, then reload.',
+      copyFailed: 'The browser didn’t allow copying. Select the text below and copy it.',
+      textLabel: 'The running order as file text',
+      insight: 'Insight',
+      custom: 'Custom chart',
+      by: 'by {dim}'
+    },
+
     // Steps left out of the running order, listed in the data sources panel only (US-3.1.1)
     sourcesTitle: 'Running order',
     sourcesIntro: 'Steps of the running order that were left out when presentation mode started.',

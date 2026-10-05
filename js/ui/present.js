@@ -4,11 +4,12 @@
  *          comparison and highlight, then puts the screen back as it was (Epic 3.1, D65, D70). Recording steps from
  *          the screen lives in js/ui/present-record.js; checking them in js/ui/present-steps.js.
  * Provides: TAP.present (check, start, stop, next, prev, first, current, active, record, recorded, move, remove,
- *           clearRecorded, asFileText, button)
- * Depends on: config/running-order.js, js/ui/present-steps.js, js/panel/panel.js, js/panel/panel-drill.js (keys),
+ *           clearRecorded, asFileText, button, fromPanel)
+ * Depends on: config/running-order.js, js/ui/present-steps.js, js/ui/present-record.js, js/panel/panel.js, js/panel/panel-drill.js (keys),
  *             js/core/store.js, js/core/dom.js, js/core/icons.js, js/core/content.js, js/ui/shell.js, js/ui/layers.js
  *             (all at call time)
- * Used by: js/ui/shell.js (Present button), js/ui/keys.js (P), js/views/guide.js (recorded steps, through Guide extras)
+ * Used by: js/ui/shell.js (Present button), js/ui/keys.js (P), js/panel/panel-menus.js (Add to running order),
+ *          js/ui/present-record.js (the Guide's Try this order)
  * Owner: PRESENT stream (#233)
  *
  * While presenting, this owns Space, Right, Left, Backspace, Home and Esc (D70). The panel's own keys (drill steps,
@@ -214,16 +215,10 @@
     return { n: run.i + 1, total: run.steps.length, title: s.title, reportId: s.reportId, kind: s.kind, index: s.index };
   }
 
-  // Recording from the screen comes with US-3.1.3 (#234), in js/ui/present-record.js.
-  var REC = ['record', 'recorded', 'move', 'remove', 'clearRecorded', 'asFileText'];
-  TAP.stub('presentRecord', REC, 234);
-
   TAP.present = { check: check, start: start, stop: stop, next: next, prev: prev, first: first, current: current,
     active: active, button: button };
-  // Each keeps the stub mark while recording isn't built, so other streams' tests can wait for it
-  REC.forEach(function (fn) {
-    var w = function () { return TAP.presentRecord[fn].apply(null, arguments); };
-    if (TAP.presentRecord.__stub) w.__stub = TAP.presentRecord.__stub;
-    TAP.present[fn] = w;
+  // Recording from the screen (US-3.1.3) lives in js/ui/present-record.js; read at call time.
+  ['record', 'recorded', 'move', 'remove', 'clearRecorded', 'asFileText', 'fromPanel'].forEach(function (fn) {
+    TAP.present[fn] = function () { return TAP.presentRecord[fn].apply(null, arguments); };
   });
 })(window.TAP);
