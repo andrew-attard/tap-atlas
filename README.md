@@ -199,6 +199,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
+| `docs/CASE-STUDY.md` | The case study: the brief, the constraints, the key decisions, the delivery method and what each phase delivered |
 | `docs/index.html` | The portfolio landing page: the problem, what the app does, screenshots, how it was built, and a button that opens the sample edition |
 | `docs/screenshots/*.png` | One screenshot per view of the sample edition at 1440 x 900, for the landing page and case study. Made by `scripts/portfolio-shots.sh`: never edit by hand |
 | `docs/PUBLISHING.md` | How to put the sample edition on the web with GitHub Pages, and what to check after (Pages is not switched on) |
