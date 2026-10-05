@@ -204,8 +204,10 @@ button.tap-panel__crumb {
 .tap-panel__html--list th.tap-list__num .tap-panel__colkind { justify-content: flex-end; }
 .tap-panel__kind-key {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-4); margin: var(--tap-sp-2) 0 0;
-  font-size: var(--tap-fs-label); color: var(--tap-muted);
+  font-size: var(--tap-fs-body); color: var(--tap-muted);
 }
+/* The key is a sentence under the table, so it reads at body size (D24); its kind marks follow it */
+.tap-panel__kind-key .tap-kind { font-size: inherit; }
 .tap-panel__kind-key-label { font-weight: 600; }
 
 /* Legend and size legend: HTML under the chart, so they stay readable and selectable */
