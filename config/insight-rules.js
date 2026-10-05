@@ -164,6 +164,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     reads: ['newBusiness.arrPotential', 'customerGrowth.accounts.incrementalArr'], params: { gap: 0.2 }, compare: true,
     scoring: 'Strength: the gap against twice the threshold. Money: the region’s three-year ARR ambition.',
     template: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average elsewhere.',
+    templates: { gaps: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average in the other regions that give both parts.' },
     attach: ['ov-ambition'], highlight: 'bar' });
 
   /* ---------- shared (US-2.5.3, US-2.5.4) ---------- */
