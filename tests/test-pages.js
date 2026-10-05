@@ -243,7 +243,10 @@
         var links = qsa('.tap-guide__toc button', root);
         a.deepEqual(links.map(txt), g.contents.map(function (c) { return c.title; }), 'contents list titles, in order');
         var secs = qsa('.tap-guide__sec', root).map(function (n) { return n.getAttribute('data-guide'); });
-        a.deepEqual(secs, ['howTo', 'planning', 'glossary'], 'three sections, in order');
+        // Sections other streams add (TAP.guideExtras, ARCHITECTURE 18.1) sit after planning and before the glossary
+        var extra = (TAP.guideExtras || []).map(function (x) { return x.id; });
+        a.deepEqual(secs.filter(function (id) { return extra.indexOf(id) < 0; }), ['howTo', 'planning', 'glossary'], 'three sections, in order');
+        a.deepEqual(secs.slice(2, secs.length - 1), extra, 'the added sections come after planning and before the glossary');
         var toc = root.querySelector('.tap-guide__toc');
         a.ok(toc.compareDocumentPosition(root.querySelector('.tap-guide__sec')) & Node.DOCUMENT_POSITION_FOLLOWING, 'contents come first');
         links[2].click();
@@ -310,6 +313,8 @@
         var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, stray = [];
         while ((n = walker.nextNode())) {
           if (gloss && gloss.contains(n)) continue;   // the glossary list is CONTENT's, checked in its own tests
+          var ext = n.parentNode && n.parentNode.closest ? n.parentNode.closest('.tap-guide__extra') : null;
+          if (ext) continue;   // an added section's words (some from the data) are checked by the stream that adds it
           var s = n.nodeValue.replace(/\s+/g, ' ').trim();
           // Key numbers in the shortcut list (US-2.6.3) are numbers, not wording
           if (s && all.indexOf(s) < 0 && !isViewLink(s) && !/^\d$/.test(s)) stray.push(s);
