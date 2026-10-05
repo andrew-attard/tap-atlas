@@ -252,7 +252,7 @@ One registry feeds reports, cards, headline and insights, so figures can't drift
 | `nb.avgDealSize` | Average deal size, weighted by implied wins | rate / IN |
 | `nb.growthY2`, `nb.growthY3` | Growth assumptions, weighted by 3-year new business ARR potential | rate / IN |
 | `nb.servicesRatio` | Services ratio, weighted by ARR | rate / PRE |
-| `cg.growthY1..3` | Customer growth % per year, weighted by current ARR | rate / IN |
+| `cg.growthY1..3` | Customer growth % per year: `cg.growth.all` for that year, combined from summed parts (D78) | rate / APP |
 | `cg.segment.strategic`, `.growth`, `.core`, `.scaled` | Accounts per segment | count / DER |
 | `ind.tier` | Tier for an industry (`ctx.industryId`) | category / IN |
 | `ind.growthPotential`, `ind.criticality`, `ind.competitiveIntensity`, `ind.references`, `ind.expertise`, `ind.productFit` | Ratings 1 to 3 | rating / IN |
@@ -342,7 +342,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 
 ## 11. Panel, views and side panels
 
-- `TAP.panel.create(el, reportId, opts)` returns `{id, el, refresh(), highlight(target), expand(on), destroy()}`. The panel owns the title, takeaway, chart or table, legend, source line and controls (US-1.2.2). It re-renders on store changes.
+- `TAP.panel.create(el, reportId, opts)` returns `{id, el, refresh(), highlight(target), expand(on), destroy()}`. The panel owns the title, takeaway, chart or table, legend, source line and controls (US-1.2.2). It re-renders on store changes. With `opts.local: true` (presentation steps) the panel never takes `state.highlight`, and "Highlight on chart" from its own insight list stays inside the panel. A target from a panel's own insight list carries the finding's `measureId`, as a store target does (D79).
 - `TAP.views.register(id, { title, mount(el) })`. `mount` returns `{destroy()}`. `TAP.views.get(id)` and `TAP.views.order()` read `TAP_VIEWS` (`js/engine/registry.js`).
 - `TAP.layers.open(name, payload)`, `close()` and `openDetails(target)` handle the side panels, one at a time. They don't block the page.
   - Built-in names: `'sources'`, `'details'` and `'glossary'` (`payload.termId`, drawn with `TAP.glossary.render`).
@@ -399,7 +399,7 @@ TAP_RULES.rules.push({ id: 'consensus', family: 'priorities', enabled: true,
 ```
 
 **Engine:** `TAP.insights.all()` is computed once against all regions. The functions built on it are:
-- `ranked(cmp, {reportId, family, regionId})`: insights in scope, with the focus region's insights first, then by significance;
+- `ranked(cmp, {reportId, family, regionId})`: insights in scope: figure-based insights first, then the `themes` family (D80); within each group the focus region's insights first, then by significance. `all()` uses the same order;
 - `top(cmp, reportId, n)`;
 - `hide(id)` / `unhide(id)` / `hidden()`, held in session state only;
 - `failures()`: rules that threw, which are shown in the data sources panel.
@@ -579,7 +579,7 @@ All return cells as in section 9; ids other streams may rely on:
 | `pt.count`, `pt.fte`, `pt.arr`, `pt.services`, `pt.oiPerFte` | Partners named, sales plus consultant FTE, three-year ARR and services, order intake per FTE (partners with FTE only) | count, count, amount, amount, rate / IN or APP | year (`pt.arr`, `pt.services`) |
 | `amb.nbShare` | Share of three-year ARR ambition from new business; combined from summed parts | rate / APP | — |
 
-`TAP.measures.combined` keeps working for every id; shares and ratios that must be combined from parts say so in their meta (`combine: 'ratioOfSums'`) and `combined` honours it.
+`TAP.measures.combined` keeps working for every id; shares and ratios that must be combined from parts say so in their meta (`combine: 'ratioOfSums'`) and `combined` honours it. Row-weighted rates (`nb.hitRate`, `nb.avgDealSize`, `nb.growthY2/3`, `nb.servicesRatio`) carry `combine: 'rowWeights'`: a region's cell keeps `ratio: {num, den}`, rows with a value but a blank weight are left out and the cell is partly provided, and a combined figure weighs each region by the `den` its own figure used (D78). A report's `options.weights` still overrides.
 
 ### 17.6 Drill-down (US-2.7.1, PANEL2)
 
