@@ -69,8 +69,9 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
   var bk = {
     withChannel: 'Books value, {channel}',
     oi: { label: 'Order intake through the organization’s books', short: 'Books value' },
-    gap: { label: 'Customer value minus books value', short: 'Difference' },
-    gapShare: { label: 'Share of customer value not in the books value', short: 'Difference %' }
+    // ARR and services on both sides: customer value holds no software perpetual or hardware
+    gap: { label: 'Customer value minus books value, ARR and services', short: 'Difference' },
+    gapShare: { label: 'Share of customer value not in the books value, ARR and services', short: 'Difference %' }
   };
   var sp = {
     oi: { label: 'Strategic plan order intake', short: 'Strategic plan' },

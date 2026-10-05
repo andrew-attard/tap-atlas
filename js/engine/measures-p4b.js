@@ -80,29 +80,18 @@
   /* ---------- new business by solution ---------- */
 
   function named(row) { return row.solution != null && row.solution !== ''; }
-  // Sums a by-year field over the region's rows, or over the rows of ctx.solution ('none': rows naming no solution).
-  // A region where no row names a solution has not filled the column: not provided. A filled column with no row
-  // for the solution in context is zero.
-  function bySolution(field) {
+  // The new business figure (nb.arr, nb.services), for all rows or those of ctx.solution, read by the same rule so
+  // the two can never disagree. A region where no row names a solution has not filled the column: not provided.
+  function bySolution(id, field) {
     return function (r, ctx) {
       ctx = ctx || {};
-      var all = k4.region(r).newBusiness || [], used = [], total = 0, partial = false;
-      var rows = !ctx.solution ? all : all.filter(function (row) { return k4.valueOf('solutions', row.solution) === ctx.solution; });
-      rows.forEach(function (row) {
-        var v = k.byYear(row[field], ctx.year);
-        if (!k.isNum(v.v)) return;
-        total += v.v;
-        partial = partial || !!v.partial;
-        used.push(row.sourceRow);
-      });
-      var s = k.src(r, 'newBusiness', field, used.length ? used : k2.rows(rows), ctx.year, 'DER');
-      if (!all.some(named) || (rows.length && !used.length)) return k.blank('DER', s);
-      return k.cell(total, 'DER', s, partial ? k2.partialYears() : null);
+      if (!(k4.region(r).newBusiness || []).some(named)) return k.blank('DER', k.src(r, 'newBusiness', field, [], ctx.year, 'DER'));
+      return M.get(id)(r, { year: ctx.year || null, solution: ctx.solution || null });
     };
   }
   var YS = ['year', 'solution'];
-  M.define('nb.arr.sol', k4.p4(k.amount('DER', YS)), bySolution('arrPotential'));
-  M.define('nb.services.sol', k4.p4(k.amount('DER', YS)), bySolution('servicesPotential'));
+  M.define('nb.arr.sol', k4.p4(k.amount('DER', YS)), bySolution('nb.arr', 'arrPotential'));
+  M.define('nb.services.sol', k4.p4(k.amount('DER', YS)), bySolution('nb.services', 'servicesPotential'));
   // A sum made by this app, as nb.oi is: its parts always add up, also when combined
   M.derive('nb.oi.sol', ['nb.arr.sol', 'nb.services.sol'], k4.p4(k.amount('APP', YS)));
 

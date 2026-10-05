@@ -104,7 +104,7 @@
 
   /* ---------- new business: order intake, tiers and industries ---------- */
 
-  M.derive('nb.oi', ['nb.arr', 'nb.services'], k.amount('APP', ['year', 'industry']));
+  M.derive('nb.oi', ['nb.arr', 'nb.services'], k.amount('APP', ['year', 'industry', 'solution']));   // solution: Phase 4 (19.2)
 
   // New business in the region's Tier 1 or Tier 2 industries, as Market Coverage sets them: the sum of each
   // industry's figure, read as nb.arr or nb.services for that industry, so a tier industry with no row is not

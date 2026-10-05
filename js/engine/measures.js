@@ -4,7 +4,8 @@
  *          figures can't drift apart. Each measure returns a full cell with its source (ARCHITECTURE section 7).
  * Provides: TAP.measures (get, meta, define, list, combined, derive, DERIVED: the derived sums and their parts,
  *           kit: cell helpers for js/engine/measures-p2.js)
- * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/engine/aggregate.js (at call time).
+ * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/engine/aggregate.js, js/engine/measures-p4.js
+ *             (kit4: the solution a new business row names) (at call time).
  *             js/engine/scores.js adds the ind.* measures
  * Used by: prepare, builders, cards, headline, insights, details
  */
@@ -43,7 +44,11 @@
   function inIndustry(rows, ctx) {
     return (rows || []).filter(function (r) { return !ctx.industryId || r.industryId === ctx.industryId; });
   }
-  function nbRows(id, ctx) { return inIndustry(region(id).newBusiness, ctx); }
+  // New business rows in context: the industry and, from Phase 4, the solution a row names ('none': it names none)
+  function nbRows(id, ctx) {
+    var rows = inIndustry(region(id).newBusiness, ctx);
+    return !ctx.solution ? rows : rows.filter(function (r) { return TAP.measures.kit4.valueOf('solutions', r.solution) === ctx.solution; });
+  }
   function accounts(id, ctx) { return inIndustry((region(id).customerGrowth || {}).accounts, ctx); }
   function mcRows(id, ctx) { return inIndustry(region(id).marketCoverage, ctx); }
   function rowNums(rows) { return rows.map(function (r) { return r.sourceRow; }); }
@@ -99,7 +104,7 @@
    * zero; an empty list is not provided (the normal path). Returns null when the rows decide.
    */
   function nbGap(r, ctx, kind, field) {
-    if (!ctx.industryId || nbRows(r, ctx).length) return null;
+    if (!ctx.industryId || inIndustry(region(r).newBusiness, ctx).length) return null;
     var ind = TAP.data.industry(ctx.industryId);
     var mc = TAP.data.row(r, 'marketCoverage', function (d) { return d.industryId === ctx.industryId; });
     var s = src(r, 'newBusiness', field, [], ctx.year, kind);
@@ -121,16 +126,21 @@
   function amount(kind, dims) { return { unit: 'money', valueKind: 'amount', kind: kind, dims: dims }; }
   function count(kind, dims) { return { unit: 'count', valueKind: 'count', kind: kind, dims: dims }; }
   function rate(kind, weightBy, dims) { return { unit: 'pct', valueKind: 'rate', kind: kind, weightBy: weightBy, dims: dims }; }
-  var NB = ['year', 'industry'], ROWS = ['industry'];
+  var NB = ['year', 'industry'], ROWS = ['industry'], NBS = NB.concat('solution');
 
   function sums(id, m, getRows, section, field, pick) {
     define(id, m, function (r, ctx) {
       ctx = ctx || {};
-      return gap(section, r, ctx, m.kind, field) || sumRows(r, section, field, m.kind, getRows(r, ctx), ctx, pick(ctx));
+      var none = gap(section, r, ctx, m.kind, field), rows = none ? [] : getRows(r, ctx);
+      // Rows exist, none for the solution in context: zero, so the solutions add up to the figure
+      if (!none && ctx.solution && !rows.length && getRows(r, Object.assign({}, ctx, { solution: null })).length) {
+        return cell(0, m.kind, src(r, section, field, [], ctx.year, m.kind));
+      }
+      return none || sumRows(r, section, field, m.kind, rows, ctx, pick(ctx));
     });
   }
-  sums('nb.arr', amount('DER', NB), nbRows, 'newBusiness', 'arrPotential', yearSum('arrPotential'));
-  sums('nb.services', amount('DER', NB), nbRows, 'newBusiness', 'servicesPotential', yearSum('servicesPotential'));
+  sums('nb.arr', amount('DER', NBS), nbRows, 'newBusiness', 'arrPotential', yearSum('arrPotential'));
+  sums('nb.services', amount('DER', NBS), nbRows, 'newBusiness', 'servicesPotential', yearSum('servicesPotential'));
   sums('cg.arr', amount('DER', NB), accounts, 'customerGrowth', 'incrementalArr', yearSum('incrementalArr'));
   sums('cg.services', amount('DER', NB), accounts, 'customerGrowth', 'servicesOrderIntake', yearSum('servicesOrderIntake'));
   sums('base.arr', amount('PRE', ROWS), mcRows, 'marketCoverage', 'currentArr', plain('currentArr'));
