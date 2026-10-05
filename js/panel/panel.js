@@ -163,7 +163,9 @@
     }
     // A highlight for another chart changes nothing here, so only the chart it was or is for redraws
     var hl = highlightOf(p, s), mine = !!hl || !!p.drewHl;
-    var only = changed.filter(function (k) { return REDRAW.indexOf(k) >= 0; });
+    // Another chart opening or closing changes nothing here: only the chart whose own expanded state moved redraws
+    var moved = (s.expanded === p.id) !== !!p.big;
+    var only = changed.filter(function (k) { return REDRAW.indexOf(k) >= 0 && (k !== 'expanded' || moved); });
     if (only.length && !(only.length === 1 && only[0] === 'highlight' && !mine)) render(p);
   }
 
