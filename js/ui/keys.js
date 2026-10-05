@@ -4,7 +4,8 @@
  *          view needs no change here; the Guide lists the keys from the same order), P starts presentation mode
  *          (US-3.1.2), and one Esc order across popovers, side panels and expanded charts.
  * Provides: TAP.keys (bind, unbind, viewFor)
- * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js, js/ui/present.js (all read at call time)
+ * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js, js/ui/present.js,
+ *             js/panel/panel-drill.js (TAP.panelKeys.typing), js/panel/panel-expand.js (collapse) (all read at call time)
  * Used by: js/ui/app.js (bound at start-up)
  *
  * The Esc order: a glossary popover closes first (it listens in the capture phase), then a panel's or the
@@ -18,11 +19,8 @@
 
   var bound = null;
 
-  // Typing in a field never switches views.
-  function typing(node) {
-    if (!node || !node.tagName) return false;
-    return /^(input|select|textarea)$/i.test(node.tagName) || !!node.isContentEditable;
-  }
+  // Typing in a field never switches views (the panel's shared check).
+  function typing(node) { return TAP.panelKeys.typing(node); }
 
   function tourOn() { return !!document.querySelector('.tap-tour, .tap-tour-welcome'); }
 
@@ -32,10 +30,7 @@
     return TAP.views.order()[Number(key) - 1] || null;
   }
 
-  function closeExpanded() {
-    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () { /* already out */ });
-    TAP.store.set({ expanded: null });
-  }
+  function closeExpanded() { TAP.panelExpand.collapse(); }   // also leaves full screen
 
   function presenting() { return !!(TAP.present && !TAP.present.__stub && TAP.present.active()); }
 
