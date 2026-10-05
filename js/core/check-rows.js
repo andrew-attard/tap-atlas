@@ -3,7 +3,8 @@
  * Purpose: The contract check for each region (docs/DATA-CONTRACT.md): its fields, source, and the rows of its
  *          Market Coverage, New Business, Customer Growth, Partner and Recap sections, with the template's rules.
  * Provides: TAP.checkRows (region)
- * Depends on: js/core/check.js (TAP.check.kit), js/core/content.js and content/text-data.js (all at call time)
+ * Depends on: js/core/check.js (TAP.check.kit), js/core/content.js and content/text-data.js (all at call time),
+ *             js/core/check-p4.js (TAP.checkP4: the Phase 4 fields and parts, at call time)
  * Used by: js/core/check.js (run)
  */
 (function (TAP) {
@@ -94,6 +95,7 @@
   }
 
   function checkNewBusinessRow(o, c, env, tiers) {
+    if (TAP.checkP4) TAP.checkP4.newBusinessRow(o, c, env);   // the optional solution (Phase 4)
     if (isObj(o.channelSplit)) {
       var sctx = sub(c, 'channelSplit'), sum = 0, any = false;
       CHANNELS().forEach(function (k) { if (!has(o.channelSplit, k)) err(sctx, k, expectFor('num', true, env), undefined); });
@@ -147,7 +149,8 @@
     var tiers = Array.isArray(r.marketCoverage) ? map() : null;
     checkSection(r, 'marketCoverage', rctx, env, function (o, c) { checkMarketRow(o, c, env, tiers); });
     checkSection(r, 'newBusiness', rctx, env, function (o, c) { checkNewBusinessRow(o, c, env, tiers); });
-    checkSection(r, 'partners', rctx, env);
+    // The optional partner type, maturity lookup and by-year fields (Phase 4)
+    checkSection(r, 'partners', rctx, env, function (o, c) { if (TAP.checkP4) TAP.checkP4.partner(o, c, env); });
     checkSection(r, 'recap', rctx, env);
     if (isObj(r.customerGrowth)) {
       var cg = r.customerGrowth;
@@ -158,6 +161,8 @@
         if (want && acc.segment !== want) warn(c, 'segment', say('expect.segmentRule', { segment: JSON.stringify(want) }), acc.segment);
       });
     }
+    // Revenue, books value, strategic plan, base year, routes and outsourcing % (Phase 4): all optional
+    if (TAP.checkP4) TAP.checkP4.region(r, rctx, env);
   }
 
   TAP.checkRows = { region: checkRegion };

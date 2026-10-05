@@ -1,10 +1,10 @@
 /*
  * File: content/text-data.js
  * Purpose: Wording for source addresses and the contract check: separators, "calculated" labels, combined-figure
- *          sources and the check's problem list.
+ *          sources and the check's problem list (the Phase 4 parts included).
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
- * Used by: js/core/sources.js, js/core/check.js through TAP.content.text
+ * Used by: js/core/sources.js, js/core/check.js, js/core/check-rows.js and js/core/check-p4.js through TAP.content.text
  * Owner: the DATA stream. Placeholders in {braces} are filled in by the code; the organization layer can
  *        replace any phrase by using the same key.
  */
@@ -38,7 +38,7 @@ Object.assign(window.TAP_CONTENT.text, {
     more: '{n} more problems not listed. Fix the ones above and check again.',
     item: { row: '{name} (row {row})', cell: 'cell {cell}' },
     found: { nothing: 'nothing', list: 'a list of {n}', emptyList: 'an empty list', object: 'an object',
-      repeatRecap: 'a second item with the same year, channel, motion and type' },
+      repeatRecap: 'a second item with the same year, channel, motion and type', second: 'a second item for {key}' },
     expect: {
       text: 'text',
       number: 'a number',
@@ -71,7 +71,19 @@ Object.assign(window.TAP_CONTENT.text, {
       arrFormula: 'target accounts × hit rate × average deal size = {value}',
       segmentRule: 'the segment the thresholds give ({segment})',
       items: 'at least one item',
-      unrated: 'no rating, as this industry is not rated'
+      unrated: 'no rating, as this industry is not rated',
+      // The full template's parts (Phase 4, US-4.1.2)
+      solution: 'a solution id from lookups.solutions',
+      partnerType: 'a partner type id from lookups.partnerTypes',
+      maturity: 'a maturity id or name from lookups.partnerMaturity',
+      yearMonth: 'a year and month, such as "2026-08"',
+      oneItem: 'one item for each {what}',
+      itemKeys: { revenue: 'year, channel, motion and type', booksValue: 'year, channel, motion and type', strategicPlan: 'year and type',
+        baseYear: 'category', routes: 'route, year, type and solution' },
+      revenueWithin: 'revenue no higher than the order intake for {key} ({value})',
+      booksWithin: 'a books value no higher than the customer value for {key} ({value})',
+      coverage: 'pipeline ÷ (forecast − actuals) = {value}',
+      variance: 'books order intake minus the strategic plan = {value}'
     }
   }
 });
