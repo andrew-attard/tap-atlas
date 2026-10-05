@@ -2,7 +2,7 @@
  * File: tests/test-combine.js
  * Purpose: Tests for combining regions and the comparison scope (TPV-TC-068 to 075), checked against the
  *          hand calculations in tests/fixtures/mini-expected.js.
- * Provides: test cases TPV-TC-068 to TPV-TC-075, X-scope-*, X-agg-*
+ * Provides: test cases TPV-TC-068 to TPV-TC-075, X-scope-*, X-agg-*, X-review-SV-16
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -359,15 +359,28 @@
       var plan = T_FIXTURE('mini');
       plan.regions = plan.regions.slice(0, 2);
       TAP.data.load(plan);
-      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha' })), 'Showing Region A against the average of the other 1 region');
-      a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha', restAgg: 'total' }))[1].label, 'Total of the other 1 region');
-      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha', restAs: 'individual' })), 'Showing Region A against the other 1 region');
       a.equal(TAP.scope.sentence(cmp({ mode: 'set', set: ['bravo'] })), 'Showing 1 chosen region: Region B');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'all' })), 'Showing all 2 regions side by side');
       plan.regions = plan.regions.slice(0, 1);
       TAP.data.load(plan);
-      a.equal(TAP.scope.sentence(cmp({ mode: 'all' })), 'Showing all 1 region side by side');
-      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'Showing the organization total across all 1 region');
       a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha' })), 'Showing Region A only');
+    });
+
+    // Review SV-16 (#372): with two regions the wording read "the other 1 region".
+    T.test('X-review-SV-16', 'With two regions, or one, the wording names "the other region", never "the other 1 region"', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions = plan.regions.slice(0, 2);
+      TAP.data.load(plan);
+      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha' })), 'Showing Region A against the average of the other region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha', restAgg: 'total' })), 'Showing Region A against the total of the other region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha', restAs: 'individual' })), 'Showing Region A against the other region');
+      a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha' }))[1].label, 'Average of the other region');
+      a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha', restAgg: 'total' }))[1].label, 'Total of the other region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'Showing the organization total across all 2 regions', 'two still reads as a count');
+      plan.regions = plan.regions.slice(0, 1);
+      TAP.data.load(plan);
+      a.equal(TAP.scope.sentence(cmp({ mode: 'all' })), 'Showing the one region in the data');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'Showing the organization total of its one region');
     });
 
     T.test('X-scope-colours', 'Each region keeps its colour by file order; past 8 regions colours repeat with a note', function (a) {
