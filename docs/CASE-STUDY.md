@@ -21,7 +21,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 
 ## Key decisions
 
-72 decisions were logged, each with the date, the reasons and the alternatives. The ones that shaped the app most:
+74 decisions were logged, each with the date, the reasons and the alternatives. The ones that shaped the app most:
 
 | Decision | What was decided | Why |
 |---|---|---|
@@ -55,9 +55,9 @@ The job: one place that plays each region's plan back, compares regions on the s
 |---|---|---|---|---|
 | 1, `v0.1.0` | The app shell and the comparison bar, the report panel and engine, sample data with planted cases, the Overview and Industry priorities views, insights in six rule families, the Guide, glossary and tour, the contract check, and the handover documents for the import | 58 (49 Must, 9 Should) | 270 | 635 automated checks pass in Chrome and Edge; the QA smoke run of 281 steps with no exceptions |
 | 2, `v0.2.0` | The New business, Customer growth and Partners views, the region profile, list reports, drill-down, a dot plot and breakdowns, three more insight families, and reading tips | 37 (22 Must, 13 Should, 2 Could) | 245 | 969 automated checks pass in Chrome and Edge; the QA smoke run of 724 steps per browser with no exceptions |
-| 3, `v0.3.0` | Presentation mode with a running order, custom charts, extra template sections, the handover pack, and this portfolio edition | 18 (10 Must, 7 Should, 1 Could) | 118 | 1,004 automated checks passed in Chrome during the build; the final figure is set at the release gate |
+| 3, `v0.3.0` | Presentation mode with a running order, custom charts, extra template sections, the handover pack, and this portfolio edition | 18 (10 Must, 7 Should, 1 Could) | 118 | 1,079 automated checks pass in Chrome and Edge; QA scripts on every view: no console errors, nothing below 13 px, no web requests; smoke test with no failures |
 
-In total: 113 stories, 633 test cases and 72 decisions, built in four days. About 110 pull requests were merged in Phase 1 and about 60 in Phase 2.
+In total: 113 stories, 633 test cases and 74 decisions, built in four days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2 and about 25 in Phase 3.
 
 ![New business on the sample data: the question the view answers, the observation worth discussing first, and the industry chart](screenshots/new-business.png)
 
