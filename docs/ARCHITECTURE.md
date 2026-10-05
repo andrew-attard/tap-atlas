@@ -436,18 +436,18 @@ vendor/echarts.min.js
 js/theme.js
 js/core/namespace.js  dom.js  icons.js  storage.js  store.js  format.js
 config/settings.js
-content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  text-engine2.js  text-newbusiness.js  text-customers.js  text-profile.js  text-themes.js  text-present.js  text-custom.js  text-extra.js  glossary.js  guide.js
+content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  text-engine2.js  text-newbusiness.js  text-customers.js  text-profile.js  text-themes.js  text-present.js  text-custom.js  text-extra.js  text-outlook.js  glossary.js  guide.js
    [index.html only: content/organization.js]
 js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
-js/core/sources.js  check.js  check-rows.js  extra.js  data.js
-js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  measures-pt.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
-config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js
+js/core/sources.js  check.js  check-rows.js  extra.js  check-p4.js  data.js
+js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  measures-pt.js  measures-p4.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
+config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js
 js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js
-js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js
+js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
 js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
-js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  other.js  regions-parts.js  regions.js  insights.js
+js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights.js
 js/ui/custom-builder.js
 js/views/guide.js
 js/ui/app.js
@@ -685,3 +685,88 @@ A step may also set `industry: '<industry id>'` (one-industry reports such as th
 | EXTRA | `js/core/extra.js`, `js/views/other.js`, `content/text-extra.js`, the extra-section parts of `js/core/check.js`, `js/core/sources.js` and `js/engine/rows.js`, `docs/DATA-CONTRACT.md`, a new docs file EXTENDING-TEMPLATE.md, the sample generator (`tools/sample-*.js`, `tools/generate-sample-data.js`, `data/sample-plan-data.js`, `tests/fixtures/sample-expected.js`), `tests/test-extra.js` |
 | DOCS3 | new in the docs folder: HANDOVER.md, CASE-STUDY.md, PUBLISHING.md, index.html and a screenshots folder; new scripts package.sh and portfolio-shots.sh; `README.md`, `docs/COPILOT-PROMPTS.md`, `tests/test-docs3.js` |
 | lead | as before; Wave 0 added registry `available()`, Guide extras and the panel's definition and starting-choice helpers |
+
+## 19. Phase 4 additions (full template)
+
+Phase 4 adds the parts of the full template the first copy lacked (D84): the plan against the strategic plan and the base year, the revenue outlook, solutions and product categories, and customer value against value through the organization's books. Everything above still holds. Decisions: D84 to D87. Data Contract changes are additions only (D57); `meta.schemaVersion` stays "0.2".
+
+### 19.1 Data Contract additions
+
+**Lookups** (all optional; a file without them is valid):
+
+| Field | Shape | Notes |
+|---|---|---|
+| `lookups.productCategories` | `[{id, name}]` | ids `swPerpetual`, `recurring`, `hardware`, `services` |
+| `lookups.solutions` | `[{id, name, category}]` | `category` is a product category id |
+| `lookups.partnerTypes` | `[{id, name}]` | e.g. a value-added reseller, a system integrator |
+| `lookups.partnerMaturity` | `[{id, name, rank}]` | rank 1 to 5: Recruit, Onboard, Enable, Skill, Strategic |
+| `lookups.routes` | `[{id, name}]` | ids `ownSales`, `customerSuccess`, `allianceBReseller`, `otherResellers`, `systemIntegrators`, `partnerExisting` |
+
+**Per region** (all optional):
+
+| Field | Shape | Tag | Source in the template |
+|---|---|---|---|
+| `revenue` | `[{year, channel, motion, type, value, sourceCell}]`, `type` `arr` or `services` | DER | Recap, revenue outlook at customer value |
+| `booksValue` | as `revenue`; `type` also `swPerpetual`, `hardware` (`arr` is recurring) | DER | Recap, value through the organization's books |
+| `strategicPlan` | `[{year, type, value, sourceCell}]`, `type` `arr`, `services`, `swPerpetual`, `hardware` | PRE | Recap, order intake against the strategic plan |
+| `baseYear` | `{year, actualsThrough, items: [{category, budget, forecast, actuals, pipeline, coverage, sourceRow}]}` | PRE | Order intake sheet; `actualsThrough` is "YYYY-MM"; `coverage` only when the workbook gives one |
+| `routes` | `[{route, year, type, value, solution, sourceCell}]`, `solution` optional | DER (some IN) | Recap, order intake by route to market |
+| `outsourcingPct` | number or null | IN | Partner sheet, outsourcing % |
+| `newBusiness[].solution` | solution id or null | IN | New Business, solution column |
+| `partners[].type` | partner type id or null | IN | Partner sheet |
+| `partners[].maturity` | a `partnerMaturity` id (text that matches a maturity name is accepted and mapped) | IN | Partner sheet |
+| `partners[].supportPct`, `.distribution`, `.servicesFromPartners` | three numbers by plan year (null allowed) | IN / DER | Partner sheet |
+| `customerGrowth.accounts[].riskLevel` | also `low` | PRE | Customer Growth |
+
+`meta.sourceMap` gains entries `revenue`, `booksValue`, `strategicPlan`, `routes` (fixed cells by item) and `baseYear` (sheet and columns), so every new figure traces to its cell (D26).
+
+**Check (`js/core/check-rows.js` and a new `js/core/check-p4.js`, DATA4):** types and lookup ids are errors as for the existing sections; repeated items (same year, channel, motion, type) are warnings; likely-wrong values only warn: revenue above the order intake of the same year, channel and motion; a books value above the customer value for `allianceA`, `allianceB` or `partner`; a coverage that disagrees with pipeline over the remaining target by more than 5%.
+
+### 19.2 Measures (`js/engine/measures-p4.js`, ENGINE4)
+
+All return cells as in section 9. Money sums; shares and ratios combine as a ratio of sums (`combine: 'ratioOfSums'`, carrying `ratio: {num, den}`); each meta names `unit`, `valueKind`, `kind` and `dims`.
+
+| Id | Meaning | valueKind / kind | dims |
+|---|---|---|---|
+| `bk.oi`, `bk.<type>` (`type`: `arr`, `services`, `swPerpetual`, `hardware`) | Order intake through the organization's books | amount / DER | year, channel, motion |
+| `bk.oi.<channel>` | The same for one channel (stack parts) | amount / DER | year, motion |
+| `cv.oi` | Order intake at customer value (the same figure as `rc.all.oi`) | amount / DER | year, channel, motion |
+| `bk.gap`, `bk.gapShare` | Customer value minus books value, and that difference as a share of customer value | amount / APP, rate / APP | year, channel |
+| `sp.oi`, `sp.<type>` | Strategic plan order intake | amount / PRE | year, category |
+| `sp.plan` | The plan's books order intake on the same basis as the strategic plan | amount / DER | year, category |
+| `sp.variance`, `sp.variancePct` | `sp.plan - sp.oi`, and that over `sp.oi` | amount / APP, rate / APP | year, category |
+| `by.budget`, `by.forecast`, `by.actuals`, `by.pipeline` | Base year figures | amount / PRE | category |
+| `by.growth` | Plan year 1 (books) over the base-year figure, minus 1; `ctx.against` `forecast` (default) or `budget` | rate / APP | category |
+| `by.coverage` | Pipeline over the order intake still to win (forecast minus actuals); the workbook's ratio when given (kind PRE), else APP | rate | category |
+| `rv.<m>.<t>` (`m` `nb`, `cg`, `all`; `t` `arr`, `services`, `oi`) | Revenue outlook | amount / DER | year, channel (+ motion for `all`) |
+| `rv.share` | Revenue in a year over order intake of the same year (`rc.all.oi`) | rate / APP | year, channel |
+| `nb.<t>.sol` (`t` `arr`, `services`, `oi`) | New business by solution | amount / DER | year, solution |
+| `oi.cat` | Books order intake by product category | amount / DER | year, category |
+| `rt.oi` | Order intake by route to market | amount / DER | year, route, solution |
+| `pt.count.maturity`, `pt.oi.maturity` | Partners and their planned order intake by maturity | count / IN, amount / IN | maturity, partnerType |
+
+**Breakdowns:** `TAP.reports.BREAKDOWNS` gains `solution`, `category`, `route`, `maturity` and `partnerType`; context keys `{solution, category, route, maturity, partnerType}`; values come from the lookups in their order, plus "not named" (`none`) for rows with no value. The Build a chart dimensions follow (US-3.5.2).
+
+### 19.3 Views and reports
+
+- **New view `outlook`** ("Outlook", menu after Partners; D87): `ol-strategic`, `ol-baseyear`, `ol-coverage`, `ol-revenue`, `ol-revshare`, `ol-category` (`config/reports-outlook.js`, `js/views/outlook.js`, OUTLOOK). With no strategic plan, base year and revenue for any region, the view shows one line saying so.
+- **New business view:** `nb-solutions` (solution heatmap and stacks, drill to `nb-rows` filtered by solution) after `nb-industries` (NBPT).
+- **Partners view:** `pt-books` (customer value against books value), `pt-routes` (route to market), `pt-maturity` (partners by maturity) after `pt-capacity`; the partner list gains `type`, `maturity`, `distribution` columns (NBPT).
+- **Region profile:** glance lines `strategic` and `revenue`; reports `ol-strategic` and `ol-revenue` (PAGES4).
+- **Running order:** two Outlook steps (PAGES4).
+
+### 19.4 Insights (`js/insights/rules-outlook.js`, INSIGHTS4)
+
+New family `outlook` (weight in `TAP_SETTINGS.insights.familyWeights`, figure-based, so it ranks with the others, D80). Rules: `spGap` (a region's plan far below or above its strategic plan), `spTotal` (the plans together against the strategic plans), `y1Jump` (year 1 far above the base-year forecast), `lowCoverage`, `booksGap` (a large share of customer value not running through the books), `solutionReliance` (one solution carrying most of a region's new business). Each attaches to the report that shows its figure and names `measureId` (D79).
+
+### 19.5 Ownership (Phase 4)
+
+| Stream | Owns |
+|---|---|
+| DATA4 (wave A) | `js/core/check-p4.js`, its call in `js/core/check.js`, the Phase 4 parts of `js/core/check-rows.js`, `docs/DATA-CONTRACT.md`, the sample generator (`tools/sample-*.js`, `tools/generate-sample-data.js`, new `tools/sample-p4.js`), `data/sample-plan-data.js`, `tests/fixtures/sample-expected.js`, `docs/PLANTED-CASES.md`, `content/text-data.js`, `tests/test-p4-data.js` |
+| ENGINE4 (wave A) | `js/engine/measures-p4.js` (new), `js/engine/rows.js` (new list columns), `js/engine/prepare.js` and `js/engine/registry.js` (breakdowns only), `js/engine/custom.js`, `content/text-engine.js`, new `tests/fixtures/mini-p4.js` and `mini-p4-expected.js`, `tests/test-measures-p4.js` |
+| OUTLOOK (wave B) | `js/views/outlook.js`, `config/reports-outlook.js`, `content/text-outlook.js`, `css/outlook.css`, `tests/test-outlook.js` |
+| NBPT (wave B) | `config/reports-newbusiness.js`, `config/reports-partners.js`, `js/views/new-business.js`, `js/views/partners.js`, `content/text-newbusiness.js`, `content/text-customers.js` (partner wording), the `newBusiness` and `partners` lines of `config/views.js`, `tests/test-p4-reports.js`, and the view-list assertions in `tests/test-newbusiness.js` and `tests/test-partners.js` |
+| INSIGHTS4 (wave B) | `js/insights/rules-outlook.js` (new), `config/insight-rules.js`, `tests/test-insights-p4.js` |
+| PAGES4 (wave B) | `content/glossary.js`, `content/guide.js`, `js/ui/tour.js`, `js/views/regions-parts.js`, `config/profile.js`, `config/running-order.js`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/HANDOVER.md`, `README.md`, `tests/test-pages-p4.js` |
+| lead | as before; Wave 0: this section, `config/views.js` (the `outlook` entry), the stubs, `config/settings.js` (family weight), the page lists |
