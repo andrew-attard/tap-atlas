@@ -2,7 +2,8 @@
  * File: js/core/sources.js
  * Purpose: Turns a figure's source reference into file › sheet › cell, and summarises each region's import.
  * Provides: TAP.sources (address, imports, datesDiffer, dataDate)
- * Depends on: js/core/namespace.js, js/core/data.js, js/core/content.js (regionName, content/text-data.js wording)
+ * Depends on: js/core/namespace.js, js/core/data.js, js/core/content.js (regionName, content/text-data.js wording),
+ *             js/core/extra.js (extra sections, at call time)
  * Used by: tooltips and tables (js/panel/), side panels and details (js/ui/layers.js), the data sources panel, the
  *          comparison bar (data date), region cards, the Industry and Insights views
  *
@@ -66,8 +67,11 @@
     var file = region && region.source && region.source.fileName ? region.source.fileName : say('unknownFile');
     var maps = (TAP.data.meta() || {}).sourceMap || {};
     var map = has(maps, src.section) ? maps[src.section] : null;
+    // An extra section (US-3.2.1): its title is the sheet; without a column letter the cell is its row
+    if (!map && TAP.extra && TAP.extra.is(src.section)) map = TAP.extra.sourceMap(src.section);
     var sheet = map && map.sheet ? map.sheet : null;
     var cell = cellFor(src, map);
+    if (!cell && map && map.extra && src.row != null) cell = TAP.content.text('extra.sourceRow', { row: src.row });
     return { file: file, sheet: sheet, cell: cell, calculated: src.kind === 'DER', combined: false,
       text: [file, sheet, cell].filter(Boolean).join(say('sep')),
       regions: region ? [TAP.content.regionName(region)] : [] };

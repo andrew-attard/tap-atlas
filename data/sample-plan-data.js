@@ -32,9 +32,12 @@
  *   Q04 shared partner: Donvocombe Systems [na, latam]
  *   Q05 Horviby Solutions Partner (mea) 268.466667 per FTE, 3.182903x the average of 84.346488
  *   Q06 themes by regions: references 7, partners 7, skills 7, marketing 5, productGaps 4, pricing 2
+ *   Extra section "5. Events" (US-3.2.1): 15 rows; ceu has none. Long note: mea row 8. Blank budget: latam row 9.
  */
 window.PLAN_DATA = {
-"meta": {"schemaVersion": "0.2", "generatedAt": "2026-10-02T08:30:00Z", "templateVersion": "sample-template-1", "currency": "EUR", "years": [2027, 2028, 2029], "isSample": true, "sourceMap": {"marketCoverage": {"sheet": "1. Market Coverage", "columns": {"industryId": "B", "growthPotential": "D", "criticality": "E", "competitiveIntensity": "F", "currentArr": "G", "pipelineTotal": "H", "pipelineCreated12m": "I", "references": "J", "expertise": "K", "productFit": "L", "tier": "M", "commentary": "N"}}, "newBusiness": {"sheet": "2. New Business", "columns": {"industryId": "B", "market": "C", "subVertical": "D", "channelSplit.direct": "E", "channelSplit.partner": "F", "channelSplit.allianceA": "G", "channelSplit.allianceB": "H", "targetAccounts": "I", "hitRate": "J", "avgDealSize": "K", "growth.year2": "L", "growth.year3": "M", "successFactors": "N", "arrPotential": ["O", "P", "Q"], "servicesPotential": ["R", "S", "T"], "servicesRatio": "U"}}, "customerGrowth": {"sheet": "3. Customer Growth", "columns": {"name": "C", "industryId": "D", "country": "E", "productLine": "F", "currentArr": "G", "riskLevel": "H", "growthPct": ["I", "J", "K"], "multiplier3y": "L", "servicesRatio": "M", "incrementalArr": ["N", "O", "P"], "servicesOrderIntake": ["Q", "R", "S"], "cumulativeOrderIntake": "T", "segment": "U"}, "cells": {"thresholds.strategicArr": "N3", "thresholds.scaledArr": "N4", "thresholds.growthArr": "N5", "thresholds.growthOrderIntake": "N6"}}, "partners": {"sheet": "4. Partner", "columns": {"name": "B", "channel": "C", "maturity": "D", "expertiseGeo": "E", "expertiseProduct": "F", "fteSales": "G", "fteConsultants": "H", "centralSupportPct": "I", "arr": ["J", "K", "L"], "services": ["M", "N", "O"]}}, "recap": {"sheet": "4. Partner"}}},
+"meta": {"schemaVersion": "0.2", "generatedAt": "2026-10-02T08:30:00Z", "templateVersion": "sample-template-1", "currency": "EUR", "years": [2027, 2028, 2029], "isSample": true, "sourceMap": {"marketCoverage": {"sheet": "1. Market Coverage", "columns": {"industryId": "B", "growthPotential": "D", "criticality": "E", "competitiveIntensity": "F", "currentArr": "G", "pipelineTotal": "H", "pipelineCreated12m": "I", "references": "J", "expertise": "K", "productFit": "L", "tier": "M", "commentary": "N"}}, "newBusiness": {"sheet": "2. New Business", "columns": {"industryId": "B", "market": "C", "subVertical": "D", "channelSplit.direct": "E", "channelSplit.partner": "F", "channelSplit.allianceA": "G", "channelSplit.allianceB": "H", "targetAccounts": "I", "hitRate": "J", "avgDealSize": "K", "growth.year2": "L", "growth.year3": "M", "successFactors": "N", "arrPotential": ["O", "P", "Q"], "servicesPotential": ["R", "S", "T"], "servicesRatio": "U"}}, "customerGrowth": {"sheet": "3. Customer Growth", "columns": {"name": "C", "industryId": "D", "country": "E", "productLine": "F", "currentArr": "G", "riskLevel": "H", "growthPct": ["I", "J", "K"], "multiplier3y": "L", "servicesRatio": "M", "incrementalArr": ["N", "O", "P"], "servicesOrderIntake": ["Q", "R", "S"], "cumulativeOrderIntake": "T", "segment": "U"}, "cells": {"thresholds.strategicArr": "N3", "thresholds.scaledArr": "N4", "thresholds.growthArr": "N5", "thresholds.growthOrderIntake": "N6"}}, "partners": {"sheet": "4. Partner", "columns": {"name": "B", "channel": "C", "maturity": "D", "expertiseGeo": "E", "expertiseProduct": "F", "fteSales": "G", "fteConsultants": "H", "centralSupportPct": "I", "arr": ["J", "K", "L"], "services": ["M", "N", "O"]}}, "recap": {"sheet": "4. Partner"}}, "extraSections": [
+  {"id": "events", "title": "5. Events", "intro": "Field events each region plans over the three years: the format, the timing, how many accounts are invited and the budget.", "columns": [{"key": "event", "label": "Event", "unit": "text", "kind": "IN", "column": "B"}, {"key": "format", "label": "Format", "unit": "text", "kind": "IN", "column": "C"}, {"key": "timing", "label": "Timing", "unit": "text", "kind": "IN", "column": "D"}, {"key": "invited", "label": "Accounts invited", "unit": "count", "kind": "IN", "column": "E"}, {"key": "budget", "label": "Budget", "unit": "money", "kind": "IN", "column": "F"}, {"key": "perAccount", "label": "Budget per account", "unit": "money", "kind": "DER", "column": "G"}, {"key": "notes", "label": "Notes", "unit": "text", "kind": "IN", "column": "H"}]}
+ ]},
 "lookups": {
  "industries": [
   {"id": "busServices", "name": "Business Services", "productLine": "pl3", "groupPriority": false, "rated": true},
@@ -219,6 +222,11 @@ window.PLAN_DATA = {
    {"sourceRow": 35, "id": "na-a26", "name": "Telqeholm University", "industryId": "education", "country": "United States", "productLine": "pl1", "currentArr": 92, "riskLevel": "medium", "growthPct": [0.166, 0.166, 0.166], "multiplier3y": null, "servicesRatio": 0.25, "incrementalArr": [15.3, 17.8, 20.8], "servicesOrderIntake": [3.8, 4.5, 5.2], "cumulativeOrderIntake": 67.4, "segment": "scaled"},
    {"sourceRow": 36, "id": "na-a27", "name": "Ronvicombe Hospital Group", "industryId": "healthcare", "country": "Canada", "productLine": "pl1", "currentArr": 77, "riskLevel": null, "growthPct": null, "multiplier3y": 1.29, "servicesRatio": 0.24, "incrementalArr": [7.4, 7.4, 7.4], "servicesOrderIntake": [1.8, 1.8, 1.8], "cumulativeOrderIntake": 27.6, "segment": "scaled"},
    {"sourceRow": 37, "id": "na-a28", "name": "Lanvostead Labs", "industryId": "pharma", "country": "United States", "productLine": "pl1", "currentArr": 57, "riskLevel": null, "growthPct": null, "multiplier3y": 1.54, "servicesRatio": 0.35, "incrementalArr": [10.3, 10.3, 10.3], "servicesOrderIntake": [3.6, 3.6, 3.6], "cumulativeOrderIntake": 41.7, "segment": "scaled"}
+  ]},
+  "extra": {"events": [
+   {"sourceRow": 8, "event": "Customer innovation day", "format": "Conference", "timing": "Year 1 Q2", "invited": 60, "budget": 45, "perAccount": 0.75, "notes": "Joint sessions with two partners"},
+   {"sourceRow": 9, "event": "Healthcare roundtable", "format": "Roundtable", "timing": "Year 1 Q3", "invited": 15, "budget": 12, "perAccount": 0.8, "notes": null},
+   {"sourceRow": 10, "event": "Data center summit", "format": "Trade fair", "timing": "Year 2 Q1", "invited": 120, "budget": 80, "perAccount": 0.67, "notes": null}
   ]}
  },
  {"id": "latam", "name": "Latin America", "source": {"fileName": "Latin America plan.xlsx", "fileModified": "2026-09-30T11:20:00Z", "importedAt": "2026-10-02T08:07:00Z", "notes": []},
@@ -337,6 +345,10 @@ window.PLAN_DATA = {
    {"sourceRow": 29, "id": "latam-a20", "name": "Firdicombe Software", "industryId": "infotech", "country": "Argentina", "productLine": "pl1", "currentArr": 81, "riskLevel": null, "growthPct": null, "multiplier3y": 2.09, "servicesRatio": 0.25, "incrementalArr": [29.4, 29.4, 29.4], "servicesOrderIntake": [7.4, 7.4, 7.4], "cumulativeOrderIntake": 110.4, "segment": "scaled"},
    {"sourceRow": 30, "id": "latam-a21", "name": "Lirkiholm Health", "industryId": "healthcare", "country": "Colombia", "productLine": "pl1", "currentArr": 78, "riskLevel": null, "growthPct": [0.211, 0.191, 0.171], "multiplier3y": null, "servicesRatio": 0.14, "incrementalArr": [16.5, 18, 19.2], "servicesOrderIntake": [2.3, 2.5, 2.7], "cumulativeOrderIntake": 61.2, "segment": "scaled"},
    {"sourceRow": 31, "id": "latam-a22", "name": "Ralqivale FM Group", "industryId": "ifm", "country": "Brazil", "productLine": "pl2", "currentArr": 26, "riskLevel": null, "growthPct": [0.26, 0.26, 0.26], "multiplier3y": null, "servicesRatio": 0.39, "incrementalArr": [6.8, 8.5, 10.7], "servicesOrderIntake": [2.7, 3.3, 4.2], "cumulativeOrderIntake": 36.2, "segment": "scaled"}
+  ]},
+  "extra": {"events": [
+   {"sourceRow": 8, "event": "Partner kick-off", "format": "Workshop", "timing": "Year 1 Q1", "invited": 25, "budget": 18, "perAccount": 0.72, "notes": null},
+   {"sourceRow": 9, "event": "Retail breakfast briefing", "format": "Roundtable", "timing": "Year 1 Q4", "invited": 20, "budget": null, "perAccount": null, "notes": "Budget to be confirmed"}
   ]}
  },
  {"id": "neu", "name": "Northern Europe", "source": {"fileName": "Northern Europe plan.xlsx", "fileModified": "2026-09-28T09:15:00Z", "importedAt": "2026-10-02T08:09:00Z", "notes": [{"message": "A rating cell held text that is not an allowed option; imported as not provided.", "sheet": "1. Market Coverage", "cell": "E14"}]},
@@ -463,6 +475,11 @@ window.PLAN_DATA = {
    {"sourceRow": 33, "id": "neu-a24", "name": "Kusvawick Field Services", "industryId": "fsm", "country": "Ireland", "productLine": "pl2", "currentArr": 42, "riskLevel": null, "growthPct": [0, 0, 0], "multiplier3y": null, "servicesRatio": 0.39, "incrementalArr": [0, 0, 0], "servicesOrderIntake": [0, 0, 0], "cumulativeOrderIntake": 0, "segment": "scaled"},
    {"sourceRow": 34, "id": "neu-a25", "name": "Mesvivale Properties", "industryId": "property", "country": "Ireland", "productLine": "pl3", "currentArr": 40, "riskLevel": null, "growthPct": [0.469, 0.469, 0.469], "multiplier3y": null, "servicesRatio": 0.38, "incrementalArr": [18.8, 27.6, 40.5], "servicesOrderIntake": [7.1, 10.5, 15.4], "cumulativeOrderIntake": 119.9, "segment": "scaled"},
    {"sourceRow": 35, "id": "neu-a26", "name": "Rurdodal Labs", "industryId": "other", "country": "Sweden", "productLine": "pl1", "currentArr": 36, "riskLevel": null, "growthPct": [0.274, 0.264, 0.254], "multiplier3y": null, "servicesRatio": 0.28, "incrementalArr": [9.9, 12.1, 14.7], "servicesOrderIntake": [2.8, 3.4, 4.1], "cumulativeOrderIntake": 47, "segment": "scaled"}
+  ]},
+  "extra": {"events": [
+   {"sourceRow": 8, "event": "Public sector webinar series", "format": "Webinar", "timing": "Year 1 Q2", "invited": 200, "budget": 10, "perAccount": 0.05, "notes": null},
+   {"sourceRow": 9, "event": "Facility leaders forum", "format": "Conference", "timing": "Year 2 Q2", "invited": 80, "budget": 55, "perAccount": 0.69, "notes": "Hosted with the user group"},
+   {"sourceRow": 10, "event": "Pharma site visit", "format": "Site visit", "timing": "Year 1 Q3", "invited": 8, "budget": 6, "perAccount": 0.75, "notes": null}
   ]}
  },
  {"id": "seu", "name": "Southern Europe", "source": {"fileName": "Southern Europe plan.xlsx", "fileModified": "2026-09-30T14:05:00Z", "importedAt": "2026-10-02T08:11:00Z", "notes": []},
@@ -586,6 +603,10 @@ window.PLAN_DATA = {
    {"sourceRow": 31, "id": "seu-a22", "name": "Kaltomere Logistics", "industryId": "transport", "country": "Portugal", "productLine": "pl2", "currentArr": 69, "riskLevel": null, "growthPct": [0, 0, 0], "multiplier3y": null, "servicesRatio": 0.34, "incrementalArr": [0, 0, 0], "servicesOrderIntake": [0, 0, 0], "cumulativeOrderIntake": 0, "segment": "scaled"},
    {"sourceRow": 32, "id": "seu-a23", "name": "Frondeford Real Estate", "industryId": "property", "country": "Portugal", "productLine": "pl3", "currentArr": 50, "riskLevel": null, "growthPct": [0, 0, 0], "multiplier3y": null, "servicesRatio": 0.13, "incrementalArr": [0, 0, 0], "servicesOrderIntake": [0, 0, 0], "cumulativeOrderIntake": 0, "segment": "scaled"},
    {"sourceRow": 33, "id": "seu-a24", "name": "Musvicombe Bank", "industryId": "finance", "country": "Portugal", "productLine": "pl1", "currentArr": 45, "riskLevel": null, "growthPct": [0.268, 0.258, 0.248], "multiplier3y": null, "servicesRatio": 0.38, "incrementalArr": [12.1, 14.7, 17.8], "servicesOrderIntake": [4.6, 5.6, 6.8], "cumulativeOrderIntake": 61.6, "segment": "scaled"}
+  ]},
+  "extra": {"events": [
+   {"sourceRow": 8, "event": "Hospitality open house", "format": "Open house", "timing": "Year 1 Q2", "invited": 30, "budget": 20, "perAccount": 0.67, "notes": null},
+   {"sourceRow": 9, "event": "Utilities workshop", "format": "Workshop", "timing": "Year 2 Q3", "invited": 12, "budget": 9, "perAccount": 0.75, "notes": null}
   ]}
  },
  {"id": "ceu", "name": "Central Europe", "source": {"fileName": "Central Europe plan.xlsx", "fileModified": "2026-09-29T10:30:00Z", "importedAt": "2026-10-02T08:13:00Z", "notes": [{"message": "The Customer Growth section is empty.", "sheet": "3. Customer Growth", "cell": "A10"}]},
@@ -775,6 +796,10 @@ window.PLAN_DATA = {
    {"sourceRow": 28, "id": "mea-a19", "name": "Grinvadal Hospital Group", "industryId": "healthcare", "country": "United Arab Emirates", "productLine": "pl1", "currentArr": 124, "riskLevel": null, "growthPct": [0.194, 0.194, 0.194], "multiplier3y": null, "servicesRatio": 0.14, "incrementalArr": [24.1, 28.7, 34.3], "servicesOrderIntake": [3.4, 4, 4.8], "cumulativeOrderIntake": 99.3, "segment": "scaled"},
    {"sourceRow": 29, "id": "mea-a20", "name": "Drenvastead Bank", "industryId": "finance", "country": "United Arab Emirates", "productLine": "pl1", "currentArr": 122, "riskLevel": null, "growthPct": [0.14, 0.13, 0.12], "multiplier3y": null, "servicesRatio": 0.35, "incrementalArr": [17.1, 18.1, 18.9], "servicesOrderIntake": [6, 6.3, 6.6], "cumulativeOrderIntake": 73, "segment": "scaled"},
    {"sourceRow": 30, "id": "mea-a21", "name": "Fraltostead Public Works", "industryId": "government", "country": "Egypt", "productLine": "pl1", "currentArr": 88, "riskLevel": null, "growthPct": [0.139, 0.129, 0.119], "multiplier3y": null, "servicesRatio": 0.11, "incrementalArr": [12.2, 12.9, 13.5], "servicesOrderIntake": [1.3, 1.4, 1.5], "cumulativeOrderIntake": 42.8, "segment": "scaled"}
+  ]},
+  "extra": {"events": [
+   {"sourceRow": 8, "event": "Workplace technology showcase", "format": "Trade fair", "timing": "Year 1 Q4", "invited": 90, "budget": 70, "perAccount": 0.78, "notes": "Shared stand with two partners. The plan assumes the same floor space as last year, a demo area for the mobile app and three short customer talks on each day; follow-up calls are booked in the two weeks after the fair, and the leads go to the regional sales team in the same week."},
+   {"sourceRow": 9, "event": "Executive dinner", "format": "Dinner", "timing": "Year 2 Q1", "invited": 10, "budget": 15, "perAccount": 1.5, "notes": null}
   ]}
  },
  {"id": "apac", "name": "Asia Pacific", "source": {"fileName": "Asia Pacific plan.xlsx", "fileModified": "2026-09-29T07:45:00Z", "importedAt": "2026-10-01T16:20:00Z", "notes": []},
@@ -901,6 +926,11 @@ window.PLAN_DATA = {
    {"sourceRow": 32, "id": "apac-a23", "name": "Brosvicombe Properties", "industryId": "property", "country": "New Zealand", "productLine": "pl3", "currentArr": 132, "riskLevel": null, "growthPct": [0.074, 0.074, 0.074], "multiplier3y": null, "servicesRatio": 0.35, "incrementalArr": [9.8, 10.5, 11.3], "servicesOrderIntake": [3.4, 3.7, 4], "cumulativeOrderIntake": 42.7, "segment": "scaled"},
    {"sourceRow": 33, "id": "apac-a24", "name": "Grulmicombe Capital", "industryId": "finance", "country": "New Zealand", "productLine": "pl1", "currentArr": 98, "riskLevel": null, "growthPct": [0.137, 0.137, 0.137], "multiplier3y": null, "servicesRatio": 0.13, "incrementalArr": [13.4, 15.3, 17.4], "servicesOrderIntake": [1.7, 2, 2.3], "cumulativeOrderIntake": 52.1, "segment": "scaled"},
    {"sourceRow": 34, "id": "apac-a25", "name": "Galtestead Stores", "industryId": "retail", "country": "Singapore", "productLine": "pl3", "currentArr": 70, "riskLevel": null, "growthPct": [0.101, 0.101, 0.101], "multiplier3y": null, "servicesRatio": 0.4, "incrementalArr": [7.1, 7.8, 8.6], "servicesOrderIntake": [2.8, 3.1, 3.4], "cumulativeOrderIntake": 32.8, "segment": "scaled"}
+  ]},
+  "extra": {"events": [
+   {"sourceRow": 8, "event": "Education leaders breakfast", "format": "Roundtable", "timing": "Year 1 Q3", "invited": 18, "budget": 10, "perAccount": 0.56, "notes": null},
+   {"sourceRow": 9, "event": "Field service tour", "format": "Roadshow", "timing": "Year 2 Q2", "invited": 40, "budget": 35, "perAccount": 0.88, "notes": null},
+   {"sourceRow": 10, "event": "Year-end customer forum", "format": "Conference", "timing": "Year 3 Q4", "invited": 70, "budget": 50, "perAccount": 0.71, "notes": null}
   ]}
  }
 ]

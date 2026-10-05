@@ -664,6 +664,7 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 - `TAP.check.run` checks them and only warns.
 - `TAP.rows` gains the row source `extra:<sectionId>` with the section's columns; `TAP.sources.address` names the section title as the sheet.
 - The `other` view builds one `list` definition per section at mount time.
+- `js/core/extra.js` (`TAP.extra`, loaded after `check.js`) holds the data side: the cleaned sections, their rows and cells for `TAP.rows`, the source map for `TAP.sources` and the warnings for `TAP.check`.
 
 ### 18.5 Ownership (Phase 3)
 
@@ -671,6 +672,6 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 |---|---|
 | PRESENT | `config/running-order.js`, `js/ui/present*.js`, `css/present.css`, `content/text-present.js`, `tests/test-present.js`; small additions to `js/ui/keys.js` (P), `js/ui/shell.js` (Present button in the actions slot), `js/ui/sources-panel.js` (the `presentation` notes) and the panel menu ("Add to running order") under "Files outside ownership" |
 | CUSTOM | `js/engine/custom.js`, `js/ui/custom-builder.js`, `css/custom.css`, `content/text-custom.js`, `tests/test-custom.js`; the "Custom chart" badge in the panel under "Files outside ownership" |
-| EXTRA | `js/views/other.js`, `content/text-extra.js`, the extra-section parts of `js/core/check.js`, `js/core/sources.js` and `js/engine/rows.js`, `docs/DATA-CONTRACT.md`, a new docs file EXTENDING-TEMPLATE.md, the sample generator (`tools/sample-*.js`, `tools/generate-sample-data.js`, `data/sample-plan-data.js`, `tests/fixtures/sample-expected.js`), `tests/test-extra.js` |
+| EXTRA | `js/core/extra.js`, `js/views/other.js`, `content/text-extra.js`, the extra-section parts of `js/core/check.js`, `js/core/sources.js` and `js/engine/rows.js`, `docs/DATA-CONTRACT.md`, a new docs file EXTENDING-TEMPLATE.md, the sample generator (`tools/sample-*.js`, `tools/generate-sample-data.js`, `data/sample-plan-data.js`, `tests/fixtures/sample-expected.js`), `tests/test-extra.js` |
 | DOCS3 | new in the docs folder: HANDOVER.md, CASE-STUDY.md, PUBLISHING.md, index.html and a screenshots folder; new scripts package.sh and portfolio-shots.sh; `README.md`, `docs/COPILOT-PROMPTS.md`, `tests/test-docs3.js` |
 | lead | as before; Wave 0 added registry `available()`, Guide extras and the panel's definition and starting-choice helpers |
