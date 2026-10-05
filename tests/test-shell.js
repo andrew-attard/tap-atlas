@@ -486,6 +486,34 @@
         a.equal(expected, 'Data: 2 Oct 2026', 'latest import date in the fixture');
       });
     });
+
+    // Review fix #372 (SV-9): with one region there is nothing to combine and no second region to pick.
+    T.test('X-review-SV-1', 'With one region, the bar offers no rest or second picker and no combined-figure explanation', function (a) {
+      run(function () {
+        var p = T_FIXTURE('mini');
+        p.regions = p.regions.slice(0, 1);
+        var root = startApp(p);
+        clickMode(root, 'one');
+        a.deepEqual(pickers(root), ['focus'], 'One vs the rest: the focus picker only');
+        a.ok(!shown(root, '.tap-cmp__explain'), 'no explanation of a combined figure');
+        clickMode(root, 'pair');
+        a.deepEqual(pickers(root), ['focus'], 'One vs one: no second region to pick');
+        a.equal(sentence(root), TAP.scope.sentence(TAP.store.get().cmp), 'the sentence follows the scope');
+      });
+    });
+
+    T.test('X-review-SV-1', 'With two regions, the rest and second pickers and the explanation still show', function (a) {
+      run(function () {
+        var p = T_FIXTURE('mini');
+        p.regions = p.regions.slice(0, 2);
+        var root = startApp(p);
+        clickMode(root, 'one');
+        a.deepEqual(pickers(root), ['focus', 'rest'], 'One vs the rest');
+        a.ok(shown(root, '.tap-cmp__explain'), 'the explanation of the combined figure');
+        clickMode(root, 'pair');
+        a.deepEqual(pickers(root), ['focus', 'second'], 'One vs one');
+      });
+    });
   });
 
   /* ---------- US-1.1.8: data status label (#9) ---------- */
