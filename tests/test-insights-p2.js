@@ -242,6 +242,15 @@
       a.deepEqual(TAP.themes.match(''), [], 'empty text: nothing');
     });
 
+    when(['TAP.themes'], 'X-review-RI-20', 'Accented letters belong to the word, and a hyphen may join a phrase', function (a) {
+      a.equal(TAP.themes.match('Partnerübersicht pflegen').indexOf('partners'), -1, '"Partnerübersicht" does not count for partners');
+      a.equal(TAP.themes.match('Réseau de revendeurs: partenaires').indexOf('partners'), -1, '"partenaires" does not count for partners');
+      a.ok(TAP.themes.match('Ein Partner vor Ort').indexOf('partners') >= 0, '"Partner" between spaces still counts');
+      a.ok(TAP.themes.match('Notre partner à Lyon').indexOf('partners') >= 0, 'an accented word next to it does not stop a match');
+      a.ok(TAP.themes.match('Two case-study visits').indexOf('references') >= 0, '"case-study" counts as the phrase "case study"');
+      a.ok(TAP.themes.match('Close the product-gaps list').indexOf('productGaps') >= 0, '"product-gaps" counts as "product gaps"');
+    });
+
     when(['TAP.themes'], 'TPV-TC-470', 'The themes report’s explanation names every theme’s keywords', function (a) {
       var text = TAP.explain.sections('nb-themes').map(function (s) { return s.paras.join(' '); }).join(' ');
       window.TAP_COMMENT_THEMES.themes.forEach(function (th) {
@@ -487,6 +496,16 @@
       a.near(list[0].figures[0].cell.v / list[0].figures[1].cell.v, CAP.multiple, 1e-6, 'the multiple');
     });
 
+    when(SHARED, 'X-review-RI-6', 'Partner capacity is flagged from 2.5 times the average and stays out of the Overview’s top three (D81)', function (a) {
+      a.equal(cfg('partnerCapacity').params.multiple, 2.5, 'the threshold is 2.5 times the average');
+      I().sample();
+      var all = TAP.insights.all(), at = all.map(function (x) { return x.ruleId; }).indexOf('partnerCapacity');
+      a.ok(at >= 0, 'the planted partner (' + CAP.multiple.toFixed(2) + '× the average) is still flagged');
+      a.ok(at >= 3, 'it is not among the three most significant insights (rank ' + (at + 1) + ')');
+      // Hand-worked strength: (3.18 - 1) / (2 × (2.5 - 1))
+      a.near(all[at].strength, (CAP.multiple - 1) / 3, 1e-6, 'its strength no longer saturates');
+    });
+
     when(SHARED, 'TPV-TC-482', 'With only 4 partners with FTE there is no partner capacity insight', function (a) {
       var p = JSON.parse(JSON.stringify(P)), kept = 0;
       p.regions.forEach(function (r) {
@@ -518,7 +537,7 @@
       var fte = function (x) { return x.fteSales + x.fteConsultants; };
       var avg = sum(kept.map(oi)) / sum(kept.map(fte));
       var planted = kept.filter(function (x) { return x.name === CAP.name; })[0], mine = oi(planted) / fte(planted);
-      a.ok(mine / avg >= 2, 'fixture: the planted partner is still at 2x or more (' + (mine / avg).toFixed(2) + ')');
+      a.ok(mine / avg >= cfg('partnerCapacity').params.multiple, 'fixture: the planted partner is still at the threshold or more (' + (mine / avg).toFixed(2) + ')');
       TAP.data.load(p);
       TAP.insights.reset();
       var x = sharedOf('partnerCapacity').filter(function (i) { return i.regionIds[0] === CAP.region; })[0];
