@@ -241,7 +241,9 @@
       withGuide(function (root) {
         var g = TAP.content.guide();
         var links = qsa('.tap-guide__toc button', root);
-        a.deepEqual(links.map(txt), g.contents.map(function (c) { return c.title; }), 'contents list titles, in order');
+        // Sections added through TAP.guideExtras join the contents list before the glossary (ARCHITECTURE 18.1)
+        var own = g.contents.map(function (c) { return c.title; }), added = (TAP.guideExtras || []).map(function (x) { return x.title; });
+        a.deepEqual(links.map(txt), own.slice(0, -1).concat(added, own.slice(-1)), 'contents list titles, in order');
         var secs = qsa('.tap-guide__sec', root).map(function (n) { return n.getAttribute('data-guide'); });
         // Sections other streams add (TAP.guideExtras, ARCHITECTURE 18.1) sit after planning and before the glossary
         var extra = (TAP.guideExtras || []).map(function (x) { return x.id; });
@@ -249,7 +251,7 @@
         a.deepEqual(secs.slice(2, secs.length - 1), extra, 'the added sections come after planning and before the glossary');
         var toc = root.querySelector('.tap-guide__toc');
         a.ok(toc.compareDocumentPosition(root.querySelector('.tap-guide__sec')) & Node.DOCUMENT_POSITION_FOLLOWING, 'contents come first');
-        links[2].click();
+        links[links.length - 1].click();
         a.equal(document.activeElement, root.querySelector('[data-guide="glossary"] h2'), 'the glossary link moves to the glossary heading');
         links[0].click();
         a.equal(document.activeElement, root.querySelector('[data-guide="howTo"] h2'), 'the first link moves to How to use this app');
