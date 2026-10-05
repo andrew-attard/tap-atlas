@@ -494,5 +494,14 @@
           'the data sources panel lists step 2 and the insight id');
       });
     });
+    T.test('X-present-reveal', 'An insight step scrolls its outlined rows into view in the stage', function (a) {
+      withApp(function () {
+        TAP.present.start([{ insight: 'split:retail' }]);
+        var stage = document.querySelector('.tap-present__stage'), hit = stage && stage.querySelector('.is-hl');
+        a.ok(hit, 'the insight row is outlined');
+        var r = hit && hit.getBoundingClientRect(), box = stage && stage.getBoundingClientRect();
+        a.ok(r && r.top >= box.top && r.bottom <= box.bottom, 'and within the visible stage');
+      });
+    });
   });
 })(window.TAP);
