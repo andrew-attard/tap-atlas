@@ -24,7 +24,7 @@
  *   P12 implied wins: na 78, latam 16.38, neu 33.32, seu 29.68, ceu 50.4, mea 15.04, apac 11.4; ratio 2.995775
  *   P13 North America top-3 share 0.60084 (na-a01, na-a05, na-a06)
  *   P14 Middle East & Africa at-risk share 0.40042
- *   P15 Strategic share: na 0.379157, latam 0.379724, neu 0.450149, seu 0.340299, ceu null, mea 0.399638, apac 0.799754
+ *   P15 Strategic share: na 0.379157, latam 0.379724, neu 0.450149, seu 0.340299, ceu null, mea 0.399638, apac 0.799754; of three-year order intake: na 0.376461, latam 0.376185, neu 0.466653, seu 0.343074, ceu null, mea 0.412412, apac 0.800839
  *   Attractive but not yet winnable: na [culture utilities finance government hospitality retail fsm], latam [finance retail], neu [government infotech], seu [utilities pharma fsm], ceu [busServices hospitality manufacturing pharma property], mea [infotech fsm property], apac [busServices culture media fsm]
  *   Q01 seu partner share 40.0% (others 15.1%)
  *   Q02 apac new business share of ARR ambition 35.9% (others 62.8%)
