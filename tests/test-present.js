@@ -466,8 +466,7 @@
         var p = shown();
         a.equal(p && p.getAttribute('data-report'), 'nb-levers', 'the insight report');
         a.equal(pressed(p, 'measure'), 'nb.wins', 'on the insight measure');
-        var hl = TAP.store.get().highlight;
-        a.deepEqual(hl && [hl.reportId, hl.regionIds, hl.mark], ['nb-levers', ['na'], 'bar'], 'its "Show me" highlight is set');
+        a.equal(TAP.store.get().highlight, null, 'the highlight goes to the step panel only, not the shared state (D74)');
         a.ok(p && p.querySelector('.tap-panel__strip'), 'the panel names the highlight');
         var box = p && p.querySelector('.tap-panel__chart'), chart = box && window.echarts.getInstanceByDom(box);
         a.ok(chart && ringed(chart.getOption().series, 0), 'and rings the mark on the chart');
