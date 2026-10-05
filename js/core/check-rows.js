@@ -45,7 +45,7 @@
   }
 
   function checkSection(r, key, rctx, env, extra) {
-    var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map();
+    var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map(), rows = map();
     var list = key === 'accounts' ? r.customerGrowth.accounts : r[key];
     if (!Array.isArray(list)) return;
     if (!list.length) warn(rctx, name, say('expect.items'), say('found.emptyList'), true);
@@ -56,7 +56,10 @@
         if (!isStr(o.sourceCell)) warn(c, 'sourceCell', say('expect.sourceCell'), o.sourceCell);
       } else if (o.sourceRow === undefined || !(isNum(o.sourceRow) && o.sourceRow % 1 === 0)) {
         warn(c, 'sourceRow', say('expect.sourceRow'), o.sourceRow);
+      } else if (rows[o.sourceRow]) {
+        warn(c, 'sourceRow', say('expect.uniqueRow'), o.sourceRow);   // lists tell rows apart by their number
       }
+      if (key !== 'recap' && isNum(o.sourceRow)) rows[o.sourceRow] = true;
       var id = key === 'accounts' ? o.id : key === 'marketCoverage' ? o.industryId : null;
       if (id != null && seen[id]) err(c, key === 'accounts' ? 'id' : 'industryId', say(key === 'accounts' ? 'expect.uniqueId' : 'expect.uniqueIndustry'), id);
       seen[id] = true;

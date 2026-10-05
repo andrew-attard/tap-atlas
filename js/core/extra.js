@@ -75,14 +75,15 @@
     }).sort(function (a, b) { return a.sourceRow - b.sourceRow; });
   }
 
-  // [{id, regionId, source, sourceRow, item}] in region file order, then source row order.
+  // [{id, regionId, source, sourceRow, key, item}] in region file order, then source row order. Rows with a missing or
+  // repeated number are left out (the check warns), so the key is always the row number.
   function list(source, regionIds) {
     var id = idOf(source), out = [];
     if (!section(id)) return out;
     TAP.data.regions().forEach(function (reg) {
       if (regionIds && regionIds.indexOf(reg.id) < 0) return;
       itemsOf(reg.id, id).forEach(function (it) {
-        out.push({ id: reg.id + ':' + it.sourceRow, regionId: reg.id, source: source, sourceRow: it.sourceRow, item: it });
+        out.push({ id: reg.id + ':' + it.sourceRow, regionId: reg.id, source: source, sourceRow: it.sourceRow, key: it.sourceRow, item: it });
       });
     });
     return out;

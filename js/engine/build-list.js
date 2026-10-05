@@ -45,7 +45,8 @@
 
   function sourceText(entry) {
     var reg = TAP.data.region(entry.regionId) || {}, file = (reg.source || {}).fileName || TAP.content.regionName(reg);
-    return t('rows.source', { file: file, row: entry.sourceRow });
+    var n = entry.sourceRow;   // a row with no usable row number names its file only
+    return typeof n === 'number' && n % 1 === 0 ? t('rows.source', { file: file, row: n }) : file;
   }
 
   function build(ctx) {
@@ -128,8 +129,8 @@
         '</button></th>';
     }).join('') + '<th data-tap-col="source">' + esc(t('rows.sourceHeading')) + '</th>';
     var body = rows.map(function (r) {
-      var e = r.entry, hl = items.some(function (x) { return x.section === section && x.regionId === e.regionId && +x.row === e.sourceRow; });
-      return '<tr data-tap-region="' + esc(e.regionId) + '" data-tap-row="' + esc(e.source + ':' + e.regionId + ':' + e.sourceRow) + '"' +
+      var e = r.entry, hl = items.some(function (x) { return x.section === section && x.regionId === e.regionId && String(x.row) === String(e.key); });
+      return '<tr data-tap-region="' + esc(e.regionId) + '" data-tap-row="' + esc(e.source + ':' + e.regionId + ':' + e.key) + '"' +
         (hl ? ' class="is-highlight is-hl"' : '') + '>' + cols.map(function (c) {
           return '<td data-tap-col="' + esc(c.key) + '"' + (c.align === 'right' ? ' class="tap-list__num"' : '') + '>' +
             esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, decimals: c.decimals })) + '</td>';
@@ -138,17 +139,18 @@
     return '<table class="tap-list"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
   }
 
-  // A row click ({row: "<source>:<regionId>:<sourceRow>"}) opens that row's details.
+  // A row click ({row: "<source>:<regionId>:<key>"}) opens that row's details. The key is the row number, or
+  // "p<position>" for a row whose number is missing or repeated (TAP.rows.list).
   function targetFn(def) {
     return function (params) {
-      var d = (params && params.data) || {}, m = /^(extra:[^:]+|[^:]+):(.+):(\d+)$/.exec(d.row || '');   // an extra section's source keeps its own colon
+      var d = (params && params.data) || {}, m = /^(extra:[^:]+|[^:]+):(.+):(\d+|p\d+)$/.exec(d.row || '');   // an extra section's source keeps its own colon
       if (!m) return null;
-      var source = m[1], regionId = m[2], n = +m[3];
-      var e = TAP.rows.list(source, [regionId]).filter(function (x) { return x.sourceRow === n; })[0];
+      var source = m[1], regionId = m[2];
+      var e = TAP.rows.list(source, [regionId]).filter(function (x) { return String(x.key) === m[3]; })[0];
       if (!e) return null;
       return { reportId: def.id, regionIds: [regionId], industryIds: e.item.industryId ? [e.item.industryId] : [],
         accountIds: source === 'accounts' && e.item.id ? [e.item.id] : [], mark: 'row',
-        items: [{ section: TAP.rows.section(source), regionId: regionId, row: n }] };
+        items: [{ section: TAP.rows.section(source), regionId: regionId, row: e.key }] };
     };
   }
 
