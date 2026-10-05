@@ -34,12 +34,11 @@
 .tap-topbar__logo { display: block; height: 28px; width: auto; }
 .tap-topbar__name { font-size: var(--tap-fs-h3); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
 
-/* Menu: one line at 1280 px. The current view is bold with an ink bar; red is kept for actions and highlights */
-.tap-menu { display: flex; align-items: stretch; gap: var(--tap-sp-1); flex: 1; min-width: 0; }
-.tap-topbar__actions { display: flex; align-items: center; gap: var(--tap-sp-2); flex: none; }
-.tap-topbar__actions:empty { display: none; }
+/* Menu: one line at 1280 px (D72). The current view is bold with an ink bar; red is kept for actions and highlights */
+.tap-menu { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 var(--tap-sp-1); flex: 1; min-width: 0; }
+/* Nine views fit one line at 1280 px; narrower (125% and 150% zoom) the menu wraps, so every view stays reachable */
 .tap-menu__item {
-  display: flex; align-items: center; padding: 0 var(--tap-sp-4);
+  display: flex; align-items: center; min-height: 40px; padding: 0 var(--tap-sp-2);
   font: inherit; font-size: var(--tap-fs-lead); font-weight: 600; color: var(--tap-ink); white-space: nowrap;
   background: transparent; border: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
   cursor: pointer;
@@ -96,11 +95,14 @@
 .tap-cmp__tick { display: inline-block; min-width: 1ch; }
 .tap-cmp__setdone { align-self: flex-start; }
 
-/* The plain sentence, its explanation and the data date */
+/* The plain sentence, its explanation, the data date and the page-wide actions beside it (D72) */
 .tap-cmp__say { flex: 1 1 480px; display: flex; align-items: center; gap: var(--tap-sp-2); margin: 0; }
 .tap-cmp__sentence { font-size: var(--tap-fs-h3); line-height: 1.3; font-weight: 800; }
 .tap-cmp__explain { flex: none; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
 .tap-cmp__date { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); background: var(--tap-ground); }
+.tap-topbar__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); flex: none; }
+.tap-topbar__actions:empty { display: none; }
+.tap-topbar__actions .tap-btn { border-width: var(--tap-rule-w); background: var(--tap-ground); }
 .tap-cmp__pop {
   position: absolute; top: calc(100% + var(--tap-sp-2)); left: 0; z-index: 40;
   width: min(560px, 92vw); padding: var(--tap-sp-4) var(--tap-sp-6);

@@ -1,6 +1,8 @@
 /*
  * File: js/ui/shell.js
  * Purpose: Draws the page frame: data status banner, top bar with the menu, comparison bar area and the view area.
+ *          Page-wide actions (Take the tour, Present) sit at the right end of the comparison bar's sentence row,
+ *          beside the data date, so the menu keeps one line at 1280 px (D72).
  * Provides: TAP.shell (mount, viewEl, actionsEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
  *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/theme.js (logo)
@@ -84,12 +86,14 @@
     root.classList.add('tap-app');
 
     var nav = menu();
-    var actions = el('div', { class: 'tap-topbar__actions' });   // filled by other streams, e.g. the tour button
+    // Filled by other streams (the tour button, Present). The comparison bar places it beside the data date (D72);
+    // the class keeps its first name, which other code and tests select by.
+    var actions = el('div', { class: 'tap-topbar__actions' });
     var slot = el('div', { class: 'tap-banner-slot' });
     var cmp = el('div', { class: 'tap-cmp', 'data-tour': 'compare' });
     var stack = el('div', { class: 'tap-stack' }, [
       slot,
-      el('header', { class: 'tap-topbar' }, [brand(), nav, actions]),
+      el('header', { class: 'tap-topbar' }, [brand(), nav]),
       cmp
     ]);
     var view = el('main', { class: 'tap-view', id: 'tap-view', tabindex: '-1' });
@@ -107,7 +111,7 @@
     // Anything can ask for details by event (e.g. a chart click), and they open in a side panel
     cleanups.push(TAP.bus.on('details:open', function (p) { TAP.layers.openDetails(p && p.target); }));
 
-    tryMount(function (slot) { TAP.compareBar.mount(slot); }, cmp);
+    tryMount(function (slot) { TAP.compareBar.mount(slot, { actions: actions }); }, cmp);
     return frame;
   }
 
@@ -116,7 +120,8 @@
     return frame.view;
   }
 
-  // The slot at the right of the top bar for page-wide actions (empty until another stream adds to it).
+  // The slot for page-wide actions, beside the data date (empty until another stream adds to it). The Regions view
+  // hides the comparison bar, and these actions with it; P and the Guide still reach presentation mode there.
   function actionsEl() {
     if (!frame) throw new Error('The shell is not drawn yet: call TAP.shell.mount first.');
     return frame.actions;
