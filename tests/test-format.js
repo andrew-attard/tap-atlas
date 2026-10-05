@@ -1,7 +1,7 @@
 /*
  * File: tests/test-format.js
  * Purpose: Tests for number, rating and date formatting (US-1.2.6).
- * Provides: test cases TPV-TC-077, X-format-*
+ * Provides: test cases TPV-TC-077, X-format-*, X-review-DE-1, X-review-DE-7, X-review-DE-11
  * Depends on: tests/harness.js, tests/test-setup.js (mini fixture loaded), js/core/format.js
  * Used by: tests.html
  */
@@ -118,7 +118,59 @@
       a.equal(F.list(['Grand', 'Andorra', 'Sandy']), 'Grand, Andorra and Sandy', 'only a whole word "and" counts');
     });
 
-    T.test('X-format-locale', 'Formatting never depends on the browser’s language (part of TPV-TC-078)', function (a) {
+    // Review DE-1: numbers JavaScript writes in exponent form (under 1e-6, from 1e21) used to print as NaN.
+    T.test('X-review-DE-1', 'Very small and very large numbers format as numbers, never NaN', function (a) {
+      a.equal(F.pct(1e-7), '0%', '1e-7 is 0.00001%, which rounds to 0 at one decimal');
+      a.equal(F.pct(0.3 - 0.2 - 0.1), '0%', 'a float residue of about -2.8e-17 reads 0%');
+      a.equal(F.pct(-2.7e-17, { exact: true }), '0%');
+      a.equal(F.money(1e-10, U), '€0');
+      a.equal(F.money(100 * 1.1 - 110), '€0', 'residue 1.42e-14 thousand is 1.42e-11 euro');
+      a.equal(F.moneyExact(1.4e-14), '€0');
+      a.equal(F.num(1e-7), '0', 'not whole, so one decimal: 0.0, shown as 0');
+      a.equal(F.cell({ v: 1e-7, state: 'value', kind: 'APP' }, { unit: 'score' }), '0');
+      // 1e21 / 1e9 = 1e12 billions: "1" and four groups of three zeros
+      a.equal(F.money(1e21, U), '€1,000,000,000,000B');
+      // 1e19 thousand = 1e22 euro: 23 digits, "10" and seven groups of three zeros
+      a.equal(F.moneyExact(1e19), '€10,000,000,000,000,000,000,000');
+      // 1e21: 22 digits, "1" and seven groups of three zeros
+      a.equal(F.num(1e21), '1,000,000,000,000,000,000,000');
+      // 1e21 as a share is 1e23 percent: 24 digits, "100" and seven groups
+      a.equal(F.pct(1e21), '100,000,000,000,000,000,000,000%');
+      // 5e20 shifted by two decimals passes 1e21 while rounding: 21 digits, "500" and six groups
+      a.equal(F.num(5e20, { decimals: 2 }), '500,000,000,000,000,000,000');
+      a.equal(F.pct(0.2345, { exact: true }), '23.5%', 'decimal rounding still half up');
+      a.equal(F.money(1234.5 * 1000, U), '€1.2M');
+    });
+
+    // Review DE-11: a negative value that rounds to zero lost its sign only after rounding.
+    T.test('X-review-DE-11', 'Small negative values that round to zero show no minus sign', function (a) {
+      a.equal(F.money(-0.0004), '€0', '-0.4 euro rounds to 0');
+      a.equal(F.moneyExact(-0.0004), '€0');
+      a.equal(F.pct(-0.0004), '0%', '-0.04% rounds to 0.0 at one decimal');
+      a.equal(F.pct(-0.00004, { exact: true }), '0%');
+      a.equal(F.num(-0.04), '0', 'one decimal: -0.0, shown as 0');
+      a.equal(F.money(-1234567, U), '-€1.2M', 'real negatives keep the sign');
+      a.equal(F.moneyExact(-0.6), '-€600', '-0.6 thousand is -600 euro');
+      a.equal(F.pct(-0.25), '-25%');
+      a.equal(F.pct(-0.004), '-0.4%');
+      a.equal(F.num(-1.25), '-1.3', 'half up away from zero, as for positives');
+    });
+
+    // Review DE-7: a combined rating whose mean is a whole number read like one region's rating.
+    T.test('X-review-DE-7', 'A combined rating always reads as an average, even when the mean is whole', function (a) {
+      var items = [2, 3, 2, 1].map(function (v, i) {
+        return { regionId: ['alpha', 'bravo', 'charlie', 'delta'][i], cell: { v: v, state: 'value', kind: 'IN' } };
+      });
+      var c = TAP.agg.combine(items, 'rating', 'total');
+      a.equal(c.v, 2, '(2 + 3 + 2 + 1) / 4 = 2');
+      a.equal(F.cell(c, { unit: 'rating', field: 'expertise' }), '2 average');
+      a.equal(F.cell({ v: 2, state: 'value', kind: 'IN', src: { regionId: 'alpha' } }, { unit: 'rating', field: 'expertise' }),
+        'Few key experts (2)', 'one region’s own rating keeps its wording');
+      var c2 = TAP.agg.combine(items.slice(0, 3), 'rating', 'total');
+      a.equal(F.cell(c2, { unit: 'rating', field: 'expertise' }), '2.3 average', '(2 + 3 + 2) / 3 = 2.33');
+    });
+
+    T.test('X-format-locale','Formatting never depends on the browser’s language (part of TPV-TC-078)', function (a) {
       var saved = Number.prototype.toLocaleString;
       Number.prototype.toLocaleString = function () { return 'LOCALE'; };
       try {
