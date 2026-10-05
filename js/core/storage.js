@@ -11,18 +11,20 @@
   var PREFIX = 'tap-atlas:';
   var memory = {};   // used when the browser blocks storage, so the session still behaves the same
 
+  // The browser's store, or null where it is blocked. Reads need no write probe, so values saved earlier can still be
+  // read when the store is full; every write is wrapped below.
   function store() {
-    try {
-      var s = window.localStorage;
-      s.setItem(PREFIX + '_probe', '1');
-      s.removeItem(PREFIX + '_probe');
-      return s;
-    } catch (e) {
-      return null;
-    }
+    try { return window.localStorage || null; } catch (e) { return null; }
   }
 
-  function available() { return !!store(); }
+  // Whether choices can be saved at all: probed once, with a write.
+  var probed = null;
+  function available() {
+    if (probed !== null) return probed;
+    var s = store();
+    try { s.setItem(PREFIX + '_probe', '1'); s.removeItem(PREFIX + '_probe'); probed = true; } catch (e) { probed = false; }
+    return probed;
+  }
 
   function get(key, fallback) {
     var s = store(), raw = memory[key];
