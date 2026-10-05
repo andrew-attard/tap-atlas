@@ -97,7 +97,8 @@
   // The report title, with {industry} filled in from the Industry view's choice.
   function reportTitle(def) {
     var id = TAP.store.get().industry, ind = id ? TAP.data.industry(id) : null;
-    return String(def.title || '').replace('{industry}', ind ? ind.name : t('anIndustry'));
+    var name = ind ? ind.name : t('anIndustry');
+    return String(def.title || '').replace('{industry}', function () { return name; });   // a function: "$&" in a name stays as written
   }
 
   // Terms are marked once across the whole panel, so the seen list is shared by every paragraph.
