@@ -423,6 +423,21 @@
       a.ok(!labels.some(function (l) { return /other 1 /.test(l); }), 'never "the other 1 region"');
     });
 
+    // Review (ENGINE note on #340): a combined rating whose mean is a whole number still reads as an average
+    T.test('X-review-DE-7', 'In the quadrant tooltip, a rating combined over regions reads as an average, even when whole', function (a) {
+      var res = quad('bubble', { mode: 'all' }), found = 0;
+      points(res).forEach(function (d) {
+        var tip = tipOf(res, d), ents = TAP.scope.entities({ mode: 'all' }), g = { id: 'all', kind: 'combined', regionIds: ents.map(function (e) { return e.id; }), how: 'average', role: 'combined' };
+        ['growthPotential', 'criticality', 'competitiveIntensity', 'references', 'expertise', 'productFit'].forEach(function (f) {
+          var c = TAP.measures.combined('ind.' + f, g, { industryId: d.industryId });
+          if (c.state !== 'value' || !Number.isInteger(c.v)) return;
+          found++;
+          a.ok(tip.indexOf(c.v + ' average') >= 0, d.industryId + ' ' + f + ': a mean of ' + c.v + ' reads "' + c.v + ' average"');
+        });
+      });
+      a.ok(found > 0, 'the mini fixture has combined ratings with a whole-number mean (' + found + ')');
+    });
+
     T.test('X-review-RI-19', 'With one industry filtered, the table numbers each row as its bubble is numbered (the region)', function (a) {
       var res = quad('bubble', { mode: 'all' }, { opts: { industryFilter: 'ind4' } });
       // Hand-worked: the regions' places in file order, alpha 1 to delta 4
