@@ -71,6 +71,9 @@ Object.assign(window.TAP_CONTENT.text, {
     partialYears: 'Some plan years were left blank',
     partNotProvided: '{parts} not provided',
     partialAccounts: 'Some accounts left this year blank',
+    // Exposure shares are taken over planned increases (D77)
+    declines: 'Not included, as a planned decline: {names}',
+    declinesMany: 'Not included, as a planned decline: {n} accounts',
     partialWeights: 'Some rows have no figure to weight by and are not included',
     nb: {
       arr: { label: 'New business ARR potential', short: 'New business' },
@@ -146,6 +149,7 @@ Object.assign(window.TAP_CONTENT.text, {
     kind: 'Kind of value',
     how: 'Combined',
     partial: 'Partly provided',
+    leftOut: 'Left out',
     partialMark: '(partly provided)',
     year: 'Year {n}',
     npFor: '{name}: not provided',

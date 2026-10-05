@@ -220,14 +220,20 @@
     });
   });
 
-  // Exposure: shares of the three-year incremental ARR. The top 3 keeps every account's figure, so combined
-  // figures take the top 3 accounts across the scope (D60).
+  // Exposure: shares of the three-year incremental ARR of the accounts with a planned increase (D77); accounts with
+  // a planned decline are left out and named in the note. The top 3 keeps every increase, so combined figures take
+  // the top 3 accounts across the scope (D60).
   function exposure(r, which) {
     var all = ((region(r).customerGrowth || {}).accounts) || [];
-    var list = all.map(function (a) { return { a: a, v: incr3(a) }; }).filter(function (x) { return x.v != null; });
+    var given = all.map(function (a) { return { a: a, v: incr3(a) }; }).filter(function (x) { return x.v != null; });
+    var list = given.filter(function (x) { return x.v >= 0; }), down = given.filter(function (x) { return x.v < 0; });
     var s = k.src(r, 'customerGrowth', 'incrementalArr', rows(all), null, 'APP');
-    if (!list.length) return k.blank('APP', s);
-    var den = sum(list.map(function (x) { return x.v; })), blank = list.some(function (x) { return incr3Partial(x.a); });
+    if (!given.length) return k.blank('APP', s);
+    var den = sum(list.map(function (x) { return x.v; })), blank = given.some(function (x) { return incr3Partial(x.a); });
+    return declined(exposed(r, which, list, den, blank, s), down.map(function (x) { return x.a.name || x.a.id; }));
+  }
+  // The top 3 or at-risk share over the increases in list
+  function exposed(r, which, list, den, blank, s) {
     if (which === 'top3') {
       var top = list.slice().sort(function (x, y) { return y.v - x.v; }).slice(0, 3);
       s = k.src(r, 'customerGrowth', 'incrementalArr', top.map(function (x) { return x.a.sourceRow; }), null, 'APP');
@@ -236,6 +242,12 @@
     var risky = list.filter(function (x) { return riskOf(x.a) !== 'none'; });
     if (risky.length) s = k.src(r, 'customerGrowth', 'incrementalArr', risky.map(function (x) { return x.a.sourceRow; }), null, 'APP');
     return markPartial(ratioCell(sum(risky.map(function (x) { return x.v; })), den, s), blank);
+  }
+  function declined(out, names) {
+    if (!names.length || out.state !== 'value') return out;
+    out.declined = names;
+    out.note = (out.partial && out.note ? out.note + '; ' : '') + TAP.agg.declineNote(names);
+    return out;
   }
   M.define('cg.top3Share', rate('APP', 'cg.arr', []), function (r) { return exposure(r, 'top3'); });
   M.define('cg.riskShare', rate('APP', 'cg.arr', []), function (r) { return exposure(r, 'risk'); });

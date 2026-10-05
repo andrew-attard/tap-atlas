@@ -2,7 +2,7 @@
  * File: js/engine/aggregate.js
  * Purpose: Combines several regions' values into one figure (totals and averages), following the combining rules
  *          of US-1.2.5. This is the only place those rules are written down in code; insights reuse it.
- * Provides: TAP.agg (combine, ratio, weightBy, describe)
+ * Provides: TAP.agg (combine, ratio, weightBy, describe, declineNote)
  * Depends on: js/core/namespace.js, js/core/store.js (TAP.notes), config/settings.js, js/core/content.js,
  *             js/core/format.js, js/core/data.js,
  *             js/engine/measures.js (only to look up rate weights and their labels, at call time)
@@ -190,7 +190,19 @@
       src.partial = partial;
       out.note = TAP.content.text('combined.partialNote', { names: TAP.format.list(names(partial)) });
     }
+    var down = [];
+    used.forEach(function (u) { down = down.concat(u.cell.declined || []); });
+    if (down.length) {
+      out.declined = down;
+      out.note = (out.note ? out.note + '; ' : '') + declineNote(down);
+    }
     return out;
+  }
+
+  // The note for accounts left out of an exposure share for a planned decline (D77): their names, or how many.
+  function declineNote(list) {
+    return list.length <= 3 ? TAP.content.text('measures.declines', { names: TAP.format.list(list) })
+      : TAP.content.text('measures.declinesMany', { n: list.length });
   }
 
   function regionsWord(n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); }
@@ -233,5 +245,5 @@
     return out.join('; ');
   }
 
-  TAP.agg = { combine: combine, ratio: ratio, weightBy: weightBy, describe: describe };
+  TAP.agg = { combine: combine, ratio: ratio, weightBy: weightBy, describe: describe, declineNote: declineNote };
 })(window.TAP);
