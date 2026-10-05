@@ -2,7 +2,7 @@
  * File: tests/test-combine.js
  * Purpose: Tests for combining regions and the comparison scope (TPV-TC-068 to 075), checked against the
  *          hand calculations in tests/fixtures/mini-expected.js.
- * Provides: test cases TPV-TC-068 to TPV-TC-075, X-scope-*, X-agg-*, X-review-SV-16
+ * Provides: test cases TPV-TC-068 to TPV-TC-075, X-scope-*, X-agg-*, X-review-SV-16, X-review-DE-13
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -278,6 +278,17 @@
       a.equal(TAP.agg.describe(TAP.agg.combine(mcItems('ind1', 'growthPotential'), 'rating', 'total')),
         'Average of 4 regions, ranging from 2 to 3');
       a.equal(TAP.agg.describe({ v: 5, state: 'value', kind: 'DER', src: { regionId: 'alpha' } }), '', 'not combined');
+    });
+  });
+
+  // Review DE-13: combined categories came back as text ("1"), which TAP.format.tier can't print.
+  T.suite('combine-category', function () {
+    T.test('X-review-DE-13', 'A combined category keeps each value as it was given', function (a) {
+      var items = [1, 1, 2].map(function (v, i) { return { regionId: ['alpha', 'bravo', 'charlie'][i], cell: { v: v, state: 'value', kind: 'IN' } }; });
+      var c = TAP.agg.combine(items, 'category', 'total');
+      a.deepEqual(c.v, [{ value: 1, n: 2 }, { value: 2, n: 1 }], 'tier 1 twice, tier 2 once, as numbers');
+      a.equal(TAP.format.tier(c.v[0].value), 'Tier 1');
+      a.equal(c.counts[1], 2);
     });
   });
 
