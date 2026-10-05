@@ -10,6 +10,7 @@
  *
  * Worked out from the raw items here, never by the app's code. Shares and ratios are a ratio of sums: a region's
  * figure is its summed parts over its summed totals, and "all regions" sums the regions that have both sides.
+ * The gap between customer value and books value is over ARR and services, the types both lists hold (`booksCv`).
  */
 'use strict';
 
@@ -30,10 +31,13 @@ function byYear(list, years, pred) {
 // One region's figures. A part the region does not carry is null, never zero.
 function regionFigures(r, years) {
   const cv = byYear(r.recap, years), books = byYear(r.booksValue, years), revenue = byYear(r.revenue, years);
-  const cv3 = sum(cv), books3 = sum(books);
-  const out = { cv: cv, books: books, revenue: revenue, cv3: clean(cv3), books3: clean(books3), revenue3: clean(sum(revenue)),
+  const both = function (x) { return x.type === 'arr' || x.type === 'services'; };
+  const booksCv = byYear(r.booksValue, years, both);
+  const cv3 = sum(cv), books3 = sum(books), booksCv3 = sum(booksCv);
+  const out = { cv: cv, books: books, booksCv: booksCv, revenue: revenue, cv3: clean(cv3), books3: clean(books3), booksCv3: clean(booksCv3),
+    revenue3: clean(sum(revenue)),
     revenueShare: years.map(function (y, i) { return clean(revenue[i] / cv[i]); }), revenueShare3: clean(sum(revenue) / cv3),
-    gap3: clean(cv3 - books3), gapShare: clean((cv3 - books3) / cv3), outsourcingPct: r.outsourcingPct };
+    gap3: clean(cv3 - booksCv3), gapShare: clean((cv3 - booksCv3) / cv3), outsourcingPct: r.outsourcingPct };
   out.booksByType = {};
   out.booksByCategory = {};
   TYPES.forEach(function (t) {
@@ -42,7 +46,7 @@ function regionFigures(r, years) {
   });
   out.gapByChannel = {};
   ['direct'].concat(RESELLERS).forEach(function (ch) {
-    const c = values(r.recap, function (x) { return x.channel === ch; }), b = values(r.booksValue, function (x) { return x.channel === ch; });
+    const c = values(r.recap, function (x) { return x.channel === ch; }), b = values(r.booksValue, function (x) { return x.channel === ch && both(x); });
     out.gapByChannel[ch] = { cv: clean(c), books: clean(b), gap: clean(c - b), share: c ? clean((c - b) / c) : null };
   });
   out.routes = {};
@@ -163,6 +167,7 @@ function build(plan) {
   return {
     p4: { years: years, regions: regions, withStrategicPlan: withPlan, withBaseYear: withBase,
       all: { cv3: clean(add(ids, function (x) { return x.cv3; })), books3: clean(add(ids, function (x) { return x.books3; })),
+        booksCv3: clean(add(ids, function (x) { return x.booksCv3; })),
         revenue3: clean(add(ids, function (x) { return x.revenue3; })),
         gapShare: clean(add(ids, function (x) { return x.gap3; }) / add(ids, function (x) { return x.cv3; })) },
       lookups: { solutions: P.lookups.solutions.map(function (s) { return s.name; }), partnerTypes: P.lookups.partnerTypes.map(function (t) { return t.name; }),
@@ -182,7 +187,7 @@ function build(plan) {
     r05: { region: C.r05.region, pipeline: one(C.r05.region).baseYear.pipeline, stillToWin: one(C.r05.region).baseYear.stillToWin,
       coverage: coverage[C.r05.region], coverageByRegion: coverage,
       others: others(C.r05.region, withBase, function (x) { return x.baseYear.pipeline; }, function (x) { return x.baseYear.stillToWin; }) },
-    r06: { region: C.r06.region, cv3: one(C.r06.region).cv3, books3: one(C.r06.region).books3, gap3: one(C.r06.region).gap3,
+    r06: { region: C.r06.region, cv3: one(C.r06.region).cv3, booksCv3: one(C.r06.region).booksCv3, gap3: one(C.r06.region).gap3,
       gapShare: gap[C.r06.region], gapShareByRegion: gap,
       others: others(C.r06.region, ids, function (x) { return x.gap3; }, function (x) { return x.cv3; }) },
     r07: { region: C.r07.region, solution: top[C.r07.region].id, share: top[C.r07.region].share, oi: one(C.r07.region).solutions[top[C.r07.region].id].oi,
@@ -213,7 +218,8 @@ function check(x) {
     x.r08.blanks.type.length === 1 && x.r08.blanks.maturity.length === 1, 'R08');
   ok(x.r09.strategicPlan === null && x.r09.withStrategicPlan.length === ids.length - 1, 'R09');
   ok(x.r10.baseYear === null && x.r10.withBaseYear.length === ids.length - 1 && x.r10.outsourcingPct === null && x.r10.coverageNotGiven.join() === C.r10.noCoverage, 'R10');
-  // Adding up: routes equal books value, books value never above customer value (equal when direct), revenue below order intake
+  // Adding up: routes equal books value; over ARR and services, books value is never above customer value (equal when direct);
+  // revenue is below order intake
   ids.forEach(function (id) {
     const r = R[id];
     ok(near(r.routes3, r.books3), id + ': routes add up to the books value');
@@ -236,7 +242,7 @@ function comment(x) {
       ' (' + f(x.r04.growthByRegion, pct) + ')',
     'R05 ' + x.r05.region + ' pipeline ' + x.r05.pipeline + ' over ' + x.r05.stillToWin + ' still to win: ' + x.r05.coverage +
       ' (' + f(x.r05.coverageByRegion, function (c) { return c === null ? 'none' : c.toFixed(2); }) + ')',
-    'R06 ' + x.r06.region + ' books value ' + x.r06.books3 + ' of customer value ' + x.r06.cv3 + ': ' + pct(x.r06.gapShare) + ' outside the books (' +
+    'R06 ' + x.r06.region + ' books value (ARR and services) ' + x.r06.booksCv3 + ' of customer value ' + x.r06.cv3 + ': ' + pct(x.r06.gapShare) + ' outside the books (' +
       f(x.r06.gapShareByRegion, pct) + ')',
     'R07 ' + x.r07.region + ' ' + x.r07.solution + ' ' + pct(x.r07.share) + ' of new business (' + f(x.r07.topByRegion, function (t) { return t.id + ' ' + pct(t.share); }) + ')',
     'R08 partners by maturity: ' + f(x.r08.maturity, String) + '; by type: ' + f(x.r08.types, String),

@@ -10,8 +10,9 @@
  *
  * Runs last and draws no random numbers, so every figure the earlier phases made stays the same. Everything here
  * is worked out from the finished recap, New Business rows and partners, so the new parts add up with them:
- * - books value = customer value (the recap), less the reseller's margin on what partners distribute and less the
- *   services partners deliver themselves; never above customer value; the same as customer value when direct;
+ * - books ARR and services = customer value (the recap), less the reseller's margin on what partners distribute and
+ *   less the services partners deliver themselves; never above customer value; the same when direct;
+ * - books perpetual software and hardware are one-off amounts sold with Solution 5 and Solution 6, beside the recap;
  * - the routes split the same books order intake another way, so each year's routes add up to its books value;
  * - revenue is a share of the same year's order intake, so it is never above it.
  */
@@ -21,7 +22,6 @@ const P = require('./sample-planted-p4');
 const D = require('./sample-derive');
 
 const TYPES = ['arr', 'services', 'swPerpetual', 'hardware'];
-const TYPE_OF = { recurring: 'arr', swPerpetual: 'swPerpetual', hardware: 'hardware' };   // a solution's category as an item type
 const CATEGORY_ROWS = ['recurring', 'services', 'swPerpetual', 'hardware'];               // base-year rows, in sheet order
 const NONE = 'none';
 const EXISTING = ['customerSuccess', 'partnerExisting'];   // the routes for existing customers
@@ -121,9 +121,10 @@ function integratorShare(r, channel) {
   return all ? amount(mine.filter(function (p) { return p.type === 'si'; })) / all : 0;
 }
 
-function typeOf(solution) {
+// The one-off category a solution also sells (perpetual software or hardware), or null.
+function oneOffOf(solution) {
   const s = P.lookups.solutions.filter(function (x) { return x.id === solution; })[0];
-  return s ? TYPE_OF[s.category] : 'arr';
+  return s && P.oneOff[s.category] ? s.category : null;
 }
 
 // Books value and routes together, from the same amounts, so they add up to each other.
@@ -138,13 +139,18 @@ function booksAndRoutes(r, rs, years) {
     D.CHANNELS.forEach(function (ch) {
       const b = booksBySolution(r, rs, y, year, ch), si = ch === 'partner' || ch === 'allianceA' ? integratorShare(r, ch) : 0;
       byType[ch] = { arr: 0, services: 0, swPerpetual: 0, hardware: 0 };
+      const place = function (type, sol, v) {
+        byType[ch][type] += v;
+        if (ch === 'direct') toRoute('ownSales', y, type, sol, v);
+        else if (ch === 'allianceB') toRoute('allianceBReseller', y, type, sol, v);
+        else { const part = D.r1(v * si); toRoute('systemIntegrators', y, type, sol, part); toRoute('otherResellers', y, type, sol, D.r1(v - part)); }
+      };
       ['arr', 'services'].forEach(function (kind) {
         Object.keys(b[kind]).forEach(function (sol) {
-          const v = b[kind][sol], type = kind === 'services' ? 'services' : typeOf(sol);
-          byType[ch][type] += v;
-          if (ch === 'direct') toRoute('ownSales', y, type, sol, v);
-          else if (ch === 'allianceB') toRoute('allianceBReseller', y, type, sol, v);
-          else { const part = D.r1(v * si); toRoute('systemIntegrators', y, type, sol, part); toRoute('otherResellers', y, type, sol, D.r1(v - part)); }
+          place(kind, sol, b[kind][sol]);
+          // The licence or hardware sold with this solution's new recurring business
+          const extra = kind === 'arr' ? oneOffOf(sol) : null;
+          if (extra) place(extra, sol, D.r1(b.arr[sol] * P.oneOff[extra]));
         });
       });
     });
