@@ -438,6 +438,43 @@
 
     /* ---------- US-2.4.5: print the profile (#218) ---------- */
 
+    /* ---------- review fix #372: data with one or two regions (SV-1) ---------- */
+
+    // The mini fixture cut down to its first n regions.
+    function firstRegions(n) {
+      var p = T_FIXTURE('mini');
+      p.regions = p.regions.slice(0, n);
+      return p;
+    }
+
+    T.test('X-review-SV-1', 'With one region, the profile draws the region column only and says there is nothing to compare with', function (a) {
+      a.ok(TAP.data.load(firstRegions(1)).ok, 'one-region data loads');
+      var m = null;
+      try {
+        try { m = mountFor('alpha'); } catch (e) { a.ok(false, 'the profile mounts without an error: ' + e.message); return; }
+        var glance = qs('.tap-pf-glance', m.root);
+        a.ok(glance, 'the plan at a glance is drawn');
+        a.equal(qsa('.tap-pf-glance__table thead th', m.root).length, 4 * 2, 'each line has a label column and the region column only');
+        a.equal(qsa('[data-part="rest"], [data-part="compare"]', m.root).length, 0, 'no rest or comparison column');
+        a.equal(txt(qs('.tap-pf-glance__alone', m.root)), TAP.content.text('profile.glance.alone'), 'says there is no other region');
+        a.ok(qs('[data-slot="insights"]', m.root), 'the rest of the page is drawn (insights)');
+        a.ok(qsa('.tap-pf__reports .tap-vh-slot', m.root).length > 0, 'the report panels are drawn');
+      } finally { if (m) m.handle.destroy(); TAP.data.load(T_FIXTURE('mini')); }
+    });
+
+    T.test('X-review-SV-1', 'With two regions, the profile compares with the other region', function (a) {
+      a.ok(TAP.data.load(firstRegions(2)).ok, 'two-region data loads');
+      var m = null;
+      try {
+        m = mountFor('alpha');
+        var rest = TAP.scope.entities(TAP.profile.cmp('alpha'))[1];
+        a.ok(rest && rest.regionIds.join() === 'bravo', 'the rest is the other region');
+        a.equal(qsa('.tap-pf-glance__table thead th', m.root).length, 4 * 4, 'label, region, rest and comparison columns');
+        a.equal(txt(qsa('.tap-pf-glance__table thead th', m.root)[2]), rest.label, 'the rest column is named as the charts name it');
+        a.ok(!qs('.tap-pf-glance__alone', m.root), 'no "nothing to compare" note');
+      } finally { if (m) m.handle.destroy(); TAP.data.load(T_FIXTURE('mini')); }
+    });
+
     T.test('X-profile-print', 'The Print button on the profile opens the browser\'s print dialog', function (a) {
       var real = window.print, calls = 0, m = mountFor('alpha');
       window.print = function () { calls++; };

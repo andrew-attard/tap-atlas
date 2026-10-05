@@ -400,6 +400,20 @@
         'as a total: 7150 new business + 418 customer growth (150 + 268)');
     });
 
+    // Review fix #372 (SV-16): one other region reads as one region, not "the other 1 region"
+    T.test('X-review-SV-1', 'With two regions, the headline names the other region in the singular', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions = p.regions.slice(0, 2);
+      a.ok(TAP.data.load(p).ok, 'two-region data loads');
+      ['average', 'total'].forEach(function (how) {
+        TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: how } });
+        var s = headlineText();
+        // Region B by hand: 4150 (mini-expected), the same as an average or a total of one region
+        a.ok(s.indexOf(H('restOne', { rest: TAP.format.money(4150) })) >= 0, how + ': "' + s + '"');
+        a.ok(!/other 1 /.test(s), how + ': no "other 1"');
+      });
+    });
+
     T.test('X-overview-headline-modes', 'Every comparison mode gives a complete sentence with no gaps', function (a) {
       sample();
       [{ mode: 'all' }, { mode: 'one', focus: 'ceu' }, { mode: 'one', focus: 'na', restAs: 'individual' }, { mode: 'pair', focus: 'na', second: 'ceu' },
