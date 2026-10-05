@@ -90,7 +90,7 @@
       lines.push([meta.label, TAP.format.cell(cell, { unit: 'score', exact: true })]);
       ratingFields(pair[1]).forEach(function (f) {
         var c = TAP.measures.combined('ind.' + f, r.g, { industryId: r.ind.id });
-        lines.push(['· ' + TAP.measures.meta('ind.' + f).label, c.state === 'value' ? TAP.format.rating(c.v, f) : TAP.format.cell(c, {})]);
+        lines.push(['· ' + TAP.measures.meta('ind.' + f).label, TAP.format.cell(c, { unit: 'rating', field: f })]);   // combined: always "n average"
       });
     });
     if (sizeCol) lines.push([sizeCol.label, K.exact(r.s, sizeCol)], [K.t('chart.kind'), TAP.format.kind(sizeCol.kind).text]);
