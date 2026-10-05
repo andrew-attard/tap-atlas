@@ -20,18 +20,22 @@
   var START = { measure: 'nb.hitRate', by: 'entity' };   // a first chart that reads at once: hit rate by region
   var cur = null;   // the current choice, in memory only: nothing is kept after the tab closes (US-3.5.3)
 
+  // What a figure can be shown by, in words: its dimensions, or "region" when it has none.
   function byWords(list) {
-    return TAP.format.list(list.filter(function (b) { return b !== 'entity'; }).map(function (b) { return lower(TAP.custom.byLabel(b)); }));
+    var dims = list.filter(function (b) { return b !== 'entity'; });
+    return TAP.format.list((dims.length ? dims : ['entity']).map(function (b) { return lower(TAP.custom.byLabel(b)); }));
   }
 
   /*
    * The measures to pick from: every option that can be shown by something. A per-industry copy of a figure that
    * adds nothing (same name, fewer choices, e.g. "Current ARR" per industry) is left out; two different figures
-   * that share a name are told apart by what they can be shown by.
+   * that share a name are told apart by what they can be shown by. Figures with more choices are looked at first,
+   * so the result doesn't depend on the catalogue's order; the list keeps the catalogue's order.
    */
   function choices() {
-    var out = [];
-    TAP.custom.options().forEach(function (o) {
+    var out = [], opts = TAP.custom.options(), pos = {};
+    opts.forEach(function (o, i) { pos[o.measureId] = i; });
+    opts.slice().sort(function (a, b) { return b.by.length - a.by.length || pos[a.measureId] - pos[b.measureId]; }).forEach(function (o) {
       if (!o.by.length) return;
       var same = out.filter(function (x) { return x.label === o.label; });
       if (same.some(function (x) { return o.by.every(function (b) { return x.by.indexOf(b) >= 0; }); })) return;
@@ -40,7 +44,7 @@
       out.push(c);
     });
     out.forEach(function (c) { c.text = c.clash ? t('measureBy', { measure: c.label, by: byWords(c.by) }) : c.label; });
-    return out;
+    return out.sort(function (a, b) { return pos[a.id] - pos[b.id]; });
   }
 
   // The nearest choice the catalogue allows: the measure if offered, the dimension and type if they still fit.
@@ -80,15 +84,30 @@
     TAP.panelChart.error(box, errors);
   }
 
+  // Which picker control has focus, so a redraw can give it back (the select, or a button of a button group).
+  function focusOf(box) {
+    var a = document.activeElement;
+    if (!a || !box.contains(a)) return null;
+    var g = a.closest ? a.closest('[data-control]') : null;
+    return { custom: a.getAttribute('data-custom'), control: g && g.getAttribute('data-control'), value: a.getAttribute('data-value') };
+  }
+  function refocus(box, f) {
+    if (!f) return;
+    var to = f.custom ? TAP.dom.qs('[data-custom="' + f.custom + '"]', box)
+      : f.control ? (TAP.dom.qs('[data-control="' + f.control + '"] [data-value="' + f.value + '"]', box) ||
+        TAP.dom.qs('[data-control="' + f.control + '"] [aria-pressed="true"]', box)) : null;
+    if (to && to.focus) to.focus({ preventScroll: true });
+  }
+
   /*
    * Draws the section into host. opts.spec starts from a given choice ({measure, by, type}); without it the
-   * session's last choice, or the story's example. Returns {el, spec(), destroy()}.
+   * session's last choice, or the story's example. Returns {el, spec(), destroy()}; the Guide calls destroy on unmount.
    */
   function render(host, opts) {
     var list = choices();
     if (opts && Object.prototype.hasOwnProperty.call(opts, 'spec')) cur = opts.spec;
     cur = fit(cur, list);
-    var panel = null;
+    var panel = null, gone = false;
     var pickers = el('div', { class: 'tap-custom__pickers' }), slot = el('div', { class: 'tap-custom__panel' });
     var root = el('div', { class: 'tap-custom' }, [el('p', { class: 'tap-custom__lead' }, t('lead')), pickers, slot]);
     host.appendChild(root);
@@ -97,7 +116,7 @@
     function choose(patch) { cur = fit(Object.assign({}, cur, patch), list); drawPickers(); drawPanel(); }
 
     function drawPickers() {
-      var m = list.filter(function (c) { return c.id === cur.measure; })[0], seg = TAP.panelMenus.seg;
+      var m = list.filter(function (c) { return c.id === cur.measure; })[0], seg = TAP.panelMenus.seg, f = focusOf(pickers);
       TAP.dom.clear(pickers);
       TAP.dom.append(pickers, [
         field(t('measure'), measureSelect(list, function (id) { choose({ measure: id }); }), 'tap-custom-measure'),
@@ -107,6 +126,7 @@
           return { value: x, label: TAP.shapes.label(x) };
         }), function (v) { choose({ type: v }); }))
       ]);
+      refocus(pickers, f);
     }
 
     function drawPanel() {
@@ -118,26 +138,28 @@
       panel = TAP.panel.create(slot, def, { initial: { type: def.spec.type, breakdown: def.defaultBreakdown } });
     }
 
-    // A type picked in the panel's own menu follows into the picker. The panel would remember it in the browser;
-    // a custom chart keeps nothing there (US-3.5.3), so it is taken back out at once.
+    // A type picked in the panel's own menu is a new choice: the panel is drawn again from a matching definition,
+    // so Reset all charts and a recorded step agree with the picker. The panel would remember the type in the
+    // browser; a custom chart keeps nothing there (US-3.5.3), so it is taken back out at once.
     slot.addEventListener('click', function (e) {
       var item = e.target && e.target.closest ? e.target.closest('[data-type]') : null;
       if (!item || !panel) return;
-      var def = TAP.reports.get(panel.id), kept = TAP.storage.get('chart:' + panel.id, null);
       TAP.storage.remove('chart:' + panel.id);
-      cur = Object.assign({}, cur, { type: kept || (def && def.defaultType) || cur.type });
-      drawPickers();
+      choose({ type: item.getAttribute('data-type') });
+      var btn = TAP.dom.qs('.tap-panel [data-action="type"]', slot);
+      if (btn && btn.focus) btn.focus({ preventScroll: true });
     });
 
     drawPickers();
     // The Guide draws its sections before they are on the page. The panel waits until the section is, so a Guide
     // drawn and dropped without ever being shown leaves no panel listening to the store behind it.
     if (slot.isConnected) drawPanel();
-    else if (window.requestAnimationFrame) window.requestAnimationFrame(function () { if (slot.isConnected && !panel) drawPanel(); });
+    else if (window.requestAnimationFrame) window.requestAnimationFrame(function () { if (!gone && slot.isConnected && !panel) drawPanel(); });
     return {
       el: root,
       spec: function () { return Object.assign({}, cur); },
       destroy: function () {
+        gone = true;
         if (panel) panel.destroy();
         panel = null;
         if (root.parentNode) root.parentNode.removeChild(root);
@@ -149,5 +171,5 @@
 
   // A section of the Guide, not a view, so the menu and its number keys don't change (D70)
   TAP.guideExtras = TAP.guideExtras || [];
-  TAP.guideExtras.push({ id: 'buildChart', title: TAP.content.text('custom.heading'), render: function (body) { render(body); } });
+  TAP.guideExtras.push({ id: 'buildChart', title: TAP.content.text('custom.heading'), render: function (body) { return render(body); } });
 })(window.TAP);

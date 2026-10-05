@@ -23,6 +23,7 @@
       var before = Object.keys(window.TAP_REPORTS), panels = [];
       var api = { panel: function (def, opts) { var p = TAP.panel.create(T.dom.mount(), def, opts); panels.push(p); return p; } };
       function tidy() {
+        builders.splice(0).forEach(function (h) { try { h.destroy(); } catch (e) { /* already gone */ } });
         panels.forEach(function (p) { try { p.destroy(); } catch (e) { /* already gone */ } });
         Object.keys(window.TAP_REPORTS).forEach(function (id) { if (before.indexOf(id) < 0) delete window.TAP_REPORTS[id]; });
         TAP.storage.clear('chart:custom:');
@@ -31,9 +32,11 @@
     };
   }
 
+  var builders = [];   // every section drawn by a test, destroyed by scene() whatever happens
   // The Build a chart section, drawn into the sandbox from a known choice.
   function builder(spec) {
     var host = T.dom.mount(), h = TAP.customBuilder.render(host, { spec: spec || null });
+    builders.push(h);
     return { host: host, h: h,
       measures: function () { return qsa('select[data-custom="measure"] option', host).map(function (o) { return o.value; }); },
       by: function () { return qsa('[data-control="custom-by"] button', host).map(function (b) { return b.getAttribute('data-value'); }); },
@@ -321,8 +324,34 @@
       a.equal(b.h.spec().type, 'dot', 'the picker follows');
       a.equal(qs('[data-control="custom-type"] [aria-pressed="true"]', b.host).getAttribute('data-value'), 'dot');
       a.equal(TAP.storage.get('chart:custom:nb.arr:entity', null), null, 'nothing remembered');
+      a.equal(TAP.reports.get('custom:nb.arr:entity').defaultType, 'dot', 'the panel was drawn again from a matching definition');
+      a.equal(document.activeElement, qs('.tap-panel [data-action="type"]', b.host), 'focus back on the chart type button');
       b.h.destroy();
     }));
+
+    T.test('X-custom-builder-focus', 'Focus stays on the control used when the pickers are drawn again', scene(function (a) {
+      var b = builder({ measure: 'nb.arr', by: 'entity' });
+      var yr = qs('[data-control="custom-by"] button[data-value="year"]', b.host);
+      yr.focus();
+      click(yr);
+      a.equal(document.activeElement, qs('[data-control="custom-by"] button[data-value="year"]', b.host), 'the By button');
+      var sel = qs('select[data-custom="measure"]', b.host);
+      sel.focus();
+      b.pick('nb.hitRate');
+      a.equal(document.activeElement, qs('select[data-custom="measure"]', b.host), 'the Measure picker');
+      var opts = qsa('select[data-custom="measure"] option', b.host).map(function (o) { return o.textContent; });
+      opts.forEach(function (x) { a.ok(!/\(by \)/.test(x), 'no empty "by": ' + x); });
+    }));
+
+    T.test('X-custom-guide-destroy', 'The Guide section returns a handle whose destroy removes its panel', function (a) {
+      var x = TAP.guideExtras.filter(function (g) { return g.id === 'buildChart'; })[0], host = T.dom.mount();
+      var h = x.render(host);
+      a.ok(h && typeof h.destroy === 'function', 'a handle with destroy');
+      a.ok(!!qs('.tap-panel', host), 'drawn');
+      h.destroy();
+      a.ok(!qs('.tap-panel', host), 'gone after destroy');
+      Object.keys(window.TAP_REPORTS).forEach(function (id) { if (/^custom:/.test(id)) delete window.TAP_REPORTS[id]; });
+    });
 
     T.test('X-custom-guide', 'Build a chart is a Guide section, not a menu entry', function (a) {
       var x = (TAP.guideExtras || []).filter(function (g) { return g.id === 'buildChart'; })[0];
