@@ -89,9 +89,7 @@
   function start(opts) {
     opts = opts || {};
     root = opts.root || document.getElementById('app') || document.body;
-    if (unsubscribe) { unsubscribe(); unsubscribe = null; }   // start() can run more than once (tests)
-    if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
-    mounted = null;
+    stop();   // start() can run more than once (tests): nothing of the last run keeps listening, even if this load fails
 
     TAP.notes.clear();
     var res = TAP.data.load(opts.plan);
@@ -150,8 +148,10 @@
     try { TAP.tour.stop(); } catch (e) { /* no tour running */ }
     try { TAP.showme.unbind(); } catch (e) { /* not bound */ }
     try { TAP.keys.unbind(); } catch (e) { /* not bound */ }
-    if (mounted && mounted.handle && mounted.handle.destroy) mounted.handle.destroy();
+    var old = mounted;
     mounted = null;
+    if (old && old.handle && old.handle.destroy) old.handle.destroy();
+    try { TAP.shell.unmount(); } catch (e) { /* no shell drawn */ }
   }
 
   TAP.app = { start: start, stop: stop, mountView: mountView, current: function () { return mounted && mounted.id; } };

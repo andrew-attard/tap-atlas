@@ -3,7 +3,7 @@
  * Purpose: Draws the page frame: data status banner, top bar with the menu, comparison bar area and the view area.
  *          Page-wide actions (Take the tour, Present) sit at the right end of the comparison bar's sentence row,
  *          beside the data date, so the menu keeps one line at 1280 px (D72).
- * Provides: TAP.shell (mount, viewEl, actionsEl, label)
+ * Provides: TAP.shell (mount, unmount, viewEl, actionsEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
  *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/ui/present.js (button), js/theme.js (logo)
  * Used by: js/ui/app.js; js/panel/panel.js and panel export read label() for saved images and copied tables;
@@ -111,7 +111,10 @@
     // Anything can ask for details by event (e.g. a chart click), and they open in a side panel
     cleanups.push(TAP.bus.on('details:open', function (p) { TAP.layers.openDetails(p && p.target); }));
 
-    tryMount(function (slot) { TAP.compareBar.mount(slot, { actions: actions }); }, cmp);
+    tryMount(function (slot) {
+      var stopBar = TAP.compareBar.mount(slot, { actions: actions });
+      if (typeof stopBar === 'function') cleanups.push(stopBar);
+    }, cmp);
     tryMount(function (slot) { TAP.present.button(slot); }, actions);   // "Present" (US-3.1.2)
     return frame;
   }
@@ -128,5 +131,8 @@
     return frame.actions;
   }
 
-  TAP.shell = { mount: mount, viewEl: viewEl, actionsEl: actionsEl, label: label };
+  // Drops the frame's store and bus listeners and the comparison bar's (TAP.app.stop); the elements stay where they are.
+  function unmount() { teardown(); }
+
+  TAP.shell = { mount: mount, unmount: unmount, viewEl: viewEl, actionsEl: actionsEl, label: label };
 })(window.TAP);
