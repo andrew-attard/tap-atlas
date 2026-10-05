@@ -675,6 +675,37 @@
       a.ok(res.sizeLegend, 'a size legend');
     });
 
+    T.test('X-review-POL-levers', 'Bubble view: names never overlap; a region without room is numbered and named in the key', function (a) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var fs = window.TAP_THEME.type.chart;
+      [{ w: 560, h: 440 }, { w: 1100, h: 560 }, { w: 380, h: 300 }].forEach(function (z) {
+        var res = lever({ mode: 'all' }, null, { type: 'bubble', size: z }), o = res.option, g = o.grid, boxes = [], seen = 0;
+        a.ok(res.sized, z.w + ': built again at the chart’s real size');
+        var X = function (v) { return g.left + (v - o.xAxis.min) / (o.xAxis.max - o.xAxis.min) * (z.w - g.left - g.right); };
+        var Y = function (v) { return z.h - g.bottom - (v - o.yAxis.min) / (o.yAxis.max - o.yAxis.min) * (z.h - g.top - g.bottom); };
+        o.series.filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) {
+          s.data.forEach(function (d) {
+            seen++;
+            var lab = d.label || {}, text = typeof lab.formatter === 'function' ? lab.formatter() : lab.formatter;
+            if (Array.isArray(lab.position)) {
+              var r = d.symbolSize / 2, w = Math.ceil(String(text).length * fs * 0.56) + 4;
+              boxes.push({ id: d.entityId, x: X(d.value[0]) - r + lab.position[0], y: Y(d.value[1]) - r + lab.position[1], w: w, h: fs + 4 });
+            } else {
+              var key = res.legend.filter(function (l) { return l.mark != null && String(l.mark) === String(text); })[0];
+              a.ok(lab.show && key && key.label === s.name, z.w + ': ' + d.entityId + ' is numbered and named in the key');
+            }
+          });
+        });
+        a.equal(seen, 7, z.w + ': one bubble per region');
+        boxes.forEach(function (b, i) {
+          boxes.slice(i + 1).forEach(function (c) {
+            var meet = b.x < c.x + c.w && c.x < b.x + b.w && b.y < c.y + c.h && c.y < b.y + b.h;
+            a.ok(!meet, z.w + ': the names of ' + b.id + ' and ' + c.id + ' do not overlap');
+          });
+        });
+      });
+    });
+
     T.test('TPV-TC-355', 'All regions: each bar takes its region’s colour; no colour depends on the value', function (a) {
       LEVERS.forEach(function (id) {
         var res = lever({ mode: 'all' }, id), n = 0;
