@@ -86,12 +86,16 @@
   }
 
   function mount(root) {
-    var g = TAP.content.guide(), titles = {};
+    var g = TAP.content.guide(), titles = {}, handles = [];
     (g.contents || []).forEach(function (c) { titles[c.id] = c.title; });
+    // Sections added by other streams join the contents list, before the glossary entry
+    var contents = (g.contents || []).filter(function (c) { return c.id !== 'glossary'; })
+      .concat(TAP.guideExtras.map(function (x) { return { id: x.id, title: x.title }; }))
+      .concat((g.contents || []).filter(function (c) { return c.id === 'glossary'; }));
     TAP.dom.clear(root);
     var toc = el('nav', { class: 'tap-guide__toc', 'aria-label': t('contents') }, [
       el('h2', { class: 'tap-guide__toch' }, t('contents')),
-      el('ol', { class: 'tap-guide__toclist' }, (g.contents || []).map(function (c) {
+      el('ol', { class: 'tap-guide__toclist' }, contents.map(function (c) {
         return el('li', null, el('button', { type: 'button', class: 'tap-guide__tocitem', onclick: function () { jump(root, c.id); } }, c.title));
       }))
     ]);
@@ -105,19 +109,23 @@
       toc,
       section('howTo', titles.howTo || (g.howTo || {}).title, howTo(g.howTo || {})),
       section('planning', titles.planning || (g.planning || {}).title, planning(g.planning || {}))
-    ].concat(extras(), [section('glossary', titles.glossary, [glossary])]));
+    ].concat(extras(handles), [section('glossary', titles.glossary, [glossary])]));
     root.appendChild(page);
     TAP.glossary.render(glossary);
-    return { destroy: function () { TAP.dom.clear(root); } };
+    return { destroy: function () {
+      handles.forEach(function (h) { if (h && typeof h.destroy === 'function') h.destroy(); });
+      TAP.dom.clear(root);
+    } };
   }
 
   // Sections other streams add to the Guide (Phase 3: the running order, US-3.1.3; Build a chart, US-3.5.1):
   // TAP.guideExtras.push({id, title, render(el)}). Each draws into its own section; one that fails shows why.
+  // render may return {destroy()}, called when the Guide is unmounted.
   TAP.guideExtras = TAP.guideExtras || [];
-  function extras() {
+  function extras(handles) {
     return TAP.guideExtras.map(function (x) {
       var body = el('div', { class: 'tap-guide__extra', 'data-extra': x.id });
-      try { x.render(body); } catch (e) { body.appendChild(el('p', { class: 'tap-stub' }, e.message)); }
+      try { handles.push(x.render(body)); } catch (e) { body.appendChild(el('p', { class: 'tap-stub' }, e.message)); }
       return section(x.id, x.title, [body]);
     });
   }
