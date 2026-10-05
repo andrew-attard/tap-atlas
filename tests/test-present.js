@@ -105,7 +105,7 @@
         a.ok(sec, 'the data sources panel has a running order section');
         a.ok(text(sec).indexOf(TAP.content.text('present.sourcesTitle')) >= 0, 'with its heading');
         a.equal(sec ? sec.querySelectorAll('li').length : 0, 4, 'listing the four skipped steps');
-        var others = body.querySelector('.tap-src__notes');
+        var others = body.querySelector('.tap-src__notes:not(.tap-src__present)');
         a.ok(!others || text(others).indexOf('no-such-report') < 0, 'not repeated under other notes');
         a.ok(text(root.querySelector('.tap-view')).indexOf('no-such-report') < 0 && text(root).indexOf('noSuchRule') < 0, 'nothing on the main screen');
       } finally { TAP.app.stop(); TAP.notes.clear('presentation'); TAP.data.load(T_FIXTURE('mini')); }

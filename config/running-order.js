@@ -1,9 +1,50 @@
 /*
  * File: config/running-order.js
- * Purpose: The running order for presentation mode: the steps of the meeting, in order (US-3.1.1). Each field is explained in docs/ARCHITECTURE.md section 18.2.
+ * Purpose: The running order for presentation mode: the steps of the meeting, in order (US-3.1.1). "Present" in
+ *          the top bar, or the P key, shows them one at a time, full screen. Steps can also be recorded from the
+ *          screen ("Add to running order" in a chart's More menu) and copied from the Guide as the text of this file.
  * Provides: window.TAP_RUNNING_ORDER
  * Depends on: nothing
- * Used by: js/ui/present.js
+ * Used by: js/ui/present.js, js/ui/present-steps.js
  * Owner: PRESENT stream (#232)
+ *
+ * Each step names exactly one of these three:
+ *   report     the id of a chart, for example 'nb-levers' (the ids are in config/reports-*.js)
+ *   insight    the id of an insight, for example 'consensus:education'. The step shows the insight's chart with
+ *              the insight highlighted, and the insight's sentence as its title
+ *   custom     a custom chart: {measure, by, type}, or a full chart definition copied from the app
+ * and may also set any of these (leave one out to get the chart's usual setting):
+ *   title      a short title, shown in the progress row with "Step 3 of 11"
+ *   measure    which of the chart's measures to show, for example 'nb.wins'
+ *   type       the chart type, for example 'bar', 'dot', 'heatmap' or 'stacked100' (one the chart offers)
+ *   breakdown  break the chart down by 'year', 'industry', 'channel', 'motion', 'segment' or 'risk' (if offered)
+ *   cmp        what to compare, as in the comparison bar:
+ *                mode     'all' (all regions), 'one' (one against the rest), 'pair' (one against one),
+ *                         'set' (a chosen set) or 'org' (the organization total)
+ *                focus    the region id the comparison is about ('one' and 'pair')
+ *                second   the other region id ('pair')
+ *                set      a list of at least two region ids ('set')
+ *                restAgg  the rest as an 'average' or a 'total' ('one'); rest is accepted as a shorter name
+ *                restAs   the rest 'combined' into one figure or shown 'individual'ly ('one')
+ *              The comparison applies to that step only. Leaving presentation mode restores the screen as it was.
+ *   highlight  what to outline: {regionIds: [...], industryIds: [...], mark: 'bar'}; mark is 'bar', 'points',
+ *              'cell', 'industryRow', 'regionColumn' or 'quadrant', as the chart draws it
+ * A step that names a chart, measure, region or insight this data doesn't have is left out when presentation
+ * starts, and listed in the data sources panel. The rest still run.
  */
-window.TAP_RUNNING_ORDER = window.TAP_RUNNING_ORDER || { steps: [] };
+window.TAP_RUNNING_ORDER = {
+  steps: [
+    { title: 'The size and make-up of every plan', report: 'ov-ambition' },
+    { title: 'Where the regions place each industry', report: 'ind-tiers' },
+    { insight: 'consensus:education' },
+    { title: 'Attractive industries and the ability to win there', report: 'ind-quad' },
+    { title: 'New business by industry', report: 'nb-industries', measure: 'ind.nb.arr' },
+    { title: 'New customer wins: one region against the rest', report: 'nb-levers', measure: 'nb.wins',
+      cmp: { mode: 'one', focus: 'na', restAgg: 'average' }, highlight: { regionIds: ['na'], mark: 'bar' } },
+    { title: 'Customer growth year by year', report: 'cg-growth', breakdown: 'year' },
+    { title: 'How concentrated customer growth is', report: 'cg-exposure', measure: 'cg.top3Share' },
+    { title: 'Which channels carry each plan', report: 'pt-reliance', type: 'stacked100' },
+    { title: 'Partner capacity in two regions', report: 'pt-capacity', cmp: { mode: 'pair', focus: 'seu', second: 'mea' } },
+    { title: 'The accounts behind one region’s growth', report: 'cg-accounts', cmp: { mode: 'one', focus: 'apac' } }
+  ]
+};
