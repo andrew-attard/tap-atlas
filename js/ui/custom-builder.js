@@ -5,7 +5,7 @@
  *          the custom definition, so comparison, sources and "not provided" work as on the prepared reports.
  * Provides: a Guide extra (TAP.guideExtras), TAP.customBuilder (render)
  * Depends on: js/engine/custom.js, js/panel/panel.js, panel-menus.js (seg), panel-chart.js (error), js/core/dom.js,
- *             content.js, format.js, storage.js (all at call time)
+ *             content.js, format.js, storage.js, js/engine/shapes.js (label, kit.lower) (all at call time)
  * Used by: js/views/guide.js
  * Owner: CUSTOM stream (#80)
  */
@@ -14,7 +14,7 @@
 
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   function t(key, vars) { return TAP.content.text('custom.' + key, vars); }
-  function lower(s) { return !s ? '' : /^[A-Z][A-Z0-9]/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); }
+  function lower(s) { return TAP.shapes.kit.lower(s); }   // mid-sentence lower case, acronyms kept (one copy, in the kit)
 
   var GROUPS = ['amount', 'count', 'rate', 'rating'];
   var START = { measure: 'nb.hitRate', by: 'entity' };   // a first chart that reads at once: hit rate by region
