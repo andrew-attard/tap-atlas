@@ -10,9 +10,21 @@ window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   custom: {
+    // The Build a chart section of the Guide (js/ui/custom-builder.js)
+    heading: 'Build a chart',
+    lead: 'Pick a measure, what to show it by and a chart type. Only combinations that make sense are offered: rates and ratings are never added up. The chart follows the comparison like any other.',
+    measure: 'Measure',
+    byPicker: 'By',
+    by: { entity: 'Region' },
+    type: 'Chart type',
+    measureBy: '{measure} (by {by})',
+    groups: { amount: 'Amounts', count: 'Counts', rate: 'Rates, shares and averages', rating: 'Ratings and scores' },
+    failed: 'This chart can’t be drawn',
+    none: 'No measure in the data can be charted.',
+    // The badge on every custom chart's panel (js/panel/panel-menus.js)
+    badge: 'Custom chart',
     // A custom chart's title and its "About this chart" text (js/engine/custom.js)
     title: '{measure} by {by}',
-    by: { entity: 'Region' },
     explain: {
       shows: 'A chart you built: {measure} by {by}. It is not one of the prepared reports.',
       readEntity: 'One bar or dot per region, or per combined figure, in the current comparison.',

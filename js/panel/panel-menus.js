@@ -1,8 +1,8 @@
 /*
  * File: js/panel/panel-menus.js
  * Purpose: Draws a panel's controls: the toolbar (insights, explanation, chart type, table, more) with its popovers,
- *          the "compare differently" editor and badge, and the controls row (industry picker, measure, break down by,
- *          bubble size and the options a builder offers).
+ *          the "compare differently" editor and badge, the "Custom chart" badge, and the controls row (industry
+ *          picker, measure, break down by, bubble size and the options a builder offers).
  * Provides: TAP.panelMenus (render, tools, types, spec, compareEditor, customBadge, button, pop, seg, select, breakdowns,
  *           fitBreakdown)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
@@ -205,6 +205,8 @@
   // b: the panel's build ({def, types, ...}); info: its insights ({list, count}).
   function tools(p, b, info) {
     var box = el('div', { class: 'tap-panel__tools', role: 'toolbar', 'aria-label': t('tools') }), open = p.st.pop;
+    // A chart built on the Guide says so, so it isn't taken for a prepared report (US-3.5.1, CUSTOM)
+    if (b.def && b.def.custom) box.appendChild(el('span', { class: 'tap-badge tap-badge--accent tap-custom__badge', 'data-custom-chart': '' }, TAP.content.text('custom.badge')));
     box.appendChild(button('insights', 'insight', t('insights'), { count: info.count, expanded: open === 'ins',
       aria: t('insightsCount', { n: info.count }), disabled: !info.count, onclick: function () { p.toggle('ins'); } }));
     box.appendChild(button('about', 'info', t('about'), { aria: t('aboutLabel'), onclick: function () { if (b.def) explain(b.def, p.st.custom || p.opts.cmp); } }));
