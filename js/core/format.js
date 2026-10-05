@@ -4,6 +4,7 @@
  *          (US-1.2.6). Charts and takeaways round with a suffix (€1.2M); tables and tooltips show the exact figure.
  * Provides: TAP.format (money, moneyExact, pct, num, rating, tier, cell, kind, date, list)
  * Depends on: js/core/namespace.js, js/core/content.js (wording), js/core/data.js (currency, rating scales),
+ *             js/core/sources.js (isoDate),
  *             js/theme.js (kind glyphs)
  * Used by: every module that shows figures
  */
@@ -136,7 +137,7 @@
 
   // "2 Oct 2026", read in UTC so the date doesn't shift with the viewer's time zone. {time: true} adds "09:05".
   function date(iso, opts) {
-    var d = iso ? new Date(iso) : null;
+    var d = TAP.sources && TAP.sources.isoDate(iso) ? new Date(iso) : null;   // other text is never guessed at
     if (!d || isNaN(d.getTime())) return missing();
     var s = d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
     if (opts && opts.time) s += ', ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());

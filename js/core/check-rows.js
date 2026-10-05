@@ -123,6 +123,7 @@
     ids[r.id] = true;
     var nctx = sub(rctx, 'source.notes');
     if (isObj(r.source)) fields(r.source, SPEC().source, sub(rctx, 'source'), env);
+    if (isObj(r.source)) ['fileModified', 'importedAt'].forEach(function (k) { K().dateField(r.source, k, sub(rctx, 'source')); });
     if (isObj(r.source)) each(r.source.notes, nctx, env, function (n, k) { fields(n, SPEC().note, sub(nctx, k), env); });
     var tiers = Array.isArray(r.marketCoverage) ? map() : null;
     checkSection(r, 'marketCoverage', rctx, env, function (o, c) { checkMarketRow(o, c, env, tiers); });

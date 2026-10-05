@@ -1,7 +1,7 @@
 /*
  * File: js/core/sources.js
  * Purpose: Turns a figure's source reference into file › sheet › cell, and summarises each region's import.
- * Provides: TAP.sources (address, imports, datesDiffer, dataDate)
+ * Provides: TAP.sources (address, imports, datesDiffer, dataDate, isoDate)
  * Depends on: js/core/namespace.js, js/core/data.js, js/core/content.js (regionName, content/text-data.js wording),
  *             js/core/extra.js (extra sections, at call time)
  * Used by: tooltips and tables (js/panel/), side panels and details (js/ui/layers.js), the data sources panel, the
@@ -86,9 +86,17 @@
     });
   }
 
+  // An ISO date, with or without a time and zone ("2026-10-02", "2026-10-02T09:00:00Z"). Other text is never guessed
+  // at: "02/10/2026" could be day first or month first (review DE-10).
+  var ISO = /^\d{4}-(\d{2})-(\d{2})(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/;
+  function isoDate(text) {
+    var m = typeof text === 'string' ? ISO.exec(text) : null;
+    return !!m && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= 31 && !isNaN(new Date(text).getTime());
+  }
+
   // Readable import dates only: [{iso, time}]
   function importDates() {
-    return imports().map(function (r) { return { iso: r.importedAt, time: r.importedAt ? new Date(r.importedAt).getTime() : NaN }; })
+    return imports().map(function (r) { return { iso: r.importedAt, time: isoDate(r.importedAt) ? new Date(r.importedAt).getTime() : NaN }; })
       .filter(function (d) { return !isNaN(d.time); });
   }
 
@@ -105,5 +113,5 @@
     return latest ? latest.iso : null;
   }
 
-  TAP.sources = { address: address, imports: imports, datesDiffer: datesDiffer, dataDate: dataDate };
+  TAP.sources = { address: address, imports: imports, datesDiffer: datesDiffer, dataDate: dataDate, isoDate: isoDate };
 })(window.TAP);
