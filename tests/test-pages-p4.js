@@ -1,7 +1,8 @@
 /*
  * File: tests/test-pages-p4.js
  * Purpose: Tests for the Phase 4 glossary, Guide, tour, region profile lines and handover documents.
- * Provides: test cases for the PAGES4 stream: US-4.6.1 (TPV-TC-742, 745, 747), X-p4-pages-*
+ * Provides: test cases for the PAGES4 stream: US-4.6.1 (TPV-TC-742, 745, 747), US-4.6.3 (TPV-TC-756, 758, 759),
+ *           X-p4-pages-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: PAGES4 stream
@@ -187,5 +188,190 @@
         });
       });
     });
+
+    /* ---------- US-4.6.3: region profile and running order (#459) ---------- */
+
+    // Region A on the miniP4 fixture against the average of the rest (Regions B and D; Region C has no Phase 4 part
+    // and is left out), from tests/fixtures/mini-p4-expected.js. Strategic plan line, three-year figures:
+    //   plan A 2575, rest (3310 + 2585) / 2 = 2947.5; strategic plan A 2700, rest (3200 + 3100) / 2 = 3150;
+    //   variance A 2575 - 2700 = -125, rest (110 - 515) / 2 = -202.5.
+    // Revenue line, rv.all.oi by plan year: A 450 / 760 / 1000; B 635 / 1100 / 1220; D 610 / 850 / 1500, so the rest is
+    //   (635 + 610) / 2 = 622.5, (1100 + 850) / 2 = 975 and (1220 + 1500) / 2 = 1360.
+    var P4_GLANCE = {
+      strategic: [['sp.plan', null, 2575, 2947.5], ['sp.oi', null, 2700, 3150], ['sp.variance', null, -125, -202.5]],
+      revenue: [['rv.all.oi', 1, 450, 622.5], ['rv.all.oi', 2, 760, 975], ['rv.all.oi', 3, 1000, 1360]]
+    };
+    function loadP4(n) {
+      var p = T_FIXTURE('miniP4');
+      if (n) p.regions = p.regions.slice(0, n);
+      var res = TAP.data.load(p);
+      if (!res.ok) throw new Error('miniP4 did not load: ' + res.errors.join('; '));
+    }
+    function lineOf(lines, key) { return lines.filter(function (l) { return l.key === key; })[0]; }
+    function mountProfile(regionId) {
+      TAP.store.set({ view: 'regions', region: regionId });
+      var root = T.dom.mount();
+      return { root: root, handle: TAP.views.get('regions').mount(root) };
+    }
+    function withP4(n, fn) {
+      loadP4(n);
+      try { return fn(); } finally { TAP.store.set({ region: null }); TAP.data.load(T_FIXTURE('mini')); }
+    }
+    function flat(rows) { return [].concat.apply([], rows.map(function (r) { return [].concat(r); })); }
+
+    T.test('TPV-TC-756', 'The glance has a strategic plan line and a revenue line, for the region and the average of the rest', function (a) {
+      withP4(0, function () {
+        var lines = TAP.profileParts.glance('alpha');
+        a.deepEqual(lines.map(function (l) { return l.key; }), ['ambition', 'focus', 'pool', 'customers', 'strategic', 'revenue'],
+          'the four card lines, then the strategic plan and revenue');
+        Object.keys(P4_GLANCE).forEach(function (key) {
+          var line = lineOf(lines, key);
+          a.ok(line && line.label && line.label.indexOf('[') !== 0, key + ': a label from the content file');
+          if (!line) return;
+          a.equal(line.figures.length, P4_GLANCE[key].length, key + ': ' + P4_GLANCE[key].length + ' figures');
+          P4_GLANCE[key].forEach(function (want, i) {
+            var f = line.figures[i] || {};
+            a.equal(f.measure, want[0], key + ' figure ' + (i + 1) + ' is ' + want[0]);
+            a.equal(f.year || null, want[1], key + ' figure ' + (i + 1) + ': plan year ' + want[1]);
+            a.near(f.region && f.region.v, want[2], 1e-6, key + ' ' + f.label + ': Region A');
+            a.near(f.rest && f.rest.v, want[3], 1e-6, key + ' ' + f.label + ': average of the rest');
+            a.ok(f.rest && f.rest.src && (f.rest.src.excluded || []).indexOf('charlie') >= 0, key + ' ' + f.label + ': Region C is left out and named');
+            a.ok(f.label && f.label.indexOf('[') !== 0, key + ' figure ' + (i + 1) + ' has its label');
+          });
+        });
+        var s = lineOf(lines, 'strategic');
+        a.deepEqual(s.figures.map(function (f) { return f.label; }),
+          [TAP.content.text('profile.glance.p4.plan'), TAP.content.text('profile.glance.p4.strategicPlan'), TAP.content.text('profile.glance.p4.variance')],
+          'plan, strategic plan and variance');
+        a.equal(s.figures[2].compare.key, 'above', '-125 against -202.5 reads "above", in the neutral words');
+      });
+    });
+
+    T.test('TPV-TC-756', 'For the region without a strategic plan or revenue, both lines read "not provided"', function (a) {
+      withP4(0, function () {
+        var lines = TAP.profileParts.glance('charlie');
+        ['strategic', 'revenue'].forEach(function (key) {
+          var line = lineOf(lines, key);
+          a.ok(line && line.np, key + ': the line is marked not provided');
+          (line ? line.figures : []).forEach(function (f) { a.equal(f.region.state, 'notProvided', key + ' ' + f.label + ': not provided'); });
+        });
+        var m = mountProfile('charlie');
+        try {
+          ['strategic', 'revenue'].forEach(function (key) {
+            var el = m.root.querySelector('.tap-pf-glance__line[data-line="' + key + '"]');
+            a.ok(el, key + ': the line is drawn');
+            a.match(txt(el), new RegExp(TAP.content.text('states.notProvided'), 'i'), key + ' reads "not provided"');
+            a.equal(qsa('[data-part="compare"]', el).filter(function (x) { return txt(x); }).length, 0, key + ': no comparison where nothing is provided');
+          });
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-p4-pages-glance-drawn', 'The new lines draw the figures, the rest and the comparison, in body text', function (a) {
+      withP4(0, function () {
+        var m = mountProfile('alpha');
+        try {
+          var line = m.root.querySelector('.tap-pf-glance__line[data-line="revenue"]');
+          a.ok(line, 'the revenue line is drawn');
+          var rows = qsa('tbody tr', line);
+          a.equal(rows.length, 3, 'one row per plan year');
+          a.deepEqual(rows.map(function (r) { return r.getAttribute('data-year'); }), ['1', '2', '3'], 'years 1 to 3');
+          a.equal(txt(rows[0] && rows[0].querySelector('[data-part="region"]')), TAP.format.cell({ v: 450, state: 'value', kind: 'DER' }, { unit: 'money' }), 'Region A, year 1');
+          a.equal(txt(rows[0] && rows[0].querySelector('[data-part="compare"]')), TAP.content.text('profile.glance.below'), '450 is below 622.5');
+          var s = m.root.querySelector('.tap-pf-glance__line[data-line="strategic"]');
+          a.equal(qsa('tbody tr', s).length, 3, 'the strategic plan line has three rows');
+          qsa('tbody th, td button', s).forEach(function (n) {
+            a.ok(parseFloat(getComputedStyle(n).fontSize) >= 16, 'at least 16 px: ' + txt(n));
+          });
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('X-p4-pages-glance-old', 'A file without the full template\'s parts shows the four lines it showed before (D57)', function (a) {
+      var lines = TAP.profileParts.glance('alpha');
+      a.deepEqual(lines.map(function (l) { return l.key; }), ['ambition', 'focus', 'pool', 'customers'], 'no strategic plan or revenue line');
+    });
+
+    T.test('X-p4-pages-glance-alone', 'With one region, the new lines show the region\'s figures and nothing extra', function (a) {
+      withP4(1, function () {
+        var m = mountProfile('alpha');
+        try {
+          ['strategic', 'revenue'].forEach(function (key) {
+            var el = m.root.querySelector('.tap-pf-glance__line[data-line="' + key + '"]');
+            a.ok(el, key + ' is drawn');
+            a.equal(qsa('thead th', el).length, 2, key + ': a label column and the region column only');
+            a.equal(qsa('[data-part="rest"], [data-part="compare"]', el).length, 0, key + ': no rest or comparison');
+          });
+          var f = (lineOf(TAP.profileParts.glance('alpha'), 'strategic') || { figures: [] }).figures[2] || {};
+          a.near(f.region && f.region.v, -125, 1e-6, 'the variance is still Region A\'s');
+          a.equal(f.rest, null, 'and there is no rest');
+        } finally { m.handle.destroy(); }
+      });
+    });
+
+    T.test('TPV-TC-758', 'The profile\'s reports include the strategic plan and revenue reports, side by side', function (a) {
+      var rows = window.TAP_PROFILE.reports, ids = flat(rows);
+      ['ol-strategic', 'ol-revenue'].forEach(function (id) { a.ok(ids.indexOf(id) >= 0, id + ' is on the profile'); });
+      a.ok(rows.some(function (r) { return [].concat(r).join() === 'ol-strategic,ol-revenue'; }), 'as one row of two panels (D24)');
+      var stubs = TAP.stub.list().length;
+      ['ol-strategic', 'ol-revenue'].forEach(function (id) {
+        var def = TAP.reports.get(id);
+        if (!def) { a.ok(stubs > 0, id + ' is not built yet, which is allowed only while stubs remain'); return; }
+        var ds = TAP.prepare.run(def, { cmp: TAP.profile.cmp('alpha') });
+        a.deepEqual(ds.entities.map(function (e) { return e.id; }), ['alpha', 'rest'], id + ': Region A, then the rest');
+        a.equal(ds.entities[1].how, 'average', id + ': the rest as an average');
+      });
+    });
+
+    T.test('TPV-TC-758', 'Once defined, the two reports are mounted on the profile with the region against the rest', function (a) {
+      var saved = {}, base = TAP.reports.get('ov-ambition');
+      ['ol-strategic', 'ol-revenue'].forEach(function (id) {
+        saved[id] = window.TAP_REPORTS[id];
+        if (!saved[id]) window.TAP_REPORTS[id] = Object.assign({}, base, { id: id, view: 'outlook' });   // a stand-in while OUTLOOK builds it
+      });
+      var real = TAP.viewHead.mountPanel, seen = [];
+      TAP.viewHead.mountPanel = function (slot, id, opts) { seen.push({ id: id, opts: opts || {} }); return null; };
+      try {
+        mountProfile('alpha').handle.destroy();
+      } finally {
+        TAP.viewHead.mountPanel = real;
+        TAP.store.set({ region: null });
+        Object.keys(saved).forEach(function (id) { if (!saved[id]) delete window.TAP_REPORTS[id]; });
+      }
+      ['ol-strategic', 'ol-revenue'].forEach(function (id) {
+        var p = seen.filter(function (x) { return x.id === id; })[0];
+        a.ok(p, id + ' is mounted');
+        a.deepEqual(p && p.opts.cmp, TAP.profile.cmp('alpha'), id + ': Region A against the average of the rest');
+      });
+    });
+
+    T.test('TPV-TC-759', 'The starter running order has two steps from the Outlook view', function (a) {
+      var outlook = window.TAP_VIEWS.outlook.reports;
+      var steps = window.TAP_RUNNING_ORDER.steps.filter(function (s) { return s && outlook.indexOf(s.report) >= 0; });
+      a.equal(steps.length, 2, 'two Outlook steps');
+      steps.forEach(function (s) {
+        a.ok(s.title && s.title.length > 10, s.report + ': a title for the progress row');
+        a.ok(!s.cmp || ['all', 'one', 'pair', 'set', 'org'].indexOf(s.cmp.mode) >= 0, s.report + ': a known comparison');
+      });
+      a.deepEqual(steps.map(function (s) { return s.report; }), ['ol-strategic', 'ol-revenue'], 'the strategic plan, then the revenue outlook');
+    });
+
+    (function () {
+      var title = 'On the sample data, the starter running order is checked and neither Outlook step is skipped';
+      if (!TAP.reports.get('ol-strategic') || !TAP.reports.get('ol-revenue')) {
+        T.skip('TPV-TC-759', title, 'pending: the Outlook reports are still being built (OUTLOOK stream)');
+        return;
+      }
+      T.test('TPV-TC-759', title, function (a) {
+        TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        try {
+          var steps = window.TAP_RUNNING_ORDER.steps, res = TAP.present.check(steps);
+          var at = steps.map(function (s, i) { return s && /^ol-/.test(s.report) ? i : -1; }).filter(function (i) { return i >= 0; });
+          a.equal(at.length, 2, 'two Outlook steps');
+          a.deepEqual(res.skipped, [], 'no step is skipped');
+          at.forEach(function (i) { a.ok(res.ok.some(function (o) { return o.index === i; }), 'step ' + (i + 1) + ' is ready to show'); });
+        } finally { TAP.notes.clear('presentation'); TAP.data.load(T_FIXTURE('mini')); }
+      });
+    })();
   });
 })(window.TAP);
