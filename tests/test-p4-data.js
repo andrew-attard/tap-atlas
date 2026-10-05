@@ -2,7 +2,7 @@
  * File: tests/test-p4-data.js
  * Purpose: Tests for the Phase 4 Data Contract additions (US-4.1.1): the new lookups, the revenue, books value,
  *          strategic plan, base year and route parts, the partner and solution fields, and their source-map entries.
- * Provides: test cases TPV-TC-634, 636, 637, 638, 640, 641, 642, 643, 645, 646, 647 and X-p4-* checks
+ * Provides: test cases TPV-TC-634, 636, 637, 638, 640, 641, 642, 643, 645, 646, 647
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js (withP4: the mini fixture with every Phase 4 part), data/sample-plan-data.js
  * Used by: tests.html
@@ -80,7 +80,17 @@
       a.ok(cats.indexOf('recurring') >= 0 && cats.indexOf('arr') < 0, 'recurring stands for arr');
     });
 
-    T.test('TPV-TC-640', 'The recap measures give the same hand-worked figures with and without revenue and books value lists', function (a) {
+    T.test('TPV-TC-638', 'The four item types map to the four product categories, with "arr" read as recurring', function (a) {
+      a.equal(TAP.checkP4.categoryOf('arr'), 'recurring');
+      a.equal(TAP.checkP4.categoryOf('services'), 'services');
+      a.equal(TAP.checkP4.categoryOf('swPerpetual'), 'swPerpetual');
+      a.equal(TAP.checkP4.categoryOf('hardware'), 'hardware');
+      a.equal(TAP.checkP4.categoryOf('licence'), null, 'anything else is no category');
+      var cats = window.TEST_FIXTURES.broken.withP4(T_FIXTURE('mini')).lookups.productCategories.map(function (c) { return c.id; });
+      a.deepEqual(TAP.checkP4.TYPES.map(TAP.checkP4.categoryOf).sort(), cats.slice().sort(), 'every type has its category in the lookup');
+    });
+
+    T.test('TPV-TC-640','The recap measures give the same hand-worked figures with and without revenue and books value lists', function (a) {
       // Mini fixture, year 1 new business ARR from the recap: Region A 450 (E5) + 250 (F5) = 700; Region B 700 (E5);
       // Region C has no recap (not provided); Region D 150 (E5).
       var want = { alpha: 700, bravo: 700, charlie: null, delta: 150 };
