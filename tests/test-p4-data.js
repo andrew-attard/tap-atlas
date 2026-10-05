@@ -231,6 +231,8 @@
   function total(list, pred) { return sum((list || []).filter(pred || Boolean).map(function (x) { return x.value; })); }
   // Money in the sample is kept to one decimal, so sums agree to within rounding
   function near(a, got, want, what) { a.ok(Math.abs(got - want) < 0.051, what + ': ' + got + ' against ' + want); }
+  // The types the recap and the books value both hold: perpetual software and hardware run through the books only
+  function both(it) { return it.type === 'arr' || it.type === 'services'; }
   function each(fn) { sample().regions.forEach(fn); }
 
   T.suite('p4-sample', function () {
@@ -251,7 +253,9 @@
         near(a, total(r.booksValue), x.books3, r.id + ' books value is the books order intake');
         // The existing recap measure still reads the recap only: adding the other two lists would more than double it
         near(a, TAP.measures.get('rc.all.oi')(r.id, {}).v, x.cv3, r.id + ' rc.all.oi is unchanged');
-        a.ok(x.revenue3 < x.cv3 && x.books3 <= x.cv3 + 0.051, r.id + ' three different figures');
+        // Over ARR and services, the types the recap holds, the books are never above customer value
+        near(a, total(r.booksValue, both), x.booksCv3, r.id + ' books value over ARR and services');
+        a.ok(x.revenue3 < x.cv3 && x.booksCv3 <= x.cv3 + 0.051 && x.booksCv3 < x.books3, r.id + ' three different figures');
         a.equal(r.recap.filter(function (it) { return it.type !== 'arr' && it.type !== 'services'; }).length, 0, r.id + ' recap keeps its two types');
         a.ok(r.revenue !== r.recap && r.booksValue !== r.recap && r.revenue !== r.booksValue, 'three separate lists');
       });
@@ -322,8 +326,8 @@
           near(a, total(r.routes, inYear), x.books[i], id + ' ' + y + ' routes against the books total');
           ['direct'].concat(RESELLERS).forEach(function (ch) {
             var cv = total(r.recap, function (it) { return it.year === y && it.channel === ch; });
-            var books = total(r.booksValue, function (it) { return it.year === y && it.channel === ch; });
-            // Never above customer value; the same as customer value through the own sales force
+            var books = total(r.booksValue, function (it) { return it.year === y && it.channel === ch && both(it); });
+            // Over ARR and services: never above customer value; the same as customer value through the own sales force
             a.ok(books <= cv + 0.051, id + ' ' + y + ' ' + ch + ': books ' + books + ' within customer value ' + cv);
             if (ch === 'direct') near(a, books, cv, id + ' ' + y + ' direct books value');
             ['newBusiness', 'customerGrowth'].forEach(function (m) {
@@ -356,7 +360,7 @@
       function variancePct(id) { return (plan3(id) - total(R[id].strategicPlan)) / total(R[id].strategicPlan); }
       function field(id, f) { return sum(R[id].baseYear.items.map(function (it) { return it[f]; })); }
       function year1(id) { return total(R[id].booksValue, function (it) { return it.year === years[0]; }); }
-      function gapShare(id) { return (total(R[id].recap) - total(R[id].booksValue)) / total(R[id].recap); }
+      function gapShare(id) { return (total(R[id].recap) - total(R[id].booksValue, both)) / total(R[id].recap); }
       function close(got, want, what) { a.ok(Math.abs(got - want) < 1e-4, what + ': ' + got + ' against ' + want); }
 
       // R01 and R02: one region well below its strategic plan, one well above

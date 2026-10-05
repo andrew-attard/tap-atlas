@@ -14,7 +14,7 @@ module.exports = {
   lookups: {
     productCategories: [{ id: 'swPerpetual', name: 'Software perpetual' }, { id: 'recurring', name: 'Recurring' },
       { id: 'hardware', name: 'Hardware' }, { id: 'services', name: 'Services' }],
-    // Solutions 1 to 4 are sold as recurring business, Solution 5 as perpetual software, Solution 6 as hardware
+    // Solutions 1 to 4 are recurring only. Solution 5 also brings a perpetual licence and Solution 6 hardware (oneOff, below)
     solutions: [{ id: 'sol1', name: 'Solution 1', category: 'recurring' }, { id: 'sol2', name: 'Solution 2', category: 'recurring' },
       { id: 'sol3', name: 'Solution 3', category: 'recurring' }, { id: 'sol4', name: 'Solution 4', category: 'recurring' },
       { id: 'sol5', name: 'Solution 5', category: 'swPerpetual' }, { id: 'sol6', name: 'Solution 6', category: 'hardware' }],
@@ -36,6 +36,9 @@ module.exports = {
   baseYear: 2026,
   actualsThrough: '2026-08',
 
+  // One-off order intake booked with each unit of new recurring business of a perpetual-software or hardware solution.
+  // It runs through the books only: the customer-value recap holds ARR and services.
+  oneOff: { swPerpetual: 0.8, hardware: 0.6 },
   // The share of a year's order intake released as revenue in that year, by plan year
   release: { arr: [0.4, 0.48, 0.55], services: [0.7, 0.78, 0.85] },
   // The share of a partner's ARR it distributes itself, by partner type (a blank type counts as an integrator)
