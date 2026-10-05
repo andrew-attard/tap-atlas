@@ -28,6 +28,9 @@ Object.assign(window.TAP_CONTENT.text, {
     glance: {
       title: 'The plan at a glance',
       hint: 'Select a figure for its details, or an average for how it was worked out',
+      // Data with one region: nothing to compare with
+      hintAlone: 'Select a figure for its details',
+      alone: 'The data has no other region, so these figures are shown without a comparison.',
       total: 'Total',
       against: 'Compared with the rest',
       above: 'above the average of the rest',

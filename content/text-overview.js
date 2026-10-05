@@ -48,6 +48,7 @@ Object.assign(window.TAP_CONTENT.text, {
       regionNone: 'No ARR ambition is provided for {name}.',
       restAverage: 'The other {n} {regions} plan {rest} each on average.',
       restTotal: 'The other {n} {regions} plan {rest} together.',
+      restOne: 'The other region plans {rest}.',
       cgMissing: 'Customer growth is not provided for {names}.',
       tier2: '{n} {regions} make {industry} a focus industry (Tier 2).',
       tier2FocusToo: '{focus} makes {industry} a focus industry (Tier 2), as do {n} of the other {m} {regions}.',
