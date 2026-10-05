@@ -13,6 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const files = require('./check-docs3-files.js');
 
 function rootDir() {
@@ -162,17 +163,40 @@ function checkHandover(root) {
 
 const SHIPPED = ['index.html', 'index-sample.html', 'js', 'css', 'config', 'content', 'data', 'vendor', 'docs'];
 
-// Files under the shipped folders, ignoring what .gitignore keeps out (the real data and organization files).
+// The .gitignore patterns as tests on a path: a name without "/" matches in any folder, one with "/" from the
+// top, a trailing "/" a whole folder. Enough for this repository's file (no "!" lines).
+function ignoreTests(root) {
+  const file = path.join(root, '.gitignore');
+  if (!fs.existsSync(file)) return [];
+  const glob = (g) => g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]');
+  return fs.readFileSync(file, 'utf8').split(/\r?\n/).map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#') && !l.startsWith('!')).map((l) => {
+      const dir = l.endsWith('/');
+      const pat = l.replace(/^\//, '').replace(/\/$/, '');
+      const re = pat.indexOf('/') >= 0 ? new RegExp('^' + glob(pat) + (dir ? '/' : '(/|$)'))
+        : new RegExp('(^|/)' + glob(pat) + (dir ? '/' : '(/|$)'));
+      return (f) => re.test(f);
+    });
+}
+
+// The shipped files: what git tracks in a git work tree; elsewhere (the internal copy, which holds the real
+// data file and other ignored files) every file under the shipped folders that .gitignore doesn't match.
 function shippedFiles(root) {
-  const ignored = new Set(['data/plan-data.js', 'content/organization.js']);
+  const inShipped = (f) => SHIPPED.some((s) => f === s || f.startsWith(s + '/'));
+  const git = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' });
+  if (git.status === 0 && spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' }).stdout.trim() ===
+      fs.realpathSync(root)) {
+    return git.stdout.split('\0').filter((f) => f && inShipped(f) && fs.existsSync(path.join(root, f))).sort();
+  }
+  const ignored = ignoreTests(root);
   const out = [];
   (function walk(rel) {
     const abs = path.join(root, rel);
     if (!fs.existsSync(abs)) return;
-    if (fs.statSync(abs).isDirectory()) fs.readdirSync(abs).sort().forEach((n) => { if (!n.startsWith('.')) walk(rel + '/' + n); });
-    else if (!ignored.has(rel)) out.push(rel);
-  })('.');
-  return out.map((f) => f.replace(/^\.\//, '')).filter((f) => SHIPPED.some((s) => f === s || f.startsWith(s + '/')));
+    if (fs.statSync(abs).isDirectory()) fs.readdirSync(abs).sort().forEach((n) => { if (!n.startsWith('.')) walk(rel ? rel + '/' + n : n); });
+    else if (!ignored.some((t) => t(rel))) out.push(rel);
+  })('');
+  return out.filter(inShipped);
 }
 
 // True when a README path names the file: the same path, a folder it sits in, or a pattern with "*" in one level.
@@ -223,10 +247,22 @@ function checkCaseStudy(root) {
   if (decisions.size < 10) problems.push(CASE_STUDY + ': names ' + decisions.size + ' decisions by number, expected at least 10');
   // The landing page links to it, so a visitor can read it.
   const landing = path.join(root, 'docs/index.html');
-  if (fs.existsSync(landing) && htmlRefs(fs.readFileSync(landing, 'utf8')).indexOf('CASE-STUDY.md') < 0) {
-    problems.push('docs/index.html does not link to CASE-STUDY.md');
+  if (fs.existsSync(landing) && htmlRefs(fs.readFileSync(landing, 'utf8')).indexOf('case-study.html') < 0) {
+    problems.push('docs/index.html does not link to case-study.html');
   }
-  return { problems, checked: CASE_PARTS.length + 2 };
+  // The web page edition is generated from the .md and must be current, with links that work on a web host.
+  const page = 'docs/case-study.html';
+  if (!fs.existsSync(path.join(root, page))) problems.push(page + ' is missing: run node tools/build-case-study.js');
+  else {
+    if (require('./build-case-study.js').build(root) !== fs.readFileSync(path.join(root, page), 'utf8')) {
+      problems.push(page + ' is out of date with ' + CASE_STUDY + ': run node tools/build-case-study.js');
+    }
+    htmlRefs(fs.readFileSync(path.join(root, page), 'utf8')).forEach((ref) => {
+      const p = refProblem(root, page, ref);
+      if (p) problems.push(p);
+    });
+  }
+  return { problems, checked: CASE_PARTS.length + 3 };
 }
 
 const CHECKS = [
@@ -236,7 +272,7 @@ const CHECKS = [
   { id: 'TPV-TC-598', label: 'every field the contract check reads is named in docs/DATA-CONTRACT.md', run: files.checkContractFields },
   { id: 'X-docs3-contract-history', label: 'docs/DATA-CONTRACT.md has a "Changes" section with each version and phase', run: checkContractHistory },
   { id: 'TPV-TC-606', label: 'package.sh: refuses on a failed verify, else one dated copy without tests or tools (606, 607, 609, 610, 611)', run: (root) => files.checkPackage(root, HANDOVER) },
-  { id: 'X-docs3-case-study', label: 'case study: brief, constraints, numbered decisions, method, phases; linked from the landing page', run: checkCaseStudy },
+  { id: 'X-docs3-case-study', label: 'case study: its parts, its web page current, linked from the landing page', run: checkCaseStudy },
   { id: 'TPV-TC-615', label: 'landing page: relative links to files that exist, 3 or 4 screenshots, the sample button', run: checkLanding },
   { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: files.checkShots },
   { id: 'TPV-TC-628', label: 'screenshot names are stable and every page names an existing one', run: files.checkShotNames }

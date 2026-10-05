@@ -14,7 +14,6 @@
 set -u
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root" || exit 2
-verify_cmd="${TAP_VERIFY_CMD:-$root/scripts/verify.sh}"
 dist="${TAP_DIST_DIR:-$root/dist}"
 # What a presenter needs; the data and organization files are copied when this copy of the folder has them.
 ITEMS=(index.html index-sample.html README.md LICENSE js css config content vendor data docs)
@@ -26,10 +25,14 @@ if [ -z "$version" ]; then
 fi
 name="tap-atlas-$version-$(date +%Y-%m-%d)"
 
-echo "Running the checks first ($verify_cmd $*)"
+echo "Running the checks first (${TAP_VERIFY_CMD:-scripts/verify.sh} $*)"
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
-if ! $verify_cmd "$@" > "$log" 2>&1; then
+# Quoted, so a folder path with spaces works; TAP_VERIFY_CMD is a plain command word (true or false in the checks).
+run_checks() {
+  if [ -n "${TAP_VERIFY_CMD:-}" ]; then $TAP_VERIFY_CMD "$@"; else "$root/scripts/verify.sh" "$@"; fi
+}
+if ! run_checks "$@" > "$log" 2>&1; then
   tail -n 20 "$log"
   echo "FAIL the checks did not pass, so no copy was made. Fix what failed, then run this again."
   exit 1
