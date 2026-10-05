@@ -2,7 +2,7 @@
  * File: tests/test-p4-reports.js
  * Purpose: Tests for the Phase 4 reports on the New business and Partners views, checked against figures worked by
  *          hand from tests/fixtures/mini-p4.js (never against the builders' own output).
- * Provides: test cases TPV-TC-714, 715, 717, 718 and X-p4-*; window.P4R_T (shared helpers)
+ * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733 and X-p4-*; window.P4R_T (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: NBPT stream
@@ -311,6 +311,207 @@
       var layout = TAP.newBusinessView.layout();
       a.deepEqual(layout.slice(0, 2), [['nb-industries'], ['nb-solutions']], 'two full-width rows');
       a.ok(layout.every(function (r) { return r.length <= 2; }), 'never more than two side by side');
+    });
+
+    /* ---------- US-4.5.1 customer value against books value ---------- */
+
+    /*
+     * Worked by hand from the recap grids in tests/fixtures/mini-p2.js (customer value) and the books value grids in
+     * tests/fixtures/mini-p4.js. Channels: direct, partner, alliance A, alliance B. The difference compares ARR and
+     * services, the two types both hold; Region A's software perpetual (50) and hardware (50), both direct, and
+     * Region D's hardware (100, partner) are in the books value only.
+     *
+     * Region A, year 1: customer value direct 400 + 80 + 100 + 20 = 600, partner 200 + 40 + 50 + 10 = 300 -> 900
+     *    books value direct 400 + 80 + 50 + 20 + 100 + 20 = 670, partner 150 + 20 + 40 + 5 = 215 -> 885
+     *    difference direct 600 - (670 - 50 - 20) = 0, partner 300 - 215 = 85 -> 85; 85 / 300 = 0.2833333; 85 / 900 = 0.0944444
+     * Region A, year 2: customer value direct 400 + 80 + 50 + 10 = 540, partner 300 + 60 = 360 -> 900
+     *    books value direct 400 + 80 + 20 + 50 + 10 = 560, partner 225 + 30 = 255 -> 815; difference 0 and 105 -> 105
+     * Region A, year 3: customer value direct 500 + 100 + 50 + 10 = 660, partner 360 -> 1020
+     *    books value direct 500 + 100 + 10 + 50 + 10 = 670, partner 255 -> 925; difference 0 and 105 -> 105
+     * Region A, three years: customer value 1800, 1020 -> 2820; books value 1900, 725 -> 2625;
+     *    difference 0, 295 -> 295; 295 / 1020 = 0.2892157; 295 / 2820 = 0.1046099
+     * Region B, three years: customer value direct 2000 + 200 + 100 + 10 = 2310, alliance A 1200 + 120 + 50 = 1370 -> 3680
+     *    books value direct 2310, alliance A 900 + 60 + 40 = 1000 -> 3310; difference 0, 370 -> 370; 370 / 1370 = 0.270073;
+     *    370 / 3680 = 0.1005435
+     * Region B, year 1: customer value direct 770, alliance A 400 + 40 + 50 = 490 -> 1260; books value 770, 300 + 20 + 40 = 360
+     *    -> 1130; difference 130; 130 / 1260 = 0.1031746
+     * Region D, three years: customer value direct 900 + 225 + 268 + 92 = 1485, partner 900 + 225 = 1125,
+     *    alliance A 450 + 115 = 565, alliance B 450 + 110 = 560 -> 3735
+     *    books value direct 1485, partner 450 + 125 + 100 = 675, alliance A 225 + 115 = 340, alliance B 225 + 110 = 335 -> 2835
+     *    difference 0, 1125 - 575 = 550, 225, 225 -> 1000; shares 0.4888889, 0.3982301, 0.4017857; 1000 / 3735 = 0.2677376
+     * Together (Region C has nothing): customer value 5595, 2145, 1935, 560 -> 10235; books value 5695, 1400, 1340, 335
+     *    -> 8770; difference 0, 845, 595, 225 -> 1665; 845 / 2145 = 0.3939394; 595 / 1935 = 0.3074935; 1665 / 10235 = 0.1626771
+     * By product category, three years (customer value holds ARR and services only):
+     *    A: books value software perpetual 50, recurring 2140, hardware 50, services 385 -> 2625; customer value recurring
+     *       2100 + 250 = 2350, services 420 + 50 = 470 -> 2820
+     *    B: books value recurring 3040, services 270 -> 3310 (no software perpetual or hardware items: not provided);
+     *       customer value recurring 3200 + 150 = 3350, services 320 + 10 = 330 -> 3680
+     *    D: books value recurring 2068, hardware 100, services 667 -> 2835; customer value recurring 2700 + 268 = 2968,
+     *       services 675 + 92 = 767 -> 3735
+     *    A, year 1: books value 50, 690, 20, 125 -> 885; customer value recurring 600 + 150 = 750, services 120 + 30 = 150 -> 900
+     */
+    var BOOKS = 'pt-books', CH = ['direct', 'partner', 'allianceA', 'allianceB'], CATS = ['swPerpetual', 'recurring', 'hardware', 'services'];
+    // [customer value, books value, difference, difference %] per channel, then for all channels; null = not provided
+    var BY_CHANNEL = {
+      all: {
+        alpha: { direct: [1800, 1900, 0, 0], partner: [1020, 725, 295, 0.2892157], total: [2820, 2625, 295, 0.1046099] },
+        bravo: { direct: [2310, 2310, 0, 0], allianceA: [1370, 1000, 370, 0.270073], total: [3680, 3310, 370, 0.1005435] },
+        delta: { direct: [1485, 1485, 0, 0], partner: [1125, 675, 550, 0.4888889], allianceA: [565, 340, 225, 0.3982301],
+          allianceB: [560, 335, 225, 0.4017857], total: [3735, 2835, 1000, 0.2677376] },
+        org: { direct: [5595, 5695, 0, 0], partner: [2145, 1400, 845, 0.3939394], allianceA: [1935, 1340, 595, 0.3074935],
+          allianceB: [560, 335, 225, 0.4017857], total: [10235, 8770, 1665, 0.1626771] }
+      },
+      1: {
+        alpha: { direct: [600, 670, 0, 0], partner: [300, 215, 85, 0.2833333], total: [900, 885, 85, 0.0944444] },
+        bravo: { direct: [770, 770, 0, 0], allianceA: [490, 360, 130, 0.2653061], total: [1260, 1130, 130, 0.1031746] }
+      },
+      2: { alpha: { direct: [540, 560, 0, 0], partner: [360, 255, 105, 0.2916667], total: [900, 815, 105, 0.1166667] } },
+      3: { alpha: { direct: [660, 670, 0, 0], partner: [360, 255, 105, 0.2916667], total: [1020, 925, 105, 0.1029412] } }
+    };
+    var COLS = ['cv.oi', 'bk.oi', 'bk.gap', 'bk.gapShare'];
+    function line(res, entityId, part) { return res.table.rows.filter(function (r) { return r.entityId === entityId && r.part === part; })[0]; }
+    function checkLines(a, res, want, label) {
+      Object.keys(want).forEach(function (e) {
+        Object.keys(want[e]).forEach(function (part) {
+          var cells = line(res, e, part === 'total' ? 'all' : part).cells;
+          COLS.forEach(function (c, i) { expectCell(a, cells[c], want[e][part][i], label + ' ' + e + ' ' + part + ' ' + c); });
+        });
+      });
+    }
+
+    T.test('TPV-TC-728', 'Customer value, books value and the difference in money and % per region, plan year and channel equal the hand-worked figures', function (a) {
+      load();
+      var def = TAP.reports.get(BOOKS), list = window.TAP_VIEWS.partners.reports;
+      a.ok(def && def.view === 'partners', 'pt-books is a Partners report');
+      a.equal(list.indexOf(BOOKS), list.indexOf('pt-capacity') + 1, 'straight after pt-capacity');
+      a.deepEqual(TAP.reports.validate(def), [], 'the definition is valid');
+      [1, 2, 3].forEach(function (y) {
+        var res = build(BOOKS, { mode: 'all' }, { type: 'table', opts: { year: String(y) } });
+        a.equal(res.error, null, 'year ' + y + ': builds');
+        checkLines(a, res, BY_CHANNEL[y], 'year ' + y);
+        a.equal(line(res, 'charlie', 'all').cells['bk.oi'].state, 'notProvided', 'year ' + y + ': Region C is not provided');
+      });
+      var res = build(BOOKS, { mode: 'all' }, { type: 'table' });
+      a.deepEqual(labels(res), ['Region', 'Channel', 'Customer value', 'Books value', 'Difference', 'Difference %'], 'the table’s columns');
+      a.deepEqual(res.missing, ['Region C'], 'Region C is named as not provided');
+    });
+
+    T.test('TPV-TC-729', 'The three years together: each value is the sum of the plan years and the % difference a ratio of sums', function (a) {
+      load();
+      var res = build(BOOKS, { mode: 'all' }, { type: 'table' });
+      a.equal(res.controls.filter(function (c) { return c.key === 'year'; })[0].value, 'all', 'the report opens on the three years together');
+      checkLines(a, res, { alpha: BY_CHANNEL.all.alpha, bravo: BY_CHANNEL.all.bravo, delta: BY_CHANNEL.all.delta }, 'three years');
+      // Region A by hand: 900 + 900 + 1020, 885 + 815 + 925, 85 + 105 + 105; the share is 295 / 2820, not the mean of the years' shares
+      var total = line(res, 'alpha', 'all').cells, years = [1, 2, 3].map(function (y) { return BY_CHANNEL[y].alpha.total; });
+      [0, 1, 2].forEach(function (i) {
+        a.near(total[COLS[i]].v, years[0][i] + years[1][i] + years[2][i], TOL, COLS[i] + ': the sum of the three plan years');
+      });
+      var mean = (years[0][3] + years[1][3] + years[2][3]) / 3;
+      a.near(total['bk.gapShare'].v, 295 / 2820, TOL, 'difference %: summed difference over summed customer value');
+      a.ok(Math.abs(total['bk.gapShare'].v - mean) > 1e-5, 'and not the mean of the yearly shares (' + mean.toFixed(7) + ')');
+      // Regions together: a ratio of the summed parts again
+      var org = build(BOOKS, { mode: 'org' }, { type: 'table' });
+      checkLines(a, org, { org: BY_CHANNEL.all.org }, 'together');
+      // The mean of the three regions' shares, worked for the engine in tests/fixtures/mini-p4-expected.js: 0.1576303
+      a.ok(Math.abs(line(org, 'org', 'all').cells['bk.gapShare'].v - window.TEST_EXPECT.miniP4.meanOfRatios['bk.gapShare']) > 1e-3, 'never the mean of the regions’ shares');
+    });
+
+    T.test('X-p4-books-bars', 'Two bars per region, customer value above books value, channels as parts, the difference at the end of the books bar', function (a) {
+      load();
+      var res = build(BOOKS, { mode: 'all' }), ss = series(res);
+      a.deepEqual(res.option.yAxis.data.slice(0, 4), ['Region A · Customer value', 'Region A · Books value', 'Region B · Customer value', 'Region B · Books value']);
+      a.deepEqual(ss.map(function (s) { return s.name; }), ['Direct', 'Partner', 'Alliance A', 'Alliance B'], 'the channels, in the lookup’s order');
+      function seg(name, rowId) { return ss.filter(function (s) { return s.name === name; })[0].items.filter(function (d) { return d.rowId === rowId; })[0].raw; }
+      a.near(seg('Partner', 'alpha:cv'), 1020, TOL, 'Region A customer value through partners');
+      a.near(seg('Partner', 'alpha:bk'), 725, TOL, 'Region A books value through partners');
+      a.near(seg('Alliance A', 'bravo:bk'), 1000, TOL, 'Region B books value through alliance A');
+      var total = res.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
+      a.match(total.label.formatter({ dataIndex: 1 }), /^€2\.6M\s+difference €295k \(10%\)$/, 'the books bar ends with the difference in money and %');
+      a.match(total.label.formatter({ dataIndex: 0 }), /^€2\.8M$/, 'the customer value bar ends with its total');
+      a.ok(res.legend.some(function (l) { return l.label === 'Alliance A' && l.role === 'part'; }), 'the channels are named in the key');
+      a.ok(res.notes.some(function (n) { return /software perpetual and hardware/i.test(n); }), 'a note says what the difference leaves out');
+    });
+
+    T.test('TPV-TC-731', 'The explanation says why the two differ: the reseller margin, partner-delivered services, the outsourcing %', function (a) {
+      var ex = TAP.reports.get(BOOKS).explain, all = [ex.shows, ex.read, ex.lookFor].join(' ');
+      a.match(all, /resellers keep a margin/i, 'resellers keep a margin');
+      a.match(all, /services are delivered by partners/i, 'some services are delivered by partners');
+      a.match(all, /outsourcing %[^.]*moves[^.]*services[^.]*partners/i, 'how the outsourcing % moves services to partners');
+      a.match(all, /customer value/i);
+      a.match(all, /books/i);
+      // Neutral wording (D20, D51): none of the banned words
+      (window.TAP_RULES.wording.banned || []).forEach(function (w) { a.ok(!new RegExp('\\b' + w + '\\b', 'i').test(all), 'no "' + w + '"'); });
+      ['shows', 'read', 'lookFor'].forEach(function (k) { a.ok(ex[k].length > 20, 'explain.' + k); });
+    });
+
+    T.test('TPV-TC-733', 'The product category switch: software perpetual, recurring, hardware and services, adding up to the channel split’s totals', function (a) {
+      load();
+      var sw = build(BOOKS, { mode: 'all' }).controls.filter(function (c) { return c.key === 'split'; })[0];
+      a.deepEqual(sw.options.map(function (o) { return [o.value, o.label]; }), [['channel', 'Channel'], ['category', 'Product category']], 'the switch');
+      a.equal(sw.value, 'channel', 'off to begin with');
+      var res = build(BOOKS, { mode: 'all' }, { type: 'table', opts: { split: 'category' } }), byChannel = build(BOOKS, { mode: 'all' }, { type: 'table' });
+      a.deepEqual(res.table.rows.filter(function (r) { return r.entityId === 'alpha'; }).map(function (r) { return r.cells.part.v; }),
+        ['Software perpetual', 'Recurring', 'Hardware', 'Services', 'All product categories'], 'the four categories, then all of them');
+      // [books value, customer value] per category; null = not provided, 'na' = customer value has no such category
+      var want = {
+        alpha: { swPerpetual: [50, 'na'], recurring: [2140, 2350], hardware: [50, 'na'], services: [385, 470], total: [2625, 2820] },
+        bravo: { swPerpetual: [null, 'na'], recurring: [3040, 3350], hardware: [null, 'na'], services: [270, 330], total: [3310, 3680] },
+        delta: { swPerpetual: [null, 'na'], recurring: [2068, 2968], hardware: [100, 'na'], services: [667, 767], total: [2835, 3735] }
+      };
+      Object.keys(want).forEach(function (e) {
+        var sums = [0, 0];
+        CATS.forEach(function (c) {
+          var cells = line(res, e, c).cells;
+          expectCell(a, cells['bk.oi'], want[e][c][0], e + ' ' + c + ' books value');
+          if (want[e][c][1] === 'na') a.equal(cells['cv.oi'].state, 'notApplicable', e + ' ' + c + ': customer value has no such category');
+          else expectCell(a, cells['cv.oi'], want[e][c][1], e + ' ' + c + ' customer value');
+          sums[0] += cells['bk.oi'].v || 0;
+          sums[1] += cells['cv.oi'].v || 0;
+        });
+        var all = line(res, e, 'all').cells, ch = line(byChannel, e, 'all').cells;
+        a.near(sums[0], want[e].total[0], TOL, e + ': the categories add up to the books value');
+        a.near(sums[1], want[e].total[1], TOL, e + ': the categories add up to the customer value');
+        ['cv.oi', 'bk.oi', 'bk.gap', 'bk.gapShare'].forEach(function (c) { a.near(all[c].v, ch[c].v, TOL, e + ' ' + c + ': the same total as the channel split'); });
+        a.near(all['bk.oi'].v, want[e].total[0], TOL, e + ' books total');
+      });
+      // Year 1, Region A: 50, 690, 20, 125 through the books; 750 and 150 at customer value
+      var y1 = build(BOOKS, { mode: 'all' }, { type: 'table', opts: { split: 'category', year: '1' } });
+      [[50, null], [690, 750], [20, null], [125, 150]].forEach(function (w, i) {
+        expectCell(a, line(y1, 'alpha', CATS[i]).cells['bk.oi'], w[0], 'year 1 ' + CATS[i] + ' books value');
+        if (w[1] != null) expectCell(a, line(y1, 'alpha', CATS[i]).cells['cv.oi'], w[1], 'year 1 ' + CATS[i] + ' customer value');
+      });
+      var bars = build(BOOKS, { mode: 'all' }, { opts: { split: 'category' } });
+      a.deepEqual(series(bars).map(function (s) { return s.name; }), ['Software perpetual', 'Recurring', 'Hardware', 'Services'], 'the bars stack the categories');
+    });
+
+    T.test('X-p4-books-no-data', 'A file without books value: the report says so for every region', function (a) {
+      MODES.forEach(function (m) {
+        var res = build(BOOKS, m);
+        a.equal(res.error, null, m.mode + ': builds');
+        a.ok(res.empty, m.mode + ': the panel’s own empty state');
+      });
+      a.deepEqual(build(BOOKS, { mode: 'all' }).missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region is named');
+    });
+
+    T.test('X-p4-books-click', 'A segment opens details for its region, naming the figure clicked', function (a) {
+      load();
+      var res = build(BOOKS, { mode: 'all' }), seg = series(res)[1].items.filter(function (d) { return d.rowId === 'alpha:bk'; })[0];
+      var tg = res.target({ data: seg });
+      a.deepEqual([tg.regionIds, tg.figure.key], [['alpha'], 'bk.oi@channel:partner'], 'the books value through partners');
+      var first = TAP.details.build(tg).groups[0].rows[0];
+      a.near(first.cell.v, 725, TOL, 'details show the figure clicked first');
+      var y2 = build(BOOKS, { mode: 'all' }, { opts: { year: '2' } });
+      a.equal(y2.target({ data: series(y2)[0].items.filter(function (d) { return d.rowId === 'alpha:cv'; })[0] }).figure.key, 'cv.oi@y2', 'with a plan year chosen: that year’s bar');
+    });
+
+    T.test('X-p4-books-escape', 'Names from the data are escaped in the tooltips', function (a) {
+      var plan = window.T_FIXTURE('miniP4');
+      plan.lookups.channels[0].name = '<img src=x onerror=alert(1)>';
+      plan.regions[0].name = '<i>Region A</i>';
+      TAP.data.load(plan);
+      var res = build(BOOKS, { mode: 'all' }), s0 = res.option.series[0], tip = s0.tooltip.formatter({ data: s0.data[0] });
+      a.ok(tip.indexOf('<img') < 0 && tip.indexOf('<i>') < 0, 'no markup from the data');
+      a.ok(tip.indexOf('&lt;img') >= 0, 'the name is shown as text');
     });
   });
 })(window.TAP);
