@@ -159,10 +159,14 @@
 
   // Phase 3 helpers for TAP.panel.create (ARCHITECTURE 18.3, 18.2): a custom chart arrives as a definition object
   // and is registered under its id; opts.initial {type, measureId, breakdown} sets a panel's starting choices.
+  // Type 'table' is the table view (a switch, not a chart type); breakdown 'none' is no breakdown, over the
+  // report's default one (#363).
   function reportOf(r) { if (r && typeof r === 'object') { window.TAP_REPORTS[r.id] = r; return r.id; } return r; }
   function initial(o) {
     var out = {};
     ['type', 'measureId', 'breakdown'].forEach(function (k) { if (o && o[k] != null) out[k] = o[k]; });
+    if (out.type === 'table') { delete out.type; out.table = true; }
+    if (out.breakdown === 'none') out.breakdown = null;
     return out;
   }
 

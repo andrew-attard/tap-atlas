@@ -214,6 +214,7 @@
   function create(host, reportId, opts) {
     reportId = TAP.panelDrill.reportOf(reportId);   // a definition object is registered first (18.3)
     var p = { id: reportId, opts: Object.assign({}, opts || {}), cs: {}, off: [], live: true };
+    if (p.opts.initial && p.opts.initial.industryId) p.opts.industryId = p.opts.initial.industryId;   // a step's industry (#363)
     p.st = Object.assign({ pop: null }, lasting(reportId), scoped(), TAP.panelDrill.initial(p.opts.initial));
     p.render = function () { render(p); };
     p.cmp = function () { return cmpOf(p, TAP.store.get()); };

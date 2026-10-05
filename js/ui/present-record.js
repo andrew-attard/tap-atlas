@@ -80,13 +80,16 @@
   function stepOf(p, b) {
     var def = b.def, top = !p.drill || !p.drill.depth();
     var step = top && b.title ? { title: b.title } : {};   // a lower level's title names the click above it
-    if (def.custom && def.spec) step.custom = Object.assign({}, def.spec, top ? { type: b.ctx.type } : {});
+    var type = p.st.table && b.ctx.type !== 'list' ? 'table' : b.ctx.type;   // the table view records as 'table'
+    if (def.custom && def.spec) step.custom = Object.assign({}, def.spec, top ? { type: type } : {});
     else step.report = p.id;
     if (top && !def.custom) {
       if ((def.measures || []).length > 1) step.measure = TAP.prepare.selected(def, { measureId: p.st.measureId });
-      step.type = b.ctx.type;
+      step.type = type;
       if (p.st.breakdown) step.breakdown = p.st.breakdown;
+      else if (def.defaultBreakdown) step.breakdown = 'none';   // "None" chosen over the report's own breakdown
     }
+    if (top && b.industryId) step.industry = b.industryId;
     step.cmp = cmpOf(p.cmp());
     return step;
   }
@@ -117,8 +120,11 @@
     ' * and may also set any of these (leave one out to get the chart\'s usual setting):',
     ' *   title      a short title, shown in the progress row with "Step 3 of 11"',
     ' *   measure    which of the chart\'s measures to show, for example \'nb.wins\'',
-    ' *   type       the chart type, for example \'bar\', \'dot\', \'heatmap\' or \'stacked100\' (one the chart offers)',
-    ' *   breakdown  break the chart down by \'year\', \'industry\', \'channel\', \'motion\', \'segment\' or \'risk\' (if offered)',
+    ' *   type       the chart type, for example \'bar\', \'dot\', \'heatmap\' or \'stacked100\' (one the chart offers),',
+    ' *              or \'table\' for the table view',
+    ' *   breakdown  break the chart down by \'year\', \'industry\', \'channel\', \'motion\', \'segment\' or \'risk\' (if offered),',
+    ' *              or \'none\' for no breakdown on a chart that starts with one',
+    ' *   industry   the industry id a one-industry chart shows (the ratings, for example)',
     ' *   cmp        what to compare, as in the comparison bar:',
     ' *                mode     \'all\' (all regions), \'one\' (one against the rest), \'pair\' (one against one),',
     ' *                         \'set\' (a chosen set) or \'org\' (the organization total)',
@@ -174,7 +180,9 @@
     if (type) parts.push(TAP.shapes.label(type));
     var m = def && (def.measures || []).filter(function (x) { return x.id === s.measure; })[0];
     if (m) parts.push(m.label);
-    if (s.breakdown) parts.push(t('guide.by', { dim: TAP.content.text('panel.breakdowns.' + s.breakdown) }));
+    if (s.breakdown) parts.push(t('guide.by', { dim: TAP.content.text(s.breakdown === 'none' ? 'panel.breakdownNone' : 'panel.breakdowns.' + s.breakdown) }));
+    var ind = s.industry && TAP.data.industry(s.industry);
+    if (ind) parts.push(ind.name);
     try { if (s.cmp) parts.push(TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, s.cmp))); } catch (e) { /* unknown region */ }
     return parts.join(' · ');
   }
