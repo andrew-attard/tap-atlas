@@ -65,9 +65,11 @@
     bound = onKey;
   }
 
+  // Also ends a running presentation, so stopping the app (TAP.app.stop) never leaves its layer or keys behind.
   function unbind() {
     if (bound) window.removeEventListener('keydown', bound);
     bound = null;
+    if (presenting()) TAP.present.stop();
   }
 
   TAP.keys = { bind: bind, unbind: unbind, viewFor: viewFor };

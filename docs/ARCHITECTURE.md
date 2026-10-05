@@ -645,10 +645,10 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 ```
 
 - `TAP.present.check(steps)` returns `{ok: [...], skipped: [{index, reason}]}`; skipped steps go to `TAP.notes` with source `'presentation'` (a new notes source; the data sources panel lists it, PRESENT adds that).
-- `TAP.present.start(steps?)` saves `{view, cmp, expanded}`, then shows each step in the expanded panel. `next()`, `prev()`, `first()`, `stop()`, `current()`. `stop()` restores what was saved.
+- `TAP.present.start(steps?)` saves `{view, expanded}` and the page scroll, then shows each step in the expanded panel. `next()`, `prev()`, `first()`, `stop()`, `current()`. `stop()` restores what was saved. `TAP.keys.unbind()` (and so `TAP.app.stop()`) ends a running presentation.
 - While presenting, `TAP.present.active()` is true and presentation mode owns Space, Right, Left, Backspace, Home and Esc (after a popover's Esc). It turns the panel's own keys off with `TAP.panelDrill.keys(false)` on start and back on at stop (`TAP.panelKeys.enabled` is checked by the drill keys, the panel menu Esc and the expanded-panel keys) (D70).
 - A step shows its report in a full-screen presentation layer of its own (`TAP.panel.create` in that layer, with `opts.cmp` and `opts.initial`), not in the view's panels.
-- A step's comparison is applied with `TAP.store.set({cmp})` and is not kept after `stop()`.
+- A step's comparison and highlight go to the step's own panel only: the comparison as `opts.cmp`, the highlight through the panel handle's `highlight(target)`. Presentation never writes `cmp` or `highlight` to `TAP.store`, so `scopeEpoch` doesn't move and the charts behind the layer keep their drill level, own comparison and choices (D74). Only `expanded` is set, to the step's report.
 - Progress row: "Step n of m" and the step title, at least 16 px.
 - **Recording (US-3.1.3):** `TAP.present.record(step)`, `recorded()`, `move(i, d)`, `remove(i)`, `clearRecorded()`, `asFileText()`; kept through `TAP.storage` key `runningOrder.recorded`. The panel menu's "Add to running order" calls `record` with the panel's current state.
 

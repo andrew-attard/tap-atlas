@@ -17,6 +17,7 @@ Object.assign(window.TAP_CONTENT.text, {
     empty: 'Nothing to present: the running order in config/running-order.js has no steps yet.',
     noneValid: 'Nothing to present: none of the {n} steps in the running order can be shown with this data. The data sources panel lists why.',
     noneValidOne: 'Nothing to present: the one step in the running order can’t be shown with this data. The data sources panel lists why.',
+    startError: 'Presentation mode stopped: the first step could not be drawn ({message}).',
     layerLabel: 'Presentation mode',
     barLabel: 'Presentation steps',
     progress: 'Step {n} of {total}',

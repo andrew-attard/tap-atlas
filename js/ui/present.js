@@ -81,9 +81,9 @@
     TAP.dom.qs('[data-present="next"]', run.row).disabled = run.i === run.steps.length - 1;
   }
 
-  // Shows step i at once (no transition, D24): a fresh panel in the layer, the step's comparison in the store,
-  // and the panel expanded. A fresh highlight object each step, so "Show me" clearing on a comparison change
-  // never takes it away.
+  // Shows step i at once (no transition, D24): a fresh panel in the layer, expanded, with the step's comparison
+  // (opts.cmp) and highlight given to that panel only. Neither goes into the shared state, so the charts behind
+  // keep their drill level, own comparison and choices (D74).
   function show(i) {
     var s = run.steps[i];
     run.i = i;
@@ -93,8 +93,9 @@
     // A chart of the view behind that leaves its expanded state focuses its own button, which would scroll the page
     var x = window.scrollX, y = window.scrollY;
     try {
-      TAP.store.set({ cmp: s.cmp, expanded: s.reportId, highlight: s.highlight ? Object.assign({}, s.highlight, { presentStep: i }) : null });
+      TAP.store.set({ expanded: s.reportId });
       run.panel = TAP.panel.create(run.host, s.def || s.reportId, { cmp: s.cmp, initial: s.initial });
+      if (s.highlight) run.panel.highlight(Object.assign({}, s.highlight));
     } finally { run.busy = false; }
     window.scrollTo(x, y);
     progress();
@@ -109,7 +110,7 @@
   function first() { return run ? (run.i === 0 ? false : go(0)) : false; }
 
   function onKey(e) {
-    if (!run || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!run || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || typing(e.target)) return;
     if (e.key === 'Escape') {
       if (TAP.layers.top()) return;   // the side panel closes first (js/ui/layers.js)
       e.preventDefault();
@@ -119,7 +120,7 @@
       return;
     }
     var fn = { ' ': next, Spacebar: next, ArrowRight: next, ArrowLeft: prev, Backspace: prev, Home: first }[e.key];
-    if (!fn || typing(e.target)) return;
+    if (!fn) return;
     e.preventDefault();
     fn();
   }
@@ -133,8 +134,8 @@
 
   /*
    * Starts at step 1 of the given steps, or of config/running-order.js. Returns {started, total, skipped} or, when
-   * nothing can be shown, {started: false, reason: 'empty'|'invalid', message, skipped}. For the file's order the
-   * message also shows next to the Present button.
+   * nothing can be shown, {started: false, reason: 'empty'|'invalid'|'error', message, skipped}. For the file's
+   * order the message also shows next to the Present button.
    */
   function start(steps) {
     var fromFile = steps === undefined;
@@ -152,8 +153,7 @@
     if (TAP.layers.top()) TAP.layers.close();
     var s0 = TAP.store.get();
     run = { steps: res.ok, i: 0, off: [], busy: false, focus: focus,
-      saved: saved || { view: s0.view, cmp: JSON.parse(JSON.stringify(s0.cmp)), expanded: s0.expanded, highlight: s0.highlight,
-        x: window.scrollX, y: window.scrollY } };
+      saved: saved || { view: s0.view, expanded: s0.expanded, x: window.scrollX, y: window.scrollY } };
     run.host = el('div', { class: 'tap-present__stage' });
     run.row = bar();
     run.layer = el('div', { class: 'tap-present', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('layerLabel'), tabindex: '-1' },
@@ -164,7 +164,12 @@
     window.addEventListener('keydown', onKey);
     run.off.push(function () { window.removeEventListener('keydown', onKey); });
     run.off.push(TAP.store.on(onStore));
-    show(0);
+    try { show(0); } catch (e) {
+      stop();   // a step that can't be drawn never leaves a half-open layer
+      var msg = t('startError', { message: e.message });
+      if (fromFile) say(msg);
+      return { started: false, reason: 'error', message: msg, skipped: res.skipped };
+    }
     return { started: true, total: res.ok.length, skipped: res.skipped };
   }
 
@@ -174,17 +179,15 @@
     if (run.layer.parentNode) run.layer.parentNode.removeChild(run.layer);
   }
 
-  // Leaves presentation mode and puts back the view, comparison, expanded chart, highlight and scroll from before.
+  // Leaves presentation mode and puts back the view, expanded chart and scroll from before. The comparison and
+  // highlight were never changed (D74).
   function stop() {
     if (!run) return false;
     var r = run;
-    teardown();
-    run = null;
-    TAP.panelDrill.keys(true);
+    try { teardown(); } finally { run = null; TAP.panelDrill.keys(true); }
     var s = r.saved;
     if (TAP.store.get().view !== s.view) TAP.store.set({ view: s.view });
-    TAP.store.set({ cmp: s.cmp });
-    TAP.store.set({ expanded: s.expanded, highlight: s.highlight });
+    TAP.store.set({ expanded: s.expanded });
     window.scrollTo(s.x, s.y);
     if (r.focus && r.focus.isConnected && r.focus.focus) r.focus.focus({ preventScroll: true });
     return true;
