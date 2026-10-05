@@ -558,6 +558,56 @@
       });
     });
 
+    /* ---------- review fixes after v0.3.0: what a step keeps (#363) ---------- */
+
+    T.test('X-review-PP-3', 'A step with type "table" shows the table view, and a chart recorded in table view records "table"', function (a) {
+      withPanel('ov-ambition', function (p) {
+        a.deepEqual(TAP.present.check([{ report: 'ov-ambition', type: 'table' }]).skipped, [], 'the step passes the check');
+        TAP.present.start([{ report: 'ov-ambition', type: 'table' }]);
+        try {
+          var sp = shown();
+          a.ok(sp && sp.querySelector('.tap-panel__table'), 'the step shows the table');
+          a.equal(sp && sp.querySelector('[data-action="table"]').getAttribute('aria-pressed'), 'true', 'with Table pressed');
+        } finally { TAP.present.stop(); }
+        click(p.el.querySelector('[data-action="table"]'));
+        recordFrom(p);
+        a.equal((TAP.present.recorded()[0] || {}).type, 'table', 'recorded in table view: type "table"');
+      });
+    });
+
+    T.test('X-review-PP-9', 'A chart recorded with "Break down by: None" replays with no breakdown', function (a) {
+      withPanel('cg-growth', function (p) {
+        a.equal(pressed(p.el, 'breakdown'), 'year', 'the report starts by plan year');
+        click(p.el.querySelector('[data-control="breakdown"] [data-value="none"]'));
+        recordFrom(p);
+        var s0 = TAP.present.recorded()[0] || {};
+        a.equal(s0.breakdown, 'none', 'recorded as an explicit "none"');
+        a.deepEqual(TAP.present.check([s0]).skipped, [], 'the step passes the check');
+        TAP.present.start([s0]);
+        try { a.equal(pressed(shown(), 'breakdown'), 'none', 'the step shows no breakdown'); } finally { TAP.present.stop(); }
+      });
+    });
+
+    T.test('X-review-PP-10', 'A step recorded on the ratings chart keeps its industry', function (a) {
+      withApp(function () {
+        TAP.present.clearRecorded();
+        var rated = TAP.data.industries({ rated: true }), ind = rated[1];
+        TAP.store.set({ industry: ind.id });
+        var p = TAP.panel.create(T.dom.mount(), 'ind-ratings', {});
+        try {
+          recordFrom(p);
+          var s0 = TAP.present.recorded()[0] || {};
+          a.equal(s0.industry, ind.id, 'the industry is recorded');
+          TAP.store.set({ industry: null });
+          TAP.present.start([s0]);
+          try {
+            var title = shown() && shown().querySelector('.tap-panel__title');
+            a.ok(title && title.textContent.indexOf(ind.name) >= 0, 'the step shows ' + ind.name + ', not ' + rated[0].name);
+          } finally { TAP.present.stop(); }
+        } finally { p.destroy(); TAP.present.clearRecorded(); }
+      });
+    });
+
     var THREE = [{ report: 'ov-ambition', title: 'First' }, { report: 'ind-tiers', title: 'Second' }, { report: 'cg-growth', title: 'Third' }];
 
     T.test('TPV-TC-542', 'Moving the second step up and removing the last leaves the old second and first, in that order', function (a) {
