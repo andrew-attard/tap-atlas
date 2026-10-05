@@ -131,10 +131,10 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{share} of {region}’s planned customer growth is in accounts flagged at risk ({amount} across {n} accounts).',
     attach: ['cg-exposure'], highlight: 'bar' });
   rule({ id: 'segmentMix', family: 'exposure',
-    description: 'A region drawing at least 60% of its planned customer growth from one segment, at least 20 points above every other region’s share for that segment.',
+    description: 'A region drawing at least 60% of its three-year order intake from existing customers from one segment, at least 20 points above every other region’s share for that segment. Regions whose accounts carry no segment are left out.',
     reads: ['customerGrowth.accounts.segment'], params: { share: 0.6, gap: 0.2 }, compare: true,
-    scoring: 'Strength: the gap to the highest other region against twice the threshold. Money: the growth in that segment.',
-    template: '{region}’s planned customer growth relies mostly on {segment} accounts ({share}, against {min} to {max} in the other regions).',
+    scoring: 'Strength: the gap to the highest other region against twice the threshold. Money: the order intake in that segment.',
+    template: '{region}’s planned three-year order intake from existing customers relies mostly on {segment} accounts ({share}, against {min} to {max} in the other regions).',
     attach: ['cg-segments'], highlight: 'bar' });
 
   /* ---------- capability (US-1.7.9) ---------- */
