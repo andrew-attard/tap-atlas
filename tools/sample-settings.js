@@ -52,7 +52,7 @@ module.exports = {
     { id: 'healthcare', name: 'Healthcare', pl: 'pl1', group: true },
     { id: 'hospitality', name: 'Hospitality', pl: 'pl3', tiers: '3333323' },
     { id: 'infotech', name: 'Information and Technology', pl: 'pl1', tiers: '2322332' },
-    { id: 'ifm', name: 'Integrated Facility Management', pl: 'pl2', group: true },
+    { id: 'ifm', name: 'Facility Services', pl: 'pl2', group: true },
     { id: 'manufacturing', name: 'Manufacturing', pl: 'pl2', tiers: '3323223' },
     { id: 'pharma', name: 'Pharma and Biotech', pl: 'pl1', tiers: '3233233' },
     { id: 'retail', name: 'Retail', pl: 'pl3', tiers: '2223333' },
