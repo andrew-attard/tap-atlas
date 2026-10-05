@@ -91,6 +91,8 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | A report on the region profile | `config/profile.js` | 9 |
 | A column on a list | the list's `config/reports-*.js` file, `js/engine/rows.js` | 10 |
 | Another template section | `docs/EXTENDING-TEMPLATE.md` | 11 to 13 |
+| The running order for a meeting | `config/running-order.js` | 14 |
+| Keeping a chart built in the meeting, or offering a measure in "Build a chart" | `js/engine/custom.js` and the view's `config/reports-*.js` file | 15 |
 | Wording | the `content/text-*.js` file that holds the phrase | none needed |
 
 The rules for every change are in the README: the app opens from a file, classic scripts only, small files with a header, colours only in the theme, words only in `content/`, numbers to tune only in `config/settings.js`, and no real data or organization names in the public repository.
