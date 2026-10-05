@@ -654,6 +654,19 @@
         items: [{ section: 'customerGrowth', regionId: 'delta', row: 11 }] });
     });
 
+    T.test('X-review-SV-16', 'With one other region, the rest of the bubbles is named in the singular (#372)', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions = plan.regions.slice(0, 2);
+      TAP.data.load(plan);
+      var labels = build('cg-bubble', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }).legend.map(function (l) { return l.label; });
+      a.ok(labels.indexOf('The other region, account by account') >= 0, 'accounts: ' + labels.join(' | '));
+      a.ok(!labels.some(function (l) { return /other 1 regions/.test(l); }), 'never "the other 1 regions"');
+      plan = window.T_FIXTURE('mini');
+      TAP.data.load(plan);
+      labels = build('cg-bubble', { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }).legend.map(function (l) { return l.label; });
+      a.ok(labels.indexOf('The other 3 regions, account by account') >= 0, 'several regions keep the plural: ' + labels.join(' | '));
+    });
+
     T.test('X-cg-bubble-left', 'An account with no current ARR is left off and named in a note; names are escaped', function (a) {
       var plan = window.T_FIXTURE('mini');
       plan.regions[1].customerGrowth.accounts[1].currentArr = null;
