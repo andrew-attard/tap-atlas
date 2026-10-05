@@ -4,8 +4,9 @@
  *          plan and the variance to it, the revenue outlook and order intake by product category (US-4.1.4; ids in
  *          docs/ARCHITECTURE.md section 19.2). Differences and ratios keep their parts, so combined figures are the
  *          summed parts, never a mean of ratios.
- * Provides: measures registered with TAP.measures (bk.*, cv.oi, sp.*, rv.*, oi.cat), and TAP.measures.kit4 (helpers
- *           for js/engine/measures-p4b.js, prepare.js, rows.js and custom.js)
+ * Provides: measures registered with TAP.measures (bk.*, cv.oi, sp.*, rv.*, oi.cat); TAP.measures.available(id): false
+ *           for a Phase 4 measure the loaded file has no data for; TAP.measures.kit4 (helpers for
+ *           js/engine/measures-p4b.js, prepare.js and rows.js)
  * Depends on: js/engine/measures.js (define, kit), measures-p2.js (kit2, rc.all.oi), js/core/data.js, js/core/content.js
  * Used by: reports, insights, the region profile and Build a chart
  * Owner: ENGINE4 stream (#439)
@@ -28,9 +29,18 @@
   function region(id) { return TAP.data.region(id) || {}; }
   function norm(v) { return v == null ? '' : String(v).trim().toLowerCase(); }
 
-  // Marks a measure as a part of the template a file may not have. Build a chart offers it only when some region
-  // has a value for it, or for the measure named in probe (js/engine/custom.js).
+  // Marks a measure as a part of the template a file may not have (meta.optional). probe names the measure whose
+  // data decides, when it is not the measure itself.
   function p4(m, probe) { m.optional = probe || true; return m; }
+  // False for such a measure when no region in the loaded file has a value for it. Build a chart offers only
+  // available measures; a view or report can ask before showing a part the file doesn't have.
+  M.available = function (id) {
+    var m = M.meta(id);
+    if (!m) return false;
+    if (!m.optional) return true;
+    var fn = M.get(m.optional === true ? id : m.optional);
+    try { return !!fn && TAP.data.regions().some(function (r) { return fn(r.id, {}).state === 'value'; }); } catch (e) { return false; }
+  };
 
   // A Phase 4 lookup in its own order; partner maturity in the order of its rank.
   function lookup(name) {

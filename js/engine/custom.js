@@ -4,7 +4,7 @@
  *          Everything is read from measure metadata (D68), so a new measure is offered without code. The definition
  *          depends only on {measure, by, type}, so a running-order step can carry it (D70).
  * Provides: TAP.custom (options, definition, types, byLabel, saved, save, remove)
- * Depends on: js/engine/measures.js, js/engine/registry.js, js/engine/shapes.js, js/core/content.js, js/core/data.js (at call time)
+ * Depends on: js/engine/measures.js, measures-p4.js (available), js/engine/registry.js, js/engine/shapes.js, js/core/content.js (at call time)
  * Used by: js/ui/custom-builder.js, js/ui/present.js (custom steps)
  * Owner: CUSTOM stream (#250)
  */
@@ -32,12 +32,8 @@
   }
 
   // A measure for a part of the template a file may not have (meta.optional, Phase 4) is offered only when some
-  // region has a value for it, or for the measure it names, so no choice ever draws an empty chart.
-  function hasData(m) {
-    if (!m.optional) return true;
-    var fn = TAP.measures.get(m.optional === true ? m.id : m.optional);
-    try { return !!fn && TAP.data.regions().some(function (r) { return fn(r.id, {}).state === 'value'; }); } catch (e) { return false; }
-  }
+  // region has a value for it, so no choice ever draws an empty chart and an earlier file reads as before.
+  function hasData(m) { return !m.optional || TAP.measures.available(m.id); }
 
   function options() {
     return TAP.measures.list().map(TAP.measures.meta).filter(function (m) {
