@@ -274,7 +274,7 @@ The parts of the full template the first copy lacked (US-4.1.1). **Every one is 
 | `value` | number or `null` | DER |
 
 - **`revenue`** is the revenue outlook at customer value: the revenue the template releases in each plan year from the order intake of that year.
-- **`booksValue`** is the same order intake as it runs through the organization's own books. It is lower than the customer value where a reseller keeps a margin or a partner delivers the services itself.
+- **`booksValue`** is the order intake as it runs through the organization's own books. Its `arr` and `services` items are the recap's order intake seen from the books: lower than the customer value where a reseller keeps a margin or a partner delivers the services itself. Its `swPerpetual` and `hardware` items have no counterpart in `recap`, which holds ARR and services only, so books value is compared with customer value over `arr` and `services`.
 - The four `type` values are the product categories: `arr` is the **recurring** category (`recurring` in `lookups.productCategories`); `services`, `swPerpetual` and `hardware` carry their own names.
 
 ```js
@@ -446,7 +446,7 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a rating on an industry that is not rated;
 - in the full template's parts (Phase 4), values that are likely wrong:
   - revenue above the order intake of the same year, channel and motion (the `recap` figure it is released from);
-  - a books value above the customer value of the same year for a reseller channel (`partner`, `allianceA`, `allianceB`);
+  - a books value above the customer value of the same year for a reseller channel (`partner`, `allianceA`, `allianceB`), over ARR and services, the types both lists hold;
   - a `coverage` more than 5% away from pipeline over the order intake still to win (forecast minus actuals);
   - a strategic plan `variance` that is not the plan's books order intake for that year and type minus the strategic plan;
   - the same item twice: a year, channel, motion and type in `revenue` or `booksValue`, a year and type in `strategicPlan`, a category in `baseYear.items`, or a route, year, type and solution in `routes`;
