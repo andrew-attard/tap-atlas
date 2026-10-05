@@ -47,6 +47,7 @@ body:has(.tap-present) .tap-popover { z-index: 66; }
 }
 .tap-present__count { flex: none; font-weight: 800; white-space: nowrap; }
 .tap-present__title { min-width: 0; font-weight: 600; }
+.tap-present__label { flex: none; font-weight: 800; color: var(--tap-accent-deep); white-space: nowrap; }
 .tap-present__navs { flex: none; display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
 .tap-present__nav { display: inline-flex; align-items: center; gap: var(--tap-sp-2); min-height: 36px; font-size: var(--tap-fs-body); }
 .tap-present__nav:disabled { opacity: 0.5; cursor: not-allowed; }

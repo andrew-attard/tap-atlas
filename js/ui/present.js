@@ -75,6 +75,7 @@
     TAP.dom.clear(where);
     TAP.dom.append(where, [
       el('strong', { class: 'tap-present__count' }, t('progress', { n: run.i + 1, total: run.steps.length })),
+      s.label ? el('span', { class: 'tap-present__label' }, s.label) : null,   // an insight step: framed for discussion (D20)
       s.title ? el('span', { class: 'tap-present__title' }, s.title) : null
     ]);
     TAP.dom.qs('[data-present="prev"]', run.row).disabled = run.i === 0;
