@@ -115,7 +115,6 @@
 
     function filters(list, families) {
       var inScope = TAP.scope.regionIds(cmp());
-      ui.regions = ui.regions.filter(function (r) { return has(inScope, r); });
       var regionRow = el('div', { class: 'tap-ins__row', role: 'group', 'aria-label': t('regionsLabel') },
         [el('span', { class: 'tap-ins__rowlabel' }, t('regionsLabel'))].concat(inScope.map(function (id) {
           var n = list.filter(function (x) { return byFamily(x) && has(x.regionIds, id); }).length;
@@ -220,6 +219,9 @@
     function draw() {
       var a = document.activeElement, focusKey = a && page.contains(a) ? a.getAttribute('data-key') : null;
       TAP.dom.clear(page);
+      // Regions that left the comparison stop filtering before anything is worked out (their chips go too)
+      var inScope = TAP.scope.regionIds(cmp());
+      ui.regions = ui.regions.filter(function (r) { return has(inScope, r); });
       var list;
       try { list = visible(); } catch (e) {
         if (!/Not built yet/.test(e.message)) throw e;
