@@ -40,6 +40,8 @@ qa_views() {
 QA_VIEWS="${QA_VIEWS:-$(qa_views)}"
 # An empty list would make every check pass without looking at anything
 if [ -z "$QA_VIEWS" ]; then echo "QA: no views found in config/views.js" >&2; exit 2; fi
+# Say what is checked, so a pass says what it looked at (the views once covered only four and still passed)
+echo "QA scope: data $QA_DATA; views ($(echo $QA_VIEWS | wc -w)): $QA_VIEWS"
 
 # Region ids in file order, one per line, read from the data file.
 qa_regions() {
