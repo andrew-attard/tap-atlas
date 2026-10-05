@@ -1,11 +1,12 @@
 /*
  * File: js/engine/measures-p2.js
  * Purpose: The Phase 2 measures: recap by channel and motion, new business by tier and industry, customer growth by
- *          segment, exposure, partners and plan make-up (US-2.7.4). Shares and ratios carry their numerator and
- *          denominator (cell.ratio), so combined figures are the summed parts, never a mean of shares (D60).
- * Provides: adds measures to TAP.measures (catalogue in docs/ARCHITECTURE.md section 17.5)
+ *          segment and exposure (US-2.7.4). Shares and ratios carry their numerator and denominator (cell.ratio),
+ *          so combined figures are the summed parts, never a mean of shares (D60).
+ * Provides: adds measures to TAP.measures (catalogue in docs/ARCHITECTURE.md section 17.5), and TAP.measures.kit2
+ *           (cell helpers for js/engine/measures-pt.js)
  * Depends on: js/engine/measures.js (define, derive, kit), js/core/data.js, js/core/content.js, js/engine/aggregate.js
- * Used by: Phase 2 report definitions, js/insights/rules-*.js
+ * Used by: Phase 2 report definitions, js/insights/rules-*.js, js/engine/measures-pt.js
  * Owner: ENGINE2 stream (#196)
  */
 (function (TAP) {
@@ -239,61 +240,7 @@
   M.define('cg.top3Share', rate('APP', 'cg.arr', []), function (r) { return exposure(r, 'top3'); });
   M.define('cg.riskShare', rate('APP', 'cg.arr', []), function (r) { return exposure(r, 'risk'); });
 
-  /* ---------- partners ---------- */
-
-  // Sums a value over the region's partners. No partners at all is not provided, as for an empty section.
-  function ptSum(field, kind, pick) {
-    return function (r, ctx) {
-      ctx = ctx || {};
-      var list = region(r).partners || [], used = [], tot = 0, partial = false;
-      list.forEach(function (p) {
-        var v = pick(p, ctx);
-        if (v && typeof v === 'object') { partial = partial || !!v.partial; v = v.v; }
-        if (!k.isNum(v)) return;
-        tot += v;
-        used.push(p.sourceRow);
-      });
-      var s = k.src(r, 'partners', field, used.length ? used : rows(list), ctx.year, kind);
-      return used.length ? k.cell(tot, kind, s, partial ? partialYears() : null) : k.blank(kind, s);
-    };
-  }
-  function fte(p) {
-    var v = [p.fteSales, p.fteConsultants].filter(k.isNum);
-    return v.length ? sum(v) : null;
-  }
-  function oi(p) {
-    var a = k.byYear(p.arr, null).v, b = k.byYear(p.services, null).v;
-    return k.isNum(a) || k.isNum(b) ? (a || 0) + (b || 0) : null;
-  }
-  // A partner's order intake is partly provided when a year of ARR or services, or one of the two, is blank
-  function oiPartial(p) {
-    var a = k.byYear(p.arr, null), b = k.byYear(p.services, null);
-    return !!(a.partial || b.partial || !k.isNum(a.v) || !k.isNum(b.v));
-  }
-  M.define('pt.count', k.count('IN', []), ptSum('name', 'IN', one));
-  M.define('pt.fteSales', k.count('IN', []), ptSum('fteSales', 'IN', function (p) { return p.fteSales; }));
-  M.define('pt.fteConsultants', k.count('IN', []), ptSum('fteConsultants', 'IN', function (p) { return p.fteConsultants; }));
-  M.define('pt.fte', k.count('IN', []), ptSum('fteSales', 'IN', fte));
-  M.define('pt.arr', k.amount('IN', ['year']), ptSum('arr', 'IN', function (p, ctx) { return k.byYear(p.arr, ctx.year); }));
-  M.define('pt.services', k.amount('IN', ['year']), ptSum('services', 'IN', function (p, ctx) { return k.byYear(p.services, ctx.year); }));
-  // Three-year order intake per FTE, over the partners that have FTE (D61)
-  M.define('pt.oiPerFte', rate('APP', 'pt.fte', [], 'money'), function (r) {
-    var list = region(r).partners || [], staffed = list.filter(function (p) { return fte(p) > 0 && oi(p) != null; });
-    var s = k.src(r, 'partners', 'arr', rows(staffed.length ? staffed : list), null, 'APP');
-    if (!staffed.length) return k.blank('APP', s);
-    return markPartial(ratioCell(sum(staffed.map(oi)), sum(staffed.map(fte)), s), staffed.some(oiPartial));
-  });
-
-  /* ---------- plan make-up ---------- */
-
-  // New business share of the three-year ARR ambition. Needs both parts: a share of a partial total would mislead.
-  M.define('amb.nbShare', rate('APP', 'amb.arr', []), function (r) {
-    var n = M.get('nb.arr')(r, {}), c = M.get('cg.arr')(r, {});
-    var s = { regionId: r, section: null, field: 'amb.nbShare', row: null, rows: [], year: null, cell: null, kind: 'APP',
-      parts: [{ measureId: 'nb.arr', src: n.src }, { measureId: 'cg.arr', src: c.src }] };
-    if (n.state !== 'value' || c.state !== 'value') return share(n, c, s);
-    var out = ratioCell(n.v, n.v + c.v, s);
-    if (out.state === 'value' && (n.partial || c.partial)) { out.partial = true; out.note = n.note || c.note; }
-    return out;
-  });
+  // Shared with js/engine/measures-pt.js (partners and plan make-up), so its cells follow the same rules
+  M.kit2 = { region: region, sum: sum, rows: rows, partialYears: partialYears, rate: rate, ratioCell: ratioCell, share: share,
+    markPartial: markPartial, one: one };
 })(window.TAP);
