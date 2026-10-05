@@ -1,10 +1,10 @@
 /*
  * File: tests/fixtures/broken-cases.js
  * Purpose: Deliberately broken data files for the contract check tests (TPV-TC-206): each case breaks one thing.
- * Provides: window.TEST_FIXTURES.broken (cases: [{id, level, change(plan), expect}], extras(plan))
+ * Provides: window.TEST_FIXTURES.broken (cases: [{id, level, change(plan), expect}], extras(plan), withP4(plan))
  * Depends on: tests/fixtures/mini-data.js (every case starts from a fresh copy of the mini fixture)
- * Used by: tests/test-check.js
- * Owner: the DATA stream.
+ * Used by: tests/test-check.js, tests/test-p4-data.js
+ * Owner: the DATA stream (DATA4 for the Phase 4 parts).
  *
  * level is 'errors' (stops loading) or 'warnings' (loads, listed in the data sources panel).
  * expect names the one item the check must report. found is the raw value, or 'nothing' for a missing field.
@@ -48,10 +48,11 @@ window.TEST_FIXTURES.broken = {
       change: function (p) { p.regions[1].partners[0].channel = 'reseller'; },
       expect: { path: 'regions[1].partners[0].channel', region: 'Region B', item: 'Fictional Partner B1 (row 10)',
         expected: '"partner", "allianceA" or "allianceB"', found: 'reseller' } },
+    // "low" is a risk level since Phase 4 (US-4.1.1), so this case names a level that is still outside the set
     { id: 'unknown-risk', level: 'errors',
-      change: function (p) { p.regions[0].customerGrowth.accounts[1].riskLevel = 'low'; },
+      change: function (p) { p.regions[0].customerGrowth.accounts[1].riskLevel = 'severe'; },
       expect: { path: 'regions[0].customerGrowth.accounts[1].riskLevel', region: 'Region A', item: 'Fictional Account A2 (row 11)',
-        expected: '"high" or "medium"', found: 'low' } },
+        expected: '"high", "medium" or "low"', found: 'severe' } },
     { id: 'two-plan-years', level: 'errors',
       change: function (p) { p.meta.years = [2027, 2028]; },
       expect: { path: 'meta.years', region: null, item: null, expected: 'a list of 3 plan years', found: 'a list of 2' } },
@@ -149,5 +150,72 @@ window.TEST_FIXTURES.broken = {
     p.regions[0].customerGrowth.accounts[0].accountType = 'Key account';
     p.regions[1].pricing = [{ sourceRow: 5, item: 'Price adjustment', value: 0.03 }];
     p.regions[1].customerGrowth.summary = { accounts: 2 };
+  },
+
+  // Not broken: the mini fixture with every Phase 4 part of the Data Contract added (US-4.1.1), for the tests
+  // that need a valid full-template file. Region A has every part; Region B has a strategic plan only.
+  // Figures are small and add up: Region A's 2027 new business ARR at customer value is 450 direct (E5) and
+  // 250 through partners (F5).
+  withP4: function (p) {
+    var A = p.regions[0], B = p.regions[1], map = p.meta.sourceMap;
+    Object.assign(p.lookups, {
+      productCategories: [{ id: 'swPerpetual', name: 'Software perpetual' }, { id: 'recurring', name: 'Recurring' },
+        { id: 'hardware', name: 'Hardware' }, { id: 'services', name: 'Services' }],
+      solutions: [{ id: 'sol1', name: 'Solution 1', category: 'recurring' }, { id: 'sol2', name: 'Solution 2', category: 'swPerpetual' }],
+      partnerTypes: [{ id: 'var', name: 'Value-added reseller' }, { id: 'si', name: 'System integrator' }, { id: 'referral', name: 'Referral partner' }],
+      partnerMaturity: [{ id: 'recruit', name: 'Recruit', rank: 1 }, { id: 'onboard', name: 'Onboard', rank: 2 }, { id: 'enable', name: 'Enable', rank: 3 },
+        { id: 'skill', name: 'Skill', rank: 4 }, { id: 'strategic', name: 'Strategic', rank: 5 }],
+      routes: [{ id: 'ownSales', name: 'Own sales force' }, { id: 'customerSuccess', name: 'Customer success' },
+        { id: 'allianceBReseller', name: 'Alliance B as reseller' }, { id: 'otherResellers', name: 'Other resellers' },
+        { id: 'systemIntegrators', name: 'System integrators' }, { id: 'partnerExisting', name: 'Partner existing business' }]
+    });
+    ['revenue', 'booksValue', 'strategicPlan', 'routes'].forEach(function (k) { map[k] = { sheet: '6. Recap' }; });
+    map.baseYear = { sheet: '7. Order Intake', columns: { category: 'B', budget: 'C', forecast: 'D', actuals: 'E', pipeline: 'F', coverage: 'G' },
+      cells: { year: 'C4', actualsThrough: 'C5' } };
+    map.newBusiness.columns.solution = 'V';
+    Object.assign(map.partners.columns, { type: 'P', supportPct: ['Q', 'R', 'S'], distribution: ['T', 'U', 'V'], servicesFromPartners: ['W', 'X', 'Y'] });
+    map.partners.cells = { outsourcingPct: 'I3' };
+
+    // Revenue never above the order intake of the same year, channel and motion (200 of 450, 100 of 250)
+    A.revenue = [{ year: 2027, sourceCell: 'E5', channel: 'direct', motion: 'newBusiness', type: 'arr', value: 200 },
+      { year: 2027, sourceCell: 'F5', channel: 'partner', motion: 'newBusiness', type: 'arr', value: 100 }];
+    // Books value: direct 400 + 50 = 450, the customer value; partner 180 + 20 + 0 = 200 of 250
+    A.booksValue = [{ year: 2027, sourceCell: 'E20', channel: 'direct', motion: 'newBusiness', type: 'arr', value: 400 },
+      { year: 2027, sourceCell: 'E22', channel: 'direct', motion: 'newBusiness', type: 'swPerpetual', value: 50 },
+      { year: 2027, sourceCell: 'F20', channel: 'partner', motion: 'newBusiness', type: 'arr', value: 180 },
+      { year: 2027, sourceCell: 'F21', channel: 'partner', motion: 'newBusiness', type: 'services', value: 0 },
+      { year: 2027, sourceCell: 'F23', channel: 'partner', motion: 'newBusiness', type: 'hardware', value: 20 }];
+    // Variance = books order intake minus the strategic plan: ARR 400 + 180 - 600 = -20; perpetual 50 - 40 = 10;
+    // hardware 20 - 25 = -5; services 0 - 10 = -10. 2028 has no books items, so it carries no variance.
+    A.strategicPlan = [{ year: 2027, sourceCell: 'E47', type: 'arr', value: 600, variance: -20 },
+      { year: 2027, sourceCell: 'E48', type: 'services', value: 10, variance: -10 },
+      { year: 2027, sourceCell: 'E49', type: 'swPerpetual', value: 40, variance: 10 },
+      { year: 2027, sourceCell: 'E50', type: 'hardware', value: 25, variance: -5 },
+      { year: 2028, sourceCell: 'F47', type: 'arr', value: 650 }];
+    // Coverage = pipeline / (forecast - actuals): 500 / (500 - 300) = 2.5. Services gives no ratio; hardware is blank.
+    A.baseYear = { year: 2026, actualsThrough: '2026-08', items: [
+      { sourceRow: 8, category: 'recurring', budget: 520, forecast: 500, actuals: 300, pipeline: 500, coverage: 2.5 },
+      { sourceRow: 9, category: 'services', budget: 100, forecast: 90, actuals: 50, pipeline: 100 },
+      { sourceRow: 10, category: 'swPerpetual', budget: 30, forecast: 30, actuals: 10, pipeline: 30, coverage: null },
+      { sourceRow: 11, category: 'hardware', budget: null, forecast: null, actuals: null, pipeline: null, coverage: null }] };
+    // All six routes for 2027, with and without a solution: 400 + 50 + 0 + 0 + 120 + 60 + 20 + 0 = 650, the books total
+    A.routes = [{ route: 'ownSales', year: 2027, sourceCell: 'E56', type: 'arr', value: 400, solution: 'sol1' },
+      { route: 'ownSales', year: 2027, sourceCell: 'G57', type: 'swPerpetual', value: 50, solution: 'sol2' },
+      { route: 'customerSuccess', year: 2027, sourceCell: 'E63', type: 'arr', value: 0 },
+      { route: 'allianceBReseller', year: 2027, sourceCell: 'E71', type: 'arr', value: 0, solution: null },
+      { route: 'otherResellers', year: 2027, sourceCell: 'E80', type: 'arr', value: 120, solution: 'sol1' },
+      { route: 'systemIntegrators', year: 2027, sourceCell: 'E87', type: 'arr', value: 60, solution: null },
+      { route: 'systemIntegrators', year: 2027, sourceCell: 'H87', type: 'hardware', value: 20 },
+      { route: 'partnerExisting', year: 2027, sourceCell: 'E95', type: 'arr', value: 0 }];
+    A.outsourcingPct = 0.3;
+    A.newBusiness[0].solution = 'sol1';            // the second row names none
+    B.newBusiness[0].solution = null;
+    Object.assign(A.partners[0], { type: 'var', maturity: 'enable', supportPct: [0.3, 0.2, 0.1], distribution: [100, 150, 200],
+      servicesFromPartners: [6, 9, 12] });
+    // A maturity may be given by its name; a type may be blank
+    Object.assign(B.partners[0], { type: null, maturity: 'Strategic', supportPct: [null, null, null] });
+    p.regions[3].partners[0].maturity = 'recruit';
+    B.strategicPlan = [{ year: 2027, sourceCell: 'E47', type: 'arr', value: 800 }];
+    return p;
   }
 };
