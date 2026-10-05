@@ -381,6 +381,42 @@
         } finally { TAP.present.clearRecorded(); }
       }) : 'Waits for the running-order recording (US-3.1.3, PRESENT).');
 
+    /* ---------- every offered choice draws something (review PP-1, #361) ---------- */
+
+    // The sample data, for the length of fn; the mini fixture comes back afterwards.
+    function onSample(fn) {
+      return scene(function (a, s) {
+        TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        try { fn(a, s); } finally { TAP.data.load(window.T_FIXTURE('mini')); }
+      });
+    }
+    function custom(spec, cmp) {
+      var def = TAP.custom.definition(spec), ents = TAP.scope.entities(cmp);
+      var ctx = { def: def, type: def.spec.type, measureId: null, sizeId: null, breakdown: def.defaultBreakdown, cmp: cmp,
+        entities: ents, year: null, industryId: null, highlight: null, expanded: false, theme: window.TAP_THEME, opts: {}, size: null, drill: null };
+      return TAP.builders.get(def.builder || def.shape)(ctx);
+    }
+
+    T.test('X-review-PP-1', 'Every offered measure, dimension and type draws a non-empty chart on the sample data', onSample(function (a) {
+      var all = { mode: 'all', focus: null, second: null, set: [], restAs: 'combined', restAgg: 'average' }, n = 0;
+      TAP.custom.options().forEach(function (o) {
+        o.by.forEach(function (by) {
+          TAP.custom.types(by).forEach(function (type) {
+            var res = custom({ measure: o.measureId, by: by, type: type }, all);
+            n += 1;
+            a.ok(res && !res.error && res.empty === false, o.measureId + ' by ' + by + ' as ' + type + ' has data');
+          });
+        });
+      });
+      a.ok(n > 40, 'every choice was tried (' + n + ')');
+    }));
+
+    T.test('X-review-PP-1', 'A per-industry figure by industry draws its chart in the panel, not the no-data message', onSample(function (a, s) {
+      var p = s.panel(TAP.custom.definition({ measure: 'ind.growthPotential', by: 'industry' }), { initial: { breakdown: 'industry' } });
+      a.equal(qs('.tap-panel__empty', p.el), null, 'no "no region has data" message');
+      a.ok(!!qs('.tap-panel__chart', p.el), 'a chart is drawn');
+    }));
+
     /* ---------- US-3.5.3: keep custom charts for the session ---------- */
 
     T.test('TPV-TC-567', 'Six charts are kept; a seventh is refused with a message and the list stays at six', listScene(function (a) {
