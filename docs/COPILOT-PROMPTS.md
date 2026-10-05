@@ -31,7 +31,7 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages) |
 | Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, internal copy only, never committed) |
 | Tests | `tests.html`, `tests/test-*.js`, `tests/fixtures/mini-data.js` (a small valid data file) |
-| Handover | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md` |
+| Handover | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/EXTENDING-TEMPLATE.md` (adding more of the template) |
 
 ## 1. Orientation
 
@@ -194,3 +194,54 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 ```
 
 **Expect:** a changed `columns` list in the definition, or a separate proposal for `js/engine/rows.js` and `content/text-engine2.js`. Check: open `tests.html`, then the list. The new heading carries its value kind and sorts like the others, and selecting a row still opens its details.
+
+## Extending the app to more of the template
+
+Prompts 11 to 13 follow the three levels in `docs/EXTENDING-TEMPLATE.md`: an extra section (data only), a measure and a report (configuration), and a new view (code). Use the lowest level that answers the question. Attach exactly the files listed: they hold everything Copilot needs, and nothing else from the folder is required.
+
+## 11. Add a template section as an extra section
+
+Use when a sheet of the template should be visible, region by region, without its own chart.
+
+**Attach:** `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js` (how the app reads and checks extra sections), `content/text-extra.js` (the wording of its warnings), and the import's files. In Copilot only: one real workbook, or a screenshot of the sheet's header rows.
+
+```
+Our planning template has a sheet the app doesn't show yet: "<sheet name>". Following level 1 of the attached EXTENDING-TEMPLATE.md and the "Extra sections" part of the data contract, extend our import so it writes this sheet as an extra section.
+Step 1: From the workbook, list the sheet's columns and propose for each: a key, a heading, a unit (money, pct, count or text), a kind (IN leader input, PRE system figure, DER calculated in the workbook) and the column letter. Propose the section's id, title (the sheet name) and a one-sentence intro. Wait for my answers.
+Step 2, after I answer: change the import so it writes the meta.extraSections entry and, for every region, extra.<section id> with one row per filled worksheet row: its sourceRow, one field per column, null for a blank cell, money in thousands. Leave out empty spare rows and personal names. Change nothing else in the data file. Tell me how to re-run the import.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** a column table to confirm, then changes to the import only. Check: re-run the import, open `index.html`, and read the data sources panel: problems in an extra section are warnings naming the section and the field, and never stop the app. Open **Other sections**, check one row per region against the workbook through its details (file › sheet › cell), then run `tests.html`.
+
+## 12. Chart a figure from an extra section
+
+Use when a figure from an extra section should be compared across regions as a chart on an existing view.
+
+**Attach:** `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `config/reports.js` (the report schema), the view's definitions file (for example `config/reports-customers.js`), `config/views.js`, `js/engine/measures.js` (how measures are defined), `js/engine/rows.js` and `js/core/extra.js` (how an extra section's rows and cells are read), `tools/build-pages.js` (the script list). In the chat, paste the section's `meta.extraSections` entry from the data file (its description only, no rows).
+
+```
+Following level 2 of the attached EXTENDING-TEMPLATE.md, add a chart to the <view> view that answers: "<question>". It reads the extra section "<section id>" described below.
+<paste the meta.extraSections entry>
+Write: (1) a new file js/engine/measures-local.js, with its header, defining the measure(s) with TAP.measures.define, reading rows only through TAP.rows with the source "extra:<section id>", keeping each figure's source rows, and returning a blank cell, never zero, when nothing was provided; (2) the measure labels for a wording file under content/; (3) one report definition for the view's definitions file, following config/reports.js, with its id added to the view's list in config/views.js; (4) the line to add to tools/build-pages.js. Use only existing shapes and chart types. Say which existing measure, if any, already answers the question instead.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** a new measures file, a wording entry, one definition, a one-line change to `config/views.js` and one to `tools/build-pages.js`. Check: run `node tools/build-pages.js` (or add the `<script>` line to the three pages by hand), open `tests.html` (all pass, including the report definitions), then the view in `index-sample.html` and `index.html`: chart, table and the source line all work.
+
+## 13. Add a view
+
+Use when a section needs a page of its own, with several reports and a menu entry.
+
+**Attach:** `docs/EXTENDING-TEMPLATE.md`, `docs/ARCHITECTURE.md` (views and the menu, sections 11 and 17), `config/views.js`, `js/views/partners.js` and `js/views/customers.js` (a small view and the layout it uses), the report definitions the view will show, `content/text-customers.js` (how view wording is written), `tests/test-partners.js` (a view's tests) and `tools/build-pages.js`.
+
+```
+Following level 3 of the attached EXTENDING-TEMPLATE.md, add a view called "<menu title>" that asks "<question>" and shows these reports: <report ids>. It goes in the menu after "<view>". It should appear only when <condition, or "always">.
+Write: (1) js/views/<id>.js, with its header, registering the view and reusing TAP.cgpLayout as js/views/partners.js does (with available() if it is conditional); (2) the change to config/views.js (menu order and report list); (3) the view's wording (kicker, title, lead, label) for a content/ file; (4) a test file modelled on tests/test-partners.js: the view mounts, its title is the question, its menu position; (5) the lines to add to tools/build-pages.js for the view and the tests. Don't change any other view.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** one view file, one test file, small changes to `config/views.js`, a wording file and `tools/build-pages.js`. Check: run `node tools/build-pages.js`, open `tests.html` (all pass), then `index-sample.html` at 1280 px wide and at 125% and 150% zoom: the menu still fits, the number keys follow the menu order, and the view's reports switch charts, show tables and name their sources.
