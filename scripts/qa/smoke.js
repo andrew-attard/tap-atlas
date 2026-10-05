@@ -173,8 +173,25 @@
     });
   }
   function panel(id) { return $('.tap-panel[data-report="' + id + '"]'); }
+  function listPlan(add, id) {
+    add('list drawn', function () { expect($('table.tap-list tbody tr', panel(id)), 'no list rows'); });
+    add('sort by the first column', function () {
+      click($('[data-tap-opt="sort"]', panel(id)));
+      expect($('table.tap-list tbody tr', panel(id)), 'no rows after sorting');
+    });
+    add('expand', function () {
+      click($('[data-action="more"]', panel(id)));
+      click($('[data-action="expand"]', panel(id)));
+      expect(state().expanded === id, 'state.expanded is ' + state().expanded);
+    });
+    add('Esc closes expanded', function () { esc(); });
+    add('collapsed', function () { expect(!state().expanded, 'still expanded'); });
+  }
   function panelPlan(v, id) {
     function add(name, fn) { step(v + ' / ' + id + ': ' + name, fn); }
+    // A list report (US-2.7.2) is its own table: no chart type menu or table switch, so sort a column instead
+    var def = TAP.reports.get(id);
+    if (def && def.shape === 'list') return listPlan(add, id);
     add('open the chart type menu', function () { click($('[data-action="type"]', panel(id))); });
     add('list the chart types', function () {
       var types = $$('.tap-panel__item[data-type]', panel(id)).map(function (b) { return b.getAttribute('data-type'); });
