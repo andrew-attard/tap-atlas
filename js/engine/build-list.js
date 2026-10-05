@@ -19,7 +19,8 @@
     var all = TAP.rows.columns(def.rows);
     return (def.columns || []).map(function (c) {
       var known = all.filter(function (x) { return x.key === c.key; })[0];
-      if (!known) { notes.push(t('rows.unknownColumn', { key: c.key })); return null; }
+      // A column the file has no data for (a Phase 4 addition) is left out quietly; an unknown one is named
+      if (!known) { if (!TAP.rows.optional(def.rows, c.key)) notes.push(t('rows.unknownColumn', { key: c.key })); return null; }
       var out = { key: c.key, label: c.label || known.label, unit: known.unit, kind: known.kind,
         align: NUMERIC[known.unit] ? 'right' : 'left' };
       if (known.decimals != null) out.decimals = known.decimals;
@@ -37,7 +38,8 @@
 
   // Blanks and not-applicable cells go last whichever way the column is sorted.
   function compare(x, y, dir) {
-    var a = x && x.state === 'value' ? x.v : null, b = y && y.state === 'value' ? y.v : null;
+    // A cell with a rank (partner maturity) sorts by it, so levels follow the lookup's order, not the alphabet
+    var a = x && x.state === 'value' ? (x.rank != null ? x.rank : x.v) : null, b = y && y.state === 'value' ? (y.rank != null ? y.rank : y.v) : null;
     if (a == null || b == null) return a == null && b == null ? 0 : a == null ? 1 : -1;
     var d = typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b));
     return dir === 'desc' ? -d : d;
