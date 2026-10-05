@@ -3,7 +3,7 @@
  * File: tools/check-docs3.js
  * Purpose: File checks for the handover pack and the portfolio edition, which the browser test page can't make:
  *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
- *          the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
+ *          the handover guide's parts and its place in the README, the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
  * Depends on: Node 18+ only
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
@@ -212,8 +212,29 @@ function checkLanding(root) {
   return { problems, checked: refs.length };
 }
 
+/* ---------- US-3.3.1: the handover guide, linked first from the README ---------- */
+
+const HANDOVER = 'docs/HANDOVER.md';
+const HANDOVER_PARTS = [/^## .*two editions/im, /^## .*refresh/im, /^## .*checks/im, /^## .*which document/im,
+  /^## .*known limits/im, /account names/i, /partner maturity/i, /weights/i];
+
+function checkHandover(root) {
+  const problems = [];
+  const file = path.join(root, HANDOVER);
+  if (!fs.existsSync(file)) return { problems: [HANDOVER + ' is missing'], checked: 0 };
+  const text = fs.readFileSync(file, 'utf8');
+  HANDOVER_PARTS.forEach((re) => { if (!re.test(text)) problems.push(HANDOVER + ': nothing matches ' + re); });
+  if (!/docs\/IMPORT-BRIEF\.md/.test(text)) problems.push(HANDOVER + ': the refresh steps do not point to docs/IMPORT-BRIEF.md');
+  // The first document the README links to or names is the handover guide.
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const first = /(?:\]\(|`)((?:docs\/)?[A-Z][A-Z-]*\.md)/.exec(readme);
+  if (!first || first[1] !== HANDOVER) problems.push('README.md: the first document it links to is ' + (first ? first[1] : 'none') + ', not ' + HANDOVER);
+  return { problems, checked: HANDOVER_PARTS.length + 2 };
+}
+
 const CHECKS = [
   { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb },
+  { id: 'X-docs3-handover', label: 'handover guide: its parts, the import brief, and first in the README', run: checkHandover },
   { id: 'TPV-TC-615', label: 'landing page: relative links to files that exist, 3 or 4 screenshots, the sample button', run: checkLanding },
   { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: checkShots },
   { id: 'TPV-TC-628', label: 'screenshot names are stable and every page names an existing one', run: checkShotNames }
