@@ -36,7 +36,7 @@ Then open `http://localhost:8000/index-sample.html` in Chrome or Edge and run th
 5. Set **Branch** to `main` and the folder to **/ (root)**, then **Save**.
    - Use the root, not the `/docs` folder: the landing page opens the sample edition one folder up, and the app's files sit at the top of the repository.
 6. Wait for the **pages build and deployment** run on the **Actions** tab to finish. Pages then shows the site address, in the form `https://<owner>.github.io/<repository>/`.
-7. Share these two addresses (the site's top address opens the internal edition, which has no data on the web, so don't share that one):
+7. Share these two addresses. The site's top address opens the internal edition, which has no data on the web: it shows the "No plan data found" screen, with a link to the sample edition, so a visitor who lands there isn't stuck, but it isn't the address to share.
    - the landing page: `https://<owner>.github.io/<repository>/docs/`
    - the sample edition: `https://<owner>.github.io/<repository>/index-sample.html`
 
