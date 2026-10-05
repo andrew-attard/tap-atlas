@@ -416,6 +416,19 @@
       }, { mode: 'pair', focus: 'na', second: 'latam' });
     });
 
+    // Review fix #375 (SV-7): a region filter whose region leaves the comparison no longer applies, not even once
+    T.test('X-review-SV-7', 'A region chip that leaves the comparison stops filtering at once', function (a) {
+      withInsights(function (root) {
+        chip(root, 'data-region', 'mea').click();
+        a.equal(chip(root, 'data-region', 'mea').getAttribute('aria-pressed'), 'true', 'Middle East and Africa is pressed');
+        TAP.store.set({ cmp: { mode: 'pair', focus: 'na', second: 'latam' } });
+        a.ok(!chip(root, 'data-region', 'mea'), 'its chip is gone with it');
+        a.deepEqual(items(root).sort(), ['concentration:na', 'consensus:education', 'groupPriority:datacenters:ability',
+          'notYetWinnable:fsm', 'pipelineCover:latam'], 'every insight about either region, unfiltered');
+        a.ok(!root.querySelector('.tap-ins__none'), 'no "nothing matches" message');
+      });
+    });
+
     T.test('TPV-TC-140', 'An insight expands to show its figures, rule and sources', function (a) {
       withInsights(function (root) {
         var it = item(root, 'pipelineCover:latam'), toggle = it.querySelector('.tap-ins__toggle');
