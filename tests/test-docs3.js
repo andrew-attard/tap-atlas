@@ -2,8 +2,8 @@
  * File: tests/test-docs3.js
  * Purpose: Tests for the handover pack and portfolio pages. Most of these are file checks, which the browser
  *          can't make from the test page, so they run in tools/check-docs3.js and are listed here as skipped.
- * Provides: test cases TPV-TC-596, 598, 599, 602, 605, 606, 607, 609, 610, 611, 615, 617, 621, 623, 627, 628
- *           (each as TPV-TC-nnn), X-docs3-handover, X-docs3-contract-history
+ * Provides: test cases TPV-TC-596, 598, 599, 602, 605, 606, 607, 609, 610, 611, 615, 617, 621, 623, 627, 628, 632
+ *           (each as TPV-TC-nnn), X-docs3-handover, X-docs3-contract-history, X-docs3-case-study
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js, index-sample.html
  * Used by: tests.html
  * Owner: DOCS3 stream
@@ -47,6 +47,8 @@
   }
 
   T.suite('docs3', function () {
+    T.skip('TPV-TC-632', 'docs/CASE-STUDY.md has no denylisted term', 'Checked by the denylist scan in scripts/verify.sh');
+    T.skip('X-docs3-case-study', 'The case study has its parts and the landing page links to it', FILE_CHECK);
     T.skip('TPV-TC-621', 'index-sample.html and every file it loads use relative paths only and nothing depends on file://',
       FILE_CHECK);
     T.skip('TPV-TC-596', 'Every file path the handover guide names exists', 'Checked by tools/check-docs.js in scripts/verify.sh');

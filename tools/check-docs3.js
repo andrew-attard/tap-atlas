@@ -3,7 +3,7 @@
  * File: tools/check-docs3.js
  * Purpose: File checks for the handover pack and the portfolio edition, which the browser test page can't make:
  *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
- *          the README's file guide against the folder, the Data Contract's fields and change history, the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
+ *          the README's file guide against the folder, the Data Contract's fields and change history, the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, the case study's parts, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
  * Depends on: Node 18+; tools/check-docs3-files.js (the screenshot and package checks)
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
@@ -208,6 +208,27 @@ function checkContractHistory(root) {
   return { problems, checked: want.length };
 }
 
+/* ---------- US-3.4.4: the case study ---------- */
+
+const CASE_STUDY = 'docs/CASE-STUDY.md';
+const CASE_PARTS = [/^## .*brief/im, /^## .*constraints/im, /^## .*decisions/im, /^## .*(delivery|method)/im,
+  /^## .*phase/im, /no server/i, /shared screen/i, /data boundary/i];
+
+function checkCaseStudy(root) {
+  const file = path.join(root, CASE_STUDY);
+  if (!fs.existsSync(file)) return { problems: [CASE_STUDY + ' is missing'], checked: 0 };
+  const text = fs.readFileSync(file, 'utf8');
+  const problems = CASE_PARTS.filter((re) => !re.test(text)).map((re) => CASE_STUDY + ': nothing matches ' + re);
+  const decisions = new Set(text.match(/\bD\d{1,3}\b/g) || []);
+  if (decisions.size < 10) problems.push(CASE_STUDY + ': names ' + decisions.size + ' decisions by number, expected at least 10');
+  // The landing page links to it, so a visitor can read it.
+  const landing = path.join(root, 'docs/index.html');
+  if (fs.existsSync(landing) && htmlRefs(fs.readFileSync(landing, 'utf8')).indexOf('CASE-STUDY.md') < 0) {
+    problems.push('docs/index.html does not link to CASE-STUDY.md');
+  }
+  return { problems, checked: CASE_PARTS.length + 2 };
+}
+
 const CHECKS = [
   { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb },
   { id: 'TPV-TC-602', label: 'README file guide lists every shipped file (paths named are checked by check-docs.js)', run: checkReadmeFiles },
@@ -215,6 +236,7 @@ const CHECKS = [
   { id: 'TPV-TC-598', label: 'every field the contract check reads is named in docs/DATA-CONTRACT.md', run: files.checkContractFields },
   { id: 'X-docs3-contract-history', label: 'docs/DATA-CONTRACT.md has a "Changes" section with each version and phase', run: checkContractHistory },
   { id: 'TPV-TC-606', label: 'package.sh: refuses on a failed verify, else one dated copy without tests or tools (606, 607, 609, 610, 611)', run: (root) => files.checkPackage(root, HANDOVER) },
+  { id: 'X-docs3-case-study', label: 'case study: brief, constraints, numbered decisions, method, phases; linked from the landing page', run: checkCaseStudy },
   { id: 'TPV-TC-615', label: 'landing page: relative links to files that exist, 3 or 4 screenshots, the sample button', run: checkLanding },
   { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: files.checkShots },
   { id: 'TPV-TC-628', label: 'screenshot names are stable and every page names an existing one', run: files.checkShotNames }
