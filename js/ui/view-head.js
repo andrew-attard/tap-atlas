@@ -5,7 +5,8 @@
  *          significant insight attached to the view's reports, with its "Show me" link (US-2.1.1, US-2.2.1, US-2.3.1).
  *          Also the shared layout helpers the Phase 2 views use: a safe panel mount and a two-panel row.
  * Provides: TAP.viewHead (render, headline, mountPanel, pair, tip, hideTips, showTips, tipsHidden)
- * Depends on: js/core/dom.js, js/core/content.js, js/core/store.js, config/views.js, js/insights/engine.js and
+ * Depends on: js/core/dom.js, js/core/content.js, js/core/store.js, config/views.js, js/insights/engine.js,
+ *             js/panel/panel-insights.js (the first panel's takeaway) and
  *             js/panel/panel.js (at call time)
  * Used by: js/views/new-business.js, customers.js, partners.js, regions.js; tip() also by the Phase 1 views
  *          (overview.js, industry.js, insights.js, guide.js)
@@ -53,10 +54,17 @@
     return best;
   }
 
+  // The first panel's takeaway (its top insight), or null.
+  function firstTakeaway(viewId, cmp) {
+    var first = (((window.TAP_VIEWS || {})[viewId] || {}).reports || [])[0];
+    try { return first && TAP.panelInsights ? TAP.panelInsights.get(cmp, first).top : null; } catch (e) { return null; }
+  }
+
   function drawHeadline(box, viewId) {
     TAP.dom.clear(box);
-    var x = headline(viewId, TAP.store.get().cmp);
-    if (!x) { box.hidden = true; return; }   // no insight: no headline line at all
+    var cmp = TAP.store.get().cmp, x = headline(viewId, cmp), lead = x && firstTakeaway(viewId, cmp);
+    // No insight, or the same sentence the first panel leads with just below (D83): no headline line at all
+    if (!x || (lead && lead.sentence === x.sentence)) { box.hidden = true; return; }
     box.hidden = false;
     box.appendChild(el('p', { class: 'tap-vh__headline-text' }, x.sentence));
     box.appendChild(el('button', { type: 'button', class: 'tap-btn tap-vh__showme', 'data-insight': x.id,
