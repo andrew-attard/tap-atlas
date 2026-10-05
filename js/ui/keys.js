@@ -1,16 +1,17 @@
 /*
  * File: js/ui/keys.js
  * Purpose: Keyboard shortcuts for presenting: 1 to 9 open the views in menu order (TAP.views.order(), so a new
- *          view needs no change here; the Guide lists the keys from the same order), and one Esc order across
- *          popovers, side panels and expanded charts.
+ *          view needs no change here; the Guide lists the keys from the same order), P starts presentation mode
+ *          (US-3.1.2), and one Esc order across popovers, side panels and expanded charts.
  * Provides: TAP.keys (bind, unbind, viewFor)
- * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js (all read at call time)
+ * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js, js/ui/present.js (all read at call time)
  * Used by: js/ui/app.js (bound at start-up)
  *
  * The Esc order: a glossary popover closes first (it listens in the capture phase), then a panel's or the
  * comparison bar's popover (they mark the Esc as handled), then the side panel, then the expanded chart. The tour
  * handles its own keys in the capture phase. Whoever handles an Esc calls preventDefault, so each Esc closes one thing.
- * The arrow keys that step through expanded charts belong to the panel (js/panel/panel.js).
+ * The arrow keys that step through expanded charts belong to the panel (js/panel/panel.js). While presentation mode
+ * runs, its keys are its own (D70), so nothing here acts.
  */
 (function (TAP) {
   'use strict';
@@ -36,11 +37,18 @@
     TAP.store.set({ expanded: null });
   }
 
+  function presenting() { return !!(TAP.present && !TAP.present.__stub && TAP.present.active()); }
+
   function onKey(e) {
-    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || presenting()) return;
     if (e.key === 'Escape') {
       if (TAP.layers.top()) { e.preventDefault(); TAP.layers.close(); return; }
       if (TAP.store.get().expanded) { e.preventDefault(); closeExpanded(); }
+      return;
+    }
+    if ((e.key === 'p' || e.key === 'P') && !typing(e.target) && !tourOn()) {
+      e.preventDefault();
+      TAP.present.start();   // the file's running order; if there is nothing to show, the Present button says why
       return;
     }
     var id = viewFor(e.key);

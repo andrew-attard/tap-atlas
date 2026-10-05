@@ -12,6 +12,21 @@ Object.assign(window.TAP_CONTENT.text, {
   present: {
     stepN: 'Step {n}',
 
+    // Presenting (US-3.1.2)
+    button: 'Present',
+    empty: 'Nothing to present: the running order in config/running-order.js has no steps yet.',
+    noneValid: 'Nothing to present: none of the {n} steps in the running order can be shown with this data. The data sources panel lists why.',
+    noneValidOne: 'Nothing to present: the one step in the running order can’t be shown with this data. The data sources panel lists why.',
+    layerLabel: 'Presentation mode',
+    barLabel: 'Presentation steps',
+    progress: 'Step {n} of {total}',
+    prev: 'Back',
+    prevKeys: '←',
+    next: 'Next',
+    nextKeys: 'Space',
+    leave: 'Leave',
+    leaveKeys: 'Esc',
+
     // Steps left out of the running order, listed in the data sources panel only (US-3.1.1)
     sourcesTitle: 'Running order',
     sourcesIntro: 'Steps of the running order that were left out when presentation mode started.',

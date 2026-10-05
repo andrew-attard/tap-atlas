@@ -5,9 +5,9 @@
  *          beside the data date, so the menu keeps one line at 1280 px (D72).
  * Provides: TAP.shell (mount, viewEl, actionsEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
- *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/theme.js (logo)
+ *             js/engine/registry.js (TAP.views), js/ui/compare-bar.js, js/ui/layers.js, js/ui/present.js (button), js/theme.js (logo)
  * Used by: js/ui/app.js; js/panel/panel.js and panel export read label() for saved images and copied tables;
- *          js/ui/tour.js (actionsEl)
+ *          js/ui/tour.js (actionsEl); js/ui/present.js draws the Present button in the actions slot (US-3.1.2)
  */
 (function (TAP) {
   'use strict';
@@ -112,6 +112,7 @@
     cleanups.push(TAP.bus.on('details:open', function (p) { TAP.layers.openDetails(p && p.target); }));
 
     tryMount(function (slot) { TAP.compareBar.mount(slot, { actions: actions }); }, cmp);
+    tryMount(function (slot) { TAP.present.button(slot); }, actions);   // "Present" (US-3.1.2)
     return frame;
   }
 

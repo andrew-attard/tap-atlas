@@ -1,8 +1,53 @@
 /*
  * File: css/present.css
- * Purpose: Styles for presentation mode.
+ * Purpose: Styles for presentation mode: the Present button and its message, the full-window presentation layer
+ *          with the step's expanded panel, and the thin progress row (US-3.1.2).
  * Provides: styles for this area only
- * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Depends on: css/base.css, css/panel.css (the expanded panel) and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
- * Owner: PRESENT stream. Colours and font sizes come from theme variables only.
+ * Owner: PRESENT stream. Colours and font sizes come from theme variables only. No transitions (D24).
  */
+
+/* The Present button beside the data date (D72), with the reason it can’t start shown under it */
+.tap-present__start { position: relative; display: flex; }
+.tap-present__button { display: inline-flex; align-items: center; gap: var(--tap-sp-2); white-space: nowrap; font-size: var(--tap-fs-body); }
+.tap-present__msg {
+  position: absolute; top: calc(100% + var(--tap-sp-2)); right: 0; z-index: 40; width: min(360px, calc(100vw - 2 * var(--tap-gutter)));
+  margin: 0; padding: var(--tap-sp-3) var(--tap-sp-4); font-size: var(--tap-fs-body); font-weight: 600; line-height: 1.4;
+  background: var(--tap-surface); color: var(--tap-ink); border: var(--tap-rule-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-sm);
+}
+.tap-present__msg:empty { display: none; }
+
+/* The layer fills the window over the page; side panels (z-index 70) still open above it */
+.tap-present {
+  position: fixed; inset: 0; z-index: 65; display: flex; flex-direction: column; background: var(--tap-ground);
+}
+.tap-present:focus { outline: none; }
+.tap-present__stage { flex: 1 1 auto; min-height: 0; overflow: auto; position: relative; }
+
+/* The step's panel is the expanded panel, placed in the stage rather than over the window */
+.tap-present .tap-panel--expanded { position: relative; inset: auto; z-index: auto; min-height: 100%; overflow: visible; }
+.tap-present .tap-panel--expanded .tap-panel__chart { height: max(300px, calc(100vh - 400px)); }
+.tap-present .tap-panel--expanded .tap-panel__tablewrap { max-height: max(300px, calc(100vh - 440px)); }
+/* "Chart 2 of 6" counts the view's charts behind the layer, which aren't part of the presentation */
+.tap-present .tap-panel__expand-row .tap-muted { display: none; }
+
+/* The thin progress row: step count, step title and the step buttons */
+.tap-present__bar {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1) var(--tap-sp-4);
+  min-height: 48px; padding: var(--tap-sp-1) clamp(var(--tap-gutter), 3vw, 48px);
+  background: var(--tap-surface); border-top: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-present__where {
+  flex: 1 1 320px; min-width: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--tap-sp-3);
+  font-size: var(--tap-fs-body); line-height: 1.35;
+}
+.tap-present__count { flex: none; font-weight: 800; white-space: nowrap; }
+.tap-present__title { min-width: 0; font-weight: 600; }
+.tap-present__navs { flex: none; display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-present__nav { display: inline-flex; align-items: center; gap: var(--tap-sp-2); min-height: 36px; font-size: var(--tap-fs-body); }
+.tap-present__nav:disabled { opacity: 0.5; cursor: not-allowed; }
+.tap-present__kbd {
+  padding: 0 var(--tap-sp-1); font-family: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-muted);
+  border: var(--tap-control-w) solid var(--tap-rule);
+}
