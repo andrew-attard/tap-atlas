@@ -193,7 +193,7 @@ function fieldsTheCheckReads(root) {
   ctx.window = ctx;
   vm.createContext(ctx);
   const code = {};
-  ['js/core/namespace.js', 'js/core/check.js', 'js/core/check-rows.js', 'js/core/extra.js', 'data/sample-plan-data.js'].forEach((f) => {
+  ['js/core/namespace.js', 'js/core/check.js', 'js/core/check-rows.js', 'js/core/extra.js', 'js/core/check-p4.js', 'data/sample-plan-data.js'].forEach((f) => {
     code[f] = fs.readFileSync(path.join(root, f), 'utf8');
     if (f === 'js/core/check.js') {
       vm.runInContext('window.TAP.content = { text: function (k) { return k; }, regionName: function (r) { return r && r.name; },' +
@@ -208,7 +208,7 @@ function fieldsTheCheckReads(root) {
   });
   ctx.TAP.check.run(wrap(ctx.PLAN_DATA));
   // Code only: comments could mention a data value in passing.
-  const src = (code['js/core/check.js'] + code['js/core/check-rows.js'] + code['js/core/extra.js']).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+  const src = (code['js/core/check.js'] + code['js/core/check-rows.js'] + code['js/core/extra.js'] + code['js/core/check-p4.js']).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
   return [...reads].filter((k) => !/^\d+$/.test(k) && BUILTIN.indexOf(k) < 0 &&
     new RegExp('(^|[^A-Za-z0-9_$])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9_$])').test(src)).sort();
 }
