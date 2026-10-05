@@ -49,7 +49,7 @@ window.PLAN_DATA = {
   {"id": "healthcare", "name": "Healthcare", "productLine": "pl1", "groupPriority": true, "rated": true},
   {"id": "hospitality", "name": "Hospitality", "productLine": "pl3", "groupPriority": false, "rated": true},
   {"id": "infotech", "name": "Information and Technology", "productLine": "pl1", "groupPriority": false, "rated": true},
-  {"id": "ifm", "name": "Integrated Facility Management", "productLine": "pl2", "groupPriority": true, "rated": true},
+  {"id": "ifm", "name": "Facility Services", "productLine": "pl2", "groupPriority": true, "rated": true},
   {"id": "manufacturing", "name": "Manufacturing", "productLine": "pl2", "groupPriority": false, "rated": true},
   {"id": "pharma", "name": "Pharma and Biotech", "productLine": "pl1", "groupPriority": false, "rated": true},
   {"id": "retail", "name": "Retail", "productLine": "pl3", "groupPriority": false, "rated": true},

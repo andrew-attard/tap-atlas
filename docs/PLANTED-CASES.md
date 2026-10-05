@@ -36,7 +36,7 @@ Industries: the template's 18, plus two unrated rows.
 | `healthcare` | Healthcare | `pl1` | yes |
 | `hospitality` | Hospitality | `pl3` | |
 | `infotech` | Information and Technology | `pl1` | |
-| `ifm` | Integrated Facility Management | `pl2` | yes |
+| `ifm` | Facility Services | `pl2` | yes |
 | `manufacturing` | Manufacturing | `pl2` | |
 | `pharma` | Pharma and Biotech | `pl1` | |
 | `retail` | Retail | `pl3` | |
