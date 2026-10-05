@@ -26,7 +26,7 @@
       title: txt(TAP.dom.qs('.tap-panel__title', root)),
       legend: TAP.dom.qsa('.tap-panel__legend-item', root).map(function (n) {
         var key = TAP.dom.qs('.tap-panel__key', n);
-        return { label: txt(n), color: key ? key.style.backgroundColor : th().ink };
+        return { label: txt(n), color: key ? key.style.backgroundColor || null : th().ink };   // null: an outline key
       }),
       lines: TAP.dom.qsa('.tap-panel__parts, .tap-panel__size-label, .tap-panel__notes li', root).map(txt),
       source: TAP.dom.qsa('.tap-panel__source > span', root).map(txt).join('   '),
@@ -114,8 +114,10 @@
       rows.forEach(function (row) {
         row.forEach(function (c) {
           var k = 16 * R;
-          ctx.fillStyle = c.item.color || T.ink;
-          ctx.fillRect(pad + c.x, y + (bLine - k) / 2, k, k);
+          if (c.item.color) {   // a key with no colour is an outline, as on the page
+            ctx.fillStyle = c.item.color;
+            ctx.fillRect(pad + c.x, y + (bLine - k) / 2, k, k);
+          }
           ctx.strokeStyle = T.ink;
           ctx.lineWidth = R;
           ctx.strokeRect(pad + c.x, y + (bLine - k) / 2, k, k);
