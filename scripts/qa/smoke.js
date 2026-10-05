@@ -101,6 +101,7 @@
       }
       if (m === 'pair') step(v + ': pair, change second', function () {
         var s = $('[data-picker="second"] select'), opts = $$('option', s);
+        if (opts.length < 2) return 'only one region: no second region to choose';
         choose(s, opts[1].value);
       });
       if (m === 'set') step(v + ': set, add a region', function () {
@@ -308,6 +309,8 @@
   QA.smoke = function (done) {
     var vs = views();
     var normal = !/[?&]screenshot=1/.test(window.location.search);
+    // Say what this run covers, so a pass says what it looked at
+    step('views in the menu', function () { return vs.length + ' views: ' + vs.join(', '); });
     if (normal) welcomeSteps();
     vs.forEach(function (v) {
       goView(v); modeSteps(v);
