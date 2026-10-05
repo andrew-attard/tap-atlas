@@ -179,7 +179,9 @@
     return clamp(f * (ws * strength + wm * money + wb * breadth) / sum);
   }
 
-  function bySignificance(a, b) { return b.significance - a.significance || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); }
+  // Theme findings come from words, not figures, so they rank after every other family whatever their score (D80).
+  function late(x) { return x.family === 'themes' ? 1 : 0; }
+  function bySignificance(a, b) { return late(a) - late(b) || b.significance - a.significance || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); }
 
   /* ---------- the cached list and what is built on it ---------- */
 
@@ -210,7 +212,7 @@
     if (h.indexOf(id) >= 0) TAP.store.set({ hiddenInsights: h.filter(function (x) { return x !== id; }) });
   }
 
-  // Insights about regions in the comparison scope, hidden ones left out, the focus region's first.
+  // Insights in scope, hidden ones left out: figure-based, then themes, the focus region's first in each group.
   function ranked(cmp, opts) {
     cmp = cmp || TAP.store.get().cmp;
     opts = opts || {};
@@ -223,9 +225,8 @@
       if (opts.family && x.family !== opts.family) return false;
       return !opts.regionId || x.regionIds.indexOf(opts.regionId) >= 0;
     });
-    if (!focus) return list;
-    var mine = list.filter(function (x) { return x.regionIds.indexOf(focus) >= 0; });
-    return mine.concat(list.filter(function (x) { return x.regionIds.indexOf(focus) < 0; }));
+    var rank = function (x) { return 2 * late(x) + (focus && x.regionIds.indexOf(focus) < 0 ? 1 : 0); };
+    return [0, 1, 2, 3].reduce(function (out, k) { return out.concat(list.filter(function (x) { return rank(x) === k; })); }, []);
   }
 
   function top(cmp, reportId, n) {

@@ -28,9 +28,10 @@ function themesConfig() {
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'config', 'comment-themes.js'), 'utf8'), box);
   return box.window.TAP_COMMENT_THEMES;
 }
+// Whole words, any case, as js/reports/themes.js: accented letters belong to the word; a hyphen may join a phrase.
 function mentions(text, keyword) {
-  const esc = keyword.trim().split(/\s+/).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('\\s+');
-  return new RegExp('(^|[^A-Za-z0-9])' + esc + '($|[^A-Za-z0-9])', 'i').test(text);
+  const esc = keyword.trim().split(/[\s-]+/).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('[\\s-]+');
+  return new RegExp('(^|[^\\p{L}\\p{N}])' + esc + '($|[^\\p{L}\\p{N}])', 'iu').test(text);
 }
 
 // Each region's share of total order intake (both motions, ARR and services) by channel, and the others' combined share.

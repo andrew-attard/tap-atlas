@@ -8,7 +8,8 @@
  *
  * Plain keyword lists, run by this app (D63): no model, no service, no network call. A text counts for a theme when
  * it holds one of the theme's keywords as a whole word or phrase, in any case: "partner" counts in "Specialist
- * partner" but not in "partnership". Add a plural or another form as its own keyword. A theme that comes up in at
+ * partner" but not in "partnership" or "Partnerübersicht", and "case study" also counts as "case-study". Add a
+ * plural or another form as its own keyword. A theme that comes up in at
  * least minRegions regions becomes an insight. Keep the list short and plain, so a viewer can see why a comment
  * was counted (the report's explanation lists every keyword).
  *
