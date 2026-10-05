@@ -1,7 +1,7 @@
 /*
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206).
- * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10
+ * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10, X-review-DE-12
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -184,6 +184,33 @@
       // A, B and C carry unreadable dates, so the latest readable import is Region D's (1 Oct), not "31 Dec 2026"
       a.equal(TAP.sources.dataDate(), '2026-10-01T15:00:00Z');
       a.equal(TAP.format.date(TAP.sources.dataDate()), '1 Oct 2026');
+    });
+
+    // Review DE-12: whole-number percentages, a repeated recap item and negative counts loaded silently.
+    T.test('X-review-DE-12', 'Percentages above 150%, a repeated recap item and negative counts are warnings', function (a) {
+      var p = T_FIXTURE('mini'), r = p.regions[0];
+      r.newBusiness[0].hitRate = 25;                        // 25 instead of 0.25: 2,500%
+      r.newBusiness[0].growth.year2 = 10;
+      r.newBusiness[1].targetAccounts = -5;
+      r.customerGrowth.accounts[0].growthPct = [10, 0, 0];
+      r.partners[0].centralSupportPct = 10;
+      r.partners[0].fteSales = -1;
+      r.recap.push(copy(r.recap[0]));                       // the same year, channel, motion and type again
+      var res = TAP.check.run(p), paths = res.warnings.map(function (w) { return w.path; });
+      a.deepEqual(res.errors, [], errorList(res));
+      ['regions[0].newBusiness[0].hitRate', 'regions[0].newBusiness[0].growth.year2', 'regions[0].newBusiness[1].targetAccounts',
+        'regions[0].customerGrowth.accounts[0].growthPct[0]', 'regions[0].partners[0].centralSupportPct',
+        'regions[0].partners[0].fteSales', 'regions[0].recap[2]']
+        .forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is warned about'); });
+      a.ok(paths.indexOf('regions[0].recap[0]') < 0, 'the first recap item is fine');
+      var q = T_FIXTURE('mini');
+      q.regions[0].newBusiness[0].hitRate = 1.5;            // 150% is unusual but possible
+      q.regions[0].customerGrowth.accounts[0].growthPct = [1.2, 0, 0];
+      q.regions[0].newBusiness[1].targetAccounts = 0;
+      var none = TAP.check.run(q).warnings.filter(function (w) { return /hitRate|growthPct|targetAccounts/.test(w.path); });
+      a.deepEqual(none.map(function (w) { return w.path; }), [], 'up to 150% and a zero count are fine');
+      var sample = TAP.check.run(copy(window.PLAN_DATA)).warnings.map(function (w) { return w.path; });
+      a.deepEqual(sample, ['regions[4].customerGrowth.accounts'], 'the sample warns only about its planted empty section');
     });
 
     // Review DE-5: a region with the id of a combined figure ("rest", "org") shared its id with that figure.
