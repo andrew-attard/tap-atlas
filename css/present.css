@@ -32,6 +32,9 @@
 /* "Chart 2 of 6" counts the view's charts behind the layer, which aren't part of the presentation */
 .tap-present .tap-panel__expand-row .tap-muted { display: none; }
 
+/* Glossary popovers (z-index 60) open over the layer while presenting */
+body:has(.tap-present) .tap-popover { z-index: 66; }
+
 /* The thin progress row: step count, step title and the step buttons */
 .tap-present__bar {
   flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-1) var(--tap-sp-4);
