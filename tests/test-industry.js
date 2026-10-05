@@ -414,6 +414,15 @@
       a.equal(points(res).length, 2, 'follows the comparison scope');
     });
 
+    T.test('X-review-SV-16', 'With two regions, the quadrant names the rest "the other region" (#372)', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions = plan.regions.slice(0, 2);
+      TAP.data.load(plan);
+      var labels = quad('bubble', { mode: 'one', focus: 'alpha', restAs: 'individual' }).legend.map(function (l) { return l.label; });
+      a.ok(labels.indexOf('Average of the other region') >= 0, 'singular: ' + labels.join(' | '));
+      a.ok(!labels.some(function (l) { return /other 1 /.test(l); }), 'never "the other 1 region"');
+    });
+
     T.test('X-review-RI-19', 'With one industry filtered, the table numbers each row as its bubble is numbered (the region)', function (a) {
       var res = quad('bubble', { mode: 'all' }, { opts: { industryFilter: 'ind4' } });
       // Hand-worked: the regions' places in file order, alpha 1 to delta 4
