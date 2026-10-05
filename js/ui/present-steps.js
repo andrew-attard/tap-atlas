@@ -92,7 +92,7 @@
     if (!def) throw new Skip('noChart', step.insight);
     var hl = Object.assign({}, ins.highlight, { reportId: def.id });
     var mine = (def.measures || []).some(function (m) { return m.id === hl.measureId; });
-    return { kind: 'insight', reportId: def.id, def: null, title: step.title || ins.sentence, insightId: ins.id,
+    return { kind: 'insight', reportId: def.id, def: null, title: step.title || ins.sentence, insightId: ins.id, label: ins.label,
       initial: choices(step, def, step.measure || (mine ? hl.measureId : null)), highlight: hl };
   }
 
@@ -112,7 +112,8 @@
       initial: choices(step, def, step.measure), highlight: highlightOf(step.highlight, def.id) };
   }
 
-  // What one step shows: {kind, reportId, def, title, cmp, initial, highlight}. Throws a Skip when it can't be shown.
+  // What one step shows: {kind, reportId, def, title, cmp, initial, highlight}, and for an insight step insightId and
+  // label ("Observation to discuss"). Throws a Skip when it can't be shown.
   function resolve(step) {
     if (!isObj(step)) throw new Skip('step', '');
     var named = KINDS.filter(function (k) { return step[k] != null; });
