@@ -83,8 +83,9 @@ One workbook per region, four sections, each on its own sheet. Three-year horizo
 
 The copy reviewed is a first version. The real template has more sections than the four above. The current contract covers only those four, so:
 
-- **The import may carry new sections early.** The app's contract check ignores fields and sections the contract doesn't name: they are neither errors nor warnings (D47). Nothing on screen uses them until the contract is extended.
-- To show one in the app: agree the fields first, then extend `docs/DATA-CONTRACT.md` (field, type, tag, notes), the contract check (`js/core/check.js`), `meta.sourceMap`, and any measure or report that will show it.
+- **Write a new section as an extra section.** The contract has an optional, additive place for the sections it doesn't name one by one: `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows (the "Extra sections" part of `docs/DATA-CONTRACT.md`). The app shows every extra section as a list on the **Other sections** view, which appears only when there are any, with file › sheet › cell for each value. Problems in an extra section are warnings, never errors. Level 1 of `docs/EXTENDING-TEMPLATE.md` gives the steps, and prompt 11 in `docs/COPILOT-PROMPTS.md` asks Copilot to extend the import.
+- **To chart a figure from it,** follow level 2 of `docs/EXTENDING-TEMPLATE.md` (prompt 12); for a whole new view, level 3 (prompt 13). Only a section that needs fields of its own, outside the extra-section shape, extends the contract itself: field, type, tag and notes in `docs/DATA-CONTRACT.md`, the contract check (`js/core/check.js`), `meta.sourceMap`, and the measure or report that shows it.
+- Anything else the import writes that the contract doesn't name is ignored by the contract check: neither an error nor a warning (D47), and not shown on screen.
 - **The version rule.** Adding a field or section never changes `meta.schemaVersion`. Raise it only when an existing field changes meaning or shape, and change `TAP.schemaVersion` in `js/core/namespace.js` to match at the same time. A mismatch stops the app with a version message.
 - Allowed values not in the copy reviewed (partner maturity, some rating dropdowns) need confirming against the real template.
 
