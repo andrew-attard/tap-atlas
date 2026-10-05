@@ -178,7 +178,7 @@
       var e = ds.entities.filter(function (x) { return x.id === d.entityId; })[0];
       if (!e) return null;
       var ind = d.industryId || ds.ctx.industryId;
-      return { reportId: def.id, regionIds: e.regionIds.slice(), industryIds: ind ? [ind] : [], accountIds: [], mark: d.mark || 'points' };
+      return { reportId: def.id, regionIds: e.regionIds.slice(), industryIds: ind ? [ind] : [], accountIds: [], mark: d.mark || 'points', figure: { key: d.key || null, how: e.kind === 'combined' ? e.how : null } };
     };
   }
 

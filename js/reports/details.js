@@ -3,7 +3,8 @@
  * Purpose: Collects everything the data holds about one clicked item, grouped and labelled, for the details panel
  *          (US-1.2.9): a region and an industry (ratings with wording, tier, scores, system figures, commentary,
  *          new business rows), a region alone (its plan summary by section), several regions and one industry,
- *          or an account. Every value is a full cell, so the panel shows its kind and file › sheet › cell.
+ *          or an account. A click on a chart's bar shows the figure clicked first ("In this chart"). Every value is a
+ *          full cell, so the panel shows its kind and file › sheet › cell.
  * Provides: TAP.details (build)
  * Depends on: js/engine/measures.js, js/engine/scores.js (ind.* measures), js/engine/scope.js, js/core/data.js,
  *             js/core/content.js, js/core/format.js, js/core/store.js (the scope for an industry alone),
@@ -110,11 +111,42 @@
     }));
   }
 
+  /* ---------- the figure clicked on a chart (target.figure: {key, how}) ---------- */
+
+  var CTX_KEY = { year: 'year', industry: 'industryId', channel: 'channel', motion: 'motion', segment: 'segment', risk: 'risk' };
+
+  // A column key as the charts write it: <measure>, <measure>@y2 or <measure>@<dim>:<value> (ARCHITECTURE 17.3).
+  function figureOf(key, industryId) {
+    var at = String(key).indexOf('@'), id = at < 0 ? key : key.slice(0, at), rest = at < 0 ? '' : key.slice(at + 1), ctx = { year: null };
+    if (/^y[123]$/.test(rest)) ctx.year = Number(rest.slice(1));
+    else if (rest.indexOf(':') > 0) ctx[CTX_KEY[rest.split(':')[0]] || rest.split(':')[0]] = rest.slice(rest.indexOf(':') + 1);
+    if (industryId) ctx.industryId = ctx.industryId || industryId;
+    return { id: id, ctx: ctx };
+  }
+  // The clicked measure (and, for a stacked part, its total), for the region or the combined bar, as the chart has it.
+  function chartGroup(target) {
+    var f = target.figure, def = target.reportId && TAP.reports.get(target.reportId), regs = target.regionIds || [];
+    if (!f || !f.key || !def || !regs.length) return null;
+    var fig = figureOf(f.key, (target.industryIds || [])[0]);
+    if (!TAP.measures.meta(fig.id)) return null;
+    if ((def.options || {}).weights) fig.ctx.weights = def.options.weights;
+    var who = regs.length === 1 && !f.how ? regs[0] : { id: 'details', kind: 'combined', regionIds: regs, how: f.how || 'average', role: 'combined' };
+    var parts = def.parts || {}, total = Object.keys(parts).filter(function (m) { return parts[m].indexOf(fig.id) >= 0; })[0];
+    var rows = [fig.id].concat(total ? [total] : []).map(function (id) {
+      var r = mrow(id, who, fig.ctx);
+      if (fig.ctx.year) r.label = t('perYear', { label: r.label, year: yearLabel(fig.ctx.year) });
+      return r;
+    });
+    return group(t('inChart'), rows);
+  }
+
   /* ---------- an account ---------- */
 
-  function findAccount(id) {
+  // An account by id, within the region named when there is one: ids are only unique within a region.
+  function findAccount(id, regionId) {
     var hit = null;
     TAP.data.regions().forEach(function (r) {
+      if (regionId && r.id !== regionId) return;
       ((r.customerGrowth || {}).accounts || []).forEach(function (acc) { if (!hit && acc.id === id) hit = { region: r, acc: acc }; });
     });
     return hit;
@@ -125,8 +157,8 @@
     return ys && ys[n - 1] ? String(ys[n - 1]) : t('year', { n: n });
   }
 
-  function account(id) {
-    var hit = findAccount(id);
+  function account(id, regionId) {
+    var hit = findAccount(id, regionId);
     if (!hit) return result('', []);
     var acc = hit.acc, rid = hit.region.id, CG = 'customerGrowth';
     var R = function (label, field, kind, unit, opts) { return irow(label, rid, CG, acc, field, kind, unit, opts); };
@@ -163,10 +195,15 @@
   // actions: [{id, label, href, view, region}], links the side panel offers under the title.
   function build(target) {
     target = target || {};
+    var res = byKind(target), chart = chartGroup(target);
+    if (chart) res.groups.unshift(chart);
+    return res;
+  }
+  function byKind(target) {
     var regs = target.regionIds || [], inds = target.industryIds || [], accs = target.accountIds || [];
     // Row targets (new business rows, partners) are drawn by js/reports/details-rows.js (US-2.7.2)
     if ((target.items || []).length && TAP.detailsRows && !TAP.detailsRows.__stub) return TAP.detailsRows.build(target);
-    if (accs.length) return account(accs[0]);
+    if (accs.length) return account(accs[0], regs.length === 1 ? regs[0] : null);
     if (inds.length && regs.length === 1) return withProfile(regionIndustry(regs[0], inds[0]), regs[0]);
     if (inds.length) return severalRegions(regs.length ? regs : TAP.scope.regionIds(TAP.store.get().cmp), inds[0]);
     if (regs.length === 1) return withProfile(regionSummary(regs[0]), regs[0]);

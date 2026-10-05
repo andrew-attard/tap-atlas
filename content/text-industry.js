@@ -106,6 +106,7 @@ Object.assign(window.TAP_CONTENT.text, {
     sections: { marketCoverage: 'Market coverage', newBusiness: 'New business', customerGrowth: 'Customer growth', ambition: 'Ambition' },
     year: 'Year {n}',
     perYear: '{label}, {year}',
+    inChart: 'In this chart',
     accountGroup: 'Account',
     planGroup: 'Planned growth',
     industry: 'Industry',
