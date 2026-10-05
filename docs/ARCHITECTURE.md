@@ -628,7 +628,7 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 - Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`.
 - `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
 - "Build a chart" (US-3.5.1) is a section of the Guide, not a view.
-- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, US-3.1.3; Build a chart, US-3.5.1). `js/views/guide.js` draws them before the glossary; one that throws shows its error in its own section.
+- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, US-3.1.3; Build a chart, US-3.5.1). `js/views/guide.js` draws them before the glossary and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
 
 ### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)
 
