@@ -54,14 +54,24 @@
 
   function clean(s) { return String(s == null ? '' : s).replace(/[\t\r\n]+/g, ' '); }
 
+  // One cell of the copied text, so a spreadsheet pastes it as written (#368): text that starts like a formula
+  // (= + - @) gets an apostrophe, and a cell with a quote is quoted, its quotes doubled, so it can't swallow the
+  // cells after it. Numbers stay numbers, minus sign and all.
+  function field(text, number) {
+    var s = clean(text);
+    if (!number && /^[=+\-@]/.test(s)) s = "'" + s;
+    return s.indexOf('"') >= 0 ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function isNumber(row, col) { var c = col.key !== SRC && row.cells[col.key]; return !!c && c.state === 'value' && typeof c.v === 'number'; }
+
   // Tab-separated text: the data label, the headers (with Source), then one line per row, in the order shown.
   function toText(table, opts) {
     opts = opts || {};
     var cols = columns(table), lines = [];
-    if (opts.label && opts.label.text) lines.push(clean(opts.label.text));
-    lines.push(cols.map(function (c) { return clean(c.label); }).join('\t'));
+    if (opts.label && opts.label.text) lines.push(field(opts.label.text));
+    lines.push(cols.map(function (c) { return field(c.label); }).join('\t'));
     sorted(table, opts.sort).forEach(function (r) {
-      lines.push(cols.map(function (c) { return clean(cellText(r, c)); }).join('\t'));
+      lines.push(cols.map(function (c) { return field(cellText(r, c), isNumber(r, c)); }).join('\t'));
     });
     return lines.join('\n');
   }
