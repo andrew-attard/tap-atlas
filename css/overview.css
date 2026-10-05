@@ -97,4 +97,5 @@
 .tap-ov-insight__label { font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 .tap-ov-insight__sentence { margin: 0; font-size: var(--tap-fs-body); line-height: 1.45; font-weight: 600; }
 .tap-ov-insight__regions { display: flex; flex-wrap: wrap; gap: 2px var(--tap-sp-3); font-size: var(--tap-fs-label); font-weight: 600; }
+.tap-ov-insight__region { min-width: 0; overflow-wrap: anywhere; }
 .tap-ov-insight__actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); margin-top: auto; }
