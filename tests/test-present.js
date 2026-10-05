@@ -1,7 +1,7 @@
 /*
  * File: tests/test-present.js
  * Purpose: Tests for presentation mode and the running order.
- * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2)
+ * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2), 548 and 550 (US-3.1.4)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js,
  *             config/running-order.js
  * Used by: tests.html
@@ -444,6 +444,54 @@
         a.equal(n(), 1, 'first() goes to step 1');
         TAP.present.stop();
         a.equal(TAP.present.current(), null, 'current() is null once left');
+      });
+    });
+    /* ---------- US-3.1.4: insight steps ---------- */
+
+    function insightOf(id) { return TAP.insights.all().filter(function (x) { return x.id === id; })[0]; }
+    function hlColor() { return window.TAP_THEME.echarts.tap.highlight.color; }
+    function ringed(o, depth) {
+      if (!o || typeof o !== 'object' || depth > 10) return false;
+      if (Array.isArray(o)) return o.some(function (x) { return ringed(x, depth + 1); });
+      if (o.borderColor === hlColor() && o.borderWidth > 0) return true;
+      return Object.keys(o).some(function (k) { return ringed(o[k], depth + 1); });
+    }
+
+    T.test('TPV-TC-548', 'An insight step shows the insight report with its highlight, titled with the insight sentence', function (a) {
+      withApp(function () {
+        // Planted case: North America needs about 3x the new customer wins of the other regions (nb-levers, wins)
+        var ins = insightOf('winsVsPeers:na');
+        a.ok(ins, 'the sample data gives the insight');
+        TAP.present.start([{ insight: 'winsVsPeers:na' }]);
+        var p = shown();
+        a.equal(p && p.getAttribute('data-report'), 'nb-levers', 'the insight report');
+        a.equal(pressed(p, 'measure'), 'nb.wins', 'on the insight measure');
+        var hl = TAP.store.get().highlight;
+        a.deepEqual(hl && [hl.reportId, hl.regionIds, hl.mark], ['nb-levers', ['na'], 'bar'], 'its "Show me" highlight is set');
+        a.ok(p && p.querySelector('.tap-panel__strip'), 'the panel names the highlight');
+        var box = p && p.querySelector('.tap-panel__chart'), chart = box && window.echarts.getInstanceByDom(box);
+        a.ok(chart && ringed(chart.getOption().series, 0), 'and rings the mark on the chart');
+        a.equal(TAP.present.current().title, ins && ins.sentence, 'the step title is the insight sentence');
+        var row = document.querySelector('.tap-present__where');
+        a.ok(row && row.textContent.indexOf(ins && ins.sentence) >= 0, 'shown in the progress row');
+        a.ok(row && row.textContent.indexOf(ins && ins.label) >= 0, 'marked as an observation to discuss');
+      });
+    });
+
+    T.test('TPV-TC-550', 'A step naming an insight the data no longer gives is skipped and listed; the other steps run', function (a) {
+      withApp(function () {
+        a.ok(insightOf('winsVsPeers:na') && !insightOf('winsVsPeers:latam'), 'the rule finds North America, not Latin America');
+        var res = TAP.present.start([{ report: 'ov-ambition' }, { insight: 'winsVsPeers:latam' }, { insight: 'winsVsPeers:na' }]);
+        a.ok(res.started, 'presentation mode starts');
+        a.deepEqual(res.skipped.map(function (x) { return [x.index, x.reason, x.name]; }), [[1, 'insight', 'winsVsPeers:latam']], 'step 2 is skipped');
+        a.equal(TAP.present.current().total, 2, 'two steps run');
+        TAP.present.next();
+        a.equal(TAP.present.current().reportId, 'nb-levers', 'the next step is the insight that exists');
+        var body = T.dom.mount();
+        TAP.sourcesPanel.render(body);
+        var sec = body.querySelector('.tap-src__present');
+        a.ok(sec && sec.textContent.indexOf('winsVsPeers:latam') >= 0 && sec.textContent.indexOf(TAP.content.text('present.stepN', { n: 2 })) >= 0,
+          'the data sources panel lists step 2 and the insight id');
       });
     });
   });
