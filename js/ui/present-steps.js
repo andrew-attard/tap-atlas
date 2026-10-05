@@ -3,9 +3,9 @@
  * Purpose: Checks the running order and works out what each step shows: the report, its starting chart choices,
  *          the comparison, the highlight and the title (US-3.1.1, US-3.1.4). A step naming something this data or
  *          this app doesn't have is left out and noted for the data sources panel, never on the main screen.
- * Provides: TAP.presentSteps (check, resolve)
+ * Provides: TAP.presentSteps (check, resolve, reportDef)
  * Depends on: config/running-order.js, js/engine/registry.js, js/engine/prepare.js, js/core/data.js, js/core/store.js
- *             (defaults, TAP.notes), js/core/content.js, js/insights/engine.js, js/engine/custom.js (all at call time)
+ *             (defaults, TAP.notes), js/core/content.js, js/insights/engine.js, js/engine/custom.js, js/views/other.js (all at call time)
  * Used by: js/ui/present.js (TAP.present.check, start)
  * Owner: PRESENT stream (#232)
  */
@@ -83,10 +83,20 @@
   // A report title with a placeholder ("{industry}") depends on the screen, so the progress row leaves it out.
   function plainTitle(def) { return /\{\w+\}/.test(def.title || '') ? '' : def.title || ''; }
 
+  // A report by id. The Other sections lists reach TAP_REPORTS only when their view mounts, so an 'other-' id
+  // is also looked up in the data's extra sections (#364). Returns {def, made} or null.
+  function reportDef(id) {
+    var def = TAP.reports.get(id), O = TAP.otherSections;
+    if (def) return { def: def, made: false };
+    if (!/^other-/.test(String(id)) || !O || O.__stub) return null;
+    def = O.definitions().filter(function (d) { return d.id === id; })[0];
+    return def ? { def: def, made: true } : null;
+  }
+
   function fromReport(step) {
-    var def = TAP.reports.get(step.report);
+    var found = reportDef(step.report), def = found && found.def;
     if (!def || TAP.reports.validate(def).length) throw new Skip('report', step.report);
-    return { kind: 'report', reportId: def.id, def: null, title: step.title || plainTitle(def),
+    return { kind: 'report', reportId: def.id, def: found.made ? def : null, title: step.title || plainTitle(def),
       initial: choices(step, def, step.measure), highlight: highlightOf(step.highlight, def.id) };
   }
 
@@ -152,5 +162,5 @@
     return out;
   }
 
-  TAP.presentSteps = { check: check, resolve: resolve };
+  TAP.presentSteps = { check: check, resolve: resolve, reportDef: reportDef };
 })(window.TAP);

@@ -173,7 +173,7 @@
 
   // What a step shows, in words: chart type, measure, breakdown and comparison, as far as the step sets them.
   function meta(s) {
-    var def = s.report ? TAP.reports.get(s.report) : null, parts = [];
+    var def = s.report ? reportOf(s.report) : null, parts = [];
     if (s.insight) parts.push(t('guide.insight'));
     if (s.custom) parts.push(t('guide.custom'));
     var type = s.type || (s.custom && s.custom.type);
@@ -187,8 +187,10 @@
     return parts.join(' · ');
   }
 
+  function reportOf(id) { var f = TAP.presentSteps.reportDef(id); return f ? f.def : null; }
+
   function nameOf(s) {
-    var def = s.report ? TAP.reports.get(s.report) : null;
+    var def = s.report ? reportOf(s.report) : null;
     return s.title || (def && def.title) || s.report || s.insight || t('guide.custom');
   }
 
