@@ -214,13 +214,14 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `tools/generate-sample-data.js` | Rebuilds the sample data from `tools/sample-settings.js` (helpers: `tools/sample-*.js`) |
 | `tools/lint.js` | Checks the house rules: headers, file size, no web calls, no stray colours |
 | `tools/check-docs.js` | Checks every path the docs name exists |
-| `tools/check-docs3.js` | Checks the handover and portfolio files: the sample edition uses relative paths and exact file names, so it also works from a web host |
+| `tools/check-docs3.js`, `tools/check-docs3-files.js` | Check the handover and portfolio files: the sample edition works from a web host, the landing page's links, the handover guide, the screenshots and the package script |
 | `tools/build-pages.js` | Writes the script list into the three pages |
 | `tools/build-auto-cases.js` | Writes `tests/auto-cases.js` from the Test Plan |
 | `tools/parse-results.js` | Reads a headless test run and reports the results |
 | `scripts/verify.sh` | Runs every check and the headless tests |
 | `scripts/test-headless.sh`, `scripts/lib-browser.sh` | Runs a test page in headless Chrome or Edge; finding the browser |
 | `scripts/screenshot.sh` | Screenshots of a page at a given size and zoom |
+| `scripts/package.sh` | Runs every check, then makes a known-good copy for presenting in `dist/tap-atlas-<version>-<date>/` (no tests or tools; `dist/` is gitignored) |
 | `scripts/portfolio-shots.sh` | Retakes the portfolio screenshots in `docs/screenshots/`, one per view, with names that never change |
 | `scripts/check-text.sh`, `scripts/open-pr.sh` | Checks text against the private word list; opens a pull request after that check |
 | `scripts/qa/*` | The QA checks (`scripts/qa/run-all.sh` runs them all): console errors, text sizes, offline, smoke test, screenshot matrix |
