@@ -222,7 +222,7 @@ For a template section the app doesn't know yet (US-3.2.1). The import describes
 |---|---|---|
 | `id` | text | Short stable key, e.g. `"events"`. Unique among the extra sections |
 | `title` | text | The worksheet name, e.g. `"5. Events"`. It is the list's title on screen and the sheet in every source address |
-| `intro` | text | One or two sentences shown under the title: what the section holds |
+| `intro` | text, optional | One or two sentences shown with the list: what the section holds |
 | `columns` | list | `{ key, label, unit, kind, column }` per column, in the order the list shows them |
 
 `columns[]`
@@ -298,7 +298,7 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a missing `sourceRow` (or `sourceCell` on recap items), or a `sourceMap` entry missing for a section;
 - an empty section;
 - a rating on an industry that is not rated;
-- anything wrong in an extra section: `meta.extraSections` not a list, a section without an id, title or columns, a duplicate id or column key, an unknown `unit` or `kind`, a column letter that isn't one, a region's `extra` naming a section that isn't listed, a row without `sourceRow`, a row naming a column the section doesn't have, or a value of the wrong type for its unit. **Extra sections never stop the app**: every problem in them is a warning naming the section and the field, and the broken part is left out of the view.
+- anything wrong in an extra section: `meta.extraSections` not a list, a section without an id, title or columns, a duplicate id or column key, an unknown `unit` or `kind`, a column letter that isn't one, a region's `extra` naming a section that isn't listed, a row without `sourceRow`, two rows of a section from the same worksheet row, a row naming a column the section doesn't have, or a value of the wrong type for its unit. **Extra sections never stop the app**: every problem in them is a warning naming the section and the field. On screen, a section without columns and an unusable column are left out, of two sections with one id or two rows from one worksheet row the first is kept, and a value of the wrong type for its unit shows as not provided.
 
 The import itself also records anything worth checking as a note in `source.notes`, with its sheet and cell.
 

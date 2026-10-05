@@ -34,6 +34,7 @@ Object.assign(window.TAP_CONTENT.text, {
       rows: 'a list of rows',
       row: 'a row object',
       rowKey: 'only column keys of this section',
+      uniqueRow: 'a worksheet row no other row of this section uses',
       number: 'a number, or null for a blank',
       text: 'text, or null for a blank'
     }

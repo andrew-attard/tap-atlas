@@ -660,7 +660,7 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 
 ### 18.4 Extra sections (Epic 3.2, EXTRA)
 
-- Data Contract addition: `meta.extraSections: [{id, title, intro, columns: [{key, label, unit, kind}]}]`; per region `extra: {<sectionId>: [{sourceRow, <key>: value}]}`.
+- Data Contract addition: `meta.extraSections: [{id, title, intro, columns: [{key, label, unit, kind, column}]}]` (`column`, the worksheet column letter, is optional); per region `extra: {<sectionId>: [{sourceRow, <key>: value}]}`.
 - `TAP.check.run` checks them and only warns.
 - `TAP.rows` gains the row source `extra:<sectionId>` with the section's columns; `TAP.sources.address` names the section title as the sheet.
 - The `other` view builds one `list` definition per section at mount time.
