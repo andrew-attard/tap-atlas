@@ -159,7 +159,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     reads: ['recap.value'], params: { gap: 0.2 }, compare: true,
     scoring: 'Strength: the gap against twice the threshold. Money: the region’s order intake through that channel.',
     template: '{region} plans {share} of its order intake through {channel}, against {avg} on average elsewhere. Worth discussing.',
-    attach: ['pt-reliance', 'nb-channels'], highlight: 'bar' });
+    attach: ['pt-reliance'], highlight: 'bar' });   // D86: only the chart that shows total order intake shares
   rule({ id: 'planMakeup', family: 'plan',
     description: 'A region whose share of three-year ARR ambition from new business is at least 20 points above or below the other regions’ combined share. Regions without both new business and customer growth are left out.',
     reads: ['newBusiness.arrPotential', 'customerGrowth.accounts.incrementalArr'], params: { gap: 0.2 }, compare: true,
