@@ -1094,4 +1094,74 @@
       } finally { TAP.store.set({ highlight: null }); }
     }));
   });
+  /* ---------- review fixes after v0.3.0: highlights from a panel's own list (#365) ---------- */
+
+  T.suite('panel-review', function () {
+    function bravo() { return insight(1, { regionIds: ['bravo'], highlight: { reportId: 'x-fake', regionIds: ['bravo'], mark: 'bar' } }); }
+    function selectFirst(root) {
+      click(qs('[data-action="insights"]', root));
+      click(qs('[data-action="select-insight"]', root));
+    }
+    function own(ctx, id) { return ctx.entities.some(function (e) { return e.kind === 'region' && e.regionIds[0] === id; }); }
+    function hlRegions(ctx) { return (ctx.highlight && ctx.highlight.regionIds) || []; }
+    // The app on the mini fixture, so the presentation layer has a live page to sit on
+    function app() { TAP.app.start({ root: T.dom.mount(), plan: T_FIXTURE('mini') }); }
+
+    T.test('X-review-PP-5', 'Highlight on chart, with the panel compared differently, shows the region the insight names', scene(function (a, s) {
+      s.report(fakeDef());
+      TAP.insights = fakeInsights([bravo()]);
+      var p = s.panel('x-fake');
+      click(qs('[data-action="more"]', p.el));
+      click(qs('[data-action="compare"]', p.el));
+      var sel = qs('select[data-control="cmp-mode"]', p.el);
+      sel.value = 'one';
+      sel.dispatchEvent(new Event('change'));
+      a.equal(last().cmp.mode, 'one', 'the panel compares Region A against the rest');
+      a.ok(!own(last(), 'bravo'), 'Region B is inside the rest');
+      try {
+        selectFirst(p.el);
+        a.ok(own(last(), 'bravo'), 'Region B is drawn on its own');
+        a.deepEqual(hlRegions(last()), ['bravo'], 'and highlighted');
+      } finally { TAP.store.set({ highlight: null }); }
+    }));
+
+    T.test('X-review-PP-5', 'Highlight on chart inside presentation mode changes nothing in the shared state (D74)', scene(function (a, s) {
+      s.report(fakeDef());
+      app();
+      TAP.insights = fakeInsights([bravo()]);
+      var before = JSON.stringify(TAP.store.get().cmp), view = TAP.store.get().view;
+      try {
+        a.ok(TAP.present.start([{ report: 'x-fake', cmp: { mode: 'one', focus: 'alpha' } }]).started, 'presentation starts');
+        selectFirst(qs('.tap-present'));
+        var st = TAP.store.get();
+        a.equal(JSON.stringify(st.cmp), before, 'the shared comparison is unchanged');
+        a.equal(st.highlight, null, 'no shared highlight');
+        a.equal(st.view, view, 'the view is unchanged');
+        a.ok(TAP.present.active(), 'still presenting');
+        a.ok(own(last(), 'bravo'), 'the step chart draws Region B on its own');
+        a.deepEqual(hlRegions(last()), ['bravo'], 'and highlights it');
+      } finally { TAP.present.stop(); TAP.store.set({ highlight: null }); TAP.app.stop(); }
+    }));
+
+    T.test('X-review-PP-7', 'A presentation step without a highlight ignores a "Show me" highlight left in the shared state', scene(function (a, s) {
+      s.report(fakeDef());
+      TAP.store.set({ highlight: { reportId: 'x-fake', regionIds: ['charlie'], mark: 'bar' } });
+      TAP.present.start([{ report: 'x-fake' }]);
+      try {
+        a.equal(last().highlight, null, 'the step chart has no highlight');
+        a.equal(qs('.tap-present .tap-panel__strip'), null, 'and no highlight strip');
+      } finally { TAP.present.stop(); TAP.store.set({ highlight: null }); }
+    }));
+
+    T.test('X-review-RI-5', 'Selecting an insight in the panel list switches to the measure its sentence quotes (D79)', scene(function (a, s) {
+      s.report(fakeDef({ measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
+      TAP.insights = fakeInsights([insight(1, { highlight: { reportId: 'x-fake', regionIds: ['alpha'], mark: 'bar', measureId: 'cg.arr' } })]);
+      var p = s.panel('x-fake');
+      a.equal(last().measureId, null, 'starts on the first measure');
+      selectFirst(p.el);
+      a.equal(last().measureId, 'cg.arr', 'built for the measure the insight quotes');
+      a.equal(qs('[data-control="measure"] [aria-pressed="true"]', p.el).getAttribute('data-value'), 'cg.arr', 'the switch shows it');
+      a.equal(last().highlight && last().highlight.measureId, 'cg.arr', 'the target carries the measure');
+    }));
+  });
 })(window.TAP);
