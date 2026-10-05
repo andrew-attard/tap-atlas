@@ -371,6 +371,23 @@
       });
     });
 
+    // D83: a headline that repeats the first panel's takeaway word for word is left out; a different one stays
+    T.test('X-review-POL-head', 'The headline is left out when it is the first panel\'s takeaway, and shown when it differs (D83)', function (a) {
+      var reports = window.TAP_VIEWS.customers.reports;
+      function lineFor(list) {
+        return withFakeInsights(list, function () {
+          var root = T.dom.mount(), h = TAP.viewHead.render(root, { viewId: 'customers', kicker: 'K', title: 'T', lead: 'L' });
+          try { var line = root.querySelector('.tap-vh__headline'); return { hidden: line.hidden, text: txt(line.querySelector('.tap-vh__headline-text')) }; }
+          finally { h.destroy(); }
+        });
+      }
+      var same = lineFor([fake('first:1', 'exposure', 0.8, reports[0]), fake('other:1', 'plan', 0.5, reports[1])]);
+      a.ok(same.hidden, 'the most significant insight leads the first panel: no headline line');
+      var differs = lineFor([fake('first:1', 'exposure', 0.5, reports[0]), fake('other:1', 'plan', 0.8, reports[1])]);
+      a.ok(!differs.hidden, 'an insight from another panel: the headline shows');
+      a.equal(differs.text, 'Sentence other:1.', 'with its sentence');
+    });
+
     T.test('X-review-POL-head', 'The profile\'s top row carries the page buttons: Present and Take the tour (D72)', function (a) {
       TAP.store.set({ view: 'regions', region: 'alpha' });
       var root = T.dom.mount(), v = TAP.views.get('regions').mount(root);
