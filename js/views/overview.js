@@ -105,7 +105,8 @@
           : { kind: 'combined', regionIds: others, how: 'average', label: TAP.content.text('combined.restAverage', { n: others.length, regions: words(others.length) }) };
         var r = cellOf('amb.arr', rest);
         if (isVal(r)) {
-          out.push({ key: rest.how === 'total' ? 'restTotal' : 'restAverage', vars: { n: others.length, regions: words(others.length),
+          // One other region: its own figure, as an average or a total alike
+          out.push({ key: others.length === 1 ? 'restOne' : rest.how === 'total' ? 'restTotal' : 'restAverage', vars: { n: others.length, regions: words(others.length),
             rest: fig({ measure: 'amb.arr', cell: r, unit: 'money', label: H('restLabel', { who: rest.label }) }) } });
         }
       }

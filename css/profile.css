@@ -37,6 +37,7 @@
 .tap-pf-glance { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
 .tap-pf-glance__title { margin: 0; font-size: var(--tap-fs-h2); }
 .tap-pf-glance__hint { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }
+.tap-pf-glance__alone { margin: 0; font-size: var(--tap-fs-body); }
 .tap-pf-glance__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-4) var(--tap-sp-6); }
 .tap-pf-glance__line { background: var(--tap-paper); border: var(--tap-rule-w) solid var(--tap-ink); padding: var(--tap-sp-3) var(--tap-sp-4); min-width: 0; }
 .tap-pf-glance__label { margin: 0 0 var(--tap-sp-2); font-size: var(--tap-fs-h3); }

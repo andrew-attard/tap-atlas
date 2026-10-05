@@ -42,13 +42,14 @@
   }
 
   // [{key, label, np, figures: [{measure, label, unit, region, rest, compare, target, restTarget}]}] for one region.
+  // With no other region in the data there is no rest: rest and restTarget are null.
   function glance(regionId) {
-    var ents = TAP.scope.entities(TAP.profile.cmp(regionId)), me = ents[0], rest = ents[1];
+    var ents = TAP.scope.entities(TAP.profile.cmp(regionId)), me = ents[0], rest = ents[1] || null;
     return LINES.map(function (line) {
       var figures = line.figures.map(function (f) {
-        var region = TAP.measures.combined(f[0], me, {}), avg = TAP.measures.combined(f[0], rest, {});
+        var region = TAP.measures.combined(f[0], me, {}), avg = rest ? TAP.measures.combined(f[0], rest, {}) : null;
         return { measure: f[0], unit: f[1], label: f[2](f[0]), region: region, rest: avg, compare: compare(region, avg),
-          target: { regionIds: [regionId] }, restTarget: { regionIds: rest.regionIds.slice() } };
+          target: { regionIds: [regionId] }, restTarget: rest ? { regionIds: rest.regionIds.slice() } : null };
       });
       return { key: line.key, label: ot(line.key), figures: figures,
         np: figures.every(function (f) { return !isValue(f.region); }) };
@@ -67,15 +68,17 @@
     TAP.format.cell(c, { unit: f.unit }));
   }
 
+  // restLabel null: no other region, so the region column only.
   function row(f, restLabel) {
     return el('tr', { 'data-measure': f.measure, 'data-compare': f.compare.key || null }, [
       el('th', { scope: 'row' }, f.label),
-      el('td', null, figure(f, 'region', function () { TAP.layers.openDetails(f.target); })),
+      el('td', null, figure(f, 'region', function () { TAP.layers.openDetails(f.target); }))
+    ].concat(restLabel == null ? [] : [
       el('td', null, figure(f, 'rest', function () {
         TAP.overviewCards.openSource(restLabel, [{ label: f.label, cell: f.rest, unit: f.unit }]);
       })),
       el('td', { 'data-part': 'compare', class: 'tap-pf-glance__cmp' }, f.compare.text)
-    ]);
+    ]));
   }
 
   // A total with a part not provided says so, as the Overview card does.
@@ -85,18 +88,19 @@
 
   // Draws the four lines into host for one region.
   function drawGlance(host, regionId) {
-    var ents = TAP.scope.entities(TAP.profile.cmp(regionId)), name = ents[0].label, restLabel = ents[1].label;
+    var ents = TAP.scope.entities(TAP.profile.cmp(regionId)), name = ents[0].label, restLabel = ents[1] ? ents[1].label : null;
     var box = el('section', { class: 'tap-pf-glance', 'aria-label': t('glance.title') }, [
       el('h2', { class: 'tap-pf-glance__title' }, t('glance.title')),
-      el('p', { class: 'tap-pf-glance__hint' }, t('glance.hint'))
+      el('p', { class: 'tap-pf-glance__hint' }, t(restLabel == null ? 'glance.hintAlone' : 'glance.hint')),
+      restLabel == null ? el('p', { class: 'tap-pf-glance__alone' }, t('glance.alone')) : null
     ]);
     var grid = el('div', { class: 'tap-pf-glance__grid' });
     glance(regionId).forEach(function (line) {
       grid.appendChild(el('div', { class: 'tap-pf-glance__line', 'data-line': line.key }, [
         el('h3', { class: 'tap-pf-glance__label' }, line.label),
         el('table', { class: 'tap-pf-glance__table' }, [
-          el('thead', null, el('tr', null, [el('th', { scope: 'col' }, ''), el('th', { scope: 'col' }, name),
-            el('th', { scope: 'col' }, restLabel), el('th', { scope: 'col' }, t('glance.against'))])),
+          el('thead', null, el('tr', null, [el('th', { scope: 'col' }, ''), el('th', { scope: 'col' }, name)].concat(restLabel == null ? []
+            : [el('th', { scope: 'col' }, restLabel), el('th', { scope: 'col' }, t('glance.against'))]))),
           el('tbody', null, line.figures.map(function (f) { return row(f, restLabel); }))
         ]),
         partial(line.figures[0].region)

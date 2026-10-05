@@ -164,12 +164,15 @@
     return t('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) });
   }
 
-  // What a combined figure on screen means, in plain words, or null when none is shown.
+  // What a combined figure on screen means, in plain words, or null when none is shown (with one region, the
+  // scope draws no rest).
   function combinedNote(c) {
     var isOrg = c.mode === 'org';
     if (!isOrg && (c.mode !== 'one' || c.restAs !== 'combined')) return null;
+    var label = combinedLabel(c);
+    if (!label) return null;
     var total = isOrg || c.restAgg === 'total';
-    return { label: combinedLabel(c), text: t(total ? 'combined.explainTotal' : 'combined.explainAverage') };
+    return { label: label, text: t(total ? 'combined.explainTotal' : 'combined.explainAverage') };
   }
 
   // The same label the charts use: the combined scope entity's own.
@@ -182,7 +185,10 @@
   function render(ui) {
     var c = cmp();
     press(ui.modes, c.mode);
-    var need = { focus: c.mode === 'one' || c.mode === 'pair', second: c.mode === 'pair', rest: c.mode === 'one', set: c.mode === 'set' };
+    // With one region there is no second region and no rest to pick
+    var others = ids().length > 1;
+    var need = { focus: c.mode === 'one' || c.mode === 'pair', second: c.mode === 'pair' && others, rest: c.mode === 'one' && others,
+      set: c.mode === 'set' };
     Object.keys(need).forEach(function (k) { ui.pickers[k].hidden = !need[k]; });
     if (!need.set) ui.showSet(false);
     TAP.dom.text(ui.focusLabel, t(c.mode === 'one' ? 'compare.focus' : 'compare.region'));
