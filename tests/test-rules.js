@@ -291,6 +291,20 @@
         'Central Europe’s empty customer growth gives no exposure insight');
     });
 
+    T.test('X-review-RI-8', 'A region whose accounts carry no segment is left out of the segment comparison, not counted at 0%', function (a) {
+      sample(function (p) {
+        p.regions.filter(function (r) { return r.id === 'neu'; })[0].customerGrowth.accounts.forEach(function (c) { c.segment = null; });
+      });
+      var x = get('segmentMix:apac:strategic');
+      a.ok(x, 'Asia Pacific’s segment insight is still found');
+      if (!x) return;
+      // Hand-worked shares of the regions that still give segments (Central Europe has no accounts, G2)
+      var rest = ['na', 'latam', 'seu', 'mea'].map(function (k) { return X.p15.strategicOiShare[k]; });
+      var range = F.pct(Math.min.apply(null, rest)) + ' to ' + F.pct(Math.max.apply(null, rest));
+      a.ok(x.sentence.indexOf('against ' + range) >= 0, 'the range is ' + range + ': ' + x.sentence);
+      a.ok(!x.figures.some(function (f) { return f.label.indexOf(region('neu').name) >= 0; }), 'Northern Europe is not among the figures');
+    });
+
     T.test('TPV-TC-163', 'With account names replaced by anonymous labels, insights use the labels', function (a) {
       sample(function (p) {
         p.regions.forEach(function (r) { r.customerGrowth.accounts.forEach(function (c, i) { c.name = 'Account ' + (i + 1); }); });
