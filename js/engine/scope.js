@@ -16,6 +16,8 @@
   function name(id) { return TAP.content.regionName(TAP.data.region(id)); }
   function regionsWord(n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); }
   function counted(n) { return { n: n, regions: regionsWord(n) }; }
+  // A wording key, or its singular form ("...One") when the count is 1: "the other region", not "the other 1 region"
+  function one(key, n) { return n === 1 ? key + 'One' : key; }
 
   // Distinct colours available: the palette, or fewer if the settings say colours repeat sooner.
   function paletteSize() {
@@ -66,7 +68,7 @@
         return { mode: 'oneIndividual', list: focus.concat(others.map(function (id) { return regionEntity(id, 'muted'); })) };
       }
       var how = cmp.restAgg === 'total' ? 'total' : 'average';
-      var label = TAP.content.text(how === 'total' ? 'combined.restTotal' : 'combined.restAverage', counted(others.length));
+      var label = TAP.content.text(one(how === 'total' ? 'combined.restTotal' : 'combined.restAverage', others.length), counted(others.length));
       return { mode: how === 'total' ? 'oneTotal' : 'oneAverage', list: focus.concat([combinedEntity('rest', others, how, label)]) };
     }
     if (cmp.mode === 'set') {
@@ -86,15 +88,15 @@
     var r = resolve(cmp), es = r.list, t = TAP.content.text;
     var focus = es[0] && es[0].role === 'focus' ? es[0] : null;
     switch (r.mode) {
-      case 'org': return t('scope.org', counted(es[0].regionIds.length));
+      case 'org': return t(one('scope.org', es[0].regionIds.length), counted(es[0].regionIds.length));
       case 'oneAverage': case 'oneTotal':
-        return t('scope.' + r.mode, Object.assign({ focus: focus.label }, counted(es[1].regionIds.length)));
-      case 'oneIndividual': return t('scope.oneIndividual', Object.assign({ focus: focus.label }, counted(es.length - 1)));
+        return t(one('scope.' + r.mode, es[1].regionIds.length), Object.assign({ focus: focus.label }, counted(es[1].regionIds.length)));
+      case 'oneIndividual': return t(one('scope.oneIndividual', es.length - 1), Object.assign({ focus: focus.label }, counted(es.length - 1)));
       case 'pair': return t('scope.pair', { focus: focus.label, second: es[1].label });
       case 'focusOnly': return t('scope.focusOnly', { focus: focus.label });
       case 'set':
         return t('scope.set', Object.assign({ names: TAP.format.list(es.map(function (e) { return e.label; })) }, counted(es.length)));
-      default: return t('scope.all', counted(es.length));
+      default: return t(one('scope.all', es.length), counted(es.length));
     }
   }
 
