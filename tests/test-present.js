@@ -1,7 +1,7 @@
 /*
  * File: tests/test-present.js
  * Purpose: Tests for presentation mode and the running order.
- * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2), 548 and 550 (US-3.1.4)
+ * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2), 548 and 550 (US-3.1.4), 539 to 546 (US-3.1.3)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js,
  *             config/running-order.js
  * Used by: tests.html
@@ -500,6 +500,136 @@
         a.ok(hit, 'the insight row is outlined');
         var r = hit && hit.getBoundingClientRect(), box = stage && stage.getBoundingClientRect();
         a.ok(r && r.top >= box.top && r.bottom <= box.bottom, 'and within the visible stage');
+      });
+    });
+    /* ---------- US-3.1.3: record from the screen ---------- */
+
+    function click(node) { if (node) node.click(); return node; }
+    function choose(sel, value) { if (sel) { sel.value = value; sel.dispatchEvent(new Event('change')); } }
+    // A panel of the given report on the sample data, with the recorded steps cleared before and after.
+    function withPanel(reportId, fn) {
+      return withApp(function (root) {
+        TAP.present.clearRecorded();
+        var host = T.dom.mount(), p = TAP.panel.create(host, reportId, {});
+        try { return fn(p, root); } finally { p.destroy(); TAP.present.clearRecorded(); }
+      });
+    }
+    function recordFrom(p) {
+      click(p.el.querySelector('[data-action="more"]'));
+      return click(p.el.querySelector('[data-action="record"]'));
+    }
+
+    T.test('TPV-TC-539', 'Add to running order records the report, measure, chart type, breakdown and comparison on screen', function (a) {
+      withPanel('nb-levers', function (p) {
+        TAP.store.set({ cmp: { mode: 'pair', focus: 'na', second: 'seu' } });
+        click(p.el.querySelector('[data-control="measure"] [data-value="nb.hitRate"]'));
+        click(p.el.querySelector('[data-action="type"]'));
+        click(p.el.querySelector('[data-type="dot"]'));
+        click(p.el.querySelector('[data-control="breakdown"] [data-value="industry"]'));
+        a.ok(recordFrom(p), 'the More menu has "Add to running order"');
+        var steps = TAP.present.recorded(), s0 = steps[0] || {};
+        a.equal(steps.length, 1, 'one step recorded');
+        a.deepEqual([s0.report, s0.measure, s0.type, s0.breakdown], ['nb-levers', 'nb.hitRate', 'dot', 'industry'], 'report, measure, type and breakdown');
+        a.deepEqual(s0.cmp, { mode: 'pair', focus: 'na', second: 'seu' }, 'the comparison on screen');
+        a.ok(p.el.querySelector('.tap-panel__status').textContent.length > 0, 'the panel says it was added');
+      });
+    });
+
+    T.test('TPV-TC-540', 'A panel with its own comparison records that comparison, not the shared one', function (a) {
+      withPanel('ov-ambition', function (p) {
+        click(p.el.querySelector('[data-action="more"]'));
+        click(p.el.querySelector('[data-action="compare"]'));
+        choose(p.el.querySelector('select[data-control="cmp-mode"]'), 'one');
+        choose(p.el.querySelector('select[data-control="cmp-focus"]'), 'mea');
+        a.equal(TAP.store.get().cmp.mode, 'all', 'the shared comparison stays all regions');
+        recordFrom(p);
+        var c = (TAP.present.recorded()[0] || {}).cmp || {};
+        a.deepEqual([c.mode, c.focus], ['one', 'mea'], 'the panel comparison: one vs the rest, Middle East & Africa');
+      });
+    });
+
+    var THREE = [{ report: 'ov-ambition', title: 'First' }, { report: 'ind-tiers', title: 'Second' }, { report: 'cg-growth', title: 'Third' }];
+
+    T.test('TPV-TC-542', 'Moving the second step up and removing the last leaves the old second and first, in that order', function (a) {
+      TAP.present.clearRecorded();
+      try {
+        THREE.forEach(function (s) { TAP.present.record(s); });
+        TAP.present.move(1, -1);
+        TAP.present.remove(2);
+        a.deepEqual(TAP.present.recorded().map(function (s) { return s.title; }), ['Second', 'First'], 'old second, then old first');
+        a.equal(TAP.present.move(0, -1), false, 'the first step cannot move up');
+      } finally { TAP.present.clearRecorded(); }
+    });
+
+    T.test('TPV-TC-544', 'The copied text, loaded as config/running-order.js, gives the same steps and passes the check', function (a) {
+      onSample(function () {
+        var saved = window.TAP_RUNNING_ORDER;
+        TAP.present.clearRecorded();
+        try {
+          [THREE[0], { report: 'nb-levers', measure: 'nb.wins', type: 'dot', cmp: { mode: 'one', focus: 'na' }, title: 'It’s "quoted" \\ here' },
+            { insight: 'winsVsPeers:na' }].forEach(function (s) { TAP.present.record(s); });
+          var text = TAP.present.asFileText();
+          a.equal(text.indexOf('/*\n * File: config/running-order.js'), 0, 'starts with the file header');
+          ['report ', 'insight ', 'custom ', 'title ', 'measure ', 'type ', 'breakdown ', 'cmp ', 'highlight '].forEach(function (f) {
+            a.ok(text.indexOf(' *   ' + f) >= 0, 'the header explains ' + f.trim());
+          });
+          window.TAP_RUNNING_ORDER = undefined;
+          var tag = document.createElement('script');
+          tag.text = text;   // as the browser would load the pasted file
+          document.head.appendChild(tag);
+          document.head.removeChild(tag);
+          var loaded = window.TAP_RUNNING_ORDER;
+          a.deepEqual(loaded && loaded.steps, TAP.present.recorded(), 'the same steps');
+          a.deepEqual(TAP.present.check(loaded && loaded.steps).skipped, [], 'and none is skipped');
+        } finally { window.TAP_RUNNING_ORDER = saved; TAP.present.clearRecorded(); }
+      });
+    });
+
+    T.test('TPV-TC-546', 'Recorded steps are kept in this browser through TAP.storage, in order', function (a) {
+      TAP.present.clearRecorded();
+      try {
+        THREE.forEach(function (s) { TAP.present.record(s); });
+        var raw = null;
+        try { raw = window.localStorage.getItem('tap-atlas:runningOrder.recorded'); } catch (e) { /* blocked */ }
+        a.ok(raw, 'saved under runningOrder.recorded');
+        a.deepEqual(JSON.parse(raw || '[]').map(function (s) { return s.title; }), ['First', 'Second', 'Third'], 'what a reload reads back, in order');
+        TAP.present.clearRecorded();
+        a.deepEqual(TAP.present.recorded(), [], 'cleared');
+      } finally { TAP.present.clearRecorded(); }
+    });
+
+    T.test('X-present-guide-recorded', 'The Guide lists the recorded steps with move, remove, try and copy buttons; Try plays them', function (a) {
+      withApp(function () {
+        TAP.present.clearRecorded();
+        try {
+          THREE.forEach(function (s) { TAP.present.record(s); });
+          TAP.store.set({ view: 'guide' });
+          var sec = document.querySelector('.tap-view [data-guide="runningOrder"]');
+          a.ok(sec, 'the Guide has a running order section');
+          var items = sec ? sec.querySelectorAll('.tap-ro__step') : [];
+          a.equal(items.length, 3, 'three steps listed');
+          a.ok(items[0] && items[0].textContent.indexOf('First') >= 0 && items[2].textContent.indexOf('Third') >= 0, 'in order');
+          ['up', 'down', 'remove'].forEach(function (k) { a.equal(sec.querySelectorAll('[data-ro="' + k + '"]').length, 3, k + ' on each step'); });
+          a.ok(sec.querySelector('[data-ro="copy"]'), 'Copy running order');
+          click(sec.querySelectorAll('[data-ro="up"]')[1]);
+          sec = document.querySelector('.tap-view [data-guide="runningOrder"]');
+          a.ok(sec.querySelectorAll('.tap-ro__step')[0].textContent.indexOf('Second') >= 0, 'moving up redraws the list');
+          click(sec.querySelector('[data-ro="try"]'));
+          a.ok(TAP.present.active(), 'Try this order starts presentation mode');
+          a.equal(TAP.present.current().title, 'Second', 'with the recorded steps, in their order');
+          TAP.present.stop();
+        } finally { TAP.present.clearRecorded(); }
+      });
+    });
+
+    T.test('X-present-guide-empty', 'With nothing recorded the Guide says how to add steps, and Try is not offered', function (a) {
+      withApp(function () {
+        TAP.present.clearRecorded();
+        TAP.store.set({ view: 'guide' });
+        var sec = document.querySelector('.tap-view [data-guide="runningOrder"]');
+        a.ok(sec && sec.textContent.indexOf(TAP.content.text('present.guide.none')) >= 0, 'the empty message');
+        a.ok(sec && !sec.querySelector('[data-ro="try"]'), 'no Try button');
+        a.ok(sec && sec.querySelector('[data-ro="present"]'), 'the file order can still be presented from here');
       });
     });
   });
