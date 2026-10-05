@@ -66,14 +66,13 @@
 
 /* ---------- the view (US-1.5.2) ---------- */
 
-.tap-ov { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
+.tap-ov { display: flex; flex-direction: column; gap: var(--tap-sp-6); padding: 0 var(--tap-gutter); }   /* the same side gutter as every other view */
 .tap-ov__sechead {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-4);
   margin-bottom: var(--tap-sp-3); padding-bottom: var(--tap-sp-1); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
 }
 .tap-ov__sechead h2 { margin: 0; font-size: var(--tap-fs-h3); }
 .tap-ov__hint { font-size: var(--tap-fs-label); color: var(--tap-muted); }
-.tap-ov__insights:empty { display: none; }
 .tap-ov__title { margin: 0; font-size: var(--tap-fs-label); font-weight: 800; color: var(--tap-accent-deep); }
 
 /* ---------- headline and top insights (US-1.5.3) ---------- */

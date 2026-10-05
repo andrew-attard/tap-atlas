@@ -36,7 +36,7 @@ window.TAP_CONTENT.guide = {
     intro: 'This app puts every region’s territory account plan side by side. It reads the finished workbooks and never changes them.',
     sections: [
       { id: 'menu', title: 'The menu', paragraphs: [
-        'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights and this Guide. The view you are on is highlighted.',
+        'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Other sections (when the plans hold extra template sections), Regions, Insights and this Guide. The view you are on is highlighted.',
         'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.',
         'A one-line tip under each view’s title says where to start. "Hide tips" hides the tips until the page is reloaded.'
       ] },
@@ -88,7 +88,7 @@ window.TAP_CONTENT.guide = {
         'The Insights page lists them all, ranked and grouped by family. Any insight can be hidden for the rest of the session.'
       ] },
       { id: 'keys', title: 'Keyboard shortcuts', shortcuts: true, paragraphs: [
-        'When presenting, a number key opens the view at that place in the menu, as listed below.',
+        'When presenting, a number key opens the view at that place in the menu, as listed below. P starts presentation mode, which steps through the running order.',
         'Esc closes one thing at a time: an open list or definition first, then a side panel, then an expanded chart. In an expanded chart the arrow keys move between the charts, and Backspace goes up a level after a drill-down.'
       ] }
     ]
@@ -108,7 +108,8 @@ window.TAP_CONTENT.guide = {
       ] },
       { id: 'template', title: 'The template', link: null, paragraphs: [
         'Every leader fills in the same workbook, one per region. It covers three plan years, with money in thousands of one currency.',
-        'It has four sections, each on its own sheet: market coverage, new business, customer growth, and partners with a recap. Each section asks the leader to decide something different.'
+        'It has four main sections, each on its own sheet: market coverage, new business, customer growth, and partners with a recap. Each section asks the leader to decide something different.',
+        'A template can also carry extra sections, such as planned events. The app lists each one on the Other sections view, which the menu shows only when the plans hold one.'
       ] },
       { id: 'marketCoverage', title: '1. Market coverage', link: { view: 'industry' }, paragraphs: [
         'The leader rates a fixed list of industries and chooses which to prioritize. For each industry they give six ratings, a tier and a comment.',
@@ -133,7 +134,7 @@ window.TAP_CONTENT.guide = {
       { id: 'tiers', title: 'How to read tiers', link: { view: 'industry' }, paragraphs: [
         'Every industry gets one of three tiers. Tier 1 is group priority: set centrally for all regions, not chosen by the leader.',
         'Tier 2 is focus: an industry where the region has a winning recipe and will invest. Tier 3 is opportunistic: the region sells there when a chance comes up, with no active investment.',
-        'When regions agree on tiers, plans line up. When the same industry ranges from Tier 1 to Tier 3, it is worth asking why.'
+        'When regions agree on tiers, plans line up. When the same industry is Tier 2 in one region and Tier 3 in another, the difference is worth discussing.'
       ] },
       { id: 'ratings', title: 'How to read the six ratings', link: { view: 'industry' }, paragraphs: [
         'Each rating is a three-step scale with the template’s own wording, scored 1 to 3. A score of 3 is always the favourable end, so higher is better on every chart.',
