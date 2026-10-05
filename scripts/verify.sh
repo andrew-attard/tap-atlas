@@ -65,8 +65,14 @@ ignored_guard() {
 
 step "lint${lint_flag:+ --release}" "$node_bin" tools/lint.js "${lint_flag[@]}"
 step "lint self-test" "$node_bin" tools/lint.js --self-test
-step "denylist scan" denylist_scan
-step "ignored-files guard" ignored_guard
+# Both read what git tracks, so they run only in a git work tree. A copy of the folder outside git
+# (the internal copy, a packaged copy) skips them and says so.
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+  step "denylist scan" denylist_scan
+  step "ignored-files guard" ignored_guard
+else
+  echo "SKIP  denylist scan and ignored-files guard: not a git work tree, so there is no list of tracked files"
+fi
 # The QA page must list the same scripts as the app (it is generated from index-sample.html)
 if [ -f scripts/qa/make-qa-page.js ]; then
   step "qa page in step" "$node_bin" scripts/qa/make-qa-page.js --check
