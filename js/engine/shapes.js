@@ -68,6 +68,7 @@
     var how = TAP.agg.describe(c);
     if (how) rows.push([t('chart.how'), how]);
     if (c.partial && c.note) rows.push([t('chart.partial'), c.note]);
+    else if (c.declined && c.note) rows.push([t('chart.leftOut'), c.note]);   // an exposure share without declines (D77)
     return rows;
   }
 
@@ -158,7 +159,7 @@
         var s = c.src || {};
         var gap = s.combined && ((s.excluded || []).length || (s.parts || []).some(function (p) { return (p.src.excluded || []).length; }));
         if (gap) msg = TAP.agg.describe(c);
-        else if (c.partial && c.note) msg = c.note;
+        else if ((c.partial || c.declined) && c.note) msg = c.note;
         if (msg) msg = t('chart.note', { label: r.label, measure: lower(col.label), text: msg });
         if (msg && out.indexOf(msg) < 0) out.push(msg);
       });
