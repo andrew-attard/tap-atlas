@@ -48,7 +48,7 @@
     return entities.map(function (e) {
       if (e.kind !== 'combined') return e;
       return { id: e.id, kind: 'combined', regionIds: e.regionIds, how: null, role: 'muted', color: th.focusGrey,
-        label: TAP.content.text('rowBubble.others.' + source, { n: e.regionIds.length }) };
+        label: TAP.content.text('rowBubble.' + (e.regionIds.length === 1 ? 'othersOne.' : 'others.') + source, { n: e.regionIds.length }) };
     });
   }
 

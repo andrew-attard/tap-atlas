@@ -45,6 +45,7 @@ Object.assign(window.TAP_CONTENT.text, {
     sourceRow: 'Source row',
     key: '{name} ({region})',
     others: { accounts: 'The other {n} regions, account by account', partners: 'The other {n} regions, partner by partner' },
+    othersOne: { accounts: 'The other region, account by account', partners: 'The other region, partner by partner' },
     noSize: '{name} ({region}) is drawn as an empty outline: no {measure} given.',
     unnamed: { accounts: '{n} more accounts are too close together to name on the chart; the table lists every one.',
       partners: '{n} more partners are too close together to name on the chart; the table lists every one.' }

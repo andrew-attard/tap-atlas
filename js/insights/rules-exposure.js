@@ -71,6 +71,7 @@
       var share = u.value(cell);
       if (!flagged.length || share === null || share < p.share) return null;
       return { key: r, regionIds: [r], accountIds: flagged.map(function (x) { return x.a.id; }), measureId: 'cg.riskShare',
+        variant: flagged.length === 1 ? 'one' : null,
         vars: { share: u.pct(share), region: u.name(r), amount: u.money(sum(flagged)), n: flagged.length },
         figures: [u.fig('cg.riskShare', u.name(r), cell)].concat(flagged.map(function (x) { return accountFigure(u, x); }), [totalFigure(u, g)]),
         strength: u.shareStrength(share, p.share), money: u.moneyShare(sum(flagged), 'arr') };
