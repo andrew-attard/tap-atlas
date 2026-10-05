@@ -49,6 +49,14 @@
       panel: function () { return qs('.tap-panel', host); } };
   }
   function click(node) { node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); }
+  var SEVEN = [{ measure: 'nb.arr', by: 'entity', type: 'bar' }, { measure: 'nb.arr', by: 'entity', type: 'dot' },
+    { measure: 'nb.arr', by: 'year', type: 'groupedBar' }, { measure: 'nb.hitRate', by: 'entity', type: 'bar' },
+    { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, { measure: 'base.arr', by: 'entity', type: 'table' },
+    { measure: 'cg.arr', by: 'entity', type: 'bar' }];
+  function emptyList() { while (TAP.custom.saved().length) TAP.custom.remove(0); }
+  // A session list that starts empty and is emptied again afterwards
+  function listScene(fn) { return scene(function (a, s) { emptyList(); try { fn(a, s); } finally { emptyList(); } }); }
+
   // PRESENT builds the recording (US-3.1.3); until then the running-order case waits.
   var recordReady = !!(TAP.present && !TAP.present.__stub && TAP.present.record && !TAP.present.record.__stub);
 
@@ -372,5 +380,81 @@
           a.equal(TAP.present.check([step]).skipped.length, 0, 'passes the step check');
         } finally { TAP.present.clearRecorded(); }
       }) : 'Waits for the running-order recording (US-3.1.3, PRESENT).');
+
+    /* ---------- US-3.5.3: keep custom charts for the session ---------- */
+
+    T.test('TPV-TC-567', 'Six charts are kept; a seventh is refused with a message and the list stays at six', listScene(function (a) {
+      SEVEN.slice(0, 6).forEach(function (spec, i) { a.equal(TAP.custom.save(spec).ok, true, 'chart ' + (i + 1) + ' kept'); });
+      a.equal(TAP.custom.saved().length, 6, 'all six');
+      var r = TAP.custom.save(SEVEN[6]);
+      a.equal(r.ok, false, 'the seventh is refused');
+      a.equal(r.message, TAP.content.text('custom.list.full'));
+      a.match(r.message, /remove one/i, 'the message says to remove one first');
+      a.equal(TAP.custom.saved().length, 6, 'still six');
+      a.deepEqual(TAP.custom.saved().map(function (x) { return x.measure + ':' + x.type; })[5], 'base.arr:table', 'the first six kept');
+    }));
+
+    T.test('TPV-TC-567', 'The section refuses a seventh chart with a message on screen', listScene(function (a) {
+      SEVEN.slice(0, 6).forEach(function (spec) { TAP.custom.save(spec); });
+      var b = builder(SEVEN[6]);
+      click(qs('[data-action="custom-keep"]', b.host));
+      a.equal(TAP.custom.saved().length, 6, 'not added');
+      a.equal(qs('.tap-custom__status', b.host).textContent, TAP.content.text('custom.list.full'), 'the message shows');
+      a.equal(qsa('[data-custom-open]', b.host).length, 6, 'six in the list');
+      b.h.destroy();
+    }));
+
+    T.test('X-custom-keep-same', 'Keeping the same chart twice keeps it once', listScene(function (a) {
+      TAP.custom.save(SEVEN[0]);
+      var r = TAP.custom.save({ measure: 'nb.arr', by: 'entity', type: 'bar' });
+      a.equal(r.ok, true);
+      a.equal(r.index, 0, 'points at the one already kept');
+      a.equal(TAP.custom.saved().length, 1);
+      a.equal(TAP.custom.save({ measure: 'ind.tier', by: 'industry' }).ok, false, 'a choice that can not be drawn is not kept');
+    }));
+
+    T.test('TPV-TC-568', 'A kept chart reopens with the same measure, dimension and chart type', listScene(function (a) {
+      var b = builder({ measure: 'nb.hitRate', by: 'industry', type: 'dot' });
+      click(qs('[data-action="custom-keep"]', b.host));
+      a.deepEqual(TAP.custom.saved()[0], { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, 'kept as built');
+      b.pick('nb.arr');
+      click(qs('[data-control="custom-by"] button[data-value="entity"]', b.host));
+      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.arr:entity', 'moved on');
+      click(qs('[data-custom-open="0"]', b.host));
+      a.deepEqual(b.h.spec(), { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, 'reopened as built');
+      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.hitRate:industry');
+      a.equal(qs('.tap-panel [data-action="type"]', b.host).textContent.trim(), TAP.shapes.label('dot'), 'the panel draws the same type');
+      b.h.destroy();
+    }));
+
+    T.test('TPV-TC-570', 'Removing one of three keeps the other two in their order', listScene(function (a) {
+      [SEVEN[0], SEVEN[3], SEVEN[5]].forEach(function (x) { TAP.custom.save(x); });
+      var b = builder(SEVEN[0]);
+      click(qs('[data-custom-remove="1"]', b.host));
+      a.deepEqual(TAP.custom.saved(), [SEVEN[0], SEVEN[5]], 'the first and the third, in order');
+      a.equal(qsa('[data-custom-open]', b.host).length, 2, 'the list on screen follows');
+      a.equal(TAP.custom.remove(5), null, 'removing a place that does not exist changes nothing');
+      a.equal(TAP.custom.saved().length, 2);
+      b.h.destroy();
+    }));
+
+    T.test('TPV-TC-572', 'Nothing about kept charts is written to browser storage', listScene(function (a) {
+      function dump(store) {
+        var out = [];
+        try { for (var i = 0; i < store.length; i++) { var k = store.key(i); out.push(k + '=' + store.getItem(k)); } } catch (e) { /* storage blocked */ }
+        return out.join('\n');
+      }
+      var before = { l: dump(window.localStorage), s: dump(window.sessionStorage) };
+      var b = builder({ measure: 'cg.arr', by: 'entity', type: 'bar' });
+      click(qs('[data-action="custom-keep"]', b.host));
+      TAP.custom.save(SEVEN[4]);
+      click(qs('.tap-panel [data-action="type"]', b.host));
+      click(qs('.tap-panel [data-type="dot"]', b.host));
+      a.equal(TAP.custom.saved().length, 2, 'two kept');
+      a.equal(dump(window.localStorage), before.l, 'local storage unchanged');
+      a.equal(dump(window.sessionStorage), before.s, 'session storage unchanged');
+      a.ok(!/custom/.test(dump(window.localStorage)), 'no custom chart in local storage');
+      b.h.destroy();
+    }));
   });
 })(window.TAP);
