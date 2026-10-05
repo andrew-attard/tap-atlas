@@ -218,6 +218,7 @@ A **multi-row source** (a sum over several rows of one region) has `row: null` a
 - `regionIds(cmp)` gives every region in scope.
 - `colorOf(regionId)` gives the region's fixed colour by file order. Past 8 regions the colours cycle and a warning goes to the data sources panel.
 - No default ever names a sample-specific region.
+- The ids `rest` and `org` belong to the combined entities, so the data check refuses them as region ids (#344).
 
 ## 9. Measures and scores (`js/engine/measures.js`, `js/engine/scores.js`, owned by ENGINE)
 
@@ -350,7 +351,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 - **Esc order:** popovers handle Esc first and stop it (`preventDefault()`). Side panels listen on `window` and ignore an Esc that was already handled. Then an expanded panel closes.
 - `TAP.details.build(target)` returns `{title, groups: [{title, rows: [{label, cell}]}]}` (owned by INDUSTRY; the shell draws it).
 
-**Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant, mark, items, theme}`. Every field except `reportId` is optional. `items` (Phase 2) names list rows (17.4); `theme` names a recurring theme for the themes report (17.7). `mark` says what to draw: `'industryRow'`, `'regionColumn'`, `'cell'`, `'points'`, `'quadrant'` or `'bar'`. It comes from the rule's `highlight` setting. `state.highlight` holds a Target.
+**Target** (details and highlights): `{reportId, regionIds: [], industryIds: [], accountIds: [], quadrant, mark, items, theme, figure}`. Every field except `reportId` is optional. `items` (Phase 2) names list rows (17.4); `theme` names a recurring theme for the themes report (17.7). `figure: {key, how}` (from a chart click, `TAP.shapes` `targetFn`) names the column clicked (`<measure>`, `<measure>@y2` or `<measure>@<dim>:<value>`) and, for a combined bar, how it was combined; the details panel then shows that figure first, "In this chart". `mark` says what to draw: `'industryRow'`, `'regionColumn'`, `'cell'`, `'points'`, `'quadrant'` or `'bar'`. It comes from the rule's `highlight` setting. `state.highlight` holds a Target.
 
 **UI modules** (owned by SHELL unless noted):
 
@@ -523,7 +524,7 @@ TAP_REPORTS['cg-accounts'] = {
 ```
 
 **Row figures: `TAP.rows`** (`js/engine/rows.js`, ENGINE2)
-- `list(source, regionIds)` returns `[{id, regionId, source, sourceRow, item}]` in region file order, then source row order. `id` is `<regionId>:<sourceRow>`.
+- `list(source, regionIds)` returns `[{id, key, regionId, source, sourceRow, item}]` in region file order, then source row order. `key` is the `sourceRow`, or `p<position>` when the row number is missing, not whole, or already used earlier in that section; `id` is `<regionId>:<key>`. List rows, click targets (`items[].row`), highlights, details and row bubbles all use the key, so every row stays its own. The check warns about repeated row numbers.
 - `cell(source, key, row)` returns a full cell (section 7) with `src: {regionId, section, field, row, kind}`. Text, money, percentages and counts all come back as cells, so the list, details and bubbles format them the same way.
 - `columns(source)` returns `[{key, unit, kind, label}]` for every key a list can show:
   - `newBusiness`: `region`, `industry`, `tier`, `subVertical`, `market`, `targetAccounts`, `hitRate`, `avgDealSize`, `wins`, `arr3`, `services3`, `successFactors`, `alsoTargeted` (APP: the other regions naming the same sub-industry).
