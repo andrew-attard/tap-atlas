@@ -608,6 +608,19 @@
       });
     });
 
+    /* ---------- review fix after v0.3.0: Other sections steps after a reload (#364) ---------- */
+
+    T.test('X-review-PP-4', 'A step on an Other sections list runs in a fresh session, before that view was opened', function (a) {
+      withApp(function () {
+        // A fresh session: the list definitions are made only when the view mounts
+        Object.keys(window.TAP_REPORTS).forEach(function (id) { if (/^other-/.test(id)) delete window.TAP_REPORTS[id]; });
+        var res = TAP.present.check([{ report: 'other-events' }]);
+        a.deepEqual(res.skipped.map(function (x) { return x.reason; }), [], 'the step passes the check');
+        a.ok(TAP.present.start([{ report: 'other-events' }]).started, 'presentation starts');
+        try { a.equal(shown() && shown().getAttribute('data-report'), 'other-events', 'the events list is shown'); } finally { TAP.present.stop(); }
+      });
+    });
+
     var THREE = [{ report: 'ov-ambition', title: 'First' }, { report: 'ind-tiers', title: 'Second' }, { report: 'cg-growth', title: 'Third' }];
 
     T.test('TPV-TC-542', 'Moving the second step up and removing the last leaves the old second and first, in that order', function (a) {
