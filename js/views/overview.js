@@ -24,6 +24,9 @@
 
   /* ---------- headline (US-1.5.3) ---------- */
 
+  // Placeholders that hold names from the workbooks: shown as written, never marked as glossary terms.
+  var NAMES = ['name', 'focus', 'industry', 'names'];
+
   // Fills a template from the content file: words are marked for the glossary (first use only), figures are plain
   // bold text and are collected in figs for the Sources panel.
   function fill(s, seen, figs) {
@@ -37,6 +40,7 @@
         return;
       }
       if (v === '') return;
+      if (m && NAMES.indexOf(m[1]) >= 0) { out.push(el('span', null, String(v))); return; }
       var span = el('span');
       TAP.dom.html(span, TAP.content.mark(String(v), seen));
       out.push(span);
