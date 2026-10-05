@@ -144,8 +144,12 @@ function checkPackage(root, handover) {
     fs.rmSync(scratch, { recursive: true, force: true });
   }
   // TPV-TC-611: dist/ is ignored by git.
-  const ig = spawnSync('git', ['check-ignore', '-q', 'dist/tap-atlas-0.0.0-2000-01-01/index.html'], { cwd: root });
-  if (ig.status !== 0) problems.push('.gitignore does not ignore dist/');
+  // Outside a git work tree (a copy of the folder) the .gitignore line is read instead.
+  const inGit = spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root }).status === 0;
+  const ignored = inGit
+    ? spawnSync('git', ['check-ignore', '-q', 'dist/tap-atlas-0.0.0-2000-01-01/index.html'], { cwd: root }).status === 0
+    : /^\/?dist\/?\s*$/m.test(fs.existsSync(path.join(root, '.gitignore')) ? fs.readFileSync(path.join(root, '.gitignore'), 'utf8') : '');
+  if (!ignored) problems.push('.gitignore does not ignore dist/');
   return { problems, checked: PACKAGED.length + NOT_PACKAGED.length + 4 };
 }
 
