@@ -26,13 +26,29 @@
     // The table shows the selected measure per value, so every heading is unique; the chart reads the parts too
     var bdTable = bd.filter(function (c) { return c.measureId === m; });
     var res = k.result(def, ds, { table: k.table(ds, keys.concat(bdTable.map(function (c) { return c.key; })), rows),
-      legend: legend(k, ds, parts, rows), notes: k.notes({ rows: rows, columns: ds.columns }, [m]) });
+      legend: legend(k, ds, parts, rows), notes: k.notes({ rows: rows, columns: ds.columns }, [m]).concat(short(k, ds, m, parts, rows)) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;
     if (bd.length) rows = split(k, rows, bd, keys);
     var draw = { k: k, ds: ds, ctx: ctx, m: m, parts: parts, rows: rows, res: res };
     res.option = type === 'treemap' ? treemap(draw) : bars(draw, type);
     return res;
+  }
+
+  // A note for each stack whose parts add up to less than its total, for example accounts with no segment (review
+  // DE-15), so the gap is never silent. Only when the total and every part have a value.
+  function short(k, ds, m, parts, rows) {
+    if (parts.indexOf(m) >= 0) return [];
+    var col = k.colOf(ds, m), out = [];
+    rows.forEach(function (r) {
+      var total = r.cells[m], cells = parts.map(function (p) { return r.cells[p]; });
+      if (!total || total.state !== 'value' || !cells.every(function (c) { return c && c.state === 'value'; })) return;
+      var sum = cells.reduce(function (t, c) { return t + c.v; }, 0);
+      if (total.v - sum <= Math.max(1e-9, Math.abs(total.v) * 1e-9)) return;
+      out.push(k.t('chart.partsShort', { label: r.label, measure: k.lower(col.label),
+        parts: k.exact({ v: sum, state: 'value' }, col), total: k.exact(total, col) }));
+    });
+    return out;
   }
 
   // One row per region and breakdown value, its cells read from that value's columns under the plain measure keys,
@@ -149,7 +165,8 @@
       var c = r.cells[draw.m];
       if (c.state === 'value' && c.v > 0) return true;
       if (c.state !== 'notApplicable') {
-        draw.res.notes.push(k.t(c.state === 'value' ? 'chart.zeroTile' : 'chart.notPlaced', { name: r.label, measure: k.lower(mc.label) }));
+        var why = c.state !== 'value' ? 'chart.notPlaced' : c.v < 0 ? 'chart.negativeTile' : 'chart.zeroTile';
+        draw.res.notes.push(k.t(why, { name: r.label, measure: k.lower(mc.label) }));
       }
       return false;
     }).map(function (r) {

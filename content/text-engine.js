@@ -157,6 +157,8 @@ Object.assign(window.TAP_CONTENT.text, {
     notPlaced: '{name} is not shown: {measure} not provided',
     notOnRadar: '{name} is not shown on the radar: {measures} not provided',
     zeroTile: '{name} is not shown: {measure} is zero',
+    negativeTile: '{name} is not shown: {measure} is negative',
+    partsShort: '{label}, {measure}: the parts shown add up to {parts}, less than the total of {total}',
     sizeMissing: '{name} (size not provided)',
     sizeLegend: 'Bubble size: {measure}',
     buildError: 'This report could not be drawn: {message}'

@@ -146,13 +146,17 @@
     }
   }
 
-  // Categories are counted, never averaged. v lists [{value, n}], most frequent first.
+  // Categories are counted, never averaged. v lists [{value, n}], most frequent first, each value as it was given
+  // (tier 1 stays the number 1, so it formats as "Tier 1").
   function counted(out, vals) {
-    var counts = {};
-    vals.forEach(function (v) { counts[v] = (counts[v] || 0) + 1; });
+    var list = [], counts = {};
+    vals.forEach(function (v) {
+      var hit = list.filter(function (x) { return x.value === v; })[0];
+      if (hit) hit.n++; else list.push({ value: v, n: 1 });
+      counts[v] = (counts[v] || 0) + 1;
+    });
     out.counts = counts;
-    out.v = Object.keys(counts).map(function (k) { return { value: k, n: counts[k] }; })
-      .sort(function (a, b) { return b.n - a.n || (a.value < b.value ? -1 : 1); });
+    out.v = list.sort(function (a, b) { return b.n - a.n || (a.value < b.value ? -1 : 1); });
   }
 
   /*
