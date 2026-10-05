@@ -3,9 +3,9 @@
  * Purpose: Multi-level drill-down inside one report panel: the level stack, the breadcrumb and stepping back up (US-2.7.1).
  *          A definition with drill: {next, label} opens `next` in the same panel when a mark naming a region is
  *          clicked; the clicked target becomes ctx.drill. Each level keeps its own chart type, table and options.
- * Provides: TAP.panelDrill (create, levels, keys), TAP.panelKeys ({enabled}: one switch for the panel's own keys)
+ * Provides: TAP.panelDrill (create, levels, keys), TAP.panelKeys ({enabled}: one switch for the panel's own keys; typing(el))
  * Depends on: js/engine/registry.js, js/engine/scope.js, js/core/dom.js, js/core/data.js, js/core/content.js,
- *             js/core/format.js, js/core/store.js (all at call time)
+ *             js/core/format.js, js/core/store.js, js/engine/shapes.js (kit.lower) (all at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (p.id, p.root, p.st, p.render, p.fresh)
  * Owner: PANEL2 stream (#75)
  */
@@ -18,7 +18,7 @@
 
   // The panel's own keys (drill steps, Esc for popovers and the expanded chart) can be switched off together, so a
   // later presentation mode can own them (D70). Read at key time by panel.js and panel-expand.js too.
-  TAP.panelKeys = { enabled: true };
+  TAP.panelKeys = { enabled: true, typing: typing };
   function keys(on) { if (typeof on === 'boolean') TAP.panelKeys.enabled = on; return TAP.panelKeys.enabled; }
 
   // Typing in a field or editable text: the keys belong to the text.
@@ -47,7 +47,7 @@
     return regs.length ? TAP.format.list(regs) : def.drill.label || '';
   }
 
-  function lower(s) { return !s ? '' : /^[A-Z][A-Z0-9]/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); }
+  function lower(s) { return TAP.shapes.kit.lower(s); }   // mid-sentence lower case, acronyms kept (one copy, in the kit)
 
   /*
    * The drill state of panel p: {push(target, def), up(), top(opts), to(level, opts), path(), depth(), current(),

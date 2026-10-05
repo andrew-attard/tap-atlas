@@ -12,8 +12,7 @@
   'use strict';
 
   function t(key, vars) { return TAP.content.text('custom.' + key, vars); }
-  // Lower-cases the first letter for use mid-sentence, but leaves acronyms such as ARR alone.
-  function lower(s) { return !s ? '' : /^[A-Z][A-Z0-9]/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); }
+  function lower(s) { return TAP.shapes.kit.lower(s); }   // mid-sentence lower case, acronyms kept (one copy, in the kit)
 
   // Text and categories can't be drawn as a value on an axis (US-3.5.2).
   var NOT_VALUES = ['text', 'category'];

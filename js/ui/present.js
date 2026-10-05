@@ -24,8 +24,8 @@
 
   var run = null;   // {steps, i, saved, layer, host, row, panel, off, busy, focus}
 
-  // Typing in a field: the keys belong to the text.
-  function typing(a) { return !!a && (/^(input|select|textarea)$/i.test(a.tagName || '') || !!a.isContentEditable); }
+  // Typing in a field: the keys belong to the text (the panel keys' test, js/panel/panel-drill.js).
+  function typing(a) { return TAP.panelKeys.typing(a); }
 
   function appRoot() {
     try { return TAP.shell.viewEl().parentNode || document.body; } catch (e) { return document.body; }
