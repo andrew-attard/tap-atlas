@@ -344,6 +344,19 @@
     return JSON.parse(JSON.stringify(list));
   }
 
+  // Review polish #382 (SV-19): the Overview keeps the same side gutter as every other view, so titles don't shift
+  T.suite('overview-gutter', function () {
+    T.test('X-review-SV-19', 'The Overview column has the same side gutter as the other views', function (a) {
+      var box = T.dom.mount();
+      var ov = TAP.dom.el('div', { class: 'tap-ov' }), other = TAP.dom.el('div', { class: 'tap-vh-page' });
+      TAP.dom.append(box, [ov, other]);
+      var o = getComputedStyle(ov), p = getComputedStyle(other);
+      a.ok(parseFloat(p.paddingLeft) > 0, 'the other views have a gutter (' + p.paddingLeft + ')');
+      a.equal(o.paddingLeft, p.paddingLeft, 'left');
+      a.equal(o.paddingRight, p.paddingRight, 'right');
+    });
+  });
+
   T.suite('overview-headline', function () {
     T.test('TPV-TC-099', 'On the sample data, the headline equals the sentence built from the planted totals', function (a) {
       sample();
