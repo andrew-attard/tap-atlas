@@ -33,9 +33,11 @@
 
   function ownMeasure(id, m) { var d = TAP.reports.get(id); return !!m && !!d && (d.measures || []).some(function (x) { return x.id === m; }); }
 
+  // The panel's own highlight, else a "Show me" for this report. A panel kept apart from the shared state
+  // (opts.local: a presentation step, D74) never takes one from the store.
   function highlightOf(p, s) {
     if (p.st.highlight) return p.st.highlight;
-    return !p.drill.depth() && s.highlight && s.highlight.reportId === p.id ? s.highlight : null;
+    return !p.opts.local && !p.drill.depth() && s.highlight && s.highlight.reportId === p.id ? s.highlight : null;
   }
 
   // Validates and builds. Returns {def, ctx, res, errors, types, ...}; every problem stays inside this panel.

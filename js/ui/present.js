@@ -96,7 +96,7 @@
     var x = window.scrollX, y = window.scrollY;
     try {
       TAP.store.set({ expanded: s.reportId });
-      run.panel = TAP.panel.create(run.host, s.def || s.reportId, { cmp: s.cmp, initial: s.initial });
+      run.panel = TAP.panel.create(run.host, s.def || s.reportId, { cmp: s.cmp, initial: s.initial, local: true });
       if (s.highlight) run.panel.highlight(Object.assign({}, s.highlight));
     } finally { run.busy = false; }
     window.scrollTo(x, y);

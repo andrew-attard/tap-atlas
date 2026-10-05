@@ -3,7 +3,7 @@
  * Purpose: A panel's insights: the takeaway line (the top insight), the count, and the list of at most 3 with
  *          figures, rule, a highlight button and "Hide for this session" (US-1.2.2, US-1.7.11).
  * Provides: TAP.panelInsights (get, fits, target, handlers, strip, takeaway, render)
- * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/core/dom.js,
+ * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/panel/panel-build.js, js/ui/showme.js, js/core/dom.js,
  *             js/core/icons.js, js/core/content.js, js/core/format.js, js/core/store.js
  * Used by: js/panel/panel.js, js/panel/panel-menus.js (the insights button)
  */
@@ -49,9 +49,10 @@
     var tg = { reportId: reportId, regionIds: (ins.regionIds || []).slice(), industryIds: (ins.industryIds || []).slice(),
       accountIds: (ins.accountIds || []).slice(), mark: hl.mark || null, quadrant: hl.quadrant || null };
     // Phase 2 targets may also name list rows (17.4) and a comment theme; copied only when there are some
-    var items = hl.items || ins.items, theme = hl.theme || ins.theme;
+    var items = hl.items || ins.items, theme = hl.theme || ins.theme, m = hl.measureId || ins.measureId;
     if (items) tg.items = items.map(function (x) { return Object.assign({}, x); });
     if (theme) tg.theme = theme;
+    if (m) tg.measureId = m;   // the measure the sentence quotes (D79)
     return tg;
   }
 
@@ -62,13 +63,20 @@
       onSelect: function (ins) {
         // While drilled, the insights and their highlight are the current level's, so selecting one stays there
         var deep = !!(p.drill && p.drill.depth()), off = p.st.selected === ins.id, tg = target(ins, deep ? p.drill.current() : p.id);
-        var sm = TAP.showme;
-        // A region the chart can't show on its own: "Show me" widens the comparison first (top level only: a
-        // comparison change returns the panel to its top level)
-        if (!off && !deep && sm && !sm.__stub && sm.widen(tg, p.cmp(), ins.regionIds)) {
-          p.st.pop = null;
-          sm.go({ insightId: ins.id, target: tg });
-          return;
+        var sm = TAP.showme, ids = ins.regionIds;
+        if (!off && TAP.panelBuild.ownMeasure(tg.reportId, tg.measureId)) p.st.measureId = tg.measureId;   // D79
+        // A region the chart can't show on its own: the comparison widens first (top level only: a comparison change
+        // returns the panel to its top level). The panel's own comparison goes first; a comparison its page fixed
+        // (presentation, a profile) widens for this panel only, never the shared one (D74); else "Show me" widens it.
+        if (!off && !deep && sm && !sm.__stub && sm.widen(tg, p.cmp(), ids)) {
+          if (p.st.custom) Object.assign(p.st, { custom: null, editing: false });
+          if (sm.widen(tg, p.cmp(), ids) && p.opts.cmp) {
+            p.st.custom = Object.assign(TAP.store.defaults().cmp, { mode: 'all' });
+          } else if (sm.widen(tg, p.cmp(), ids)) {
+            p.st.pop = null;
+            sm.go({ insightId: ins.id, target: tg });
+            return;
+          }
         }
         p.set({ selected: off ? null : ins.id, sentence: off ? null : ins.sentence, highlight: off ? null : tg });
       },
