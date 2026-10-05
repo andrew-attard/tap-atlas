@@ -404,6 +404,28 @@
       a.ok(!res.error && res.empty === false, 'the chart draws');
     });
 
+    // As X-review-PP-1 does on the sample data, here on the fixture that has every Phase 4 part
+    T.test('X-p4-custom-draws', 'Every Phase 4 measure, dimension and chart type in Build a chart draws a non-empty chart', function (a) {
+      load();
+      var all = cmp({ mode: 'all' }), one = cmp({ mode: 'one', focus: 'alpha', restAgg: 'average' }), n = 0;
+      TAP.custom.options().filter(function (o) { return !!CAT[o.measureId]; }).forEach(function (o) {
+        o.by.forEach(function (by) {
+          TAP.custom.types(by).forEach(function (type) {
+            [all, one].forEach(function (c) {
+              var d = TAP.custom.definition({ measure: o.measureId, by: by, type: type });
+              var res = TAP.builders.get(d.builder || d.shape)({ def: d, type: type, measureId: null, sizeId: null, breakdown: d.defaultBreakdown,
+                cmp: c, entities: TAP.scope.entities(c), year: null, industryId: null, highlight: null, expanded: false,
+                theme: window.TAP_THEME, opts: {}, size: null, drill: null });
+              n += 1;
+              a.ok(res && !res.error && res.empty === false, o.measureId + ' by ' + by + ' as ' + type + ' (' + c.mode + ') has data' +
+                (res && res.error ? ': ' + res.error : ''));
+            });
+          });
+        });
+      });
+      a.ok(n > 200, 'every choice was tried (' + n + ')');
+    });
+
     T.test('X-p4-partner-list', 'The partner list gains type, maturity and distribution, named from the lookups', function (a) {
       load();
       var cols = TAP.rows.columns('partners');
