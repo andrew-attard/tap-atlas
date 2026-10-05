@@ -79,6 +79,15 @@
     } }, [TAP.icons.svg('data'), el('span', null, TAP.content.text('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) }))]);
   }
 
+  // The page-wide buttons the hidden comparison bar would otherwise carry, beside the data date (D72).
+  function pageButtons() {
+    var box = el('div', { class: 'tap-pf__actions' });
+    try { if (!TAP.present.__stub) TAP.present.button(box); } catch (e) { /* presentation mode is optional here */ }
+    box.appendChild(el('button', { type: 'button', class: 'tap-btn tap-tour__button', onclick: function () { TAP.tour.start(); } },
+      [TAP.icons.svg('help', { size: 18 }), TAP.content.text('tourUi.button')]));
+    return box;
+  }
+
   // The data status label and date for every printed page (US-2.4.5): the print stylesheet shows this variable in
   // the page margin. It is a CSS string, so quotes and backslashes in the label are escaped.
   function printLabel(on) {
@@ -95,7 +104,7 @@
     page.setAttribute('data-region', id);
     var top = el('div', { class: 'tap-pf__top' }, [regionSelect(id),
       el('button', { type: 'button', class: 'tap-btn tap-pf__print', 'data-action': 'print', onclick: function () { window.print(); } }, t('print')),
-      dataButton()]);
+      dataButton(), pageButtons()]);
     printLabel(true);
     var title = el('div', { class: 'tap-pf__head' }, [
       el('span', { class: 'tap-pf__bar', style: 'background:' + TAP.scope.colorOf(id), 'aria-hidden': 'true' })
