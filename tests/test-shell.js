@@ -110,6 +110,8 @@
       withApp(function () {
         var root = startApp();
         root.style.width = '1280px';
+        // The page-wide actions (Take the tour, Present) sit beside the data date, not in the top bar (D72)
+        ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
         var items = menuItems(root);
         var tops = items.map(function (b) { return Math.round(b.getBoundingClientRect().top); });
         a.ok(items.length > 0, 'menu drawn');
@@ -147,19 +149,66 @@
       });
     });
 
-    T.test('X-shell-actions', 'The top bar has an empty actions slot on the right for other streams to fill', function (a) {
+    T.test('X-shell-actions', 'The page-wide actions slot sits beside the data date, empty for other streams to fill (D72)', function (a) {
       withApp(function () {
         var root = startApp();
-        var slot = TAP.shell.actionsEl();
-        a.ok(slot && qs('.tap-topbar', root).contains(slot), 'inside the top bar');
+        root.style.width = '1280px';
+        var slot = TAP.shell.actionsEl(), date = qs('.tap-cmp__date', root);
+        a.ok(slot && qs('.tap-cmp__row--sentence', root).contains(slot), 'in the comparison bar, on the sentence row');
+        a.ok(!qs('.tap-topbar', root).contains(slot), 'not in the top bar');
         a.ok(slot.classList.contains('tap-topbar__actions'), 'the actions slot');
         a.equal(slot.children.length, 0, 'empty until another stream adds to it');
-        a.equal(qs('.tap-topbar', root).lastElementChild, slot, 'last in the top bar, so it sits at the right');
+        a.equal(date && date.nextElementSibling, slot, 'right after the data date');
         slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Example action'));
-        var menuRight = qs('.tap-menu', root).getBoundingClientRect().right;
-        a.ok(slot.getBoundingClientRect().left >= menuRight - 1, 'right of the menu');
+        a.ok(slot.getBoundingClientRect().left >= date.getBoundingClientRect().right - 1, 'right of the data date');
+        var sr = slot.getBoundingClientRect(), dr = date.getBoundingClientRect();
+        a.ok(sr.top < dr.bottom && sr.bottom > dr.top, 'on the same line at 1280 px');
         a.deepEqual(qsa('.tap-menu__item', root).map(function (b) { return Math.round(b.getBoundingClientRect().top); })
           .filter(function (t, i, all) { return t !== all[0]; }), [], 'the menu still fits on one line');
+      });
+    });
+
+    // Nine views in the menu, as with extra sections (Other sections, US-3.2.2), for the checks below.
+    function withNine(fn) {
+      var other = TAP.views.get('other'), was = other && other.available;
+      try {
+        if (other) other.available = function () { return true; };
+        return withApp(fn);
+      } finally { if (other) other.available = was; }
+    }
+
+    T.test('X-shell-menu-nine', 'Nine views at 1280, 1024 (125%) and 853 px (150%): every menu item fully visible, no sideways scroll (D72)', function (a) {
+      withNine(function () {
+        var root = startApp();
+        ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
+        a.equal(menuItems(root).length, 9, 'nine views in the menu');
+        [1280, 1024, 853].forEach(function (w) {
+          root.style.width = w + 'px';
+          window.dispatchEvent(new Event('resize'));   // charts follow the window's size, as on a real zoom change
+          var items = menuItems(root), nav = qs('.tap-menu', root), box = nav.getBoundingClientRect();
+          var hidden = items.filter(function (b) {
+            var r = b.getBoundingClientRect();
+            return !(r.width > 0 && r.left >= box.left - 1 && r.right <= box.right + 1);
+          }).map(function (b) { return b.textContent; });
+          a.deepEqual(hidden, [], w + ' px: every item fully visible');
+          a.ok(nav.scrollWidth <= nav.clientWidth + 1 && root.scrollWidth <= root.clientWidth + 1, w + ' px: no horizontal scroll');
+          if (w === 1280) {
+            var top0 = Math.round(items[0].getBoundingClientRect().top);
+            a.equal(items.filter(function (b) { return Math.round(b.getBoundingClientRect().top) !== top0; }).length, 0, '1280 px: one line');
+          }
+        });
+        a.ok(parseFloat(getComputedStyle(menuItems(root)[0]).fontSize) >= 16, 'menu text at least 16 px');
+      });
+    });
+
+    T.test('X-shell-menu-wraps', 'At 853 px the menu wraps onto more lines and the current item stays marked', function (a) {
+      withNine(function () {
+        var root = startApp();
+        root.style.width = '853px';
+        var items = menuItems(root), tops = items.map(function (b) { return Math.round(b.getBoundingClientRect().top); });
+        a.ok(tops.some(function (t) { return t !== tops[0]; }), 'more than one line');
+        var cur = qs('.tap-menu__item[aria-current="page"]', root), cs = cur && getComputedStyle(cur);
+        a.ok(cs && cs.borderBottomStyle === 'solid' && parseFloat(cs.borderBottomWidth) > 0 && parseFloat(cs.fontWeight) >= 800, 'the current view is still marked');
       });
     });
 
