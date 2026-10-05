@@ -232,6 +232,93 @@
       });
     });
 
+    /* ---------- review fix #373: addresses that name no available view (D76, SV-2 to SV-5) ---------- */
+
+    // Sets the address bar, waits for the app to follow it, and returns the address the bar ends on.
+    function goTo(hash) {
+      var p = nextHashChange();
+      window.location.hash = hash;
+      return p.then(settle).then(function () { return window.location.hash; });
+    }
+
+    T.test('X-review-SV-2', 'An address naming no view opens the Overview and the address bar is corrected', function (a) {
+      return withApp(function () {
+        var root = startApp();
+        qs('.tap-menu__item[data-view="industry"]', root).click();
+        return settle().then(function () { return goTo('#foo'); }).then(function (hash) {
+          a.equal(TAP.store.get().view, 'overview', 'the Overview opens');
+          a.equal(TAP.app.current(), 'overview', 'and is mounted');
+          a.equal(hash, '#overview', 'the address bar says so');
+          a.deepEqual(current(root), ['overview'], 'the menu marks it');
+        });
+      });
+    });
+
+    T.test('X-review-SV-2', '#other on data without extra sections opens the Overview (D76)', function (a) {
+      return withApp(function () {
+        var root = startApp();
+        a.ok(TAP.views.order().indexOf('other') < 0, 'the fixture has no extra sections, so Other sections is not in the menu');
+        qs('.tap-menu__item[data-view="industry"]', root).click();
+        return settle().then(function () { return goTo('#other'); }).then(function (hash) {
+          a.equal(TAP.store.get().view, 'overview', 'state.view');
+          a.equal(TAP.app.current(), 'overview', 'the mounted view');
+          a.equal(hash, '#overview', 'the address bar');
+        });
+      });
+    });
+
+    T.test('X-review-SV-2', 'A region the data does not have opens the region picker; a malformed address opens the Overview', function (a) {
+      return withApp(function () {
+        startApp();
+        return goTo('#regions/zzz').then(function (hash) {
+          a.equal(TAP.store.get().view, 'regions', 'the Regions view');
+          a.equal(TAP.store.get().region, null, 'no unknown region in the state');
+          a.equal(hash, '#regions', 'the address bar names the picker');
+          return goTo('#regions/%');
+        }).then(function (hash) {
+          a.equal(TAP.store.get().view, 'overview', 'a malformed address opens the Overview');
+          a.equal(hash, '#overview', 'and the address bar is corrected');
+          return goTo('#regions/bravo');
+        }).then(function (hash) {
+          a.equal(TAP.store.get().region, 'bravo', 'a known region still opens its profile');
+          a.equal(hash, '#regions/bravo', 'and keeps its address');
+        });
+      });
+    });
+
+    T.test('X-review-SV-2', 'A view that fails to mount shows its error, and the menu still leaves it', function (a) {
+      return withApp(function () {
+        var root = startApp(), spec = TAP.views.get('industry'), real = spec.mount;
+        spec.mount = function () { throw new Error('test: industry failed'); };
+        var warn = console.error;
+        console.error = function () {};
+        try {
+          qs('.tap-menu__item[data-view="industry"]', root).click();
+        } finally { spec.mount = real; console.error = warn; }
+        var area = qs('.tap-view', root);
+        a.match(txt(area), /test: industry failed/, 'the error is shown in the view area');
+        qs('.tap-menu__item[data-view="overview"]', root).click();
+        a.equal(TAP.app.current(), 'overview', 'the Overview mounts again');
+        a.ok(qs('.tap-view .tap-ov', root), 'its content is drawn');
+        a.ok(txt(area).indexOf('test: industry failed') < 0, 'the error is gone');
+      });
+    });
+
+    T.test('X-review-SV-2', 'Screenshot mode refuses an unknown view, mode, rest or region', function (a) {
+      var keep = window.location.pathname + window.location.search + window.location.hash;
+      history.replaceState(null, '', window.location.pathname + '?screenshot=1&view=bogus&mode=bogus&rest=bogus&region=zzz');
+      try {
+        return withApp(function () {
+          var root = startApp(), s = TAP.store.get();
+          a.equal(s.view, 'overview', 'unknown view: the Overview');
+          a.equal(s.cmp.mode, 'all', 'unknown mode: All regions');
+          a.equal(s.cmp.restAgg, 'average', 'unknown rest: the default');
+          a.equal(s.region, null, 'unknown region: none');
+          a.equal(root.getAttribute('data-view'), 'overview', 'the frame names the Overview');
+        });
+      } finally { history.replaceState(null, '', keep); }
+    });
+
     T.test('X-shell-logo', 'The logo slot shows the theme logo, and leaves no gap when there is none', function (a) {
       var saved = TAP_THEME.logo;
       try {
