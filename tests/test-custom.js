@@ -81,6 +81,8 @@
       TAP.measures.list().forEach(function (id) {
         var vk = TAP.measures.meta(id).valueKind;
         if (vk === 'text' || vk === 'category') return;
+        // A Phase 4 measure is offered only when the file has data for it (TPV-TC-675, X-p4-custom-gate)
+        if (TAP.measures.meta(id).optional) return;
         a.equal(!!byId(opts, id), none.indexOf(id) < 0, id + (none.indexOf(id) < 0 ? ' is offered' : ' is not offered'));
       });
       opts.forEach(function (o) { a.ok(o.by.length > 0, o.measureId + ' can be shown by something'); });
