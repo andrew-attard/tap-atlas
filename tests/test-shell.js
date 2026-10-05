@@ -882,6 +882,36 @@
         });
       });
     });
+
+    /* ---------- review chore #374 (SV-6): TAP.app.stop() drops every listener of the running app ---------- */
+
+    T.test('X-review-SV-6', 'After TAP.app.stop() the old frame and comparison bar no longer react', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+      try {
+        TAP.app.stop();
+        TAP.bus.emit('details:open', { target: { reportId: 'ov-ambition', regionIds: ['alpha'] } });
+        a.equal(TAP.layers.top(), null, 'a details request opens nothing');
+        TAP.store.set({ cmp: { mode: 'one', focus: 'alpha' } });
+        a.equal(qs('.tap-cmp__mode[data-mode="one"]', root).getAttribute('aria-pressed'), 'false', 'the old bar is not redrawn');
+        TAP.store.set({ view: 'industry' });
+        a.equal(root.getAttribute('data-view'), 'overview', 'the old frame does not follow the view');
+      } finally { TAP.layers.close(); TAP.data.load(T_FIXTURE('mini')); }
+    });
+
+    T.test('X-review-SV-6', 'A failed load after a good start leaves nothing of the old app listening', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+      try {
+        TAP.app.start({ root: T.dom.mount(), plan: null });
+        TAP.bus.emit('details:open', { target: { reportId: 'ov-ambition', regionIds: ['alpha'] } });
+        a.equal(TAP.layers.top(), null, 'the shell no longer opens details');
+        var e = new KeyboardEvent('keydown', { key: '2', bubbles: true, cancelable: true });
+        window.dispatchEvent(e);
+        a.equal(TAP.store.get().view, 'overview', 'the number keys are unbound');
+        a.ok(!e.defaultPrevented, 'and leave the key alone');
+      } finally { TAP.layers.close(); TAP.data.load(T_FIXTURE('mini')); }
+    });
   });
 
   T.suite('sources-panel', function () {
