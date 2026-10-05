@@ -504,8 +504,6 @@
     });
     /* ---------- US-3.1.3: record from the screen ---------- */
 
-    function click(node) { if (node) node.click(); return node; }
-    function choose(sel, value) { if (sel) { sel.value = value; sel.dispatchEvent(new Event('change')); } }
     // A panel of the given report on the sample data, with the recorded steps cleared before and after.
     function withPanel(reportId, fn) {
       return withApp(function (root) {
@@ -545,6 +543,18 @@
         recordFrom(p);
         var c = (TAP.present.recorded()[0] || {}).cmp || {};
         a.deepEqual([c.mode, c.focus], ['one', 'mea'], 'the panel comparison: one vs the rest, Middle East & Africa');
+      });
+    });
+
+    T.test('X-present-record-drilled', 'Below the top drill level only the report and comparison are recorded, with no title', function (a) {
+      withPanel('nb-industries', function (p) {
+        click(p.el.querySelector('[data-tap-region]'));
+        a.ok(p.el.querySelector('.tap-panel__crumbs'), 'one drill level down');
+        recordFrom(p);
+        var s0 = TAP.present.recorded()[0] || {};
+        a.equal(s0.report, 'nb-industries', 'the top report');
+        a.deepEqual([s0.title, s0.type, s0.measure, s0.breakdown], [undefined, undefined, undefined, undefined], 'no title or level choices');
+        a.ok(s0.cmp && s0.cmp.mode === 'all', 'the comparison');
       });
     });
 
