@@ -99,6 +99,36 @@
       });
     });
 
+    T.test('X-review-RI-6', 'Theme insights rank after every figure-based insight, the focus region first in each group (D80)', function (a) {
+      sample();
+      var all = TAP.insights.all(), isTheme = function (x) { return x.family === 'themes'; };
+      var lastFigure = all.map(isTheme).lastIndexOf(false), firstTheme = all.map(isTheme).indexOf(true);
+      a.ok(firstTheme > 0 && lastFigure < firstTheme, 'sample: every theme comes after every figure-based insight');
+      // Hand-worked: a theme in all 7 regions has strength 0.2, money 0 and breadth 1, so 0.5 × 0.2 + 0.2 × 1 = 0.30
+      all.filter(function (x) { return isTheme(x) && x.regionIds.length === 7; }).forEach(function (x) {
+        a.near(x.significance, 0.3, 1e-9, x.id + ' keeps its significance (shown on the Insights page)');
+      });
+      // A theme family rule far stronger than a figure-based rule with nothing at stake
+      withRule({ id: 'x-rank-theme', family: 'themes' }, fixed(), function () {
+        withRule({ id: 'x-rank-low' }, function (ctx) {
+          return fixed()(ctx).map(function (f) { f.strength = 0; f.money = 0; return f; });
+        }, function () {
+          var list = mine(TAP.insights.ranked(cmpOf({ mode: 'all' })), 'x-rank');
+          a.ok(list.filter(function (x) { return x.ruleId === 'x-rank-theme'; })[0].significance > list[0].significance,
+            'fixture: the strongest theme scores above the figure-based findings');
+          a.deepEqual(list.slice(0, 7).map(function (x) { return x.ruleId; }), ['x-rank-low', 'x-rank-low', 'x-rank-low', 'x-rank-low',
+            'x-rank-low', 'x-rank-low', 'x-rank-low'], 'yet every figure-based finding ranks first');
+          a.deepEqual(list.slice(7).map(function (x) { return x.regionIds[0]; }), ['na', 'ceu', 'neu', 'apac', 'seu', 'latam', 'mea'],
+            'themes follow, by significance');
+          var focus = mine(TAP.insights.ranked(cmpOf({ mode: 'one', focus: 'mea' })), 'x-rank');
+          a.equal(focus[0].id, 'x-rank-low:mea', 'with a focus, the focus region’s figure-based finding leads');
+          a.equal(focus[7].id, 'x-rank-theme:mea', 'and the focus region’s theme leads the themes');
+          a.deepEqual(focus.slice(8).map(function (x) { return x.regionIds[0]; }), ['na', 'ceu', 'neu', 'apac', 'seu', 'latam'],
+            'the other themes follow by significance');
+        });
+      });
+    });
+
     T.test('TPV-TC-137', 'Raising one family’s weight moves its insights up', function (a) {
       sample();
       withRule({ id: 'x-rank-real', family: 'realism' }, fixed(), function () {
