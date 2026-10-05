@@ -84,6 +84,8 @@ Object.assign(window.TAP_CONTENT.text, {
     copyHeading: 'Data file check: {n} problems',
     copy: 'Copy the list',
     copied: 'List copied.',
-    copyManual: 'This browser blocked copying. The list is selected below: press Ctrl+C to copy it.'
+    copyManual: 'This browser blocked copying. The list is selected below: press Ctrl+C to copy it.',
+    // A view that failed to draw (the rest of the app keeps working)
+    viewFailed: 'This page could not be drawn: {message}'
   }
 });
