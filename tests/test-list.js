@@ -847,4 +847,73 @@
       } finally { TAP.store.set({ expanded: null }); }
     }));
   });
+
+  /* ---------- US-2.7.1: drilled figures on the real reports, mini fixture (TPV-TC-272, TPV-TC-278; #371) ---------- */
+
+  // Hand-worked from tests/fixtures/mini-data.js, newBusiness rows (arrPotential is by plan year 1, 2, 3):
+  //   Region A row 20  Healthcare  Clinics    500 + 550 + 605    = 1655
+  //   Region B row 20  Healthcare  Hospitals  1000 + 1200 + 1200 = 3400   (target accounts 40)
+  //   Region C row 20  Healthcare  Labs       arrPotential blank       -> not provided
+  //   Region D         no Healthcare row                                -> not provided
+  // Healthcare for "the rest" of Region A, as an average: only Region B gives a figure, so 3400 / 1 = 3400,
+  // with Regions C and D named as not provided. Drilling that cell lists the rest's Healthcare rows: B 20, C 20.
+  T.suite('drill-figures', function () {
+    var HC = { alpha: 1655, bravo: 3400 };
+    function grid(cmp) {
+      var def = TAP.reports.get('nb-industries'), ents = TAP.scope.entities(cmp);
+      return TAP.builders.get(def.builder)({ def: def, type: def.defaultType, cmp: cmp, entities: ents, opts: {}, theme: window.TAP_THEME, highlight: null });
+    }
+    function cellOf(res, entityId) {
+      var row = res.table.rows.filter(function (r) { return r.entityId === entityId && r.cells.industry && /Healthcare/.test(String(r.cells.industry.v)); })[0];
+      return row ? row.cells['ind.nb.arr'] : null;
+    }
+    // The panel at its top level, a click on one grid cell, then what the level below lists.
+    function drill(fn) {
+      var p = TAP.panel.create(T.dom.mount(), 'nb-industries', {});
+      try {
+        fn(p, function (region, industry) {
+          var c = qs('[data-tap-region="' + region + '"][data-tap-industry="' + industry + '"]', p.el);
+          if (c) c.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          return qsa('tr[data-tap-row]', p.el).map(function (tr) { return tr.getAttribute('data-tap-row'); });
+        });
+      } finally { p.destroy(); }
+    }
+    function arr3(rowKey) {
+      var parts = rowKey.split(':'), item = TAP.rows.list('newBusiness', [parts[1]]).filter(function (x) { return String(x.sourceRow) === parts[2]; })[0];
+      return item ? TAP.rows.cell('newBusiness', 'arr3', item) : null;
+    }
+
+    T.test('TPV-TC-272', 'One region and industry: the level below lists that item only, with the hand-worked figures', function (a) {
+      var res = grid(TAP.store.get().cmp);
+      a.equal((cellOf(res, 'bravo') || {}).v, HC.bravo, 'the grid cell: Region B Healthcare 1000 + 1200 + 1200 = 3400');
+      drill(function (p, click) {
+        var rows = click('bravo', 'ind1');
+        a.equal(p.el.getAttribute('data-report'), 'nb-industries', 'still the same panel');
+        a.ok(qs('.tap-panel__crumbs', p.el), 'one level down');
+        a.deepEqual(rows, ['newBusiness:bravo:20'], 'only Region B\'s Healthcare row');
+        a.equal((arr3(rows[0]) || {}).v, HC.bravo, 'its 3-year ARR potential is 3400');
+        var tr = qs('tr[data-tap-row]', p.el);
+        a.match(txt(tr), /Hospitals/, 'the Hospitals sub-industry');
+        a.match(txt(tr), /South/, 'in the South market');
+      });
+    });
+
+    T.test('TPV-TC-278', 'One vs the rest: the entities follow the scope and the rest\'s drilled figures are the hand-worked ones', function (a) {
+      TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' } });
+      var res = grid(TAP.store.get().cmp), rest = cellOf(res, 'rest');
+      a.deepEqual(TAP.scope.entities(TAP.store.get().cmp).map(function (e) { return e.id; }), ['alpha', 'rest'], 'Region A and the rest');
+      a.equal((cellOf(res, 'alpha') || {}).v, HC.alpha, 'Region A Healthcare 500 + 550 + 605 = 1655');
+      a.equal((rest || {}).v, HC.bravo, 'the rest, as an average: 3400 / 1 region giving a figure');
+      a.deepEqual(((rest || {}).src || {}).excluded, ['charlie', 'delta'], 'Regions C and D not provided');
+      drill(function (p, click) {
+        var rows = click('rest', 'ind1');
+        a.deepEqual(rows, ['newBusiness:bravo:20', 'newBusiness:charlie:20'], 'the rest\'s Healthcare rows, Region B then C, none of Region A');
+        a.equal((arr3(rows[0]) || {}).v, HC.bravo, 'Region B 3400');
+        a.equal((arr3(rows[1]) || {}).state, 'notProvided', 'Region C not provided');
+      });
+      drill(function (p, click) {
+        a.deepEqual(click('alpha', 'ind1'), ['newBusiness:alpha:20'], 'the focus cell: Region A\'s row only');
+      });
+    });
+  });
 })(window.TAP);
