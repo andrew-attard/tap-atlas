@@ -36,13 +36,13 @@ window.TAP_CONTENT.guide = {
     intro: 'This app puts every region’s territory account plan side by side. It reads the finished workbooks and never changes them.',
     sections: [
       { id: 'menu', title: 'The menu', paragraphs: [
-        'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Other sections (when the plans hold extra template sections), Regions, Insights and this Guide. The view you are on is highlighted.',
+        'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Outlook, Other sections (when the plans hold extra template sections), Regions, Insights and this Guide. The view you are on is highlighted.',
         'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.',
         'A one-line tip under each view’s title says where to start. "Hide tips" hides the tips until the page is reloaded.'
       ] },
       { id: 'viewNewBusiness', title: 'The New business view', link: { view: 'newBusiness' }, paragraphs: [
-        'New business shows where each region expects new customers to come from: the industries and channels its new business rests on, and the assumptions behind the number.',
-        'Start with the industry grid, then compare levers such as target accounts and hit rate. The list below names every sub-industry and market each region targets, and which other regions target the same one.'
+        'New business shows where each region expects new customers to come from: the industries, solutions and channels its new business rests on, and the assumptions behind the number.',
+        'Start with the industry grid and the solution chart, then compare levers such as target accounts and hit rate. The list below names every sub-industry and market each region targets, and which other regions target the same one.'
       ] },
       { id: 'viewCustomers', title: 'The Customer growth view', link: { view: 'customers' }, paragraphs: [
         'Customer growth shows how each region plans to grow its existing customers: how the customer base is segmented and the growth each region assumes.',
@@ -50,10 +50,14 @@ window.TAP_CONTENT.guide = {
       ] },
       { id: 'viewPartners', title: 'The Partners view', link: { view: 'partners' }, paragraphs: [
         'Partners shows how much each plan relies on partners and alliances, and what the named partners bring: their staff, planned order intake and order intake per FTE.',
-        'The partner list names every partner, with the other regions that named the same one.'
+        'Three charts compare customer value with the value through the organization’s books, show order intake by route to market, and count partners by maturity level. The partner list names every partner, with its type, its maturity and the other regions that named the same one.'
+      ] },
+      { id: 'viewOutlook', title: 'The Outlook view', link: { view: 'outlook' }, paragraphs: [
+        'Outlook sets each plan against the organization’s strategic plan, and plan year 1 against the base year: the budget, forecast, actuals and pipeline coverage of the year before the plan.',
+        'It also shows the revenue each plan brings in year by year, and order intake by product category. When the plans hold none of these parts, the view says so in one line.'
       ] },
       { id: 'viewRegions', title: 'Region profiles', link: { view: 'regions' }, paragraphs: [
-        'A region profile puts one region’s whole plan on one page: its ambition, industry priorities, new business, customers and partners, with the same charts as the other views.',
+        'A region profile puts one region’s whole plan on one page: its ambition, industry priorities, new business, customers and partners, and its strategic plan and revenue when the plans hold them, with the same charts as the other views.',
         'To open one, choose Regions in the menu and pick a region, or select "Open profile" on a region card on the Overview or in a details panel. The back button returns to where you were.'
       ] },
       { id: 'compare', title: 'The comparison bar', paragraphs: [
@@ -103,12 +107,13 @@ window.TAP_CONTENT.guide = {
         'This app does not judge the plans. It shows them side by side so leaders can learn from each other and discuss the differences.'
       ] },
       { id: 'operational', title: 'How it feeds operational planning', link: null, paragraphs: [
-        'The plans feed the yearly operational planning that follows. That is where headcount, marketing budgets, partner programmes and product requests are decided.',
+        'The plans feed the yearly operational planning that follows. That is where headcount, marketing spend, partner programmes and product requests are decided.',
         'For example, an industry many regions put in Tier 2 may justify specialist hires or marketing material. Product gaps rated in many regions may shape product plans.'
       ] },
       { id: 'template', title: 'The template', link: null, paragraphs: [
         'Every leader fills in the same workbook, one per region. It covers three plan years, with money in thousands of one currency.',
         'It has four main sections, each on its own sheet: market coverage, new business, customer growth, and partners with a recap. Each section asks the leader to decide something different.',
+        'The full template adds a recap sheet of its own, with the revenue outlook, the value through the organization’s books and the strategic plan, and an order intake sheet for the year before the plan. The Outlook and Partners views show them.',
         'A template can also carry extra sections, such as planned events. The app lists each one on the Other sections view, which the menu shows only when the plans hold one.'
       ] },
       { id: 'marketCoverage', title: '1. Market coverage', link: { view: 'industry' }, paragraphs: [
@@ -118,7 +123,7 @@ window.TAP_CONTENT.guide = {
       ] },
       { id: 'newBusiness', title: '2. New business', link: { view: 'newBusiness' }, paragraphs: [
         'For Tier 1 and Tier 2 industries only, the leader breaks each industry into sub-verticals in a geographic market. Each row says how many accounts to target, the expected hit rate and the average deal size.',
-        'The workbook multiplies these into ARR potential and adds services using the services ratio. Each row also splits its value across channels and lists key success factors.',
+        'The workbook multiplies these into ARR potential and adds services using the services ratio. Each row also splits its value across channels, lists key success factors and, in the full template, names a solution.',
         'The New business view shows these rows by industry, channel and lever, and lists every sub-industry each region targets.'
       ] },
       { id: 'customerGrowth', title: '3. Customer growth', link: { view: 'customers' }, paragraphs: [
@@ -128,8 +133,17 @@ window.TAP_CONTENT.guide = {
       ] },
       { id: 'partners', title: '4. Partners and recap', link: { view: 'partners' }, paragraphs: [
         'The recap adds up the plan by plan year and by channel, split into new business and customer growth, ARR and services. Most of it is calculated from the two sections before.',
-        'The leader also lists the partners who will carry the plan, with their channel, expertise and sales capacity.',
+        'The leader also lists the partners who will carry the plan, with their channel, type, maturity level, expertise and sales capacity.',
         'The Overview shows the totals. The Partners view shows the channel split and every partner named.'
+      ] },
+      { id: 'outlook', title: '5. Strategic plan, base year and outlook', link: { view: 'outlook' }, paragraphs: [
+        'The full template sets each plan against the strategic plan, the order intake the organization’s strategy expects of the region, by product category. The variance is the plan minus the strategic plan.',
+        'The base year is the year before the plan. Its budget, forecast and actuals so far come from company systems, with the open pipeline; pipeline coverage divides that pipeline by the order intake still to win.',
+        'The revenue outlook is the revenue the order intake brings in each plan year. Only part of a year’s order intake becomes revenue in that same year, so a year’s revenue is normally below its order intake.'
+      ] },
+      { id: 'books', title: 'How to read customer value and books value', link: { view: 'partners' }, paragraphs: [
+        'Customer value is what the customer pays. Books value is the part that runs through the organization’s own books: a reseller keeps a margin, and a partner may deliver some services itself.',
+        'The two are compared over ARR and services, which both hold. Software perpetual and hardware run through the books only, so they show in the product category figures.'
       ] },
       { id: 'tiers', title: 'How to read tiers', link: { view: 'industry' }, paragraphs: [
         'Every industry gets one of three tiers. Tier 1 is group priority: set centrally for all regions, not chosen by the leader.',

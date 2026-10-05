@@ -194,8 +194,8 @@
       a.equal(by.segments.link.view, 'customers', 'segments');
       strings(TAP.content.guide(), 'guide').forEach(function (s) { a.ok(!/later phase/i.test(s.text), s.path + ' promises nothing for later'); });
       var menu = TAP.content.guide().howTo.sections.filter(function (s) { return s.id === 'menu'; })[0];
-      // Other sections (Phase 3) sits between Partners and Regions in the menu (#382)
-      a.ok(/New business, Customer growth, Partners, Other sections .*Regions/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
+      // Other sections (Phase 3) sits between Partners and Regions in the menu (#382), after Outlook (Phase 4)
+      a.ok(/New business, Customer growth, Partners, (Outlook, )?Other sections .*Regions/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
     });
 
     T.test('X-pages2-explain-ratio', 'Shares combined from parts say so, instead of calling themselves weighted', function (a) {
@@ -304,7 +304,8 @@
     T.test('TPV-TC-506', 'The tour has one step for the Phase 2 views and one for the region profile', function (a) {
       var steps = TAP.tour.steps(), ids = steps.map(function (s) { return s.id; });
       a.ok(ids.indexOf('views') === ids.indexOf('menu') + 1, 'the views step follows the menu step');
-      a.ok(ids.indexOf('profile') === ids.indexOf('views') + 1, 'then the profile step');
+      // US-4.6.1 puts the Outlook step between them, as Outlook follows Partners in the menu
+      a.ok(ids.indexOf('profile') === ids.indexOf('views') + 1 + (ids.indexOf('outlook') === ids.indexOf('views') + 1 ? 1 : 0), 'then the profile step');
       var views = steps[ids.indexOf('views')], prof = steps[ids.indexOf('profile')];
       ['newBusiness', 'customers', 'partners'].forEach(function (v) {
         a.ok(views.text.indexOf(TAP.views.title(v)) >= 0, 'the views step names ' + TAP.views.title(v));

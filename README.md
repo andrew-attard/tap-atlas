@@ -191,6 +191,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `content/ui-text.js` | General wording: app name, tour, Guide and glossary screens |
 | `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections), outlook (the Outlook view) |
 | `content/glossary.js` | The general glossary: every term in plain English |
+| `content/glossary-p4.js` | The glossary terms for the full template's parts: strategic plan, base year, revenue outlook, books value, solutions, partner maturity |
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |

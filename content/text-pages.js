@@ -41,6 +41,7 @@ Object.assign(window.TAP_CONTENT.text, {
     newBusiness: 'Start with the industry grid, then compare the channels and the levers.',
     customers: 'Start with the segments, then compare the growth each region assumes.',
     partners: 'Start with how much each plan relies on partners and alliances.',
+    outlook: 'Start with each plan against its strategic plan, then the base year.',
     regions: 'Pick a region to see its whole plan on one page.',
     insights: 'Filter by region or family, then use "Show me" to see the figures.',
     guide: 'Use the contents to jump to a section; the glossary defines every term.'
@@ -65,6 +66,7 @@ Object.assign(window.TAP_CONTENT.text, {
     purpose: '{app} puts every region’s territory account plan side by side, so the plans can be compared and discussed.',
     menu: 'The menu switches between the views. Each view answers a few questions, one chart per question.',
     views: 'New business, Customer growth and Partners each look at one part of the plan in more detail. Their lists show every row the leaders filled in.',
+    outlook: 'Outlook sets each plan against the strategic plan and the year before the plan, with pipeline coverage and the revenue the plan brings in. When the plans hold none of these parts, it says so in one line.',
     profile: 'Regions shows one region’s whole plan on a single page. Pick a region there, or select "Open profile" on a region card.',
     compare: 'This bar sets what every chart compares: all regions, one against the rest, two regions, a chosen set or the organization total. The sentence below it always says what is on screen.',
     panel: 'Every chart sits in a panel like this. Switch the chart type or show a table of exact figures, use the explanation icon to learn how to read it, and check the source line for where the figures come from.',
@@ -91,6 +93,7 @@ Object.assign(window.TAP_CONTENT.text, {
       purpose: 'What this app is for',
       menu: 'Moving between views',
       views: 'The plan in detail',
+      outlook: 'Strategy and outlook',
       profile: 'One region’s whole plan',
       compare: 'Choosing what to compare',
       panel: 'Reading a chart',
