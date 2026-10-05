@@ -29,12 +29,14 @@
 
   /* ---------- the sections, cleaned ---------- */
 
-  // The usable sections in file order: a text id seen once, and the columns with a usable key.
+  // The usable sections in file order: the first section with each text id, if it has columns, and the columns
+  // with a usable key. Of two sections with one id the first is kept even when it is broken, as check() does.
   function cleanSections(meta) {
     var list = isObj(meta) && Array.isArray(meta.extraSections) ? meta.extraSections : [], seen = Object.create(null);
     return list.filter(function (s) {
-      if (!isObj(s) || !filled(s.id) || seen[s.id] || !Array.isArray(s.columns)) return false;
-      return (seen[s.id] = true);
+      if (!isObj(s) || !filled(s.id) || seen[s.id]) return false;
+      seen[s.id] = true;
+      return Array.isArray(s.columns) && s.columns.length > 0;
     }).map(function (s) {
       var keys = Object.create(null);
       var columns = s.columns.filter(function (c) {
@@ -57,10 +59,13 @@
 
   /* ---------- rows, columns and cells (TAP.rows delegates here for "extra:<id>") ---------- */
 
+  // A region's rows of a section by worksheet row; of two rows naming the same worksheet row, the first is kept.
   function itemsOf(regionId, id) {
-    var r = TAP.data.region(regionId) || {}, x = isObj(r.extra) ? r.extra[id] : null;
-    return (Array.isArray(x) ? x : []).filter(function (o) { return isObj(o) && isRow(o.sourceRow); })
-      .slice().sort(function (a, b) { return a.sourceRow - b.sourceRow; });
+    var r = TAP.data.region(regionId) || {}, x = isObj(r.extra) ? r.extra[id] : null, seen = {};
+    return (Array.isArray(x) ? x : []).filter(function (o) {
+      if (!isObj(o) || !isRow(o.sourceRow) || seen[o.sourceRow]) return false;
+      return (seen[o.sourceRow] = true);
+    }).sort(function (a, b) { return a.sourceRow - b.sourceRow; });
   }
 
   // [{id, regionId, source, sourceRow, item}] in region file order, then source row order.
@@ -103,7 +108,8 @@
     return src(source, regionId, c ? c.key : null, n, c ? c.kind : 'IN');
   }
 
-  // A full cell (ARCHITECTURE section 7). A value of the wrong type for its unit reads as not provided.
+  // A full cell (ARCHITECTURE section 7). A value of the wrong type for its unit (a number in a text column, text in
+  // a money column) reads as not provided, as the check warns.
   function cell(source, key, row) {
     var s = section(idOf(source)), regionId = row && row.regionId;
     var n = row ? (row.sourceRow != null ? row.sourceRow : row.row) : null;
@@ -113,7 +119,7 @@
     var out = { v: null, state: 'notProvided', kind: c ? c.kind : 'IN', src: src(source, regionId, field, n, c ? c.kind : 'IN') };
     if (!c || !it) return out;
     var v = key === 'region' ? TAP.content.regionName(TAP.data.region(regionId)) : it[key];
-    if (NUMERIC[c.unit] ? !isNum(v) : !(filled(v) || isNum(v))) return out;
+    if (key === 'region' ? !v : NUMERIC[c.unit] ? !isNum(v) : !filled(v)) return out;
     out.v = NUMERIC[c.unit] ? v : String(v);
     out.state = 'value';
     return out;
@@ -140,7 +146,7 @@
 
   // [{path, region, item, expected, found, message}], in the shape TAP.check.run gives its warnings.
   function check(plan) {
-    var out = [], known = Object.create(null);   // section id -> {name, keys}; ids from the file, so no prototype
+    var out = [], known = Object.create(null);   // section id -> {name, keys, broken}; ids from the file, so no prototype
     function warn(path, sec, expected, v, opts) {
       opts = opts || {};
       var plain = opts.plain || isObj(v) || Array.isArray(v) || v === undefined, text = opts.plain ? String(v) : described(v);
@@ -154,11 +160,15 @@
     (Array.isArray(list) ? list : []).forEach(function (s, i) {
       var p = 'meta.extraSections[' + i + ']';
       if (!isObj(s)) return warn(p, null, t('check.section'), s);
-      var name = filled(s.title) ? s.title : filled(s.id) ? s.id : '#' + (i + 1), keys = Object.create(null);
-      if (!filled(s.id) || known[s.id]) warn(p + '.id', name, t('check.id'), s.id); else known[s.id] = { name: name, keys: keys };
+      var name = filled(s.title) ? s.title : filled(s.id) ? s.id : '#' + (i + 1), keys = Object.create(null), entry = null;
+      if (!filled(s.id) || known[s.id]) warn(p + '.id', name, t('check.id'), s.id); else entry = known[s.id] = { name: name, keys: keys };
       if (!filled(s.title)) warn(p + '.title', name, t('check.title'), s.title);
       if (s.intro != null && !isStr(s.intro)) warn(p + '.intro', name, t('check.intro'), s.intro);
-      if (!Array.isArray(s.columns) || !s.columns.length) return warn(p + '.columns', name, t('check.columns'), s.columns);
+      // Without columns the section is left out of the view, so its rows get no warnings of their own
+      if (!Array.isArray(s.columns) || !s.columns.length) {
+        if (entry) entry.broken = true;
+        return warn(p + '.columns', name, t('check.columns'), s.columns);
+      }
       s.columns.forEach(function (c, k) {
         var cp = p + '.columns[' + k + ']';
         if (!isObj(c)) return warn(cp, name, t('check.column'), c);
@@ -176,13 +186,16 @@
       Object.keys(r.extra).forEach(function (id) {
         var sp = rp + '.' + id, s = known[id], rows = r.extra[id];
         if (!s) return warn(sp, id, t('check.known'), id, { region: region, plain: true });
-        var name = s.name, keys = s.keys;
+        var name = s.name, keys = s.keys, rowsSeen = {};
+        if (s.broken) return;
         if (!Array.isArray(rows)) return warn(sp, name, t('check.rows'), rows, { region: region });
         rows.forEach(function (o, k) {
           var op = sp + '[' + k + ']', item = isObj(o) && isRow(o.sourceRow) ? t('sourceRow', { row: o.sourceRow }) : null;
           var at = { region: region, item: item };
           if (!isObj(o)) return warn(op, name, t('check.row'), o, at);
           if (!isRow(o.sourceRow)) warn(op + '.sourceRow', name, TAP.content.text('check.expect.sourceRow'), o.sourceRow, at);
+          else if (rowsSeen[o.sourceRow]) warn(op + '.sourceRow', name, t('check.uniqueRow'), o.sourceRow, at);
+          rowsSeen[o.sourceRow] = true;
           Object.keys(o).forEach(function (key) {
             if (key === 'sourceRow') return;
             var c = keys[key], v = o[key];
@@ -197,6 +210,5 @@
   }
 
   TAP.extra = { sections: sections, section: section, any: any, is: is, sourceOf: sourceOf, list: list, columns: columns,
-    cell: cell, rowSrc: rowSrc, rowName: rowName, sourceMap: sourceMap, check: check, UNITS: UNITS, KINDS: KINDS,
-    clean: cleanSections };
+    cell: cell, rowSrc: rowSrc, rowName: rowName, sourceMap: sourceMap, check: check, UNITS: UNITS, KINDS: KINDS };
 })(window.TAP);
