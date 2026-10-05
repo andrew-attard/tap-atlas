@@ -45,6 +45,8 @@ button.tap-panel__crumb {
 /* Toolbar: words beside every icon, nothing hover-only */
 .tap-panel__tools { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
 .tap-panel__tool { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); white-space: nowrap; }
+/* Chart type, table and More stay together when the toolbar wraps (#370) */
+.tap-panel__toolgroup { display: flex; align-items: center; gap: inherit; }
 .tap-panel__tool[aria-expanded="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
 /* Half-width panels (QA-10): About and Table keep their icon and spoken name, the word is visually hidden, so the
    toolbar stays on one row; the chart type, Insights and More keep their words */
@@ -123,14 +125,18 @@ button.tap-panel__crumb {
   padding: var(--tap-sp-3) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink);
 }
 .tap-panel__control { display: flex; align-items: center; gap: 10px; max-width: 100%; }
-.tap-panel__control-label { font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-panel__control-label { flex: none; font-size: var(--tap-fs-body); font-weight: 600; white-space: nowrap; }
 .tap-panel__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); }
-.tap-panel__seg { display: inline-flex; flex-wrap: wrap; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
-.tap-panel__seg-opt {
-  padding: 7px 14px; font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
-  background: transparent; border: 0; border-left: var(--tap-rule-w) solid var(--tap-ink); cursor: pointer;
+/* A switch that has to wrap fills each line, so the lines are even (#370): the rules between options are the ink
+   showing through the gaps, so they also run between lines */
+.tap-panel__seg {
+  display: inline-flex; flex-wrap: wrap; gap: var(--tap-rule-w); border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ink);
 }
-.tap-panel__seg-opt:first-child { border-left: 0; }
+.tap-panel__control > .tap-panel__seg { flex: 0 1 auto; min-width: 0; }
+.tap-panel__seg-opt {
+  flex: 1 1 auto; padding: 7px 14px; font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
+  background: var(--tap-ground); border: 0; cursor: pointer; white-space: nowrap;
+}
 .tap-panel__seg-opt:hover { background: var(--tap-surface); }
 .tap-panel__seg-opt[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
 
@@ -185,7 +191,7 @@ button.tap-panel__crumb {
 .tap-panel__html--list .tap-list td { padding: 6px var(--tap-sp-2); line-height: 1.3; border-bottom: 1px solid var(--tap-grid); vertical-align: top; font-variant-numeric: tabular-nums; }
 .tap-panel__html--list .tap-list .num, .tap-panel__html--list .tap-list .tap-list__num { text-align: right; }
 /* The source on one line keeps rows short (#194) */
-.tap-panel__html--list .tap-list .tap-list__src { font-size: var(--tap-fs-label); color: var(--tap-muted); white-space: nowrap; }
+.tap-panel__html--list .tap-list .tap-list__src { font-size: var(--tap-fs-body); color: var(--tap-muted); white-space: nowrap; }
 .tap-panel__html--list .tap-list [data-tap-opt] {
   padding: 0; font: inherit; font-size: var(--tap-fs-body); font-weight: 800; color: inherit; text-align: inherit;
   background: none; border: 0; cursor: pointer;
@@ -199,7 +205,7 @@ button.tap-panel__crumb {
 
 /* Value kinds (US-2.6.4): the glyph and word under each heading's name, and the one-line key under a list or table */
 .tap-panel__colkind { display: flex; flex-wrap: wrap; gap: 0 var(--tap-sp-2); margin-top: 2px; font-weight: 400; white-space: normal; }
-.tap-panel__colkind .tap-kind { font-weight: 400; }
+.tap-panel__colkind .tap-kind { font-weight: 400; white-space: nowrap; }   /* glyph and word together (#370) */
 .tap-panel__table th.num .tap-panel__colkind, .tap-panel__html--list th.num .tap-panel__colkind,
 .tap-panel__html--list th.tap-list__num .tap-panel__colkind { justify-content: flex-end; }
 .tap-panel__kind-key {

@@ -182,7 +182,7 @@
     item(big ? 'collapse-menu' : 'expand', big ? 'shrink' : 'expand', t(big ? 'closeExpanded' : 'expand'), function () { p.st.pop = null; p.expand(!big); });
     item('fullscreen', 'fullscreen', t('fullscreen'), function () { p.st.pop = null; p.fullscreen(); p.render(); });
     // US-3.1.3: keep this chart, as it is on screen, as a step of a running order (js/ui/present-record.js)
-    item('record', 'layers', TAP.content.text('present.add'), function () { p.st.pop = null; p.render(); TAP.dom.text(p.statusEl, TAP.present.fromPanel(p, b)); });
+    item('record', 'layers', TAP.content.text('present.add'), function () { p.st.pop = null; p.render(); p.say(TAP.present.fromPanel(p, b)); });
     box.appendChild(el('div', { class: 'tap-panel__sep', role: 'separator' }));
     // Images are of the chart itself, so they are offered on chart views only (US-1.2.10)
     item('save-image', 'download', t('saveImage'), function () { p.image('save'); }, !chartOn);
@@ -212,17 +212,20 @@
     box.appendChild(button('insights', 'insight', t('insights'), { count: info.count, expanded: open === 'ins',
       aria: t('insightsCount', { n: info.count }), disabled: !info.count, onclick: function () { p.toggle('ins'); } }));
     box.appendChild(button('about', 'info', t('about'), { aria: t('aboutLabel'), onclick: function () { if (b.def) explain(b.def, p.st.custom || p.opts.cmp); } }));
+    // Chart type, table and More wrap as one group, so More never sits alone on a line (#370)
+    var group = el('span', { class: 'tap-panel__toolgroup' });
     if (b.types && b.types.list.length) {
-      box.appendChild(button('type', 'chart', TAP.shapes.label(b.types.current), { expanded: open === 'type', menu: true,
+      group.appendChild(button('type', 'chart', TAP.shapes.label(b.types.current), { expanded: open === 'type', menu: true,
         aria: t('typeAria', { type: TAP.shapes.label(b.types.current) }), onclick: function () { p.toggle('type'); } }));
     }
     if (b.types && b.types.current !== 'list') {
-      box.appendChild(button('table', 'table', t('table'), { pressed: !!p.st.table,
+      group.appendChild(button('table', 'table', t('table'), { pressed: !!p.st.table,
         onclick: function () { p.set({ table: !p.st.table, pop: null }); } }));
     }
     if (b.types) {
-      box.appendChild(button('more', null, t('more'), { expanded: open === 'more', menu: true, onclick: function () { p.toggle('more'); } }));
+      group.appendChild(button('more', null, t('more'), { expanded: open === 'more', menu: true, onclick: function () { p.toggle('more'); } }));
     }
+    if (group.firstChild) box.appendChild(group);
     if (open === 'more' && b.types) box.appendChild(moreMenu(p, !p.st.table && !!(b.res && b.res.option && !b.res.empty && !b.errors.length), b));
     if (open === 'ins' && info.count) {
       var list = pop(t('insightsTitle'));

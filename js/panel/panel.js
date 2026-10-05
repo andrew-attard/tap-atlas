@@ -100,7 +100,9 @@
 
   function render(p) {
     if (!p.live) return;
-    var s = TAP.store.get(), keep = TAP.panelChart.focusKey(p.root), I = TAP.panelInsights;
+    var s = TAP.store.get(), keep = TAP.panelChart.focusKey(p.root), I = TAP.panelInsights, a0 = document.activeElement;
+    // A choice made in a menu closes it: focus then goes back to the button that opened it, not the page body
+    var opener = a0 && a0.closest && p.root.contains(a0) && a0.closest('.tap-panel__pop') ? POP_BUTTON[p.shownPop] : null;
     p.seen = {};   // glossary terms are marked once per panel
     var b = build(p, s), info = I.get(cmpOf(p, s), p.drill.current()), ok = !b.errors.length && b.res && !b.res.empty;
     p.drewHl = !!(b.ctx && b.ctx.highlight);
@@ -118,7 +120,7 @@
         el('div', { class: 'tap-panel__titles' }, [
           p.drill.crumbs(),
           el('h2', { class: 'tap-panel__title', tabindex: '-1', html: TAP.content.mark(b.title, p.seen) }),
-          b.errors.length ? null : p.drill.hint(b.def),
+          b.errors.length || tabled(p, b) ? null : p.drill.hint(b.def),   // a table doesn't drill
           I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide),
           p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
         ]),
@@ -138,9 +140,11 @@
     // Focus follows the change: into the expanded chart's Close button, and back to More when it closes
     if (big !== !!p.big) keep = big ? '[data-action="collapse"]' : '[data-action="more"]';
     p.big = big;
-    var back = keep && TAP.dom.qs(keep, p.root);
+    var back = (keep && TAP.dom.qs(keep, p.root)) || (opener && TAP.dom.qs('[data-action="' + opener + '"]', p.root));
     if (back && back.focus) back.focus();
+    p.shownPop = p.st.pop;
   }
+  var POP_BUTTON = { ins: 'insights', type: 'type', more: 'more' };
 
   // The expanded view (US-1.2.8) lives in js/panel/panel-expand.js.
   function X() { return TAP.panelExpand; }
@@ -172,6 +176,7 @@
   function destroy(p) {
     if (!p.live) return;
     p.live = false;
+    clearTimeout(p.sayTimer);
     p.off.forEach(function (fn) { fn(); });
     X().remove(p);
     p.drill.destroy();
@@ -230,9 +235,15 @@
     p.expand = function (on) { if (on) TAP.store.set({ expanded: reportId }); else X().collapse(); };
     p.fullscreen = function () { X().fullscreen(reportId); };
     p.statusEl = el('p', { class: 'tap-panel__status', role: 'status' });   // kept across redraws, so a message stays
+    // A status message ("Image saved", "Added as step 3") clears itself after a few seconds
+    p.say = function (msg) {
+      clearTimeout(p.sayTimer);
+      TAP.dom.text(p.statusEl, msg || '');
+      if (msg) p.sayTimer = setTimeout(function () { TAP.dom.text(p.statusEl, ''); }, TAP.panel.statusMs);
+    };
     p.image = function (how) {
       p.set({ pop: null });
-      TAP.panelExport[how === 'save' ? 'saveImage' : 'copyImage'](p.root).then(function (msg) { TAP.dom.text(p.statusEl, msg); });
+      TAP.panelExport[how === 'save' ? 'saveImage' : 'copyImage'](p.root).then(p.say);
     };
     // tabindex -1: a click in the panel gives it focus, so Backspace can step up a drill level (17.6)
     p.root = el('section', { class: 'tap-panel', 'data-report': reportId, 'data-tour': 'panel', tabindex: '-1' });
@@ -251,5 +262,5 @@
     };
   }
 
-  TAP.panel = { create: create };
+  TAP.panel = { create: create, statusMs: 6000 };   // statusMs: how long a status message stays
 })(window.TAP);

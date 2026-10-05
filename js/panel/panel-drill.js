@@ -118,7 +118,7 @@
         nav.appendChild(i === list.length - 1 ? el('span', { class: 'tap-panel__crumb', 'aria-current': 'location' }, l.label) :
           el('button', { type: 'button', class: 'tap-panel__crumb', 'data-drill-level': String(i), onclick: function () { to(i); } }, l.label));
       });
-      nav.appendChild(el('span', { class: 'tap-panel__crumb-keys' }, t('drillKeys')));
+      if (keys()) nav.appendChild(el('span', { class: 'tap-panel__crumb-keys' }, t('drillKeys')));   // not while presenting owns them
       return nav;
     }
 
