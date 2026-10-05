@@ -6,7 +6,7 @@ How to put the portfolio edition on the web with GitHub Pages, and what to check
 
 ## What gets published
 
-Only what is already in the public repository: the sample edition (`index-sample.html`) on fictional data, the landing page in the docs folder, and the documents. The real data file and the organization layer are gitignored, so they are never in the repository and can never be published.
+Only what is already in the public repository: the sample edition (`index-sample.html`) on fictional data, the landing page (`docs/index.html`), and the documents. The real data file and the organization layer are gitignored, so they are never in the repository and can never be published.
 
 The sample edition is ready for a web host as it is:
 
@@ -45,7 +45,7 @@ Then open `http://localhost:8000/index-sample.html` in Chrome or Edge and run th
 In Chrome and in Edge, with the developer tools open (F12):
 
 1. **The address starts with `https://`** and the browser shows it as secure.
-2. **The landing page** shows its text and every screenshot. Its button opens the sample edition.
+2. **The landing page** (`docs/index.html`) shows its text and every screenshot. Its button opens the sample edition.
 3. **The Overview appears**, then open every view from the menu: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights and Guide. Each one draws its charts.
 4. **No console errors** on the **Console** tab while going through the views.
 5. **No request outside the site.** On the **Network** tab, tick **Disable cache**, reload, and go through every view again. Every row's address starts with the site address above. Nothing goes to another domain: no fonts, no chart library, no analytics.

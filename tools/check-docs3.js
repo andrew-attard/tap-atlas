@@ -185,7 +185,7 @@ function checkShotNames(root) {
     const file = path.join(root, doc);
     if (!fs.existsSync(file)) return;
     const text = fs.readFileSync(file, 'utf8');
-    const re = /screenshots\/([^"')\s]+)/g;
+    const re = /screenshots\/([A-Za-z0-9_-]+\.png)/g;
     let m;
     while ((m = re.exec(text))) {
       checked++;

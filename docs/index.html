@@ -1,0 +1,123 @@
+<!doctype html>
+<!--
+  File: docs/index.html
+  Purpose: Portfolio landing page: the problem, what TAP Atlas does, screenshots, how it was built, and a button
+           that opens the sample edition. Static, relative paths only, so it works from the folder and a web host.
+  Provides: the landing page
+  Depends on: js/theme.js and css/base.css (the app's own theme), docs/screenshots/*.png, index-sample.html
+  Used by: visitors to the portfolio; see docs/PUBLISHING.md
+  Owner: DOCS3 stream
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TAP Atlas: every region's plan, side by side</title>
+  <meta name="description" content="A small browser app that shows every region's territory account plan side by side. Portfolio page with a sample-data demo.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../css/base.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    /* Theme variables only (written by js/theme.js), as in the app */
+    .lp-banner { padding: var(--tap-sp-2) var(--tap-gutter); background: var(--tap-banner-sample); color: var(--tap-on-colour); font-weight: 800; }
+    .lp-wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--tap-gutter); }
+    .lp-hero { padding: var(--tap-sp-12) 0 var(--tap-sp-8); border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
+    .lp-kicker { color: var(--tap-accent-deep); font-weight: 800; margin-bottom: var(--tap-sp-2); }
+    .lp-hero h1 { font-size: var(--tap-fs-display); max-width: 22ch; }
+    .lp-lead { font-size: var(--tap-fs-lead); max-width: 62ch; }
+    .lp-actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-4); align-items: center; margin-top: var(--tap-sp-6); }
+    .lp-button { display: inline-flex; align-items: center; min-height: 48px; padding: var(--tap-sp-3) var(--tap-sp-6);
+      background: var(--tap-accent); color: var(--tap-on-colour); font-weight: 800; text-decoration: none;
+      border: var(--tap-control-w) solid var(--tap-accent); }
+    .lp-button:hover { background: var(--tap-accent-hover); color: var(--tap-on-colour); }
+    .lp-section { padding: var(--tap-sp-8) 0; border-bottom: var(--tap-control-w) solid var(--tap-rule); }
+    .lp-section h2 { margin-bottom: var(--tap-sp-4); }
+    .lp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--tap-sp-6); }
+    .lp-cols p, .lp-section > p { max-width: 70ch; }
+    .lp-list { margin: 0; padding-left: var(--tap-sp-6); }
+    .lp-list li { margin-bottom: var(--tap-sp-2); max-width: 70ch; }
+    .lp-shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: var(--tap-sp-8) var(--tap-sp-6); }
+    .lp-shots figure { margin: 0; }
+    .lp-shots img { display: block; width: 100%; height: auto; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-paper); }
+    .lp-shots figcaption { margin-top: var(--tap-sp-2); }
+    .lp-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--tap-sp-4); margin: 0 0 var(--tap-sp-6); }
+    .lp-facts div { border-top: var(--tap-rule-w) solid var(--tap-ink); padding-top: var(--tap-sp-2); }
+    .lp-facts dt { font-weight: 800; }
+    .lp-facts dd { margin: 0; }
+    .lp-foot { padding: var(--tap-sp-8) 0 var(--tap-sp-12); color: var(--tap-muted); }
+    @media (max-width: 520px) { .lp-shots { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="lp-banner" role="note">Portfolio edition: every name and figure in the demo is fictional</div>
+
+  <main class="lp-wrap">
+    <header class="lp-hero">
+      <p class="lp-kicker">TAP Atlas</p>
+      <h1>Every region's plan, side by side</h1>
+      <p class="lp-lead">A small browser app that reads the territory account plans of every region from one data file and shows them together, so leadership can play each plan back, compare regions and see what is worth discussing.</p>
+      <div class="lp-actions">
+        <a class="lp-button" href="../index-sample.html">Open the sample edition</a>
+        <span>Runs in Chrome or Edge on fictional data. Nothing to install.</span>
+      </div>
+    </header>
+
+    <section class="lp-section" aria-labelledby="problem">
+      <h2 id="problem">The problem</h2>
+      <div class="lp-cols">
+        <p>Each regional leader fills in the same planning workbook: which industries matter, where new business will come from, how existing customers will grow and which partners carry the plan. Read one at a time, the plans are hard to compare. Totals are worked out in different ways, and the interesting differences between regions get lost in the cells.</p>
+        <p>The review happens over a shared screen, so whatever shows the plans must be readable at a distance, explain itself, and say where every figure came from. The real plans are confidential: the tool must run without a server and keep real data off the web.</p>
+      </div>
+    </section>
+
+    <section class="lp-section" aria-labelledby="what">
+      <h2 id="what">What the app does</h2>
+      <ul class="lp-list">
+        <li><strong>Plays back every plan in one place:</strong> an overview with the headline figures and a card per region, then views for industry priorities, new business, customer growth and partners, and a profile page per region.</li>
+        <li><strong>Compares once for every chart:</strong> all regions side by side, one region against the rest, two regions, a chosen set, or the organization total, with a plain sentence saying what is shown.</li>
+        <li><strong>Traces every figure:</strong> any number can be followed back to the file, sheet and cell it came from, and every chart has a table view.</li>
+        <li><strong>Points out what is worth discussing:</strong> insight rules flag observations, such as a plan that relies on many more new customer wins than its peers, worded neutrally and ranked by size.</li>
+        <li><strong>Built for presenting:</strong> large type, no hover-only details, no animation, keyboard steps through expanded charts, and a "Sample data" or confidentiality label on every screen.</li>
+      </ul>
+    </section>
+
+    <section class="lp-section" aria-labelledby="shots">
+      <h2 id="shots">Screens</h2>
+      <div class="lp-shots">
+        <figure>
+          <a href="screenshots/overview.png"><img src="screenshots/overview.png" width="1440" height="900" alt="The Overview: the headline sentence for seven fictional regions, the top three insights, and a card per region with its three-year ambition."></a>
+          <figcaption><strong>Overview.</strong> The headline, the top insights and a card per region.</figcaption>
+        </figure>
+        <figure>
+          <a href="screenshots/industry.png"><img src="screenshots/industry.png" width="1440" height="900" alt="Industry priorities: a grid of industries against regions, each cell showing the region's tier for that industry."></a>
+          <figcaption><strong>Industry priorities.</strong> Where regions agree and differ on which industries matter.</figcaption>
+        </figure>
+        <figure>
+          <a href="screenshots/new-business.png"><img src="screenshots/new-business.png" width="1440" height="900" alt="New business: the question the view answers, a highlighted observation, and the first chart panel with its controls."></a>
+          <figcaption><strong>New business.</strong> Where new business will come from, with the observation worth discussing first.</figcaption>
+        </figure>
+        <figure>
+          <a href="screenshots/regions.png"><img src="screenshots/regions.png" width="1440" height="900" alt="A region profile: one fictional region's plan at a glance, compared with the average of the other regions."></a>
+          <figcaption><strong>Region profile.</strong> One region's whole plan against the rest, ready to print.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="lp-section" aria-labelledby="how">
+      <h2 id="how">How it was built</h2>
+      <dl class="lp-facts">
+        <div><dt>No server, no build step</dt><dd>Plain HTML, CSS and JavaScript opened from a folder by double-click. The chart library and fonts sit in the folder.</dd></div>
+        <div><dt>One data contract</dt><dd>A documented file shape is the only interface between the plans and the views. The app checks it on load and lists problems in plain words.</dd></div>
+        <div><dt>Stories and test cases</dt><dd>Delivered in three phases from user stories with acceptance criteria. More than 600 test cases are traced to them, and the automated ones run on every change.</dd></div>
+        <div><dt>Parallel build</dt><dd>Contracts fixed first, then several build streams working at once, each owning its own files, with tests written before the code.</dd></div>
+      </dl>
+      <p>Everything on screen comes from configuration: report definitions, insight rules, wording and the theme are separate files, so a new report or rule needs no new chart code. The public repository holds only fictional sample data, generated by a script with deliberate cases for every insight rule to find; a scan blocks any organization term from being committed.</p>
+    </section>
+
+    <footer class="lp-foot">
+      <p>TAP Atlas. Sample data only: every region, company, partner and figure shown is invented. Built with Apache ECharts and the Archivo font.</p>
+      <p><a class="lp-button" href="../index-sample.html">Open the sample edition</a></p>
+    </footer>
+  </main>
+</body>
+</html>
