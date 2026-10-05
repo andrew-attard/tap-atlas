@@ -670,6 +670,16 @@
       });
     });
 
+    T.test('X-review-PP-14', 'A damaged recorded list keeps only its step objects, and the Guide section still draws', function (a) {
+      try {
+        TAP.storage.set('runningOrder.recorded', [null, 5, 'ov-ambition', ['x'], { report: 'ov-ambition' }]);
+        a.deepEqual(TAP.present.recorded(), [{ report: 'ov-ambition' }], 'only the step object is kept');
+        var extra = TAP.guideExtras.filter(function (x) { return x.id === 'runningOrder'; })[0], host = T.dom.mount();
+        try { extra.render(host); a.ok(true, 'the section draws'); } catch (e) { a.ok(false, 'the section threw: ' + e.message); }
+        a.ok(host.querySelector('[data-ro="clear"]'), 'with "Remove all" offered');
+      } finally { TAP.present.clearRecorded(); }
+    });
+
     T.test('TPV-TC-546', 'Recorded steps are kept in this browser through TAP.storage, in order', function (a) {
       TAP.present.clearRecorded();
       try {
