@@ -321,5 +321,64 @@
       a.ok(n <= 10, n + ' steps');
       a.ok(n >= 9, 'and keeps the Phase 1 steps');
     });
+
+    /* ---------- review polish #381 (POL-head): a chart on the first screen of the newer views ---------- */
+
+    // A stand-in insight engine with fixed insights per report, for the length of fn.
+    function withFakeInsights(list, fn) {
+      var old = TAP.insights;
+      TAP.insights = { __stub: false, all: function () { return list.slice(); }, failures: function () { return []; },
+        ranked: function (cmp, opts) {
+          return list.filter(function (x) { return !opts || !opts.reportId || x.attach.indexOf(opts.reportId) >= 0; });
+        },
+        top: function (cmp, id, n) { return this.ranked(cmp, { reportId: id }).slice(0, n || 3); },
+        hidden: function () { return []; }, hide: function () {}, unhide: function () {}, reset: function () {} };
+      try { return fn(); } finally { TAP.insights = old; }
+    }
+    function fake(id, family, significance, reportId) {
+      return { id: id, ruleId: id, family: family, significance: significance, sentence: 'Sentence ' + id + '.', regionIds: ['alpha'],
+        industryIds: [], accountIds: [], attach: [reportId], reportId: reportId, highlight: { reportId: reportId }, figures: [], label: 'Observation to discuss' };
+    }
+
+    // Refs #353 (D80): the view headline takes insights in the engine's order, so a theme never leads a view
+    T.test('X-review-D80-headline', 'A theme insight that out-scores the figure-based ones never becomes the view headline', function (a) {
+      var reports = window.TAP_VIEWS.newBusiness.reports;
+      var list = [fake('theme:1', 'themes', 0.95, 'nb-themes'), fake('fig:1', 'plan', 0.4, reports[1]), fake('fig:2', 'shared', 0.6, reports[3])];
+      withFakeInsights(list, function () {
+        var x = TAP.viewHead.headline('newBusiness', TAP.store.get().cmp);
+        a.equal(x && x.id, 'fig:2', 'the most significant figure-based insight');
+        var only = [fake('theme:1', 'themes', 0.95, 'nb-themes')];
+        TAP.insights.ranked = function () { return only; };
+        a.equal((TAP.viewHead.headline('newBusiness', TAP.store.get().cmp) || {}).id, 'theme:1', 'a theme still leads when it is the only one');
+      });
+    });
+
+    T.test('X-review-POL-head', 'The headline\'s Show me sits on the headline line, after the sentence', function (a) {
+      var reports = window.TAP_VIEWS.newBusiness.reports;
+      var x = fake('fig:2', 'shared', 0.6, reports[1]);
+      x.sentence = new Array(9).join('A sentence long enough to wrap onto a second line of the header. ');
+      withFakeInsights([x], function () {
+        var root = T.dom.mount();
+        root.style.width = '1280px';
+        var h = TAP.viewHead.render(root, { viewId: 'newBusiness', kicker: 'K', title: 'T', lead: 'L' });
+        try {
+          var text = root.querySelector('.tap-vh__headline-text'), btn = root.querySelector('.tap-vh__showme');
+          a.equal(text.textContent, x.sentence, 'the sentence as the insight says it');
+          var t = text.getClientRects(), last = t[t.length - 1], b = btn.getBoundingClientRect();
+          a.ok(b.top < last.bottom && b.bottom > last.top, 'Show me shares the last line of the sentence');
+          a.ok(parseFloat(getComputedStyle(btn).fontSize) >= 16, 'at body text size (D24)');
+        } finally { h.destroy(); }
+      });
+    });
+
+    T.test('X-review-POL-head', 'The profile\'s top row carries the page buttons: Present and Take the tour (D72)', function (a) {
+      TAP.store.set({ view: 'regions', region: 'alpha' });
+      var root = T.dom.mount(), v = TAP.views.get('regions').mount(root);
+      try {
+        var top = root.querySelector('.tap-pf__top');
+        a.ok(top.querySelector('.tap-present__button'), 'Present');
+        a.ok(top.querySelector('.tap-tour__button'), 'Take the tour');
+      } finally { v.destroy(); }
+    });
   });
 })(window.TAP);
