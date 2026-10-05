@@ -99,10 +99,21 @@
       if (s.highlight) run.panel.highlight(Object.assign({}, s.highlight));
     } finally { run.busy = false; }
     window.scrollTo(x, y);
+    run.host.scrollTop = 0;   // each step starts at its top
     progress();
+    reveal();
     // Focus stays on the layer, not the strip's Close button the panel focuses, so Space never presses a button
     if (run.layer.focus) run.layer.focus({ preventScroll: true });
     return true;
+  }
+
+  // Outlined rows or cells (an insight step) that sit below the fold are brought up, a third of the way down the
+  // stage, at once (D24). Chart marks are always in view, so only HTML highlights need this.
+  function reveal() {
+    var hit = TAP.dom.qs('.is-hl', run.host);
+    if (!hit) return;
+    var r = hit.getBoundingClientRect(), box = run.host.getBoundingClientRect();
+    if (r.top < box.top || r.bottom > box.bottom) run.host.scrollTop += r.top - box.top - box.height / 3;
   }
 
   function go(i) { return !!run && i >= 0 && i < run.steps.length && i !== run.i && show(i); }
