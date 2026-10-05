@@ -1,7 +1,7 @@
 /*
  * File: tests/test-core.js
  * Purpose: Tests for the core modules: store and events, storage, page helpers, data loading, wording, report checks.
- * Provides: test cases TPV-TC-047, TPV-TC-185 and X-core-*
+ * Provides: test cases TPV-TC-047, TPV-TC-185, X-core-* and X-review-DE-15
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js
  * Used by: tests.html
  */
@@ -82,6 +82,21 @@
       a.equal(TAP.storage.get('other:test'), 1);
       TAP.storage.remove('other:test');
       a.equal(TAP.storage.get('other:test', null), null);
+    });
+
+    // Review DE-15 (1): every read wrote a probe key first, so with storage full saved values could not be read.
+    T.test('X-review-DE-15', 'With browser storage full, values saved earlier can still be read', function (a) {
+      window.localStorage.setItem('tap-atlas:full:test', JSON.stringify('saved earlier'));
+      var setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function () { throw new Error('QuotaExceededError'); };
+      try {
+        a.equal(TAP.storage.get('full:test', 'fallback'), 'saved earlier');
+        TAP.storage.set('full:other', 'this session');
+        a.equal(TAP.storage.get('full:other'), 'this session', 'a value that could not be saved is kept for the session');
+      } finally {
+        Storage.prototype.setItem = setItem;
+        TAP.storage.clear('full:');
+      }
     });
   });
 

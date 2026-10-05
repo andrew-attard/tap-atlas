@@ -3,7 +3,7 @@
  * Purpose: Tests for chart-type rules, prepared data and the generic builders: allowed types per shape, table
  *          values identical to chart values, the five modes on the reference report, highlights, escaping, colours.
  * Provides: test cases TPV-TC-056, TPV-TC-062, TPV-TC-074 (report weights), TPV-TC-075 (builders), TPV-TC-095,
- *           X-shapes-*, X-prepare-*, X-builders-*
+ *           X-shapes-*, X-prepare-*, X-builders-*, X-review-DE-15
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -304,6 +304,31 @@
       a.equal(seriesOf(gap)[0].data.filter(function (n) { return n.entityId === 'charlie'; }).length, 0, 'no tile for C');
       a.ok(gap.notes.some(function (n) { return /Region C/.test(n) && /not provided/.test(n); }), 'C is named in the notes');
       a.deepEqual(gap.missing, ['Region C']);
+    });
+
+    // Review DE-15 (3): a negative total was left off the treemap with the note "is zero".
+    T.test('X-review-DE-15', 'A treemap names a negative total as negative, not zero', function (a) {
+      var plan = T_FIXTURE('mini');
+      // A: new business ARR 2,255; customer growth 3-year: -3,000 + 100 + 0 + 150 = -2,750; ambition -495
+      plan.regions[0].customerGrowth.accounts[0].incrementalArr = [-3000, 0, 0];
+      TAP.data.load(plan);
+      var res = build('ov-ambition', 'treemap', { mode: 'all' });
+      var note = res.notes.filter(function (n) { return /Region A/.test(n); })[0] || '';
+      a.match(note, /negative/, note);
+      a.ok(!/zero/.test(note), 'not "zero"');
+    });
+
+    // Review DE-15 (2): accounts with a blank segment are in no segment, so the parts fell short of the total silently.
+    T.test('X-review-DE-15', 'When the parts add up to less than the total, a note says so', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[0].customerGrowth.accounts[1].segment = null;   // a2 has no segment
+      TAP.data.load(plan);
+      // A: 4 accounts; segments strategic 1 (a1), growth 1 (a4), core 0, scaled 1 (a3) = 3
+      var res = build('cg-segments', 'stackedBar', { mode: 'all' });
+      var note = res.notes.filter(function (n) { return /Region A/.test(n); })[0] || '';
+      a.match(note, /3/, note);
+      a.match(note, /4/, note);
+      a.equal(res.notes.filter(function (n) { return /Region B/.test(n); }).length, 0, 'B adds up: no note');
     });
 
     T.test('X-builders-compare-industry', 'A per-industry compare reads the cell for the right region and industry', function (a) {
