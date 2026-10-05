@@ -4,7 +4,8 @@
  *          (US-2.2.4, US-2.3.3). The definition's x, y and size name TAP.rows column keys; options.label is 'all'
  *          (names where they fit, up to TAP_SETTINGS.rowBubble.labelMax more numbered in the key, a note for the rest)
  *          or 'top' (the largest by options.labelBy, up to labelMax).
- * Provides: builder 'rowBubble'
+ * Provides: builder 'rowBubble'; TAP.bubbleLabels (MARGIN, frame, range, place, labelOf: the name placement, also
+ *           used by the levers bubble in js/reports/nb-levers.js)
  * Depends on: js/engine/rows.js, js/engine/shapes.js (drawing kit), js/engine/scope.js, js/core/data.js,
  *             js/core/content.js, js/core/format.js, config/settings.js (all at call time)
  * Used by: js/panel/panel.js (through TAP.builders), config/reports-customers.js (cg-bubble), config/reports-partners.js (pt-capacity)
@@ -207,4 +208,5 @@
   }
 
   TAP.builders.register('rowBubble', TAP.shapes.kit.safely(build));
+  TAP.bubbleLabels = { MARGIN: MARGIN, frame: frame, range: range, place: place, labelOf: labelOf };
 })(window.TAP);
