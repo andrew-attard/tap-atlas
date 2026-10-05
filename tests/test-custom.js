@@ -417,6 +417,24 @@
       a.ok(!!qs('.tap-panel__chart', p.el), 'a chart is drawn');
     }));
 
+    /* ---------- "Table" and "Break down by: None" on a custom chart (review PP-2, #362) ---------- */
+
+    T.test('X-review-PP-2', 'Chart type "Table" in the picker shows the panel\'s table view', scene(function (a) {
+      var b = builder({ measure: 'nb.hitRate', by: 'entity', type: 'table' });
+      a.equal(qs('[data-control="custom-type"] [aria-pressed="true"]', b.host).getAttribute('data-value'), 'table', 'the picker shows Table');
+      a.ok(!!qs('.tap-panel__table', b.panel()), 'the panel draws the table');
+      a.equal(qs('.tap-panel__chart', b.panel()), null, 'not a chart');
+      a.equal(qs('[data-action="table"]', b.panel()).getAttribute('aria-pressed'), 'true', 'and its Table button is pressed');
+      b.h.destroy();
+    }));
+
+    T.test('X-review-PP-2', 'A custom chart by a dimension offers no "Break down by" control that would remove it', scene(function (a) {
+      var b = builder({ measure: 'nb.arr', by: 'year', type: 'groupedBar' });
+      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.arr:year', 'the chart by plan year');
+      a.equal(qs('[data-control="breakdown"]', b.panel()), null, 'no breakdown control on the panel');
+      b.h.destroy();
+    }));
+
     /* ---------- US-3.5.3: keep custom charts for the session ---------- */
 
     T.test('TPV-TC-567', 'Six charts are kept; a seventh is refused with a message and the list stays at six', listScene(function (a) {
