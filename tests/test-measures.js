@@ -3,7 +3,7 @@
  * Purpose: Tests for the measure catalogue, combined figures through the measures, scores and the three missing
  *          states, all checked against the hand calculations in tests/fixtures/mini-expected.js.
  * Provides: test cases TPV-TC-068 to 074 (through the measures), TPV-TC-081, TPV-TC-096, TPV-TC-114, X-measures-*,
- *           X-scores-midpoint
+ *           X-scores-midpoint, X-review-DE-2, X-review-DE-3, X-review-DE-8
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -309,6 +309,86 @@
       a.near(c.v, 100 / 680, TOL);
       a.equal(c.partial, true);
       a.equal(m('cg.growthY2', 'alpha').partial, undefined, 'year 2 is complete');
+    });
+
+    // Review DE-2, D78: a rate entered with its weights left blank still counts.
+    T.test('X-review-DE-2', 'A rate whose rows have no weight is averaged equally over its rows', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[0].newBusiness.forEach(function (row) {
+        row.targetAccounts = null;
+        row.arrPotential = [null, null, null];
+        row.servicesPotential = [null, null, null];
+      });
+      TAP.data.load(plan);
+      // A's rows: hit rates 0.25 and 0.1 -> 0.35 / 2 = 0.175; deal sizes 100 and 200 -> 150 (no wins without target accounts)
+      a.near(m('nb.hitRate', 'alpha').v, 0.175, TOL);
+      a.equal(m('nb.hitRate', 'alpha').partial, undefined, 'no row has a weight: nothing is left out');
+      a.near(m('nb.avgDealSize', 'alpha').v, 150, TOL);
+      // Year 2 growth 0.1 and 0 -> 0.05; services ratio 0.2 and 0.2 -> 0.2 (no ARR potential to weight by)
+      a.near(m('nb.growthY2', 'alpha').v, 0.05, TOL);
+      a.near(m('nb.servicesRatio', 'alpha').v, 0.2, TOL);
+      // Organization hit rate: A has no weight, so it is named as weight missing, not as not provided.
+      //   B: 0.5 x 40 + 0.2 x 10 = 22 over 50; C: row 21 only, 0.2 x 5 = 1 over 5; D: 0.6 x 100 = 60 over 100
+      //   (22 + 1 + 60) / (50 + 5 + 100) = 83 / 155 = 0.5354839
+      var o = TAP.measures.combined('nb.hitRate', org(), {});
+      a.near(o.v, 83 / 155, TOL);
+      a.deepEqual(o.src.weightMissing, ['alpha']);
+      a.deepEqual(o.src.excluded, []);
+      var ds = TAP.prepare.run(TAP.reports.get('nb-levers'), { cmp: cmp({ mode: 'all' }), measureId: 'nb.hitRate' });
+      a.ok(ds.missing.indexOf('Region A') < 0, 'the levers chart no longer lists Region A as having no data');
+    });
+
+    T.test('X-review-DE-2', 'Rows with a blank weight are left out and the rate is marked partly provided', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions[0].newBusiness[1].targetAccounts = null;
+      TAP.data.load(plan);
+      // Only row 20 has target accounts: 0.25 on 20 accounts; row 21 (0.1) is left out
+      var c = m('nb.hitRate', 'alpha');
+      a.near(c.v, 0.25, TOL);
+      a.equal(c.partial, true);
+      a.ok(c.note && c.note.charAt(0) !== '[', 'the cell carries a note: ' + c.note);
+      a.deepEqual(c.src.rows, [20], 'the source names the row used');
+    });
+
+    // Review DE-3, D78: combined rates weigh each region by the rows its own figure used.
+    T.test('X-review-DE-3', 'A combined deal size weighs each region by the wins its own deal size used', function (a) {
+      var plan = T_FIXTURE('mini');
+      var aRows = plan.regions[0].newBusiness, bRows = plan.regions[1].newBusiness;
+      Object.assign(aRows[0], { targetAccounts: 20, hitRate: 0.5, avgDealSize: 100 });    // 10 wins at 100
+      Object.assign(aRows[1], { targetAccounts: 180, hitRate: 0.5, avgDealSize: null });  // 90 wins, no deal size
+      Object.assign(bRows[0], { targetAccounts: 20, hitRate: 0.5, avgDealSize: 200 });    // 10 wins at 200
+      bRows.length = 1;
+      TAP.data.load(plan);
+      var two = { kind: 'combined', regionIds: ['alpha', 'bravo'], how: 'total' };
+      a.near(m('nb.avgDealSize', 'alpha').v, 100, TOL, 'A: only row 20 has a deal size');
+      // (100 x 10 + 200 x 10) / (10 + 10) = 3000 / 20 = 150
+      a.near(TAP.measures.combined('nb.avgDealSize', two, {}).v, 150, TOL);
+    });
+
+    T.test('X-review-DE-3', 'Customer growth % combines the same way for the insight and the chart', function (a) {
+      var plan = T_FIXTURE('mini');
+      var aAcc = plan.regions[0].customerGrowth.accounts, bAcc = plan.regions[1].customerGrowth.accounts;
+      Object.assign(aAcc[0], { currentArr: 100, incrementalArr: [10, 0, 0] });
+      Object.assign(aAcc[1], { currentArr: 900, incrementalArr: [null, 0, 0] });
+      aAcc.length = 2;
+      Object.assign(bAcc[0], { currentArr: 100, incrementalArr: [50, 0, 0] });
+      bAcc.length = 1;
+      TAP.data.load(plan);
+      var two = { kind: 'combined', regionIds: ['alpha', 'bravo'], how: 'average' };
+      // A uses a1 only (a2's year 1 is blank): 10 over 100; B: 50 over 100. (10 + 50) / (100 + 100) = 0.3
+      var ins = TAP.measures.combined('cg.growthY1', two, {}), chart = TAP.measures.combined('cg.growth.all', two, { year: 1 });
+      a.near(chart.v, 0.3, TOL);
+      a.near(ins.v, 0.3, TOL, 'the insight measure reads the same 30%, not 14%');
+    });
+
+    T.test('X-review-DE-8', 'Customer growth % for an industry with no account is not applicable, not 0%', function (a) {
+      // Region A's accounts are in ind1, ind2 and ind3; none in ind4
+      var c = m('cg.growthY1', 'alpha', { industryId: 'ind4' });
+      a.equal(c.state, 'notApplicable');
+      a.equal(c.v, null);
+      // Organization year 1 on the unchanged fixture, both measures: (200 + 150 + 180) / (880 + 700 + 1250) = 530 / 2830
+      a.near(TAP.measures.combined('cg.growthY1', org(), {}).v, 530 / 2830, TOL);
+      a.near(TAP.measures.combined('cg.growth.all', org(), { year: 1 }).v, 530 / 2830, TOL);
     });
   });
 
