@@ -239,7 +239,7 @@
     host.appendChild(p.root);
     X().add(p);
     listen(p);
-    render(p);
+    try { render(p); } catch (e) { destroy(p); throw e; }   // a panel that can't draw stops listening (#367)
     return {
       id: reportId, el: p.root,
       refresh: p.render,

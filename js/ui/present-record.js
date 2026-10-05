@@ -25,7 +25,8 @@
   function recorded() {
     var list;
     try { list = TAP.storage.get(KEY, []); } catch (e) { list = []; }
-    return Array.isArray(list) ? list : [];
+    // Only step objects: a damaged stored list must not break the Guide section that offers "Remove all" (#367)
+    return Array.isArray(list) ? list.filter(function (s) { return !!s && typeof s === 'object' && !Array.isArray(s); }) : [];
   }
   function save(list) { TAP.storage.set(KEY, list); redraw(); }
 

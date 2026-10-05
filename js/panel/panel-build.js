@@ -16,7 +16,7 @@
   // The industry a one-industry report shows: the view's choice, else the one selected, else the first rated.
   function industryOf(p, def, s) {
     var o = (def && def.options) || {};
-    if (!def || (!o.industryPicker && def.dimension !== 'rating' && def.title.indexOf('{industry}') < 0)) return null;
+    if (!def || (!o.industryPicker && def.dimension !== 'rating' && String(def.title || '').indexOf('{industry}') < 0)) return null;
     var rated = TAP.data.industries({ rated: true }), id = p.opts.industryId || s.industry;
     var ok = rated.some(function (d) { return d.id === id; });
     return ok ? id : (rated[0] ? rated[0].id : null);
@@ -47,7 +47,7 @@
     p.cmpKey = key;
     var def = TAP.reports.get(p.drill.current()), errors = TAP.reports.validate(def);
     if (def && def.drill && !errors.length) errors = TAP.panelDrill.levels(def).errors;
-    var industryId = industryOf(p, def, s), entities = TAP.scope.entities(cmp);
+    var industryId = errors.length ? null : industryOf(p, def, s), entities = TAP.scope.entities(cmp);
     if (def && !errors.length) TAP.panelMenus.fitBreakdown(def, p.st);   // a breakdown the measure doesn't list is dropped
     var types = def && !errors.length ? TAP.panelMenus.types(def, entities.length, p.st) : null;
     var ctx = def ? { def: def, type: types ? types.current : def.defaultType, measureId: p.st.measureId,
