@@ -1,13 +1,14 @@
 /*
  * File: js/views/regions-parts.js
  * Purpose: The parts of a region profile besides its reports: the plan at a glance against the rest (the four card
- *          lines of US-1.5.1, US-2.4.2), the region's insights, and everything its leader wrote (US-2.4.4).
+ *          lines of US-1.5.1, US-2.4.2, and the strategic plan and revenue lines of US-4.6.3), the region's insights,
+ *          and everything its leader wrote (US-2.4.4).
  * Provides: TAP.profileParts (glance, compare, drawGlance, insights, drawInsights, words, drawWords)
  * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js, js/engine/measures.js,
  *             js/engine/scope.js, js/ui/layers.js, js/views/overview-cards.js (openSource), js/views/regions.js
  *             (TAP.profile.cmp), js/insights/engine.js, js/core/data.js, js/core/store.js (all at call time)
  * Used by: js/views/regions.js
- * Owner: PROFILE stream (#215, #217)
+ * Owner: PROFILE stream (#215, #217); the full template's lines PAGES4 (#459)
  */
 (function (TAP) {
   'use strict';
@@ -16,10 +17,12 @@
   function t(key, vars) { return TAP.content.text('profile.' + key, vars); }
   function ot(key, vars) { return TAP.content.text('overview.cards.' + key, vars); }
   function meta(id) { return TAP.measures.meta(id) || { label: id, short: id }; }
+  function pt(key, vars) { return t('glance.p4.' + key, vars); }
 
   /* ---------- the plan at a glance (US-2.4.2) ---------- */
 
   // The four lines of the Overview cards, with the figures each shows (label: the words the cards use).
+  // A figure is [measure id, unit, label, measure context (optional)].
   var LINES = [
     { key: 'ambition', figures: [['amb.arr', 'money', function () { return t('glance.total'); }], ['nb.arr', 'money', function () { return ot('nb'); }],
       ['cg.arr', 'money', function () { return ot('cg'); }], ['amb.services', 'money', function () { return ot('services'); }]] },
@@ -30,6 +33,20 @@
       return ['cg.segment.' + s, 'count', function (id) { return meta(id).short || meta(id).label; }];
     }) }
   ];
+  // The full template's lines (US-4.6.3): three-year figures, and revenue by plan year. Each shows only when some
+  // region in the file has that part (probe), so a file without it reads exactly as before (D57).
+  var P4_LINES = [
+    { key: 'strategic', probe: 'sp.oi', figures: [['sp.plan', 'money', function () { return pt('plan'); }],
+      ['sp.oi', 'money', function () { return pt('strategicPlan'); }], ['sp.variance', 'money', function () { return pt('variance'); }]] },
+    { key: 'revenue', probe: 'rv.all.oi', figures: [1, 2, 3].map(function (y) {
+      return ['rv.all.oi', 'money', function () { return pt('year', { n: y }); }, { year: y }];
+    }) }
+  ];
+  function lines() {
+    var has = TAP.measures.available;
+    return LINES.concat(P4_LINES.filter(function (l) { return typeof has === 'function' && has(l.probe); }));
+  }
+  function lineLabel(line) { return line.probe ? pt(line.key + 'Line') : ot(line.key); }
 
   function isValue(c) { return !!c && c.state === 'value' && typeof c.v === 'number'; }
 
@@ -45,13 +62,13 @@
   // With no other region in the data there is no rest: rest and restTarget are null.
   function glance(regionId) {
     var ents = TAP.scope.entities(TAP.profile.cmp(regionId)), me = ents[0], rest = ents[1] || null;
-    return LINES.map(function (line) {
+    return lines().map(function (line) {
       var figures = line.figures.map(function (f) {
-        var region = TAP.measures.combined(f[0], me, {}), avg = rest ? TAP.measures.combined(f[0], rest, {}) : null;
-        return { measure: f[0], unit: f[1], label: f[2](f[0]), region: region, rest: avg, compare: compare(region, avg),
+        var ctx = f[3] || {}, region = TAP.measures.combined(f[0], me, ctx), avg = rest ? TAP.measures.combined(f[0], rest, ctx) : null;
+        return { measure: f[0], year: ctx.year || null, unit: f[1], label: f[2](f[0]), region: region, rest: avg, compare: compare(region, avg),
           target: { regionIds: [regionId] }, restTarget: rest ? { regionIds: rest.regionIds.slice() } : null };
       });
-      return { key: line.key, label: ot(line.key), figures: figures,
+      return { key: line.key, label: lineLabel(line), p4: !!line.probe, figures: figures,
         np: figures.every(function (f) { return !isValue(f.region); }) };
     });
   }
@@ -70,7 +87,7 @@
 
   // restLabel null: no other region, so the region column only.
   function row(f, restLabel) {
-    return el('tr', { 'data-measure': f.measure, 'data-compare': f.compare.key || null }, [
+    return el('tr', { 'data-measure': f.measure, 'data-year': f.year ? String(f.year) : null, 'data-compare': f.compare.key || null }, [
       el('th', { scope: 'row' }, f.label),
       el('td', null, figure(f, 'region', function () { TAP.layers.openDetails(f.target); }))
     ].concat(restLabel == null ? [] : [
@@ -86,7 +103,7 @@
     return isValue(c) && c.partial && c.note ? el('p', { class: 'tap-pf-glance__partial' }, ot('partial', { note: c.note })) : null;
   }
 
-  // Draws the four lines into host for one region.
+  // Draws the lines into host for one region.
   function drawGlance(host, regionId) {
     var ents = TAP.scope.entities(TAP.profile.cmp(regionId)), name = ents[0].label, restLabel = ents[1] ? ents[1].label : null;
     var box = el('section', { class: 'tap-pf-glance', 'aria-label': t('glance.title') }, [
@@ -103,7 +120,8 @@
             : [el('th', { scope: 'col' }, restLabel), el('th', { scope: 'col' }, t('glance.against'))]))),
           el('tbody', null, line.figures.map(function (f) { return row(f, restLabel); }))
         ]),
-        partial(line.figures[0].region)
+        // The full template's lines name a part left blank in any of their figures; the card lines in their total
+        partial(line.p4 ? (line.figures.filter(function (f) { return isValue(f.region) && f.region.partial; })[0] || {}).region : line.figures[0].region)
       ]));
     });
     box.appendChild(grid);
