@@ -4,7 +4,7 @@
  *          (US-2.7.2), its figures by plan year and its source row. An item with no row stands for a region's
  *          customer growth section and lists its segment thresholds, since they differ by region (US-2.2.2).
  * Provides: TAP.detailsRows (build)
- * Depends on: js/engine/rows.js, js/core/data.js, js/core/content.js, js/core/sources.js, js/core/format.js (all at call time)
+ * Depends on: js/engine/rows.js, js/core/extra.js, js/core/data.js, js/core/content.js, js/core/sources.js, js/core/format.js (all at call time)
  * Used by: js/reports/details.js
  * Owner: CGP stream (#208)
  */
@@ -17,6 +17,8 @@
 
   // The TAP.rows source for each Data Contract section.
   var SOURCE = { newBusiness: 'newBusiness', customerGrowth: 'accounts', partners: 'partners' };
+  // An extra template section's section name is its row source too ("extra:<id>", US-3.2.2)
+  function sourceOf(section) { return SOURCE[section] || (TAP.extra && TAP.extra.is(section) ? section : null); }
 
   // Fields held by plan year and not already a list column, shown one row per year: [field, label key, kind, unit].
   var YEARLY = {
@@ -43,6 +45,7 @@
 
   function titleOf(source, r) {
     var it = r.item || {};
+    if (TAP.extra && TAP.extra.is(source)) return t('title', { name: TAP.extra.rowName(source, it) || t('noName'), region: rname(r.regionId) });
     if (source === 'newBusiness') return t('nbTitle', { name: [it.subVertical, it.market].filter(Boolean).join(', '), region: rname(r.regionId) });
     return t('title', { name: isBlank(it.name) ? t('noName') : it.name, region: rname(r.regionId) });
   }
@@ -73,7 +76,7 @@
   }
 
   function rowGroups(item, many) {
-    var source = SOURCE[item.section], r = source ? find(source, item.regionId, item.row) : null;
+    var source = sourceOf(item.section), r = source ? find(source, item.regionId, item.row) : null;
     if (!r) return [{ title: t('missing', { region: rname(item.regionId), row: item.row }), rows: [] }];
     var title = titleOf(source, r);
     return [
@@ -105,7 +108,7 @@
     var regions = items.map(function (i) { return i.regionId; }).filter(function (r, k, a) { return a.indexOf(r) === k; });
     var title = '';
     if (rowItems.length === 1 && items.length === 1) {
-      var src = SOURCE[items[0].section], r = src ? find(src, items[0].regionId, items[0].row) : null;
+      var src = sourceOf(items[0].section), r = src ? find(src, items[0].regionId, items[0].row) : null;
       title = r ? titleOf(src, r) : rname(items[0].regionId);
     } else if (rowItems.length) title = t('several', { n: rowItems.length, regions: TAP.format.list(regions.map(rname)) });
     else if (items.length) title = t('thresholdsHead', { regions: TAP.format.list(regions.map(rname)) });

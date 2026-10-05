@@ -141,7 +141,7 @@
   // A row click ({row: "<source>:<regionId>:<sourceRow>"}) opens that row's details.
   function targetFn(def) {
     return function (params) {
-      var d = (params && params.data) || {}, m = /^([^:]+):(.+):(\d+)$/.exec(d.row || '');
+      var d = (params && params.data) || {}, m = /^(extra:[^:]+|[^:]+):(.+):(\d+)$/.exec(d.row || '');   // an extra section's source keeps its own colon
       if (!m) return null;
       var source = m[1], regionId = m[2], n = +m[3];
       var e = TAP.rows.list(source, [regionId]).filter(function (x) { return x.sourceRow === n; })[0];
