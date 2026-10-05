@@ -92,8 +92,29 @@
     return errors.length ? { errors: errors } : def;
   }
 
-  var notYet = function (fn) { return TAP.stub.fn('TAP.custom.' + fn, 251); };
+  /* ---------- the session list (US-3.5.3) ---------- */
+
+  // Held in memory only, never in browser storage, so nothing is kept after the tab closes.
+  var MAX = 6, kept = [];
+
+  function saved() { return kept.map(function (x) { return Object.assign({}, x); }); }
+
+  // Keeps a chart that can be drawn. The same chart twice is kept once. A seventh is refused with a message.
+  // Returns {ok, index} or {ok: false, message}.
+  function save(spec) {
+    var def = definition(spec);
+    if (def.errors) return { ok: false, message: def.errors[0] };
+    var s = def.spec, at = -1;
+    kept.forEach(function (x, i) { if (x.measure === s.measure && x.by === s.by && x.type === s.type) at = i; });
+    if (at >= 0) return { ok: true, index: at };
+    if (kept.length >= MAX) return { ok: false, message: t('list.full', { n: MAX }) };
+    kept.push(Object.assign({}, s));
+    return { ok: true, index: kept.length - 1 };
+  }
+
+  // Removes the chart at place i and returns it, or null when there is none.
+  function remove(i) { return i >= 0 && i < kept.length ? kept.splice(i, 1)[0] : null; }
 
   TAP.custom = { options: options, definition: definition, types: types, byLabel: byLabel,
-    saved: notYet('saved'), save: notYet('save'), remove: notYet('remove') };
+    saved: saved, save: save, remove: remove };
 })(window.TAP);
