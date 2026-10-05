@@ -2,7 +2,7 @@
  * File: tests/test-docs3.js
  * Purpose: Tests for the handover pack and portfolio pages. Most of these are file checks, which the browser
  *          can't make from the test page, so they run in tools/check-docs3.js and are listed here as skipped.
- * Provides: test cases TPV-TC-621, TPV-TC-623, TPV-TC-627, TPV-TC-628
+ * Provides: test cases TPV-TC-615, TPV-TC-617, TPV-TC-621, TPV-TC-623, TPV-TC-627, TPV-TC-628
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, data/sample-plan-data.js, index-sample.html
  * Used by: tests.html
  * Owner: DOCS3 stream
@@ -48,6 +48,8 @@
   T.suite('docs3', function () {
     T.skip('TPV-TC-621', 'index-sample.html and every file it loads use relative paths only and nothing depends on file://',
       FILE_CHECK);
+    T.skip('TPV-TC-615', 'Every link and image path in docs/index.html is relative and points to a file that exists', FILE_CHECK);
+    T.skip('TPV-TC-617', 'docs/index.html has no denylisted term', 'Checked by the denylist scan in scripts/verify.sh');
     T.skip('TPV-TC-627', 'docs/screenshots holds one 1440 x 900 image per view', FILE_CHECK);
     T.skip('TPV-TC-628', 'Screenshot names are stable and match every path in docs/index.html and docs/CASE-STUDY.md', FILE_CHECK);
 

@@ -3,7 +3,7 @@
  * File: tools/check-docs3.js
  * Purpose: File checks for the handover pack and the portfolio edition, which the browser test page can't make:
  *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
- *          and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
+ *          the landing page's links, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
  * Depends on: Node 18+ only
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
@@ -195,8 +195,26 @@ function checkShotNames(root) {
   return { problems, checked };
 }
 
+/* ---------- TPV-TC-615: the landing page links only to files of the site ---------- */
+
+function checkLanding(root) {
+  const page = 'docs/index.html';
+  if (!fs.existsSync(path.join(root, page))) return { problems: [page + ' is missing'], checked: 0 };
+  const refs = htmlRefs(fs.readFileSync(path.join(root, page), 'utf8'));
+  const problems = [];
+  refs.forEach((ref) => {
+    const p = refProblem(root, page, ref);
+    if (p) problems.push(p);
+  });
+  if (refs.indexOf('../index-sample.html') < 0) problems.push(page + ': has no link to ../index-sample.html');
+  const shots = new Set(refs.filter((r) => /^screenshots\/[^/]+\.png$/.test(r)));
+  if (shots.size < 3 || shots.size > 4) problems.push(page + ': shows ' + shots.size + ' screenshots, expected 3 or 4');
+  return { problems, checked: refs.length };
+}
+
 const CHECKS = [
   { id: 'TPV-TC-621', label: 'sample edition: relative paths, exact names, nothing tied to file://', run: checkWeb },
+  { id: 'TPV-TC-615', label: 'landing page: relative links to files that exist, 3 or 4 screenshots, the sample button', run: checkLanding },
   { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: checkShots },
   { id: 'TPV-TC-628', label: 'screenshot names are stable and every page names an existing one', run: checkShotNames }
 ];
