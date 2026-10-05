@@ -73,7 +73,9 @@
     var errors = res.errors || [];
     if (res.reason === 'missing') {
       return [el('h1', null, t('screens.missingTitle')), el('p', { class: 'tap-screen__lead' }, t('screens.missingBody')),
-        el('p', { class: 'tap-muted' }, t('screens.missingLooked'))];
+        el('p', { class: 'tap-muted' }, t('screens.missingLooked')),
+        // A visitor on the published site lands here first (D67): one click to the fictional edition
+        el('p', null, el('a', { class: 'tap-btn tap-btn--primary', href: 'index-sample.html', 'data-action': 'open-sample' }, t('screens.openSample')))];
     }
     if (res.reason === 'version') {
       var e = errors[0] || {};
