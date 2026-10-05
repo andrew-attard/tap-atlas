@@ -117,7 +117,7 @@
     });
 
     T.test('TPV-TC-321', 'The view holds the Epic 2.1 reports, never more than two panels in a row', function (a) {
-      a.deepEqual(viewReports(), ['nb-industries', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'], 'the reports, in order');
+      a.deepEqual(viewReports(), ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'], 'the reports, in order');
       withView(function (root) {
         var layout = TAP.newBusinessView.layout(), flat = [].concat.apply([], layout);
         a.ok(layout.every(function (r) { return r.length <= 2; }), 'the layout puts at most two reports in a row');
@@ -186,6 +186,9 @@
       defined().forEach(function (id) {
         var res = build(id, { mode: 'all' });
         a.equal(res.error, null, id + ' builds');
+        // A report on a part of the template the file doesn't hold (Phase 4) shows its empty state instead
+        var held = (TAP.reports.get(id).measures || []).every(function (m) { return TAP.measures.available(m.id); });
+        if (!held) { a.ok(res.empty, id + ' says no region has data'); return; }
         a.ok(!res.empty, id + ' is not empty');
         a.ok(figureCells(res).some(function (x) { return x.cell.state === 'value'; }), id + ' has a value');
       });
