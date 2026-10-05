@@ -359,6 +359,41 @@
       });
       a.ok(n > 20, 'paragraphs found (' + n + ')');
     });
+
+    /* ---------- review polish #382: Guide, glossary and wording brought up to date ---------- */
+
+    function guidePart(group, id) {
+      return window.TAP_CONTENT.guide[group].sections.filter(function (x) { return x.id === id; })[0].paragraphs.join(' ');
+    }
+
+    T.test('X-review-SV-17', 'The Guide names every view in the menu, the extra sections and the P key, and its tier line agrees with Tier 1', function (a) {
+      var menu = guidePart('howTo', 'menu');
+      window.TAP_VIEWS.order.forEach(function (id) {
+        var title = window.TAP_VIEWS[id].title;
+        a.ok(menu.indexOf(id === 'guide' ? 'this Guide' : title) >= 0, 'the menu paragraph names ' + title);
+      });
+      a.match(guidePart('planning', 'template'), /Other sections/, 'the template part says where extra sections are shown');
+      a.match(guidePart('howTo', 'keys'), /\bP\b/, 'the shortcuts name P for presentation mode');
+      a.ok(guidePart('planning', 'tiers').indexOf('from Tier 1 to Tier 3') < 0, 'no "Tier 1 to Tier 3" when Tier 1 is set centrally');
+    });
+
+    T.test('X-review-SV-18', 'Glossary entries describe without judging, and carry no project notes (D20)', function (a) {
+      var g = window.TAP_CONTENT.glossary;
+      a.ok(g.ambition.short.indexOf('new business a region plans to win') < 0, 'ambition is not defined by one of its own parts');
+      a.ok(g.partnerMaturity.why.indexOf('not confirmed') < 0, 'partner maturity has no project note');
+      var judging = [/worth pursuing/i, /deprioriti/i, /realistic/i];
+      ['quadrant', 'attractiveness', 'segGrowth'].forEach(function (id) {
+        var text = g[id].short + ' ' + g[id].why;
+        judging.forEach(function (re) { a.ok(!re.test(text), id + ' avoids ' + re); });
+      });
+    });
+
+    T.test('X-review-SV-20', 'Wording keys nothing reads are removed', function (a) {
+      var tx = window.TAP_CONTENT.text;
+      a.ok(!('subtitle' in tx.app), 'app.subtitle');
+      a.ok(!('shareLabel' in tx.overview.cards), 'overview.cards.shareLabel');
+      a.ok(!('cardTitle' in tx.overview.source), 'overview.source.cardTitle');
+    });
   });
   // Runs fn as if content/organization.js had thrown a script error while loading.
   function withOrgScriptError(org, message, fn) {
