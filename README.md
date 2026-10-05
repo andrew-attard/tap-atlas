@@ -114,6 +114,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled |
 | `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |
+| `js/insights/util.js` | The helpers every rule gets as `ctx.util`: names, catalogue figures, the other regions' combined figure, phrases, strength and money at stake |
 | `js/insights/rules-*.js` | One file per rule family: priorities, judgement, assumptions, realism, exposure, capability, plan (channel reliance, plan make-up), shared (shared targets, partner capacity), themes (recurring themes) |
 | `js/panel/panel.js` | The report panel: title, takeaway, chart or table, legend, source line, controls |
 | `js/panel/panel-build.js` | What a panel draws: checks the report and runs its builder |
