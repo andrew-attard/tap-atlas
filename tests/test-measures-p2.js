@@ -300,7 +300,7 @@
   T.suite('breakdowns', function () {
     T.test('TPV-TC-310', 'A report may allow all six breakdowns', function (a) {
       load();
-      a.deepEqual(TAP.reports.BREAKDOWNS, DIMS);
+      a.deepEqual(TAP.reports.BREAKDOWNS.slice(0, DIMS.length), DIMS);   // Phase 4 adds five after these (TPV-TC-673)
       a.deepEqual(TAP.reports.validate(def('compare', ['rc.all.arr'])), [], 'year, industry, channel, motion, segment and risk are accepted');
     });
     T.test('TPV-TC-310', 'An unknown breakdown fails validation', function (a) {
