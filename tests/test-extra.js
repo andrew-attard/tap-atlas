@@ -38,7 +38,13 @@
     { id: 'row without its source row', tc: 'X-extra-check', path: 'regions[0].extra.events[0].sourceRow', field: 'sourceRow',
       change: function (p) { delete p.regions[0].extra.events[0].sourceRow; } },
     { id: 'text in a money column', tc: 'X-extra-check', path: 'regions[0].extra.events[0].budget', field: 'budget',
-      change: function (p) { p.regions[0].extra.events[0].budget = '45k'; } }
+      change: function (p) { p.regions[0].extra.events[0].budget = '45k'; } },
+    { id: 'a number in a text column', tc: 'X-extra-check', path: 'regions[0].extra.events[0].event', field: 'event', single: true,
+      change: function (p) { p.regions[0].extra.events[0].event = 12; } },
+    { id: 'section without columns: one warning, not one per row', tc: 'X-extra-check', path: 'meta.extraSections[0].columns',
+      field: 'columns', single: true, change: function (p) { delete p.meta.extraSections[0].columns; } },
+    { id: 'two rows from the same worksheet row', tc: 'X-extra-check', path: 'regions[0].extra.events[1].sourceRow', field: 'sourceRow',
+      single: true, change: function (p) { p.regions[0].extra.events[1].sourceRow = 8; } }
   ];
 
   T.suite('extra', function () {
@@ -66,6 +72,7 @@
         c.change(p);
         var res = TAP.check.run(copy(p)), hit = res.warnings.filter(function (w) { return w.path === c.path; })[0];
         a.deepEqual(res.errors, [], 'no errors: ' + messages(res.errors));
+        if (c.single) a.equal(about(res.warnings).length, 1, 'a single warning: ' + messages(about(res.warnings)));
         a.ok(hit, 'a warning at ' + c.path + '; got: ' + messages(about(res.warnings)));
         if (hit) {
           var section = c.section !== undefined ? c.section : E().title;
@@ -104,6 +111,17 @@
       a.deepEqual(TAP.extra.sections().map(function (s) { return s.id; }), ['events'], 'only the usable section');
       a.deepEqual(TAP.rows.columns(SRC).map(function (c) { return c.key; }), ['region'].concat(E().columns), 'bad columns left out');
       a.equal(TAP.rows.list(SRC).length, E().total, 'rows still listed');
+      p = sample();
+      p.regions[0].extra.events[1].sourceRow = 8;
+      p.regions[0].extra.events[0].event = 12;
+      TAP.data.load(p);
+      a.deepEqual(TAP.rows.list(SRC, ['na']).map(function (e) { return e.item.timing; }), ['Year 1 Q2', 'Year 2 Q1'], 'a repeated row is left out, the first kept');
+      a.equal(TAP.rows.cell(SRC, 'event', { regionId: 'na', row: 8 }).state, 'notProvided', 'a value of the wrong type shows as not provided');
+      p = sample();
+      p.meta.extraSections.unshift({ id: 'events', title: 'Broken', columns: 'none' });
+      TAP.data.load(p);
+      a.deepEqual(TAP.extra.sections(), [], 'of two sections with one id, the first is kept even when it is broken');
+      a.ok(TAP.check.run(p).warnings.some(function (w) { return w.path === 'meta.extraSections[1].id'; }), 'and the check names the second');
     });
 
     T.test('TPV-TC-579', 'The sample data has one extra section, with rows for at least one region', function (a) {
