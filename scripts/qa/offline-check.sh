@@ -39,7 +39,7 @@ for b in $browsers; do
   echo "== $b with networking off"
   for view in $QA_VIEWS; do
     base="$out/$b-$view"
-    qa_run "$b" tests/qa.html "?screenshot=1&view=$view&mode=all&qa=offline,console" "$base.html" "$base.log" \
+    qa_run "$b" tests/qa.html "?screenshot=1&$(qa_view_query "$view")&mode=all&qa=offline,console" "$base.html" "$base.log" \
       --window-size=1280,800 "${OFF[@]}" || echo "ERROR  [$b $view] browser did not finish"
     "$QA_NODE" "$here/qa-report.js" offline "$b $view offline" "$base.html" "$base.log" --json "$base.json" || status=1
     # Only the page's own console lines count; the browser's services (sync, updates) also fail offline

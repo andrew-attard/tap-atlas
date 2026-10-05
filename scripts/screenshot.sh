@@ -57,7 +57,16 @@ if [ "${1:-}" = "--matrix" ]; then
     echo 'img{width:360px;border:1px solid #ccc}figcaption{font-size:12px}</style>'
     echo "<h1>$page ($browser)</h1>"
   } > "$sheet"
-  for view in overview industry insights guide; do
+  # Every view in the menu order of config/views.js, so new views are never left out
+  node_bin="$(command -v node || echo "$HOME/.local/bin/node")"
+  views="$("$node_bin" -e '
+    const vm = require("vm"); const fs = require("fs");
+    const ctx = { window: {} }; vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(process.argv[1], "utf8"), ctx);
+    console.log(((ctx.window.TAP_VIEWS || {}).order || []).join(" "));
+  ' "$TAP_ROOT/config/views.js")"
+  if [ -z "$views" ]; then echo "No views found in config/views.js"; exit 2; fi
+  for view in $views; do
     echo "<h2>$view</h2>" >> "$sheet"
     for size in 1280x800 1920x1080; do
       for zoom in 1.25 1.5; do

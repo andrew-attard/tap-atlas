@@ -36,8 +36,8 @@ for b in $browsers; do
   mkdir -p "$outdir/$b"
   for view in $QA_VIEWS; do
     [ "$view" = "none" ] && continue
-    for mode in $QA_MODES; do
-      q="screenshot=1&view=$view&$(qa_mode_query "$mode")"
+    for mode in $(qa_view_modes "$view"); do
+      q="screenshot=1&$(qa_view_query "$view")&$(qa_mode_query "$mode")"
       for s in $sizes; do
         wh="${s%@*}"; zoom="${s#*@}"
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$b" "$page" "$q" "${wh%x*}" "${wh#*x}" "$zoom" \
@@ -78,7 +78,7 @@ sheet="$outdir/index.html"
     for view in $QA_VIEWS; do
       [ "$view" = "none" ] && continue
       echo "<h2>$b: $view</h2>"
-      for mode in $QA_MODES; do
+      for mode in $(qa_view_modes "$view"); do
         echo "<div><h3>$mode</h3>"
         for s in $sizes; do
           n="$view-$mode-${s%@*}@${s#*@}.png"
