@@ -260,11 +260,10 @@
 
     /* ---------- US-2.6.3: tour and shortcuts cover the new views (#226) ---------- */
 
-    T.test('TPV-TC-503', 'Number keys 1 to 8 open the views in menu order, one key per view', function (a) {
+    T.test('TPV-TC-503', 'Number keys 1 to 9 open the views in menu order, one key per view', function (a) {
       var order = TAP.views.order();
-      a.equal(order.length, 8, 'eight views in the menu');
+      a.equal(order.length, 9, 'nine views in the menu');
       order.forEach(function (id, i) { a.equal(TAP.keys.viewFor(String(i + 1)), id, 'key ' + (i + 1) + ' opens ' + id); });
-      a.equal(TAP.keys.viewFor('9'), null, 'key 9 opens nothing while there are eight views');
       a.equal(TAP.keys.viewFor('0'), null, 'key 0 opens nothing');
     });
 
@@ -278,7 +277,7 @@
       } finally { TAP.keys.unbind(); }
     });
 
-    T.test('TPV-TC-504', 'The Guide lists all eight number-key shortcuts, built from the menu order', function (a) {
+    T.test('TPV-TC-504', 'The Guide lists every number-key shortcut, built from the menu order', function (a) {
       withGuide(function (root) {
         var items = qsa('[data-guide="howTo"] .tap-guide__key', root), order = TAP.views.order();
         a.equal(items.length, order.length, 'one line per view');
@@ -292,8 +291,10 @@
 
     T.test('TPV-TC-504', 'A view added to the menu is listed without a content change', function (a) {
       var order = window.TAP_VIEWS.order, saved = order.slice();
-      order.splice(5, 0, 'insights');   // a stand-in ninth entry, removed again below
+      order.splice(order.indexOf('outlook'), 1);   // one view fewer, then a stand-in entry added; both undone below
       try {
+        withGuide(function (root) { a.equal(qsa('.tap-guide__key', root).length, 8, 'eight keys for eight views'); });
+        order.splice(5, 0, 'insights');
         withGuide(function (root) {
           a.equal(qsa('.tap-guide__key', root).length, 9, 'nine keys');
           a.equal(TAP.keys.viewFor('9'), 'guide', 'the last view moves to key 9');

@@ -2,7 +2,13 @@
  * File: css/outlook.css
  * Purpose: Styles for the Outlook view.
  * Provides: styles for this area only
- * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Depends on: css/base.css, css/view-head.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: OUTLOOK stream. Colours and font sizes come from theme variables only.
  */
+
+/* ---------- the Outlook page (US-4.2.1) ---------- */
+.tap-ol__body { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
+.tap-ol__wide { min-width: 0; }
+/* The line shown in place of panels, and the one naming parts the data lacks: body size, plain words (D24) */
+.tap-ol__none, .tap-ol__some { margin: 0; max-width: 60rem; font-size: var(--tap-fs-body); line-height: 1.5; }

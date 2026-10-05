@@ -9,8 +9,7 @@
  * section 17; a view still being built may list reports that don't exist yet.
  */
 window.TAP_VIEWS = {
-  // 'outlook' joins the order after 'partners' when its view is built (Phase 4, section 19.3)
-  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'other', 'regions', 'insights', 'guide'],
+  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other', 'regions', 'insights', 'guide'],
   overview: { title: 'Overview', reports: ['ov-ambition'] },
   industry: { title: 'Industry priorities', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
   newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },

@@ -81,7 +81,7 @@
     });
 
     T.test('X-contract-views', 'The Phase 1 and Phase 2 views are registered in menu order', function (a) {
-      a.deepEqual(TAP.views.order(), ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'regions', 'insights', 'guide']);
+      a.deepEqual(TAP.views.order(), ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'regions', 'insights', 'guide']);
     });
 
     T.test('X-contract-reports', 'Every report a view lists exists and passes validation', function (a) {

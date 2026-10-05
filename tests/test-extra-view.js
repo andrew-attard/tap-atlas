@@ -43,7 +43,8 @@
     T.test('TPV-TC-581', '"Other sections" is in the menu after Partners with an extra section, and not without one', function (a) {
       loadSample();
       var order = TAP.views.order();
-      a.equal(order.indexOf('other'), order.indexOf('partners') + 1, 'straight after Partners');
+      a.equal(order.indexOf('other'), order.indexOf('outlook') + 1, 'after Partners and Outlook');
+      a.equal(order.indexOf('outlook'), order.indexOf('partners') + 1, 'Outlook comes straight after Partners');
       a.equal(TAP.views.title('other'), 'Other sections', 'menu title');
       a.ok(!TAP.views.get('other').__stub, 'the view is built');
       var root = T.dom.mount();
@@ -163,10 +164,10 @@
         a.equal(TAP.keys.viewFor(String(k)), order[k - 1] || null, 'key ' + k);
         a.ok(TAP.keys.viewFor(String(k)) !== 'other', 'key ' + k + ' is not Other sections');
       }
-      a.equal(TAP.keys.viewFor('6'), 'regions', 'key 6 opens Regions, the view after Partners');
+      a.equal(TAP.keys.viewFor('7'), 'regions', 'key 7 opens Regions, the view after Outlook');
       loadSample();
-      a.equal(TAP.keys.viewFor('6'), 'other', 'with an extra section, key 6 opens Other sections');
-      a.equal(TAP.keys.viewFor('7'), 'regions', 'and key 7 Regions');
+      a.equal(TAP.keys.viewFor('7'), 'other', 'with an extra section, key 7 opens Other sections');
+      a.equal(TAP.keys.viewFor('8'), 'regions', 'and key 8 Regions');
     });
   });
 })(window.TAP);
