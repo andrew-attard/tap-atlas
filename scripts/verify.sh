@@ -2,7 +2,7 @@
 # File: scripts/verify.sh
 # Purpose: Runs every local check in order (lint, denylist, ignored files, docs paths, browser tests) before a pull request.
 # Provides: CLI `scripts/verify.sh [--release] [--browser chrome|edge|both]`; exit 1 if any step fails
-# Depends on: tools/lint.js, tools/check-docs.js, tools/check-docs3.js, scripts/check-text.sh, scripts/test-headless.sh, git, Node
+# Depends on: tools/lint.js, tools/build-pages.js, tools/check-docs.js, tools/check-docs3.js, scripts/check-text.sh, scripts/test-headless.sh, git, Node
 # Used by: developers and agents before opening a pull request (see CONTRIBUTING.md)
 
 set -u
@@ -73,6 +73,8 @@ if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
 else
   echo "SKIP  denylist scan and ignored-files guard: not a git work tree, so there is no list of tracked files"
 fi
+# The pages and the script order in docs/ARCHITECTURE.md must match the list in tools/build-pages.js
+step "pages in step" "$node_bin" tools/build-pages.js --check
 # The QA page must list the same scripts as the app (it is generated from index-sample.html)
 if [ -f scripts/qa/make-qa-page.js ]; then
   step "qa page in step" "$node_bin" scripts/qa/make-qa-page.js --check

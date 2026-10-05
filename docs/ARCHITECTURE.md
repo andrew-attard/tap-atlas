@@ -427,27 +427,31 @@ Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'tex
 
 ## 14. Script order (all three pages; lint compares them)
 
-The master list is `APP` in `tools/build-pages.js`, which writes every page's script tags; run `node tools/build-pages.js` after adding or removing a script. The block below is the Phase 1 order, kept for orientation; Phase 2 and 3 files sit next to their Phase 1 neighbours (for example `js/core/extra.js` after `check.js`, `js/engine/measures-p2.js` and `rows.js` after `scores.js`, the `js/ui/present*.js` files after `view-head.js`).
+The master list is `APP` in `tools/build-pages.js`, which writes every page's script tags and the block below; run `node tools/build-pages.js` after adding or removing a script (`verify.sh` fails while a page or this block is out of step).
 
+<!-- script-order:start (written by tools/build-pages.js) -->
 ```
 vendor/echarts.min.js
 js/theme.js
 js/core/namespace.js  dom.js  icons.js  storage.js  store.js  format.js
 config/settings.js
-content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  glossary.js  guide.js
+content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  text-engine2.js  text-newbusiness.js  text-customers.js  text-profile.js  text-themes.js  text-present.js  text-custom.js  text-extra.js  glossary.js  guide.js
    [index.html only: content/organization.js]
 js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
-js/core/sources.js  check.js  data.js
-js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js
-config/reports.js  reports-overview.js  reports-industry.js  views.js  insight-rules.js
-js/reports/tier-grid.js  quadrant.js  details.js
-js/insights/engine.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js
-js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel.js
-js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js
-js/views/overview-cards.js  overview.js  industry.js  insights.js  guide.js
+js/core/sources.js  check.js  extra.js  data.js
+js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
+config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js
+js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js
+js/insights/engine.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js
+js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
+js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
+js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  other.js  regions-parts.js  regions.js  insights.js
+js/ui/custom-builder.js
+js/views/guide.js
 js/ui/app.js
 ```
+<!-- script-order:end -->
 
 `tests.html` then adds the harness, `tests/auto-cases.js`, the fixtures and the `tests/test-*.js` files.
 

@@ -1,8 +1,9 @@
 /*
  * File: tools/build-pages.js
  * Purpose: Writes the script lists into index.html, index-sample.html and tests.html from one list, so the
- *          three pages always load the same app scripts in the same order. Development only.
- * Provides: a command: node tools/build-pages.js
+ *          three pages always load the same app scripts in the same order, and the script order section of
+ *          docs/ARCHITECTURE.md from the same list. Development only.
+ * Provides: a command: node tools/build-pages.js [--check] (--check writes nothing and exits 1 if a file is out of step)
  * Depends on: Node 18+, nothing else
  * Used by: the lead, whenever a script file is added or removed
  */
@@ -109,9 +110,46 @@ function page(name, p) {
     scripts.join('\n') + '\n' + tail + '</body>\n</html>\n';
 }
 
-Object.keys(PAGES).forEach(function (name) {
-  fs.writeFileSync(path.join(ROOT, name), page(name, PAGES[name]));
-});
+// The script order section of docs/ARCHITECTURE.md (section 14), between its two marker comments: one line per
+// folder run, the data and organization slots in brackets, so the document can never drift from the pages.
+const ARCH = 'docs/ARCHITECTURE.md';
+const MARK_START = '<!-- script-order:start (written by tools/build-pages.js) -->';
+const MARK_END = '<!-- script-order:end -->';
+function scriptOrder() {
+  const lines = [];
+  let dir = null;
+  APP.forEach(function (s) {
+    if (s === 'ORG') { lines.push('   [index.html only: content/organization.js]'); dir = null; return; }
+    if (s === 'DATA') { lines.push('   [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]'); dir = null; return; }
+    const d = path.posix.dirname(s), f = path.posix.basename(s);
+    if (d === dir) lines[lines.length - 1] += '  ' + f;
+    else { lines.push(s); dir = d; }
+  });
+  return MARK_START + '\n```\n' + lines.join('\n') + '\n```\n' + MARK_END;
+}
+function withScriptOrder(text) {
+  const a = text.indexOf(MARK_START), b = text.indexOf(MARK_END);
+  if (a < 0 || b < a) throw new Error(ARCH + ': the script-order markers are missing');
+  return text.slice(0, a) + scriptOrder() + text.slice(b + MARK_END.length);
+}
+
+const check = process.argv.indexOf('--check') >= 0;
+const wanted = {};
+Object.keys(PAGES).forEach(function (name) { wanted[name] = page(name, PAGES[name]); });
+wanted[ARCH] = withScriptOrder(fs.readFileSync(path.join(ROOT, ARCH), 'utf8'));
+if (check) {
+  const stale = Object.keys(wanted).filter(function (f) {
+    const at = path.join(ROOT, f);
+    return !fs.existsSync(at) || fs.readFileSync(at, 'utf8') !== wanted[f];
+  });
+  if (stale.length) {
+    process.stderr.write('Out of step with tools/build-pages.js (run it and commit the result):\n  ' + stale.join('\n  ') + '\n');
+    process.exit(1);
+  }
+  process.stdout.write('pages and script order in step: ' + Object.keys(wanted).join(', ') + '\n');
+  process.exit(0);
+}
+Object.keys(wanted).forEach(function (name) { fs.writeFileSync(path.join(ROOT, name), wanted[name]); });
 
 // Every listed file must exist (except the gitignored real-data and organization files).
 const optional = ['data/plan-data.js', 'content/organization.js', 'vendor/echarts.min.js',
@@ -123,7 +161,7 @@ if (missing.length) {
   process.stderr.write('Listed but missing:\n  ' + missing.join('\n  ') + '\n');
   process.exit(1);
 }
-process.stdout.write('Wrote ' + Object.keys(PAGES).join(', ') + '\n');
+process.stdout.write('Wrote ' + Object.keys(wanted).join(', ') + '\n');
 // The QA page is generated from index-sample.html; keep it in step whenever the pages change.
 const qa = path.join(ROOT, 'scripts', 'qa', 'make-qa-page.js');
 if (fs.existsSync(qa)) require('child_process').execFileSync(process.execPath, [qa], { stdio: 'inherit' });
