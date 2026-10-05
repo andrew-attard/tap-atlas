@@ -112,9 +112,9 @@
       a.equal(F.date('2026-10-02'), '2 Oct 2026', 'a date without a time');
       a.equal(F.date('2026-10-02T09:00:00+02:00', { time: true }), '2 Oct 2026, 07:00', '09:00 at +02:00 is 07:00 UTC');
       a.equal(F.date('2026-10-02T09:05:00.000Z', { time: true }), '2 Oct 2026, 09:05');
-      a.equal(F.isoDate('2026-10-02T09:00:00Z'), true);
-      a.equal(F.isoDate('2026-13-02'), false, 'month 13 is not a date');
-      a.equal(F.isoDate('02/10/2026'), false);
+      a.equal(TAP.sources.isoDate('2026-10-02T09:00:00Z'), true);
+      a.equal(TAP.sources.isoDate('2026-13-02'), false, 'month 13 is not a date');
+      a.equal(TAP.sources.isoDate('02/10/2026'), false);
     });
 
     T.test('X-format-list', 'Lists of names join with commas and "and"', function (a) {

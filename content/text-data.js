@@ -59,6 +59,7 @@ Object.assign(window.TAP_CONTENT.text, {
       mcTier: 'the Market Coverage tier for this industry ({tier})',
       mcRow: 'an industry with a row in Market Coverage',
       sourceRow: 'the worksheet row number',
+      isoDate: 'a date written year first, such as "2026-10-02T09:00:00Z" or "2026-10-02"',
       uniqueRow: 'a worksheet row number not already used in this section',
       sourceCell: 'the worksheet cell, for example "E5"',
       sourceMap: 'the template map: a sheet and its columns for each section',

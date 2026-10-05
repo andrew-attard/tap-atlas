@@ -136,6 +136,7 @@
     var ctx = sub(rootCtx(out), 'meta');
     if (!isObj(meta)) { err(rootCtx(out), 'meta', say('expect.object'), meta); return; }
     fields(meta, SPEC.meta, ctx, env);
+    dateField(meta, 'generatedAt', ctx);
     var y = meta.years;
     if (!Array.isArray(y) || y.length !== 3 || !y.every(function (x, i) { return isNum(x) && y.indexOf(x) === i; })) err(ctx, 'years', say('expect.planYears'), y);
     else env.years = y;
@@ -192,7 +193,12 @@
   }
 
   // The helpers js/core/check-rows.js checks the regions' sections with
-  var kit = { say: say, has: has, map: map, isObj: isObj, isNum: isNum, isStr: isStr, round2: round2, at: at, sub: sub,
+  // A date the app shows must be an ISO date; any other text loads with a warning and reads "not provided" (review DE-10)
+  function dateField(obj, key, ctx) {
+    if (TAP.sources && isStr(obj[key]) && !TAP.sources.isoDate(obj[key])) warn(ctx, key, say('expect.isoDate'), obj[key]);
+  }
+
+  var kit = { dateField: dateField, say: say, has: has, map: map, isObj: isObj, isNum: isNum, isStr: isStr, round2: round2, at: at, sub: sub,
     rootCtx: rootCtx, err: err, warn: warn, fields: fields, each: each, expectFor: expectFor, TYPES: TYPES, SPEC: SPEC,
     RATINGS: RATINGS, CHANNELS: CHANNELS };
   TAP.check = { run: run, kit: kit };

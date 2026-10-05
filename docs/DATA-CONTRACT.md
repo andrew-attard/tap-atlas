@@ -299,6 +299,7 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a missing `sourceRow` (or `sourceCell` on recap items), or a `sourceMap` entry missing for a section;
 - two items of one section with the same `sourceRow`. Lists still keep them apart: the first keeps its row number, and a later item with a repeated or missing number is told apart by its position in the file;
 - an empty section;
+- a date (`meta.generatedAt`, `source.fileModified`, `source.importedAt`) that is not an ISO date such as `"2026-10-02T09:00:00Z"` or `"2026-10-02"`. The app never guesses at other forms (`"02/10/2026"` could be day first or month first), so such a date shows as not provided;
 - a rating on an industry that is not rated;
 - anything wrong in an extra section: `meta.extraSections` not a list, a section without an id, title or usable column, a section id with a colon, a duplicate id or column key, an unknown `unit` or `kind`, a column letter that isn't one, a region's `extra` naming a section that isn't listed, a row without `sourceRow`, two rows of a section from the same worksheet row, a row naming a column the section doesn't have, or a value of the wrong type for its unit. **Extra sections never stop the app**: every problem in them is a warning naming the section and the field. On screen, a section with a colon in its id or no usable column, and an unusable column, are left out, of two sections with one id or two rows from one worksheet row the first is kept, and a value of the wrong type for its unit shows as not provided.
 
