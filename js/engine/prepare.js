@@ -3,7 +3,7 @@
  * Purpose: Runs a report's measures over the comparison scope into one dataset for the chart and the table, so
  *          both always read the same cells (US-1.2.4), and works out which regions have no data (US-1.2.11).
  * Provides: TAP.prepare (run, primaryIds, selected, breakdowns)
- * Depends on: js/engine/registry.js (measureIds), js/engine/measures.js, js/engine/scope.js, js/core/data.js,
+ * Depends on: js/engine/registry.js (measureIds), js/engine/measures.js, measures-p4.js (kit4), js/engine/scope.js, js/core/data.js,
  *             js/core/content.js, js/core/store.js
  * Used by: the generic builders (build-compare, build-parts, build-xy), js/panel/panel-menus.js
  */
@@ -32,8 +32,11 @@
     return ys && ys[y - 1] ? String(ys[y - 1]) : TAP.content.text('chart.year', { n: y });
   }
 
-  // Breakdown dimensions are listed in TAP.reports.BREAKDOWNS (ARCHITECTURE 17.3); each sets one measure context key.
-  var CTX_KEY = { year: 'year', industry: 'industryId', channel: 'channel', motion: 'motion', segment: 'segment', risk: 'risk' };
+  // Breakdown dimensions are listed in TAP.reports.BREAKDOWNS (ARCHITECTURE 17.3, 19.2); each sets one measure context key.
+  var CTX_KEY = { year: 'year', industry: 'industryId', channel: 'channel', motion: 'motion', segment: 'segment', risk: 'risk',
+    solution: 'solution', category: 'category', route: 'route', maturity: 'maturity', partnerType: 'partnerType' };
+  // The Phase 4 dimensions and the lookup each takes its values from
+  var LOOKUP = { solution: 'solutions', category: 'productCategories', route: 'routes', maturity: 'partnerMaturity', partnerType: 'partnerTypes' };
 
   // bd: {dim, value, label} for a breakdown column. Year columns keep the Phase 1 key <id>@y1..3.
   function column(def, id, bd) {
@@ -66,9 +69,23 @@
   function lookupValues(list) { return (list || []).map(function (x) { return { value: x.id, label: x.name }; }); }
   function words(dim, ids) { return ids.map(function (v) { return { value: v, label: TAP.content.text('breakdown.' + dim + '.' + v) }; }); }
 
+  // A Phase 4 dimension: the lookup's values in its order, then "none" when some row or item in scope names no value.
+  function lookupValuesOf(dim, ids, entities, mctx) {
+    var none = {};
+    none[CTX_KEY[dim]] = 'none';
+    var used = entities.some(function (e) {
+      return ids.some(function (id) {
+        var c = TAP.measures.combined(id, e, Object.assign({}, mctx, none));
+        return c.state === 'value' && c.v !== 0;
+      });
+    });
+    return lookupValues(TAP.measures.kit4.lookup(LOOKUP[dim])).concat(used ? words(dim, ['none']) : []);
+  }
+
   // The values of a dimension. Industries are those with a value for some entity in scope; the rest are fixed lists.
   function valuesOf(dim, ids, entities, mctx) {
     var lk = TAP.data.lookups() || {};
+    if (LOOKUP[dim]) return lookupValuesOf(dim, ids, entities, mctx);
     if (dim === 'year') return [1, 2, 3].map(function (y) { return { value: y, label: yearLabel(y) }; });
     if (dim === 'channel') return lookupValues(lk.channels);
     if (dim === 'segment') return lookupValues(lk.segments);
@@ -122,6 +139,9 @@
     var entities = ctx.entities || TAP.scope.entities(ctx.cmp);
     var mctx = { year: ctx.year || null, industryId: industryOf(def, ctx), channel: ctx.channel || null,
       weights: (def.options && def.options.weights) || null };
+    // Which base-year figure growth is measured against (by.growth): the panel's choice, else the report's
+    var against = (ctx.opts && ctx.opts.against) || (def.options && def.options.against);
+    if (against) mctx.against = against;
     var cols = columns(def, ctx, entities, mctx), rows = [], dim = def.dimension || 'entity';
     var industries = dim === 'industry' ? TAP.data.industries({ rated: true }) : null;
 

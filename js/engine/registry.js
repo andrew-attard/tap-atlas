@@ -10,8 +10,8 @@
 (function (TAP) {
   'use strict';
 
-  // The breakdown dimensions a report may allow (ARCHITECTURE 17.3, US-2.7.5)
-  var BREAKDOWNS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk'];
+  // The breakdown dimensions a report may allow (ARCHITECTURE 17.3, US-2.7.5; the last five from 19.2, US-4.1.4)
+  var BREAKDOWNS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk', 'solution', 'category', 'route', 'maturity', 'partnerType'];
   var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread', 'list'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',
     'heatmap', 'bubbleGrid', 'line', 'table', 'list'];

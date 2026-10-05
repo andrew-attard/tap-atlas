@@ -1,8 +1,9 @@
 /*
  * File: js/engine/rows.js
  * Purpose: Row-level figures for lists, bubbles and details: one cell per new business row, account or partner, with its source (US-2.7.2).
- * Provides: TAP.rows (list, cell, columns, matchKey, section, rowSrc)
- * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/core/extra.js (row sources "extra:<id>") (at call time)
+ * Provides: TAP.rows (list, cell, columns, optional, matchKey, section, rowSrc)
+ * Depends on: js/core/data.js, js/core/content.js, js/core/format.js, js/core/extra.js (row sources "extra:<id>"),
+ *             js/engine/measures-p4.js (kit4: the partner maturity lookup) (at call time)
  * Used by: js/engine/build-list.js, js/reports/row-bubble.js, js/reports/details-rows.js, js/insights/rules-shared.js
  * Owner: ENGINE2 stream (#194)
  */
@@ -82,6 +83,14 @@
     };
   }
   function field(name) { return function (it) { return it[name]; }; }
+  // A partner's maturity: the lookup's name for the level, with its rank to sort by. A value the lookup doesn't
+  // have reads as written and sorts after the levels; without the lookup it is plain text, as before Phase 4.
+  function maturity(p) {
+    var levels = TAP.measures.kit4.lookup('partnerMaturity'), m = TAP.measures.kit4.maturity(p.maturity);
+    if (!levels.length || p.maturity == null || p.maturity === '') return p.maturity;
+    return m ? { v: m.name, rank: levels.indexOf(m) } : { v: p.maturity, rank: levels.length };
+  }
+  function partnerType(p) { return p.type ? lookupName(TAP.measures.kit4.lookup('partnerTypes'), p.type) : null; }
   function region(it, regionId) { return regionName(regionId); }
   function industry(it) { return it.industryId ? (TAP.data.industry(it.industryId) || {}).name || it.industryId : null; }
 
@@ -114,12 +123,14 @@
     partners: [
       ['region', 'text', 'PRE', 'name', region], ['name', 'text', 'IN', 'name', field('name')],
       ['channel', 'text', 'IN', 'channel', function (p) { return p.channel ? lookupName(TAP.data.lookups().channels, p.channel) : null; }],
-      ['maturity', 'text', 'IN', 'maturity', field('maturity')], ['expertiseGeo', 'text', 'IN', 'expertiseGeo', field('expertiseGeo')],
+      ['type', 'text', 'IN', 'type', partnerType],
+      ['maturity', 'text', 'IN', 'maturity', maturity], ['expertiseGeo', 'text', 'IN', 'expertiseGeo', field('expertiseGeo')],
       ['expertiseProduct', 'text', 'IN', 'expertiseProduct', field('expertiseProduct')],
       ['fteSales', 'count', 'IN', 'fteSales', field('fteSales')], ['fteConsultants', 'count', 'IN', 'fteConsultants', field('fteConsultants')],
       ['fte', 'count', 'APP', 'fteSales', fte], ['centralSupportPct', 'pct', 'IN', 'centralSupportPct', field('centralSupportPct')],
       ['arr3', 'money', 'IN', 'arr', function (p) { return years3(p.arr); }],
       ['services3', 'money', 'IN', 'services', function (p) { return years3(p.services); }],
+      ['distribution', 'money', 'DER', 'distribution', function (p) { return years3(p.distribution); }],
       // Three-year order intake per head (D61): only for partners with staff figures
       ['oiPerFte', 'money', 'APP', 'arr', function (p) {
         var f = fte(p), a = years3(p.arr), s = years3(p.services);
@@ -134,10 +145,20 @@
   var DECIMALS = { multiplier3y: 2 };
   function spec(source, key) { return (COLS[source] || []).filter(function (c) { return c[0] === key; })[0] || null; }
 
+  // Phase 4 columns a file may not have. A list shows one only when the file has it, so an earlier file reads as before.
+  var OPTIONAL = { partners: {
+    type: function () { return TAP.measures.kit4.lookup('partnerTypes').length > 0; },
+    distribution: function () {
+      return TAP.data.regions().some(function (r) { return (r.partners || []).some(function (p) { return Array.isArray(p.distribution); }); });
+    }
+  } };
+  function optional(source, key) { return !!(OPTIONAL[SOURCE[source]] || {})[key]; }
+  function shown(source, key) { var has = (OPTIONAL[source] || {})[key]; return !has || has(); }
+
   function columns(source) {
     if (extra(source)) return TAP.extra.columns(source);
     source = SOURCE[source];
-    return (COLS[source] || []).map(function (c) {
+    return (COLS[source] || []).filter(function (c) { return shown(source, c[0]); }).map(function (c) {
       var out = { key: c[0], unit: c[1], kind: c[2], label: t('rows.' + source + '.' + c[0]) };
       if (DECIMALS[c[0]]) out.decimals = DECIMALS[c[0]];
       return out;
@@ -176,6 +197,7 @@
     var out = { v: null, state: 'notProvided', kind: c[2], src: s };
     if (v && typeof v === 'object') {
       if (v.regionIds) out.regionIds = v.regionIds;
+      if (v.rank != null) out.rank = v.rank;   // what a list sorts the column by, in place of the text
       if (v.partial) { out.partial = true; out.note = t('measures.partialYears'); }
       v = v.v;
     }
@@ -185,5 +207,5 @@
     return out;
   }
 
-  TAP.rows = { list: list, cell: cell, columns: columns, matchKey: matchKey, section: function (s) { return extra(s) ? s : SECTION[SOURCE[s]]; }, rowSrc: rowSrc };
+  TAP.rows = { list: list, cell: cell, columns: columns, optional: optional, matchKey: matchKey, section: function (s) { return extra(s) ? s : SECTION[SOURCE[s]]; }, rowSrc: rowSrc };
 })(window.TAP);

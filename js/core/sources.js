@@ -11,6 +11,8 @@
  * The cell comes from meta.sourceMap: a fixed cell (src.cell or the section's cells map), or the field's
  * column (one per plan year for fields held by year) plus the item's row. A sum over several rows
  * (src.rows) or over all three years (year null on a by-year field) gives a range such as "G10:G14".
+ * The Phase 4 lists (revenue, books value, strategic plan, routes) hold a fixed cell per item: a sum over
+ * several of them (src.cells) names the block they fill, or the first and last cell and how many.
  */
 (function (TAP) {
   'use strict';
@@ -34,8 +36,26 @@
     return (src.rows || []).filter(num).slice().sort(function (a, b) { return a - b; });
   }
 
+  // Lists of items with a fixed cell each (ARCHITECTURE 19.1). The recap keeps its Phase 2 address: file and sheet.
+  var CELL_LISTS = { revenue: true, booksValue: true, strategicPlan: true, routes: true };
+  function colNum(letters) { return letters.split('').reduce(function (n, ch) { return n * 26 + ch.charCodeAt(0) - 64; }, 0); }
+
+  // Several fixed cells as one address: "E90:G91" when they fill a block, else "E90 to G93 (8 cells)".
+  function cellsText(cells) {
+    var at = cells.filter(function (c, i) { return cells.indexOf(c) === i; }).map(function (c) {
+      var m = /^([A-Z]+)(\d+)$/.exec(c);
+      return m ? { c: colNum(m[1]), r: +m[2], text: c } : null;
+    });
+    if (at.some(function (x) { return !x; })) return null;
+    at.sort(function (x, y) { return x.r - y.r || x.c - y.c; });
+    var cols = at.map(function (x) { return x.c; }), first = at[0], last = at[at.length - 1];
+    var block = (Math.max.apply(null, cols) - Math.min.apply(null, cols) + 1) * (last.r - first.r + 1) === at.length;
+    return block ? first.text + ':' + last.text : say('someCells', { first: first.text, last: last.text, n: at.length });
+  }
+
   function cellFor(src, map) {
     if (src.cell) return src.cell;
+    if (CELL_LISTS[src.section] && src.cells && src.cells.length > 1) return cellsText(src.cells);
     if (!map) return null;
     if (has(map.cells, src.field)) return map.cells[src.field];
     var col = has(map.columns, src.field) ? map.columns[src.field] : null;
