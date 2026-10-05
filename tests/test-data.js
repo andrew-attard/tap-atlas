@@ -191,7 +191,13 @@
         r.recap.forEach(function (x, i) { a.match(x.sourceCell, /^[A-Z]+\d+$/, r.id + ' recap[' + i + '] sourceCell'); });
       });
       var map = P.meta.sourceMap;
-      a.deepEqual(map, window.TEST_FIXTURES.mini.meta.sourceMap, 'same shape and columns as the mini fixture');
+      // Phase 4 only adds to the map (US-4.1.1): without its additions, the sample's map is still the mini fixture's
+      var base = JSON.parse(JSON.stringify(map));
+      ['revenue', 'booksValue', 'strategicPlan', 'routes', 'baseYear'].forEach(function (k) { delete base[k]; });
+      delete base.newBusiness.columns.solution;
+      ['type', 'supportPct', 'distribution', 'servicesFromPartners'].forEach(function (k) { delete base.partners.columns[k]; });
+      delete base.partners.cells;
+      a.deepEqual(base, window.TEST_FIXTURES.mini.meta.sourceMap, 'same shape and columns as the mini fixture');
       var fields = {
         marketCoverage: ['industryId', 'currentArr', 'pipelineTotal', 'pipelineCreated12m', 'tier', 'commentary'].concat(RATINGS),
         newBusiness: ['industryId', 'market', 'subVertical', 'targetAccounts', 'hitRate', 'avgDealSize', 'successFactors', 'arrPotential',
