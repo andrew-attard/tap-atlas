@@ -178,5 +178,176 @@
       flat.forEach(function (id, n) { if (/^pt-/.test(id)) lastPt = n; if (/^ol-/.test(id)) firstOl = Math.min(firstOl, n); });
       a.ok(firstOl > lastPt, 'profile: Outlook reports follow the Partners report');
     });
+
+    /* ---------- US-4.2.2 the plan against the strategic plan ---------- */
+
+    var SP = 'ol-strategic', X = window.TEST_EXPECT.miniP4, TOL = 1e-6;
+    function row(res, id) { return res.table.rows.filter(function (r) { return r.id === id; })[0]; }
+    function v(c) { return c && c.state === 'value' ? c.v : null; }
+    // Checks a cell against a hand-worked value: a number, or null for "not provided"
+    function cellIs(a, c, exp, what) {
+      a.ok(c && c.src, what + ' is a cell with a source');
+      if (exp === null) { a.equal(c.state, 'notProvided', what + ' is not provided'); a.equal(c.v, null, what + ' is never zero'); return; }
+      a.equal(c.state, 'value', what + ' has a value');
+      a.near(c.v, exp, TOL, what);
+    }
+    var SP_KEYS = ['sp.oi', 'sp.plan', 'sp.variance', 'sp.variancePct'];
+
+    when([SP], 'TPV-TC-688', 'Strategic plan, plan and variance per entity, for the three years and per plan year, equal the hand-worked figures', function (a) {
+      load();
+      var res = build(SP, { mode: 'all' }, { type: 'table' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity'].concat(SP_KEYS), 'the table holds the four figures');
+      ['alpha', 'bravo', 'delta'].forEach(function (r) {
+        SP_KEYS.forEach(function (k) { cellIs(a, row(res, r).cells[k], X.region[r][k], r + ' ' + k); });
+      });
+      SP_KEYS.forEach(function (k) { cellIs(a, row(res, 'charlie').cells[k], null, 'charlie ' + k); });
+      // Per plan year: Region A year 1 (900, 865, -35, -35 / 900); Region D year 3 (950, 840, -110, -110 / 950 = -0.1157895)
+      var by = build(SP, { mode: 'all' }, { type: 'table', breakdown: 'year' });
+      a.equal(by.error, null, 'builds by year');
+      a.equal(by.table.rows.length, 12, 'one row per region and plan year');
+      cellIs(a, row(by, 'alpha:1').cells['sp.oi'], X.region.alpha['sp.oi.y1'], 'A year 1 strategic plan');
+      cellIs(a, row(by, 'alpha:1').cells['sp.plan'], X.region.alpha['sp.plan.y1'], 'A year 1 plan');
+      cellIs(a, row(by, 'alpha:1').cells['sp.variance'], X.region.alpha['sp.variance.y1'], 'A year 1 variance');
+      cellIs(a, row(by, 'alpha:1').cells['sp.variancePct'], X.region.alpha['sp.variancePct.y1'], 'A year 1 variance %');
+      cellIs(a, row(by, 'delta:3').cells['sp.oi'], X.region.delta['sp.oi.y3'], 'D year 3 strategic plan');
+      cellIs(a, row(by, 'delta:3').cells['sp.plan'], X.region.delta['sp.plan.y3'], 'D year 3 plan');
+      cellIs(a, row(by, 'delta:3').cells['sp.variance'], X.region.delta['sp.variance.y3'], 'D year 3 variance');
+      cellIs(a, row(by, 'delta:3').cells['sp.variancePct'], -110 / 950, 'D year 3 variance %');
+      a.ok(/2027/.test(row(by, 'alpha:1').cells.entity.v), 'the row is named with its year: ' + row(by, 'alpha:1').cells.entity.v);
+      // The chart: two bars per row, the variance written after them in money and in percent
+      var chart = build(SP, { mode: 'all' });
+      var bars = chart.option.series.filter(function (s) { return s.tapRole === 'value'; });
+      a.deepEqual(bars.map(function (s) { return s.name; }), ['Strategic plan', 'Plan'], 'two bars per region');
+      a.deepEqual(chart.option.yAxis.data.slice(0, 2), ['Region A', 'Region B'], 'one row per region');
+      var end = chart.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
+      a.equal(end.label.formatter({ dataIndex: 0 }), 'Variance -€125k (-5%)', 'Region A: the variance in money and %');
+      a.equal(end.label.formatter({ dataIndex: 1 }), 'Variance +€110k (+3%)', 'Region B: above its strategic plan reads with a plus');
+      a.equal(end.label.formatter({ dataIndex: 2 }), '', 'Region C: no variance line');
+      a.ok(chart.option.series.some(function (s) { return s.tapRole === 'notProvided'; }), 'Region C has the not-provided mark');
+      a.equal(bars[0].data[0].text, 'Strategic plan  €2.7M', 'each bar is named on the chart');
+      a.equal(bars[1].label.formatter({ data: bars[1].data[0] }), 'Plan  €2.6M', 'the plan bar too');
+      a.ok(chart.legend.some(function (l) { return l.role === 'part' && l.label === 'Plan'; }), 'the key names the bars');
+      a.ok(chart.height > 400, 'a height hint that gives every row its room');
+    });
+
+    when([SP], 'TPV-TC-690', 'The measure switch offers total, ARR, services, software perpetual and hardware where the data gives them', function (a) {
+      load();
+      var def = TAP.reports.get(SP);
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['Total', 'ARR', 'Services', 'Software perpetual', 'Hardware'], 'the five types');
+      a.deepEqual(TAP.reports.validate(def), [], 'valid');
+      function offered() {
+        var root = T.dom.mount(), p = TAP.panel.create(root, SP, {});
+        try { return qsa('[data-control="measure"] button', root).map(txt); } finally { p.destroy(); }
+      }
+      a.deepEqual(offered(), ['Total', 'ARR', 'Services', 'Software perpetual', 'Hardware'], 'all five with the fixture (A has software perpetual, D hardware)');
+      // ARR: the recurring category of each figure. A: 2200, books 2140, -60, -60 / 2200
+      var res = build(SP, { mode: 'all' }, { type: 'table', measureId: 'sp.arr' });
+      cellIs(a, row(res, 'alpha').cells['sp.oi'], X.region.alpha['sp.arr'], 'A ARR strategic plan');
+      cellIs(a, row(res, 'alpha').cells['sp.plan'], X.region.alpha['bk.arr'], 'A ARR plan');
+      cellIs(a, row(res, 'alpha').cells['sp.variance'], -60, 'A ARR variance');
+      cellIs(a, row(res, 'alpha').cells['sp.variancePct'], -60 / 2200, 'A ARR variance %');
+      // Hardware: only D has one; A's hardware books value has no strategic plan figure, so A is not provided
+      var hw = build(SP, { mode: 'all' }, { type: 'table', measureId: 'sp.hardware' });
+      cellIs(a, row(hw, 'delta').cells['sp.oi'], X.region.delta['sp.hardware'], 'D hardware strategic plan');
+      cellIs(a, row(hw, 'delta').cells['sp.plan'], X.region.delta['bk.hardware'], 'D hardware plan');
+      a.equal(row(hw, 'alpha').cells['sp.oi'].state, 'notProvided', 'A: no hardware in its strategic plan');
+      a.ok(hw.missing.indexOf('Region A') >= 0, 'and A is named as not provided');
+      // A category no region's strategic plan gives is not offered
+      var p = window.T_FIXTURE('miniP4');
+      p.regions.forEach(function (r) { r.strategicPlan = (r.strategicPlan || []).filter(function (it) { return it.type !== 'hardware'; }); });
+      TAP.data.load(p);
+      a.deepEqual(offered(), ['Total', 'ARR', 'Services', 'Software perpetual'], 'hardware is not offered without a hardware figure');
+    });
+
+    when([SP], 'TPV-TC-691', 'Organization total: the sum of the plans against the sum of the strategic plans, with each region’s share of the gap', function (a) {
+      load();
+      var res = build(SP, { mode: 'org' }, { type: 'table' }), org = res.table.rows[0];
+      SP_KEYS.forEach(function (k) { cellIs(a, org.cells[k], X.combined.orgTotal[k], 'organization ' + k); });
+      a.equal(res.table.columns[res.table.columns.length - 1].label, 'Share of the gap', 'a share column');
+      // Each region's variance over the combined variance of -530: A -125 (0.2358491), B +110 (-0.2075472), D -515 (0.9716981)
+      var share = { alpha: -125 / -530, bravo: 110 / -530, delta: -515 / -530 };
+      Object.keys(share).forEach(function (r) {
+        var x = row(res, 'org/' + r);
+        a.ok(x, r + ' has a row under the total');
+        cellIs(a, x.cells.share, share[r], r + ' share of the gap');
+        a.equal(x.cells.share.kind, 'APP', 'calculated by this app');
+        cellIs(a, x.cells['sp.variance'], X.region[r]['sp.variance'], r + ' variance beside it');
+      });
+      a.near(Object.keys(share).reduce(function (t, r) { return t + v(row(res, 'org/' + r).cells.share); }, 0), 1, TOL, 'the shares add up to 1');
+      a.equal(row(res, 'org/charlie').cells.share.state, 'notProvided', 'C has no strategic plan: no share');
+      a.equal(org.cells.share.state, 'notApplicable', 'the total itself has no share');
+      a.equal(build(SP, { mode: 'all' }, { type: 'table' }).table.columns.filter(function (c) { return c.key === 'share'; }).length, 0, 'no share column without a combined total');
+      var chart = build(SP, { mode: 'org' });
+      a.equal(chart.option.yAxis.data.length, 1, 'one row on the chart');
+      a.near(chart.option.series[0].data[0].value, 9000, TOL, 'the summed strategic plans');
+      a.near(chart.option.series[1].data[0].value, 8470, TOL, 'against the summed plans');
+    });
+
+    when([SP], 'TPV-TC-692', 'A region without a strategic plan is not provided, left out of combined variances and named in a note', function (a) {
+      load();
+      var res = build(SP, { mode: 'all' }, { type: 'table' });
+      SP_KEYS.forEach(function (k) { cellIs(a, row(res, 'charlie').cells[k], null, 'charlie ' + k); });
+      a.ok(res.missing.indexOf('Region C') >= 0, 'named among the regions with no data');
+      var org = build(SP, { mode: 'org' }, { type: 'table' }), top = org.table.rows[0];
+      cellIs(a, top.cells['sp.variance'], X.combined.orgTotal['sp.variance'], 'the combined variance leaves C out');
+      cellIs(a, top.cells['sp.variancePct'], X.combined.orgTotal['sp.variancePct'], 'as a ratio of sums');
+      a.ok(top.cells['sp.variance'].src.excluded.indexOf('charlie') >= 0, 'the source says C was left out');
+      a.ok(org.notes.some(function (n) { return /Region C/.test(n) && /not provided/.test(n); }), 'a note names Region C: ' + org.notes.join(' | '));
+      var rest = build(SP, { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }, { type: 'table' });
+      cellIs(a, row(rest, 'rest').cells['sp.variance'], X.combined.restOfAlphaAverage['sp.variance'], 'the rest as an average, without C');
+      cellIs(a, row(rest, 'rest').cells['sp.variancePct'], X.combined.restOfAlphaAverage['sp.variancePct'], 'the rest’s variance % over the summed strategic plans');
+      a.ok(rest.notes.some(function (n) { return /Region C/.test(n); }), 'the rest’s note names Region C');
+    });
+
+    when([SP], 'TPV-TC-723', 'Product category is a breakdown of the strategic plan report; the category parts equal the hand-worked figures and add up', function (a) {
+      load();
+      var def = TAP.reports.get(SP);
+      a.ok(TAP.prepare.breakdowns(def, {}).indexOf('category') >= 0, 'offered');
+      var res = build(SP, { mode: 'org' }, { type: 'table', breakdown: 'category' });
+      a.equal(res.error, null, 'builds by category');
+      var exp = X.breakdowns.filter(function (b) { return b.id === 'sp.oi' && b.dim === 'category' && b.entity === 'org'; })[0];
+      var sum = 0;
+      Object.keys(exp.values).forEach(function (cat) {
+        cellIs(a, row(res, 'org:' + cat).cells['sp.oi'], exp.values[cat], 'strategic plan ' + cat);
+        sum += v(row(res, 'org:' + cat).cells['sp.oi']);
+      });
+      a.near(sum, exp.total, TOL, 'the categories add up to the strategic plan total');
+      // The plan on the same basis per category: recurring 7248 (the books ARR), services 385 + 270 + 417 = 1072,
+      // software perpetual 50 (A), hardware 100 (D; A's hardware has no strategic plan figure) = 8470
+      var plan = { recurring: 7248, services: 1072, swPerpetual: 50, hardware: 100 };
+      Object.keys(plan).forEach(function (cat) { cellIs(a, row(res, 'org:' + cat).cells['sp.plan'], plan[cat], 'plan ' + cat); });
+      a.near(Object.keys(plan).reduce(function (t, c) { return t + plan[c]; }, 0), X.combined.orgTotal['sp.plan'], TOL, 'the plan parts add up to the total');
+      // With one type selected, only its category stays on the chart
+      var arr = build(SP, { mode: 'all' }, { type: 'table', measureId: 'sp.arr', breakdown: 'category' });
+      a.deepEqual(arr.table.rows.map(function (r) { return r.id; }), ['alpha:recurring', 'bravo:recurring', 'charlie:recurring', 'delta:recurring'], 'ARR broken down by category shows the recurring rows only');
+    });
+
+    T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
+      load();
+      var built = REPORTS.filter(function (id) { return !!TAP.reports.get(id); });
+      a.ok(built.length > 0, 'some report is built: ' + built.join(', '));
+      var modes = [{ mode: 'all' }, { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }, { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'total' },
+        { mode: 'pair', focus: 'alpha', second: 'bravo' }, { mode: 'set', set: ['alpha', 'charlie', 'delta'] }, { mode: 'org' }];
+      built.forEach(function (id) {
+        var def = TAP.reports.get(id);
+        a.deepEqual(TAP.reports.validate(def), [], id + ' is valid');
+        a.ok(def.explain.shows.length > 40 && def.explain.read.length > 40 && def.explain.lookFor.length > 40, id + ' has its explanation');
+        modes.forEach(function (m) {
+          var res = build(id, m), label = id + ' ' + m.mode + (m.restAgg || ''), n = 0;
+          a.equal(res.error, null, label + ': builds');
+          a.ok(res.option || res.empty, label + ': draws a chart');
+          (res.table.rows || []).forEach(function (r) {
+            Object.keys(r.cells).forEach(function (k) {
+              var c = r.cells[k];
+              if (k === 'entity' || !c || c.kind == null) return;
+              a.ok(c.src, label + ': ' + r.id + ' ' + k + ' has a source');
+              n++;
+            });
+          });
+          a.ok(n > 0, label + ': checked ' + n + ' cells');
+        });
+      });
+    });
   });
 })(window.TAP);

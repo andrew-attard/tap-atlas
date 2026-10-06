@@ -33,6 +33,7 @@
     add('sp.variance', 'amount', 'APP', YC);
     add('sp.variancePct', 'rate', 'APP', YC);
     ['budget', 'forecast', 'actuals', 'pipeline'].forEach(function (f) { add('by.' + f, 'amount', 'PRE', ['category']); });
+    add('by.plan', 'amount', 'DER', ['category']);
     add('by.growth', 'rate', 'APP', ['category']);
     add('by.coverage', 'rate', 'APP', ['category']);
     ['nb', 'cg', 'all'].forEach(function (m) {
