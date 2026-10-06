@@ -166,10 +166,12 @@
 
     var PT_COLS = ['region', 'name', 'channel', 'maturity', 'expertiseGeo', 'expertiseProduct', 'fteSales', 'fteConsultants',
       'centralSupportPct', 'arr3', 'services3', 'oiPerFte', 'alsoNamed'];
+    // The definition also lists the Phase 4 columns (US-4.5.3); a file without them shows the Phase 2 columns only
+    var PT_COLS_DEF = PT_COLS.slice(0, 3).concat(['type']).concat(PT_COLS.slice(3, 11)).concat(['distribution']).concat(PT_COLS.slice(11));
     function ids(res) { return res.table.rows.map(function (r) { return r.id; }); }
 
     T.test('TPV-TC-430', 'Columns: region, partner, channel, maturity, expertise, sales and consultant FTE, central support, ARR, services, order intake per FTE', function (a) {
-      a.deepEqual(TAP.reports.get('pt-list').columns.map(function (c) { return c.key; }), PT_COLS, 'definition');
+      a.deepEqual(TAP.reports.get('pt-list').columns.map(function (c) { return c.key; }), PT_COLS_DEF, 'definition');
       var res = H.build('pt-list', { mode: 'all' });
       a.equal(res.error, null, 'builds');
       a.deepEqual(res.table.columns.map(function (c) { return c.key; }), PT_COLS, 'table');

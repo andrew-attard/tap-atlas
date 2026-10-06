@@ -1,7 +1,7 @@
 /*
  * File: config/reports-partners.js
  * Purpose: Report definitions for the Partners view.
- * Provides: adds to window.TAP_REPORTS (pt-reliance, pt-capacity, pt-books, pt-routes, pt-list)
+ * Provides: adds to window.TAP_REPORTS (pt-reliance, pt-capacity, pt-books, pt-routes, pt-maturity, pt-list)
  * Depends on: config/reports.js (schema); builders 'rowBubble', 'list', 'ptBooks' (js/reports/pt-books.js) and
  *             'dimStack' (js/reports/dim-stack.js)
  * Used by: js/engine/registry.js, js/views/partners.js
@@ -111,13 +111,35 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     options: { by: 'route' }
   };
 
+  // US-4.5.3: the partner base by maturity level, in the lookup's order (Recruit to Strategic), counted and as the
+  // order intake those partners are planned to bring; a partner without a level counts under "not provided".
+  window.TAP_REPORTS['pt-maturity'] = {
+    id: 'pt-maturity',
+    view: 'partners',
+    title: 'How established are the partners carrying each plan?',
+    explain: {
+      shows: 'Each region’s named partners by maturity level, from Recruit to Strategic as the template orders them: how many partners sit at each level, and the three-year order intake (ARR plus services) they are planned to bring. Partners with no level are counted under “Maturity not provided”.',
+      read: 'One bar per region, the levels as parts numbered as in the key, lowest level first. Switch between the number of partners and their planned order intake, and break down by partner type to see a bar per type. The 100% view compares the mix whatever the size of the partner base.',
+      lookFor: 'Plans whose order intake rests on partners still being recruited or onboarded, regions with no strategic partner, and partners named without a level or type.'
+    },
+    shape: 'parts',
+    builder: 'dimStack',
+    dimension: 'entity',
+    measures: [{ id: 'pt.count.maturity', label: 'Partners' }, { id: 'pt.oi.maturity', label: 'Order intake' }],
+    defaultType: 'stackedBar',
+    types: ['stackedBar', 'stacked100', 'table'],
+    breakdowns: ['partnerType'],
+    sources: ['IN'],
+    options: { by: 'maturity' }
+  };
+
   // US-2.3.4: every named partner, as a sortable list.
   window.TAP_REPORTS['pt-list'] = {
     id: 'pt-list',
     view: 'partners',
     title: 'Which partners does each region name?',
     explain: {
-      shows: 'Every partner the regions name, with its channel, maturity, expertise, people, central support and planned contribution.',
+      shows: 'Every partner the regions name, with its channel, type, maturity, expertise, people, central support, planned contribution and, where the template gives it, the distribution it carries at customer value.',
       read: 'One row per partner, sorted by three-year ARR. Filter by channel, sort by any column and click a row for the partner’s details and source row. "Also named by" lists the other regions that name a partner with the same name, ignoring case and spacing.',
       lookFor: 'Partners several regions work with, and partners carrying a large plan with few people.'
     },
@@ -126,8 +148,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     dimension: 'entity',
     rows: 'partners',
     columns: [
-      { key: 'region' }, { key: 'name' }, { key: 'channel' }, { key: 'maturity' }, { key: 'expertiseGeo' }, { key: 'expertiseProduct' },
-      { key: 'fteSales' }, { key: 'fteConsultants' }, { key: 'centralSupportPct' }, { key: 'arr3' }, { key: 'services3' },
+      { key: 'region' }, { key: 'name' }, { key: 'channel' }, { key: 'type' }, { key: 'maturity' }, { key: 'expertiseGeo' }, { key: 'expertiseProduct' },
+      { key: 'fteSales' }, { key: 'fteConsultants' }, { key: 'centralSupportPct' }, { key: 'arr3' }, { key: 'services3' }, { key: 'distribution' },
       { key: 'oiPerFte' }, { key: 'alsoNamed' }
     ],
     sort: { key: 'arr3', dir: 'desc' },
