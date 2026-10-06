@@ -2,8 +2,10 @@
  * File: tests/test-extra.js
  * Purpose: Tests for extra template sections in the data (US-3.2.1). The view's tests are in tests/test-extra-view.js.
  * Provides: test cases TPV-TC-574 to TPV-TC-579 (automated ones) and X-extra-check, X-extra-tolerant, X-extra-rows
- * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
+ * Depends on: tests/harness.js, tests/test-setup.js (T_WITH_EXTRA), the app scripts, tests/fixtures/mini-data.js,
  *             data/sample-plan-data.js (window.PLAN_DATA), tests/fixtures/sample-expected.js (SAMPLE_EXPECT.extra)
+ *
+ * The sample has no extra section (D93): these tests run on a copy of the sample with the test section added.
  * Used by: tests.html
  * Owner: EXTRA stream
  */
@@ -13,7 +15,7 @@
   var SRC = 'extra:events';
   function E() { return window.SAMPLE_EXPECT.extra; }
   function copy(x) { return JSON.parse(JSON.stringify(x)); }
-  function sample() { return copy(window.PLAN_DATA); }
+  function sample() { return window.T_WITH_EXTRA(); }
   function loadSample() { var r = TAP.data.load(sample()); if (TAP.insights && TAP.insights.reset) TAP.insights.reset(); return r; }
   function about(list) { return list.filter(function (w) { return /extra/i.test(w.path); }); }
   function messages(list) { return list.map(function (w) { return w.message; }).join(' | '); }
@@ -66,7 +68,7 @@
       a.deepEqual(TAP.rows.list(SRC), [], 'no rows');
     });
 
-    T.test('TPV-TC-575', 'The sample data with its extra section passes the check with no errors and no extra-section warnings', function (a) {
+    T.test('TPV-TC-575', 'The sample data with the test extra section passes the check with no errors and no extra-section warnings', function (a) {
       var res = TAP.check.run(sample());
       a.deepEqual(res.errors, [], messages(res.errors));
       a.deepEqual(about(res.warnings), [], messages(about(res.warnings)));
@@ -144,7 +146,13 @@
       a.equal(TAP.extra.rowName(SRC, TAP.rows.list(SRC, ['na'])[1].item), 'Healthcare roundtable', 'text does');
     });
 
-    T.test('TPV-TC-579', 'The sample data has one extra section, with rows for at least one region', function (a) {
+    T.test('TPV-TC-579', 'The sample data has no extra section (D93); with the test section there is one, with rows for some regions', function (a) {
+      var plain = copy(window.PLAN_DATA);
+      a.equal(plain.meta.extraSections, undefined, 'the sample has no meta.extraSections');
+      a.deepEqual(plain.regions.filter(function (r) { return 'extra' in r; }).map(function (r) { return r.id; }), [], 'and no region has extra');
+      TAP.data.load(plain);
+      a.equal(TAP.extra.sections().length, 0, 'no sections on the sample');
+      a.equal(TAP.extra.any(), false, 'any() is false on the sample');
       loadSample();
       var list = TAP.extra.sections();
       a.equal(list.length, 1, 'one section');
@@ -187,7 +195,7 @@
       a.deepEqual(TAP.rows.columns('extra:nothing'), [], 'and no columns');
     });
 
-    T.test('TPV-TC-577', 'Every value in the sample extra section traces to file, section (as the sheet) and its source row', function (a) {
+    T.test('TPV-TC-577', 'Every value in the test extra section traces to file, section (as the sheet) and its source row', function (a) {
       loadSample();
       E().sources.forEach(function (s) {
         var c = TAP.rows.cell(SRC, s.src.field, { regionId: s.src.regionId, row: s.src.row });
