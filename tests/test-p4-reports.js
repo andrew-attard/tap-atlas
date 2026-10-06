@@ -35,7 +35,7 @@
     a.ok(c && c.src, what + ': a cell with a source');
     if (want === null) { a.equal(c.state, 'notProvided', what + ' is not provided'); a.ok(c.v !== 0, what + ' is never zero'); return; }
     a.equal(c.state, 'value', what + ' has a value');
-    a.near(c.v, want, TOL, what);
+    if (typeof want === 'string') a.equal(c.v, want, what); else a.near(c.v, want, TOL, what);
   }
   // Every value series of a chart: {name, items: the data items that carry a figure}
   function series(res) {
@@ -777,11 +777,11 @@
         a.near(LEVELS.reduce(function (s, v) { return s + cells[mkey(PM.count, v)].v; }, 0), n, TOL, r + ': every partner is counted');
       });
       a.ok(series(build(MAT, { mode: 'all' })).some(function (s) { return s.name === 'Maturity not provided'; }), 'the bars name it');
-      // A maturity written as text that is not a level counts as not provided too
-      var plan = window.T_FIXTURE('miniP4');
-      plan.regions[1].partners[0].maturity = 'Platinum';
-      TAP.data.load(plan);
-      expectCell(a, row(build(MAT, { mode: 'all' }, { type: 'table' }), 'bravo').cells[mkey(PM.count, 'none')], 1, 'an unknown level');
+      // A level written as its name in any case is mapped, never dropped (A2's "Strategic")
+      expectCell(a, row(res, 'alpha').cells[mkey(PM.count, 'strategic')], 1, 'Region A: partner A2, written as text');
+      // The list shows the same partner as not provided
+      var list = build('pt-list', { mode: 'all' }).table.rows.filter(function (r) { return r.id === 'alpha:12'; })[0];
+      a.equal(list.cells.maturity.state, 'notProvided', 'the list reads "not provided" for A3');
     });
 
     T.test('X-p4-maturity-no-data', 'A file without maturity lookups: the report says so for every region', function (a) {

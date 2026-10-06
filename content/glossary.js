@@ -187,7 +187,7 @@ window.TAP_CONTENT.glossary = Object.assign(window.TAP_CONTENT.glossary || {}, {
   direct: { term: 'Direct channel', aliases: ['direct sales'],
     short: 'Selling with the region’s own sales team, with no partner in between.',
     why: 'The channel a region controls most closely.', related: ['channel', 'partner'] },
-  partner: { term: 'Partner', aliases: ['partner channel', 'reseller'],
+  partner: { term: 'Partner', aliases: ['partners', 'partner channel', 'reseller'],
     short: 'An outside firm that resells or delivers the offer for a share of the value.',
     why: 'Plans that lean on partners need enough capable partners in place.', related: ['channel', 'alliance'] },
   alliance: { term: 'Alliance', aliases: ['Alliance A', 'Alliance B', 'alliance channel'],

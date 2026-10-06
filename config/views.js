@@ -15,7 +15,7 @@ window.TAP_VIEWS = {
   industry: { title: 'Industry priorities', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
   newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
   customers: { title: 'Customer growth', reports: ['cg-segments', 'cg-growth', 'cg-exposure', 'cg-bubble', 'cg-accounts'] },
-  partners: { title: 'Partners', reports: ['pt-reliance', 'pt-capacity', 'pt-books', 'pt-routes', 'pt-list'] },
+  partners: { title: 'Partners', reports: ['pt-reliance', 'pt-capacity', 'pt-books', 'pt-routes', 'pt-maturity', 'pt-list'] },
   // Outlook (Phase 4, docs/ARCHITECTURE.md section 19.3): the plans against the strategic plan and the base year
   outlook: { title: 'Outlook', reports: ['ol-strategic', 'ol-baseyear', 'ol-coverage', 'ol-revenue', 'ol-revshare', 'ol-category'] },
   // The profile's reports are listed in config/profile.js; it shows existing reports for one region
