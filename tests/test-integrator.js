@@ -200,17 +200,20 @@
       });
     });
 
-    T.test('X-int-showme-overview', 'Show me from the Overview top insights lands on its chart', function (a) {
+    // D92: the Overview no longer lists top insights, so their Show me buttons are clicked on the Insights page instead
+    T.test('X-int-showme-overview', 'Show me on the top-ranked insights, from the Insights page, lands on its chart', function (a) {
       withApp(function (root) {
-        reset(null, 'overview');
-        var n = qsa('.tap-ov-insight__show', root).length;
-        a.ok(n > 0, 'the Overview lists top insights');
-        for (var i = 0; i < n; i++) {
-          reset(null, 'overview');
-          var btn = qsa('.tap-ov-insight__show', root)[i], id = btn.closest('[data-insight]').getAttribute('data-insight');
+        reset(null, 'insights');
+        var top = TAP.insights.top(TAP.store.get().cmp, null, 3).map(function (x) { return x.id; });
+        a.ok(top.length > 0, 'the sample data has top insights');
+        top.forEach(function (id, i) {
+          reset(null, 'insights');
+          var btn = root.querySelector('.tap-ins__item[data-insight="' + id + '"] .tap-ins__showme');
+          a.ok(!!btn, 'top insight ' + (i + 1) + ' has a Show me button');
+          if (!btn) return;
           btn.click();
           a.equal(landed(root, TAP.insights.all().filter(function (x) { return x.id === id; })[0]), null, 'top insight ' + (i + 1));
-        }
+        });
       });
     });
 

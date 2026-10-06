@@ -1,8 +1,8 @@
 /*
  * File: tests/test-overview.js
- * Purpose: Tests for region cards, the Overview view and ambition chart, the headline and top insights.
+ * Purpose: Tests for region cards, the Overview view and ambition chart, and the headline (no top insights, D92).
  *          TPV-TC-095 and 096 live with the engine tests (test-shapes.js, test-measures.js).
- * Provides: test cases for OVERVIEW stories (#29, #30, #31): TPV-TC-087, TPV-TC-099, X-overview-*
+ * Provides: test cases for OVERVIEW stories (#29, #30, #31, #487): TPV-TC-087, TPV-TC-099, X-overview-*, X-d92-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample, insights)
  * Used by: tests.html
  */
@@ -220,11 +220,11 @@
       a.equal(TAP.views.title('overview'), 'Overview');
     });
 
-    T.test('X-overview-layout', 'Headline, then top insights, then the cards, then the ambition panel', function (a) {
+    T.test('X-overview-layout', 'Headline, then the cards, then the ambition panel', function (a) {
       var m = mountView();
       try {
         var order = qsa('.tap-ov > *', m.host).map(function (n) { return n.getAttribute('data-part'); });
-        a.deepEqual(order, ['headline', 'insights', 'cards', 'panel'], 'section order');
+        a.deepEqual(order, ['headline', 'cards', 'panel'], 'section order');
         a.equal(qs('[data-part="panel"]', m.host).getAttribute('data-report'), 'ov-ambition');
         a.equal(qsa('.tap-ov-card', m.host).length, 4, 'one card per region');
       } finally { m.handle.destroy(); }
@@ -294,7 +294,7 @@
     });
   });
 
-  /* ---------- US-1.5.3: headline and top insights (#31) ---------- */
+  /* ---------- US-1.5.3: headline (#31); top insights removed by D92 (#487) ---------- */
 
   var H = function (key, vars) { return TAP.content.text('overview.headline.' + key, vars); };
   var words = function (n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); };
@@ -500,106 +500,26 @@
     });
   });
 
+  // D92 (amends US-1.5.3): the Overview no longer lists top insights. They stay on the Insights page and in each panel.
   T.suite('overview-insights', function () {
-    T.test('X-overview-insights-top', 'The top 3 insights show in ranking order, asked for with the comparison (TPV-TC-102)', function (a) {
+    T.test('X-d92-no-top-insights', 'The Overview has no insight list and no Show me or Hide buttons; the headline still shows', function (a) {
       sample();
       var list = fixture();
-      a.ok(list.length >= 4, 'fixture has enough insights');
-      withInsights(list, function (calls) {
-        TAP.store.set({ cmp: { mode: 'one', focus: 'seu' } });
+      a.ok(list.length >= 3, 'fixture has insights to show');
+      withInsights(list, function () {
         var m = mountView();
         try {
-          var items = qsa('.tap-ov-insight', m.host);
-          a.equal(items.length, 3, 'three insights');
-          a.deepEqual(items.map(function (n) { return n.getAttribute('data-insight'); }), list.slice(0, 3).map(function (x) { return x.id; }), 'in order');
-          // Panels left on the page by other tests also ask, for their own report; the Overview asks for none.
-          var mine = calls.filter(function (c) { return c[1] === null; });
-          a.ok(mine.length >= 1, 'asked across every report');
-          a.equal(mine[0][2], 3, 'three asked for');
-          a.equal(mine[0][0].focus, 'seu', 'with the comparison');
-          a.ok(txt(items[0]).indexOf(list[0].sentence.slice(0, 20)) >= 0, 'the sentence shows');
+          a.equal(qsa('[data-part="insights"], [data-insight]', m.host).length, 0, 'no insight list or insight items');
+          // The wording any insight's buttons use, on the Insights page, in a panel or under a view title
+          var words = ['Show me', 'Hide for this session', TAP.content.text('insightsPage.showMe'), TAP.content.text('insightsPage.hide'),
+            TAP.content.text('viewHead.showMe')];
+          var buttons = qsa('button', m.host).map(txt).filter(function (s) { return words.indexOf(s) >= 0; });
+          a.deepEqual(buttons, [], 'no Show me or Hide buttons');
+          a.equal(qsa('a[href="#insights"]', m.host).length, 0, 'no link to the Insights page');
+          a.ok(txt(qs('.tap-ov__sentence', m.host)).length > 0, 'the headline still shows');
+          a.ok(!!qs('[data-part="headline"] .tap-ov__sentence', m.host), 'inside the headline part');
         } finally { m.handle.destroy(); }
       });
-    });
-
-    T.test('X-overview-insights-showme', '"Show me" asks for the chart, or opens details when there is no chart (TPV-TC-103)', function (a) {
-      sample();
-      var list = fixture(), withChart = list[0];
-      var noChart = list.filter(function (x) { return !x.reportId; })[0];
-      withInsights([withChart, noChart], function () {
-        var m = mountView(), got = [];
-        TAP.bus.on('showme', function (p) { got.push(p); });
-        try {
-          qs('[data-insight="' + withChart.id + '"] .tap-ov-insight__show', m.host).click();
-          a.equal(got.length, 1, 'showme emitted');
-          a.equal(got[0].insightId, withChart.id);
-          a.deepEqual(got[0].target, withChart.highlight, 'with the insight’s target');
-          spy(TAP.layers, 'openDetails', function (calls) {
-            qs('[data-insight="' + noChart.id + '"] .tap-ov-insight__show', m.host).click();
-            a.equal(calls.length, 1, 'details opened');
-            a.deepEqual(calls[0][0], noChart.highlight, 'for the insight’s target');
-          });
-          a.equal(got.length, 1, 'no showme for an insight with no chart');
-        } finally { m.handle.destroy(); }
-      });
-    });
-
-    T.test('X-overview-insights-hide', '"Hide for this session" hides the insight and the next one moves up', function (a) {
-      sample();
-      var list = fixture();
-      withInsights(list, function (calls, hidden) {
-        var m = mountView();
-        try {
-          qs('[data-insight="' + list[1].id + '"] .tap-ov-insight__hide', m.host).click();
-          a.deepEqual(hidden, [list[1].id], 'hidden through the engine');
-          a.deepEqual(qsa('.tap-ov-insight', m.host).map(function (n) { return n.getAttribute('data-insight'); }),
-            [list[0].id, list[2].id, list[3].id], 'the next one moves up');
-        } finally { m.handle.destroy(); }
-      });
-    });
-
-    T.test('X-overview-insights-link', 'A link opens the full Insights page', function (a) {
-      withInsights(fixture(), function () {
-        var m = mountView();
-        try {
-          var link = qs('.tap-ov__all-insights', m.host);
-          a.ok(!!link, 'link present');
-          link.click();
-          a.equal(TAP.store.get().view, 'insights');
-        } finally { m.handle.destroy(); }
-      });
-    });
-
-    T.test('X-overview-insights-empty', 'With no insights, or an engine that fails, the section shows a short neutral line, never an error', function (a) {
-      withInsights([], function () {
-        var m = mountView();
-        try {
-          a.equal(qsa('.tap-ov-insight', m.host).length, 0, 'no insights');
-          a.ok(txt(qs('[data-part="insights"]', m.host)).indexOf(TAP.content.text('overview.insights.none')) >= 0, 'the neutral line');
-        } finally { m.handle.destroy(); }
-        TAP.insights.top = function () { throw new Error('Not built yet (#44): TAP.insights.top'); };
-        m = mountView();
-        try {
-          var s = txt(qs('[data-part="insights"]', m.host));
-          a.equal(/Not built|Error/.test(s), false, 'no error text');
-          a.ok(s.indexOf(TAP.content.text('overview.insights.none')) >= 0, 'the neutral line');
-          a.equal(qsa('.tap-ov-card', m.host).length, 4, 'cards still draw');
-        } finally { m.handle.destroy(); }
-      });
-    });
-
-    T.test('X-overview-insights-real', 'With the real engine on the sample data, the top three show in its order', function (a) {
-      sample();
-      if (TAP.insights.__stub) { a.ok(true, 'engine not built here'); return; }
-      TAP.insights.reset();
-      var want = TAP.insights.top(TAP.store.get().cmp, null, 3).map(function (x) { return x.id; });
-      a.ok(want.length <= 3, 'at most three');
-      var m = mountView();
-      try {
-        a.deepEqual(qsa('.tap-ov-insight', m.host).map(function (n) { return n.getAttribute('data-insight'); }), want, 'the engine’s top three');
-        // Until the rule families land (#47 to #52) the engine finds nothing: the section then reads the neutral line
-        if (!want.length) a.ok(txt(qs('[data-part="insights"]', m.host)).indexOf(TAP.content.text('overview.insights.none')) >= 0, 'neutral line');
-      } finally { m.handle.destroy(); TAP.insights.reset(); }
     });
   });
 })(window.TAP);
