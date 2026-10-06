@@ -168,7 +168,7 @@
 
     T.test('X-extra-rows', 'TAP.rows serves the section: the region then its columns in order, every row, values as cells', function (a) {
       loadSample();
-      var raw = window.PLAN_DATA.meta.extraSections[0].columns, cols = TAP.rows.columns(SRC);
+      var raw = E().fixture.section.columns, cols = TAP.rows.columns(SRC);
       a.deepEqual(cols.map(function (c) { return c.key; }), ['region'].concat(E().columns), 'column keys in order');
       a.deepEqual(cols.slice(1).map(function (c) { return c.label; }), E().labels, 'labels');
       raw.forEach(function (c, i) { a.equal(cols[i + 1].unit, c.unit, c.key + ' unit'); a.equal(cols[i + 1].kind, c.kind, c.key + ' kind'); });
