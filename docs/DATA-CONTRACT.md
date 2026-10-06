@@ -312,7 +312,7 @@ strategicPlan: [{ year: 2027, sourceCell: 'E47', type: 'arr', value: 600, varian
 | `sourceRow` | number | IMP | |
 | `category` | `"swPerpetual"`, `"recurring"`, `"hardware"` or `"services"` | IMP | A product category id |
 | `budget` | number or `null` | PRE | The order intake budget for the year |
-| `forecast` | number or `null` | PRE | The current forecast for the full year |
+| `forecast` | number or `null` | PRE | The current forecast for the full year: the **later** of the workbook's two forecasts (the app reads only this field) |
 | `actuals` | number or `null` | PRE | Order intake won so far |
 | `pipeline` | number or `null` | PRE | Unweighted pipeline for the rest of the year |
 | `coverage` | number or `null`; optional | PRE | The workbook's coverage ratio, when it gives one: pipeline over the order intake still to win (forecast minus actuals). Left out or `null`, the app works the ratio out itself |

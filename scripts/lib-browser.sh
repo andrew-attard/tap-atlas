@@ -108,8 +108,10 @@ browser_run() {
   mkdir -p "$profile"
   url="$(file_url "$(browser_path_for "$base/$page")")$query"
 
+  # --disable-ipc-flooding-protection: Chrome otherwise caps address-bar changes (about 200 in ten seconds), and a
+  # long test page that switches views many times starves the later routing tests of their hashchange.
   local flags=(--headless=new --disable-gpu --no-first-run --no-default-browser-check
-    --disable-extensions --allow-file-access-from-files
+    --disable-extensions --allow-file-access-from-files --disable-ipc-flooding-protection
     "--user-data-dir=$(browser_path_for "$profile")"
     "--virtual-time-budget=${TAP_VTIME_BUDGET:-60000}")
   # GitHub's Ubuntu runners block Chrome's user-namespace sandbox.
