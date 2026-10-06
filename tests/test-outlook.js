@@ -669,7 +669,8 @@
       a.deepEqual(chart.option.series.filter(function (s) { return s.tapRole === 'value'; }).map(function (s) { return s.name; }),
         ['Order intake', 'Revenue'], 'two bars per region');
       var end = chart.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
-      a.equal(end.label.formatter({ dataIndex: 0 }), 'Released in the same year 78%', 'Region A: 2210 / 2820');
+      // A's revenue grid leaves one cell blank (year 1, new business ARR, Alliance B), so its share is partly provided
+      a.equal(end.label.formatter({ dataIndex: 0 }), 'Released in the same year 78% ' + TAP.content.text('chart.partialMark'), 'Region A: 2210 / 2820');
     });
 
     when([RS], 'TPV-TC-711', 'One vs the rest and organization total: the released share is the ratio of the summed figures, not the mean', function (a) {
@@ -687,12 +688,20 @@
       var res = build(RS, { mode: 'all' }, { type: 'table' }), c = row(res, 'charlie');
       cellIs(a, c.cells['rv.all.oi'], null, 'C revenue');
       cellIs(a, c.cells['rv.share'], null, 'C share');
-      a.equal(c.cells['rc.all.oi'].state, 'value', 'its order intake still shows');
+      // A region with order intake but no revenue outlook: its revenue bar and its share say "not provided"
+      var p = window.T_FIXTURE('miniP4');
+      p.regions.filter(function (r) { return r.id === 'delta'; })[0].revenue = [];
+      TAP.data.load(p);
+      var d = row(build(RS, { mode: 'all' }, { type: 'table' }), 'delta');
+      a.equal(d.cells['rc.all.oi'].state, 'value', 'D: its order intake still shows');
+      cellIs(a, d.cells['rv.all.oi'], null, 'D revenue');
+      cellIs(a, d.cells['rv.share'], null, 'D share');
       var chart = build(RS, { mode: 'all' }), bars = chart.option.series.filter(function (s) { return s.tapRole === 'value'; });
-      var ci = chart.option.yAxis.data.indexOf('Region C');
-      a.equal(bars[1].data[ci].text, TAP.content.text('chart.npFor', { name: 'Revenue' }), 'the revenue bar says not provided');
+      var di = chart.option.yAxis.data.indexOf('Region D');
+      a.equal(bars[1].data[di].text, TAP.content.text('chart.npFor', { name: 'Revenue' }), 'the revenue bar says not provided');
       var end = chart.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
-      a.ok(/not provided/.test(end.label.formatter({ dataIndex: ci })), 'and so does the share: ' + end.label.formatter({ dataIndex: ci }));
+      a.ok(/not provided/.test(end.label.formatter({ dataIndex: di })), 'and so does the share: ' + end.label.formatter({ dataIndex: di }));
+      load();
       var org = build(RS, { mode: 'org' }, { type: 'table' });
       a.ok(org.notes.some(function (n) { return /Region C/.test(n); }), 'the combined share names Region C as left out');
     });
