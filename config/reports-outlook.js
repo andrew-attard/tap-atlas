@@ -82,4 +82,26 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
       }
     }
   };
+
+  // US-4.2.4: pipeline coverage. The generic compare chart with a line at 1, through a builder that adds the
+  // pipeline and the amount still to win to the table (js/reports/outlook-coverage.js).
+  window.TAP_REPORTS['ol-coverage'] = {
+    id: 'ol-coverage',
+    view: 'outlook',
+    title: 'Does this year’s pipeline cover what is still to win?',
+    explain: {
+      shows: 'Each region’s pipeline coverage in the base year: the unweighted pipeline against the order intake still to win this year (the forecast minus the actuals so far), as a ratio, overall or by product category.',
+      read: 'One bar per region, its coverage written beside it, such as 1.09×. The dashed line marks a coverage of 1, where the pipeline equals what is still to win. Where the workbook gives its own coverage ratio, that ratio is shown; where it does not, this app works it out and the note under the chart says so. Combined figures add up the pipelines and the amounts still to win before dividing.',
+      lookFor: 'Regions near or below the line, whose remaining target rests on a thin pipeline, and categories where the coverage sits apart from the rest. A region without a base year reads "not provided".'
+    },
+    shape: 'compare',
+    builder: 'olCoverage',
+    dimension: 'entity',
+    measures: [{ id: 'by.coverage', label: 'Pipeline coverage' }],
+    defaultType: 'bar',
+    types: ['bar', 'table'],
+    breakdowns: ['category'],
+    sources: ['PRE', 'APP'],
+    get options() { return { refLines: [{ value: 1, label: TAP.content.text('olCoverage.refLine') }] }; }
+  };
 })();

@@ -84,6 +84,13 @@
     return minus(p, n) + n + '%';
   }
 
+  // Ratios such as pipeline coverage: two decimals and a times sign, "1.09×", on charts and exact alike.
+  function ratio(v) {
+    if (!isNum(v)) return missing();
+    var n = round(v, 2).toFixed(2);
+    return minus(v, n) + n + '×';
+  }
+
   // Counts and other plain numbers: whole numbers stay whole; others show one decimal (or as asked).
   function num(v, opts) {
     if (!isNum(v)) return missing();
@@ -117,6 +124,7 @@
     switch (opts.unit) {
       case 'money': return opts.exact ? moneyExact(v, { currency: opts.currency }) : money(v, { currency: opts.currency });
       case 'pct': return pct(v, opts);
+      case 'ratio': return ratio(v);
       case 'rating': return rating(v, opts.field, { combined: !!(c.src && c.src.combined) });
       case 'score': return isNum(v) ? fixed(v, opts.exact ? 2 : 1) : missing();
       case 'tier': return tier(v);

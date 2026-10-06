@@ -68,7 +68,7 @@
   }
   // One item with the workbook's ratio is that figure (a system figure). Anything else is worked out by this app:
   // the summed pipeline over the summed amount still to win. Nothing still to win has no coverage: not applicable.
-  M.define('by.coverage', k4.p4(k2.rate('APP', 'by.forecast', ['category'])), function (r, ctx) {
+  M.define('by.coverage', k4.p4(k2.rate('APP', 'by.forecast', ['category'], 'ratio')), function (r, ctx) {
     ctx = ctx || {};
     var rows = baseRows(r, ctx);
     var parts = rows.map(function (it) { return { it: it, c: cover(it) }; }).filter(function (x) { return x.c; });

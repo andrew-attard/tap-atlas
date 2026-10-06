@@ -34,6 +34,14 @@ Object.assign(window.TAP_CONTENT.text, {
     actualsPart: 'The actuals cover part of the year only, up to the month the workbook gives, so they sit below the full-year budget and forecast.'
   },
 
+  // Pipeline coverage (js/reports/outlook-coverage.js): the table's parts of the ratio, the note and the line at 1
+  olCoverage: {
+    pipeline: 'Pipeline',
+    left: 'Still to win',
+    refLine: 'Coverage 1×: pipeline equals what is still to win',
+    workedOut: 'For {names}, the workbook leaves out the coverage ratio for some or all product categories, so the ratio there is worked out by this app: unweighted pipeline over the order intake still to win (forecast minus actuals).'
+  },
+
   // The side-by-side charts (js/reports/outlook-side.js): the closing line after each row's bars
   olSide: {
     endBoth: '{label} {amount} ({rate})',
