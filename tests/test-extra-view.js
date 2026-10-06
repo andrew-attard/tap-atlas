@@ -4,8 +4,10 @@
  *          sorting, number keys, row details and report validation for extra rows.
  * Provides: test cases TPV-TC-581 to TPV-TC-587 (automated ones) and X-extra-view, X-extra-long-text,
  *           X-extra-row-click, X-extra-validate
- * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
+ * Depends on: tests/harness.js, tests/test-setup.js (T_WITH_EXTRA), the app scripts, tests/fixtures/mini-data.js,
  *             data/sample-plan-data.js (window.PLAN_DATA), tests/fixtures/sample-expected.js (SAMPLE_EXPECT.extra)
+ *
+ * The sample has no extra section (D93): these tests run on a copy of the sample with the test section added.
  * Used by: tests.html
  * Owner: EXTRA stream
  */
@@ -15,7 +17,8 @@
   var SRC = 'extra:events';
   function E() { return window.SAMPLE_EXPECT.extra; }
   function copy(x) { return JSON.parse(JSON.stringify(x)); }
-  function sample() { return copy(window.PLAN_DATA); }
+  function sample() { return window.T_WITH_EXTRA(); }
+  function plainSample() { return copy(window.PLAN_DATA); }
   function loadSample() { var r = TAP.data.load(sample()); if (TAP.insights && TAP.insights.reset) TAP.insights.reset(); return r; }
 
   T.suite('extra view', function () {
@@ -49,7 +52,13 @@
       a.ok(!TAP.views.get('other').__stub, 'the view is built');
       var root = T.dom.mount();
       TAP.app.start({ root: root, plan: sample() });
-      a.ok(root.querySelector('.tap-menu__item[data-view="other"]'), 'a menu button with the sample');
+      a.ok(root.querySelector('.tap-menu__item[data-view="other"]'), 'a menu button with an extra section');
+      TAP.app.stop();
+      root = T.dom.mount();
+      TAP.app.start({ root: root, plan: plainSample() });
+      a.equal(root.querySelector('.tap-menu__item[data-view="other"]'), null, 'no menu button with the sample, which has no extra section (D93)');
+      a.equal(TAP.views.order().indexOf('other'), -1, 'and not in the order');
+      a.equal(TAP.views.order().indexOf('regions'), TAP.views.order().indexOf('outlook') + 1, 'Regions follows Outlook on the sample');
       TAP.app.stop();
       root = T.dom.mount();
       TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
@@ -165,6 +174,8 @@
         a.ok(TAP.keys.viewFor(String(k)) !== 'other', 'key ' + k + ' is not Other sections');
       }
       a.equal(TAP.keys.viewFor('7'), 'regions', 'key 7 opens Regions, the view after Outlook');
+      TAP.data.load(plainSample());
+      a.equal(TAP.keys.viewFor('7'), 'regions', 'on the sample, which has no extra section, key 7 opens Regions');
       loadSample();
       a.equal(TAP.keys.viewFor('7'), 'other', 'with an extra section, key 7 opens Other sections');
       a.equal(TAP.keys.viewFor('8'), 'regions', 'and key 8 Regions');

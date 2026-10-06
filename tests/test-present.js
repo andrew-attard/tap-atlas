@@ -162,9 +162,9 @@
     /* ---------- US-3.1.2: presenting ---------- */
 
     // The app on the sample data, keys bound; presentation always left and the mini fixture back afterwards.
-    function withApp(fn) {
+    function withApp(fn, plan) {
       var root = T.dom.mount(), file = window.TAP_RUNNING_ORDER.steps;
-      TAP.app.start({ root: root, plan: sample() });
+      TAP.app.start({ root: root, plan: plan || sample() });
       TAP.insights.reset();
       try { return fn(root); } finally {
         window.TAP_RUNNING_ORDER.steps = file;
@@ -636,7 +636,7 @@
         a.deepEqual(res.skipped.map(function (x) { return x.reason; }), [], 'the step passes the check');
         a.ok(TAP.present.start([{ report: 'other-events' }]).started, 'presentation starts');
         try { a.equal(shown() && shown().getAttribute('data-report'), 'other-events', 'the events list is shown'); } finally { TAP.present.stop(); }
-      });
+      }, window.T_WITH_EXTRA());   // the sample has no extra section (D93)
     });
 
     var THREE = [{ report: 'ov-ambition', title: 'First' }, { report: 'ind-tiers', title: 'Second' }, { report: 'cg-growth', title: 'Third' }];
