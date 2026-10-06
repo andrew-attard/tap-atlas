@@ -357,6 +357,7 @@
 
     when([BY], 'TPV-TC-694', 'Budget, latest forecast and actuals so far next to plan year 1, with the growth over the forecast, equal the hand-worked figures', function (a) {
       load();
+      a.deepEqual(TAP.reports.get(BY).measures.map(function (m) { return m.id; }), ['by.growth'], 'its measure is the growth, which the year 1 insight names (D79)');
       var res = build(BY, { mode: 'all' }, { type: 'table' });
       a.equal(res.error, null, 'builds');
       a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity'].concat(BY_KEYS), 'the table holds the five figures');
