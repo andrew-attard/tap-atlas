@@ -49,6 +49,14 @@
   }
 
   T.suite('pages-p4', function () {
+    /* ---------- US-4.6.4: import brief, prompts and checklist (#460): file checks, run by Node ---------- */
+
+    var DOCS4 = 'Checked by tools/check-docs4.js (run by tools/check-docs3.js in scripts/verify.sh and CI)';
+    T.skip('TPV-TC-762', 'Every field the Data Contract adds for the full template is named in docs/IMPORT-BRIEF.md', DOCS4);
+    T.skip('X-p4-docs-after-import', 'The checklist and the prompts have a full template part with the checks to run after the import', DOCS4);
+    T.skip('TPV-TC-766', 'Every file path the four documents name exists, and no denylisted term is found',
+      'Checked by tools/check-docs.js and the denylist scan in scripts/verify.sh');
+
     /* ---------- US-4.6.1: glossary and Guide for Phase 4 (#457) ---------- */
 
     T.test('TPV-TC-742', 'Every term the story names has a full glossary entry, found by the words on screen', function (a) {
