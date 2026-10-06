@@ -450,6 +450,93 @@
       } finally { TAP.data.load(window.T_FIXTURE('mini')); }
     });
 
+    /* ---------- US-4.2.4 pipeline coverage ---------- */
+
+    var CV = 'ol-coverage';
+    // Pipeline over the order intake still to win (forecast minus actuals, or read back from the workbook's ratio):
+    // A 540 / 280, B 530 / (400 + 60) = 530 / 460, D 130 / 220 (services has no pipeline); together 1200 / 960
+    var CV_PARTS = { alpha: [540, 280], bravo: [530, 460], delta: [130, 220] };
+
+    when([CV], 'TPV-TC-699', 'Pipeline, the order intake still to win and the coverage ratio per entity and by category equal the hand-worked figures', function (a) {
+      load();
+      var def = TAP.reports.get(CV);
+      a.ok(def.measures.some(function (m) { return m.id === 'by.coverage'; }), 'offers by.coverage, which the low-coverage insight names (D79)');
+      a.equal(TAP.measures.meta('by.coverage').unit, 'ratio', 'coverage is a ratio, not a percentage');
+      var res = build(CV, { mode: 'all' }, { type: 'table' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity', 'pipeline', 'left', 'by.coverage'], 'pipeline, still to win and coverage');
+      Object.keys(CV_PARTS).forEach(function (r) {
+        cellIs(a, row(res, r).cells.pipeline, CV_PARTS[r][0], r + ' pipeline');
+        cellIs(a, row(res, r).cells.left, CV_PARTS[r][1], r + ' still to win');
+        cellIs(a, row(res, r).cells['by.coverage'], X.region[r]['by.coverage'], r + ' coverage');
+      });
+      ['pipeline', 'left', 'by.coverage'].forEach(function (k) { cellIs(a, row(res, 'charlie').cells[k], null, 'charlie ' + k); });
+      var org = build(CV, { mode: 'org' }, { type: 'table' }).table.rows[0];
+      cellIs(a, org.cells['by.coverage'], X.combined.orgTotal['by.coverage'], 'organization: 1200 / 960, a ratio of sums');
+      a.ok(Math.abs(org.cells['by.coverage'].v - X.meanOfRatios['by.coverage']) > 0.01, 'not the mean of the regions’ ratios');
+      cellIs(a, org.cells.pipeline, 1200, 'organization pipeline');
+      cellIs(a, org.cells.left, 960, 'organization still to win');
+      // By product category: A recurring is the workbook's 2, A services 60 / (110 - 70) = 1.5, D hardware 30 / (25 - 5) = 1.5
+      var cat = build(CV, { mode: 'all' }, { type: 'table', breakdown: 'category' });
+      a.equal(cat.error, null, 'builds by category');
+      var r0 = row(cat, 'alpha');
+      cellIs(a, r0.cells['by.coverage@category:recurring'], 2, 'A recurring');
+      cellIs(a, r0.cells['by.coverage@category:services'], 1.5, 'A services');
+      cellIs(a, row(cat, 'delta').cells['by.coverage@category:hardware'], 1.5, 'D hardware');
+      a.equal(row(cat, 'delta').cells['by.coverage@category:services'].state, 'notProvided', 'D services: no pipeline figure');
+      // Read as a ratio everywhere: 1.93×, never 192.9%
+      var chart = build(CV, { mode: 'all' });
+      var bar = chart.option.series.filter(function (s) { return s.tapRole === 'value'; })[0];
+      a.equal(TAP.format.cell(row(res, 'alpha').cells['by.coverage'], { unit: 'ratio' }), '1.93×', 'A reads 1.93×');
+      a.ok(bar && bar.label && /1\.93×/.test(String(bar.label.formatter({ data: bar.data[0], value: bar.data[0].value, dataIndex: 0 }))), 'the bar label reads 1.93×');
+      a.equal(chart.option.xAxis.axisLabel.formatter(1.5), '1.50×', 'the axis reads as a ratio');
+    });
+
+    when([CV], 'TPV-TC-700', 'The workbook’s own ratio shows where it is given; otherwise the app works it out (APP) and a note says so', function (a) {
+      // Region B keeps one item, recurring with the workbook's 1.25; Region A's three items need working out
+      var p = window.T_FIXTURE('miniP4');
+      p.regions.filter(function (r) { return r.id === 'bravo'; })[0].baseYear.items.splice(1);
+      TAP.data.load(p);
+      var res = build(CV, { mode: 'all' }, { type: 'table' }), b = row(res, 'bravo').cells['by.coverage'], al = row(res, 'alpha').cells['by.coverage'];
+      cellIs(a, b, 1.25, 'B: the workbook’s ratio');
+      a.equal(b.kind, 'PRE', 'B: a figure the workbook gives');
+      cellIs(a, row(res, 'bravo').cells.left, 400, 'B: still to win read back from it, 500 / 1.25');
+      cellIs(a, al, X.region.alpha['by.coverage'], 'A: worked out by the app');
+      a.equal(al.kind, 'APP', 'A: calculated by this app');
+      var note = res.notes.filter(function (n) { return /worked out by this app/.test(n); })[0];
+      // A gives the workbook's ratio for recurring only, D for no category: both are named; B gives it throughout
+      a.ok(note && /Region A/.test(note) && /Region D/.test(note) && !/Region B/.test(note), 'a note names the regions the app worked out: ' + note);
+    });
+
+    when([CV], 'TPV-TC-701', 'The coverage chart has a labelled reference line at a coverage of 1', function (a) {
+      load();
+      var chart = build(CV, { mode: 'all' }), host = chart.option.series.filter(function (s) { return s.markLine; })[0];
+      a.ok(host, 'a reference line');
+      var line = host.markLine.data[0];
+      a.equal(line.xAxis, 1, 'at 1');
+      a.ok(line.name && /1/.test(line.name), 'named: ' + line.name);
+      a.equal(host.markLine.lineStyle.type, 'dashed', 'dashed, so not told apart by colour alone');
+    });
+
+    when([CV], 'X-p4-outlook-sample-coverage', 'Sample: North America’s coverage 1.09×, Latin America worked out by the app at 2.59×, Central Europe not provided', function (a) {
+      var E = window.SAMPLE_EXPECT;
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      try {
+        var res = build(CV, { mode: 'all' }, { type: 'table' });
+        a.near(v(row(res, E.r05.region).cells['by.coverage']), E.r05.coverage, 1e-4, 'R05 1.09×');
+        a.near(v(row(res, E.r05.region).cells.pipeline), E.r05.pipeline, 0.05, 'R05 pipeline');
+        Object.keys(E.r05.coverageByRegion).forEach(function (r) {
+          var c = row(res, r).cells['by.coverage'];
+          if (E.r05.coverageByRegion[r] === null) a.equal(c.state, 'notProvided', r + ': no base year');
+          else a.near(c.v, E.r05.coverageByRegion[r], 1e-4, r + ' coverage');
+        });
+        var la = row(res, E.r10.coverageNotGiven[0]).cells['by.coverage'];
+        a.equal(la.kind, 'APP', 'R10 Latin America: worked out by the app');
+        a.equal(TAP.format.cell(la, { unit: 'ratio' }), '2.59×', 'reads 2.59×');
+        a.ok(res.notes.some(function (n) { return /worked out by this app/.test(n) && n.indexOf(TAP.data.region('latam').name) >= 0; }), 'the note names Latin America');
+      } finally { TAP.data.load(window.T_FIXTURE('mini')); }
+    });
+
     T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
       load();
       var built = REPORTS.filter(function (id) { return !!TAP.reports.get(id); });

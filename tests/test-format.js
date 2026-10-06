@@ -55,6 +55,14 @@
       a.equal(F.pct(null), 'not provided');
     });
 
+    T.test('X-format-ratio', 'Ratios such as pipeline coverage: two decimals and a times sign, on charts and exact', function (a) {
+      a.equal(F.cell({ v: 1.0936742, state: 'value' }, { unit: 'ratio' }), '1.09×');
+      a.equal(F.cell({ v: 2.591689, state: 'value' }, { unit: 'ratio', exact: true }), '2.59×', 'exact reads the same');
+      a.equal(F.cell({ v: 1, state: 'value' }, { unit: 'ratio' }), '1.00×');
+      a.equal(F.cell({ v: null, state: 'notProvided' }, { unit: 'ratio' }), 'not provided');
+      a.equal(TAP.shapes.kit.axisFormatter('ratio')(1.5), '1.50×', 'chart axes read as a ratio too');
+    });
+
     T.test('X-format-num', 'Counts use English separators; averages show one decimal', function (a) {
       a.equal(F.num(1234), '1,234');
       a.equal(F.num(1234567.4), '1,234,567');
