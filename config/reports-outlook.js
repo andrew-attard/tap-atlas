@@ -67,7 +67,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     shape: 'compare',
     builder: 'olSide',
     dimension: 'entity',
-    measures: [{ id: 'by.forecast', label: 'Forecast' }],
+    // One measure, so no switch: the growth, which the y1Jump insight names (D79); the bars are set in options.side
+    measures: [{ id: 'by.growth', label: 'Base year' }],
     defaultType: 'bar',
     types: ['bar', 'table'],
     breakdowns: ['category'],
