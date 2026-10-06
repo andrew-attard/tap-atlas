@@ -36,7 +36,7 @@
     var root = T.dom.mount(), handle = TAP.views.get('guide').mount(root);
     try { return fn(root); } finally { handle.destroy(); }
   }
-  // "Open Industry priorities": the content template with a view title filled in.
+  // "Open Market coverage": the content template with a view title filled in.
   function isViewLink(s) {
     return TAP.views.order().some(function (id) {
       return s === TAP.content.text('guidePage.openView', { view: TAP.views.title(id) });
