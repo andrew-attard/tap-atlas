@@ -127,6 +127,18 @@ How the new parts are built, so the figures add up:
 
 **No near-duplicates.** Each region-level case has one region: no other region is 10% or more from its strategic plan, 20% above its base-year forecast, under 2x coverage, 8% or more outside the books, or above 45% on one solution. The generator checks these limits (`cases` in `tools/sample-planted-p4.js`).
 
+**The insights they produce (US-4.6.2, TPV-TC-753).** Each outlook rule fires on its case and on no other region. Thresholds are the rules' `params` in `config/insight-rules.js`; they sit between the planted figure and the generator's limit for every other region.
+
+| Case | Rule (threshold) | Insight on the sample data |
+|---|---|---|
+| R01 | `spGap` (15% from the strategic plan) | Asia Pacific’s three-year plan is 30% below its strategic plan (€9.6M against €13.7M). |
+| R02 | `spGap` | Latin America’s three-year plan is 25% above its strategic plan (€10M against €8M). |
+| R03 | `spTotal` (5% together) | Together, the three-year plans of the 6 regions with a strategic plan are 8% below their strategic plans (€71.4M against €77.6M). Not included, with no strategic plan: Northern Europe. |
+| R04 | `y1Jump` (30% above the forecast) | Middle East & Africa’s plan for year 1 is 60% above its base-year forecast (€2.1M against €1.3M); together, the other regions with a base year plan 8% above theirs. Worth discussing. |
+| R05 | `lowCoverage` (under 1.5×) | North America’s base-year pipeline (€2.5M) covers 1.09× the order intake still to win (€2.3M); together, the other regions with a base year cover 2.95×. Worth discussing. |
+| R06 | `booksGap` (10% of customer value) | 19% of Southern Europe’s customer value (€2.3M of €12.5M) does not run through the organization’s books, against 4% for the other regions together. Through partners alone it is 40%. |
+| R07 | `solutionReliance` (half of new business) | Solution 2 carries 68% of Northern Europe’s three-year new business order intake (€7.8M of €11.4M). |
+
 **How coverage is read.** The base-year workbooks give the coverage ratio on every row (rounded to two decimals, as a workbook shows it), except Latin America's (R10). Row by row, the workbook's ratio stands where it gives one, so the amount still to win is read back from it (pipeline over the ratio), and a region's coverage is the summed pipeline over those amounts, a ratio of sums (ARCHITECTURE section 19.2, `by.coverage`). That is the figure in `SAMPLE_EXPECT.r05.coverage` and `p4.regions.<id>.baseYear.coverage`; the plain pipeline over forecast minus actuals sits beside it as `pipelineOverLeft`. The two agree to two decimals, which is what the reports show.
 
 **Other planted states in the Phase 4 parts.** Two New Business rows name no solution (Southern Europe's blank-hit-rate row from G1, and Asia Pacific's smallest row). Asia Pacific's row counts under "not named"; Southern Europe's has no potential at all, so its "not named" figure is not provided, never zero (`p4.regions.seu.solutions.none`). Central Europe has no customer growth (G2), so its `revenue`, `booksValue` and `routes` hold new business only: the two routes for existing customers are not provided there, not zero. Two regions (C and F) plan no existing business through partners, shown as `0`.
