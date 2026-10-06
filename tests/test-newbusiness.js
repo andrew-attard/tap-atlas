@@ -71,7 +71,7 @@
   T.suite('newbusiness-view', function () {
     /* ---------- US-2.1.1 the view ---------- */
 
-    T.test('TPV-TC-317', 'New business comes straight after Industry priorities, titled with its question', function (a) {
+    T.test('TPV-TC-317', 'New business comes straight after Market coverage, titled with its question', function (a) {
       var order = window.TAP_VIEWS.order;
       a.equal(order.indexOf(VIEW), order.indexOf('industry') + 1, 'menu order');
       a.deepEqual(TAP.views.order().slice(0, 3), ['overview', 'industry', VIEW], 'registered and shown in the menu');

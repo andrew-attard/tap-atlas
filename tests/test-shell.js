@@ -61,8 +61,20 @@
         var ids = menuItems(root).map(function (b) { return b.getAttribute('data-view'); });
         a.deepEqual(ids, TAP.views.order(), 'menu order is TAP.views.order()');
         a.deepEqual(menuItems(root).map(txt), TAP.views.order().map(TAP.views.title), 'titles from TAP.views.title');
-        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Industry priorities', 'New business', 'Customer growth', 'Partners', 'Outlook', 'Regions',
+        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Market coverage', 'New business', 'Customer growth', 'Partners', 'Outlook', 'Regions',
           'Insights', 'Guide'], 'Phase 1, Phase 2 and Phase 4 views');
+      });
+    });
+
+    // D94: the Guide sits at the right end of the menu, apart from the views; D95: Market coverage is second
+    T.test('X-d94-guide-right', 'The Guide is the last menu item, pushed to the right end of the bar', function (a) {
+      withApp(function () {
+        var root = startApp(), items = menuItems(root), guide = items[items.length - 1], before = items[items.length - 2];
+        a.equal(guide.getAttribute('data-view'), 'guide', 'the Guide is last');
+        a.equal(txt(items[1]), 'Market coverage', 'the second view is Market coverage (D95)');
+        var nav = root.querySelector('.tap-menu'), g = guide.getBoundingClientRect(), b = before.getBoundingClientRect(), n = nav.getBoundingClientRect();
+        if (g.top === b.top) a.ok(g.left - b.right > 24, 'a clear gap before the Guide (' + Math.round(g.left - b.right) + ' px)');
+        a.ok(Math.abs(n.right - g.right) < 2, 'the Guide ends at the right edge of the menu');
       });
     });
 
@@ -97,7 +109,7 @@
         // Let the hash changes from the clicks arrive first, so only the back button's change is awaited
         function back() { return settle().then(function () { var p = nextHashChange(); history.back(); return p; }); }
         return back().then(function () {
-          a.equal(TAP.store.get().view, 'industry', 'first back: Industry priorities');
+          a.equal(TAP.store.get().view, 'industry', 'first back: Market coverage');
           return back();
         }).then(function () {
           a.equal(TAP.store.get().view, 'overview', 'second back: Overview');
