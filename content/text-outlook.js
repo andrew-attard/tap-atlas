@@ -38,7 +38,7 @@ Object.assign(window.TAP_CONTENT.text, {
   olCoverage: {
     pipeline: 'Pipeline',
     left: 'Still to win',
-    refLine: 'Coverage 1×: pipeline equals what is still to win',
+    refLine: 'Coverage 1×',
     workedOut: 'For {names}, the workbook leaves out the coverage ratio for some or all product categories, so the ratio there is worked out by this app: unweighted pipeline over the order intake still to win (forecast minus actuals).'
   },
 
