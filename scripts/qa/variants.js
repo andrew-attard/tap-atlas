@@ -47,7 +47,7 @@ const VARIANTS = {
     R[0].marketCoverage[0].commentary = 'Comment ' + PROBE + ' partners and references matter. ' + LONG;
     Object.assign(R[0].newBusiness[0], { subVertical: 'Sub ' + PROBE, market: 'Market ' + PROBE, successFactors: 'Partners and skills ' + PROBE });
     R[0].newBusiness[1].subVertical = LONG;
-    Object.assign(R[0].partners[0], { name: 'Partner ' + PROBE, maturity: 'Maturity ' + PROBE, expertiseGeo: LONG });
+    Object.assign(R[0].partners[0], { name: 'Partner ' + PROBE, expertiseProduct: 'Expertise ' + PROBE, expertiseGeo: LONG });
     R[1].partners[0].name = WORD;
     const a0 = R[0].customerGrowth.accounts;
     Object.assign(a0[0], { name: 'Account ' + PROBE, country: 'Country ' + PROBE });
