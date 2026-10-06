@@ -11,7 +11,7 @@
   'use strict';
 
   var PHASE1 = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
-  var FAMILIES = PHASE1.concat(['plan', 'shared', 'themes']);
+  var FAMILIES = PHASE1.concat(['plan', 'shared', 'themes', 'outlook']);
   var MARKS = ['industryRow', 'regionColumn', 'cell', 'points', 'quadrant', 'bar', null];
   var STATES = ['value', 'notProvided', 'notApplicable'];
   var UNITS = ['money', 'pct', 'rating', 'score', 'count', 'tier', 'text'];
