@@ -14,7 +14,7 @@
   var FAMILIES = PHASE1.concat(['plan', 'shared', 'themes', 'outlook']);
   var MARKS = ['industryRow', 'regionColumn', 'cell', 'points', 'quadrant', 'bar', null];
   var STATES = ['value', 'notProvided', 'notApplicable'];
-  var UNITS = ['money', 'pct', 'rating', 'score', 'count', 'tier', 'text'];
+  var UNITS = ['money', 'pct', 'ratio', 'rating', 'score', 'count', 'tier', 'text'];   // 'ratio' ("1.09×") since Phase 4
 
   // Checks one insight against the insight object contract (ARCHITECTURE section 12).
   function checkShape(a, x) {
