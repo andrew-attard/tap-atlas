@@ -8,7 +8,7 @@ Generic on purpose: this copy names no organization, region, file or person. Any
 
 TAP Atlas shows every region's territory account plan side by side. Each regional leader fills in the same planning workbook; an import turns the workbooks into one data file; the app reads that file and shows the plans together, so leadership can play each plan back, compare regions and see what is worth discussing.
 
-- **Views:** Overview, Industry priorities, New business, Customer growth, Partners, Outlook (the plans against the strategic plan and the year before the plan, and the revenue outlook), Other sections (only when the data has extra sections), Regions (one region's profile against the rest), Insights and Guide.
+- **Views:** Overview, Market coverage, New business, Customer growth, Partners, Outlook (the plans against the strategic plan and the year before the plan, and the revenue outlook), Other sections (only when the data has extra sections), Regions (one region's profile against the rest), Insights and Guide.
 - **One comparison for every chart:** all regions, one against the rest, one against one, a chosen set, or the organization total.
 - **Every figure traces to its source:** file › sheet › cell, through the details panel and the data sources panel. Every chart has a table view.
 - **Insights:** rules in configuration flag observations worth discussing, worded neutrally and ranked.

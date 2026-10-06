@@ -36,7 +36,7 @@ window.TAP_CONTENT.guide = {
     intro: 'This app puts every region’s territory account plan side by side. It reads the finished workbooks and never changes them.',
     sections: [
       { id: 'menu', title: 'The menu', paragraphs: [
-        'The menu at the top lists the views: Overview, Industry priorities, New business, Customer growth, Partners, Outlook, Other sections (when the plans hold extra template sections), Regions, Insights and this Guide. The view you are on is highlighted.',
+        'The menu at the top lists the views: Overview, Market coverage, New business, Customer growth, Partners, Outlook, Other sections (when the plans hold extra template sections), Regions, Insights and this Guide. The view you are on is highlighted.',
         'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.',
         'A one-line tip under each view’s title says where to start. "Hide tips" hides the tips until the page is reloaded.'
       ] },
@@ -119,7 +119,7 @@ window.TAP_CONTENT.guide = {
       { id: 'marketCoverage', title: '1. Market coverage', link: { view: 'industry' }, paragraphs: [
         'The leader rates a fixed list of industries and chooses which to prioritize. For each industry they give six ratings, a tier and a comment.',
         'System figures sit next to the ratings: current ARR, pipeline and pipeline created in the last 12 months. They show where the region already does business.',
-        'This section is what the Industry priorities view shows: tiers by region, attractiveness against ability to win, and the six ratings for one industry.'
+        'This section is what the Market coverage view shows: tiers by region, attractiveness against ability to win, and the six ratings for one industry.'
       ] },
       { id: 'newBusiness', title: '2. New business', link: { view: 'newBusiness' }, paragraphs: [
         'For Tier 1 and Tier 2 industries only, the leader breaks each industry into sub-verticals in a geographic market. Each row says how many accounts to target, the expected hit rate and the average deal size.',

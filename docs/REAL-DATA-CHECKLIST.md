@@ -34,7 +34,7 @@ Generic on purpose: this copy names no organization, region, file or person. The
   | View | All regions | One vs the rest | One vs one | Chosen set | Organization total |
   |---|---|---|---|---|---|
   | Overview | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Industry priorities | [ ] | [ ] | [ ] | [ ] | [ ] |
+  | Market coverage | [ ] | [ ] | [ ] | [ ] | [ ] |
   | New business | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Customer growth | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Partners | [ ] | [ ] | [ ] | [ ] | [ ] |

@@ -45,6 +45,8 @@
   cursor: pointer;
 }
 .tap-menu__item:hover { background: var(--tap-surface); }
+/* D94: the Guide is help, not a view of the plans, so it sits at the right end of the bar */
+.tap-menu__item[data-view="guide"] { margin-left: auto; }
 .tap-menu__item[aria-current="page"] { font-weight: 800; border-bottom-color: var(--tap-ink); }
 
 /* Comparison bar, two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
