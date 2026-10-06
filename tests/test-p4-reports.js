@@ -792,5 +792,25 @@
       });
       a.deepEqual(build(MAT, { mode: 'all' }).missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region is named');
     });
+
+    /* ---------- the sample's planted case R08 (docs/PLANTED-CASES.md) ---------- */
+
+    // R08: the 28 sample partners by maturity (Recruit 5, Onboard 3, Enable 6, Skill 7, Strategic 6, not named 1) and by
+    // type (value-added reseller 16, system integrator 7, referral partner 4, not named 1). Figures from SAMPLE_EXPECT.r08.
+    T.test('X-p4-sample-r08', 'On the sample, partners by maturity and by type equal the planted counts', function (a) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var X = window.SAMPLE_EXPECT.r08;
+      var res = build(MAT, { mode: 'org' }, { type: 'table', measureId: PM.count }), cells = row(res, 'org').cells;
+      LEVELS.forEach(function (v) { expectCell(a, cells[mkey(PM.count, v)], X.maturity[v], 'together: partners at ' + v); });
+      expectCell(a, cells[PM.count], X.partners, 'together: 28 partners');
+      var oi = row(build(MAT, { mode: 'org' }, { type: 'table', measureId: PM.oi }), 'org').cells;
+      LEVELS.forEach(function (v) { a.near(oi[mkey(PM.oi, v)].v, X.oiByMaturity[v], 0.05, 'together: order intake at ' + v); });
+      var byType = build(MAT, { mode: 'org' }, { type: 'table', breakdown: 'partnerType', measureId: PM.count });
+      Object.keys(X.types).forEach(function (ty) {
+        var r = row(byType, 'org', ty);
+        a.ok(r, 'a line for type ' + ty);
+        expectCell(a, r.cells[PM.count], X.types[ty], 'together: partners of type ' + ty);
+      });
+    });
   });
 })(window.TAP);
