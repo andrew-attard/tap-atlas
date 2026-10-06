@@ -234,13 +234,13 @@
     when([SP], 'TPV-TC-690', 'The measure switch offers total, ARR, services, software perpetual and hardware where the data gives them', function (a) {
       load();
       var def = TAP.reports.get(SP);
-      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['Total', 'ARR', 'Services', 'Software perpetual', 'Hardware'], 'the five types');
+      a.deepEqual(def.measures.map(function (m) { return m.label; }), ['Order intake', 'ARR', 'Services', 'Software perpetual', 'Hardware'], 'the five types');
       a.deepEqual(TAP.reports.validate(def), [], 'valid');
       function offered() {
         var root = T.dom.mount(), p = TAP.panel.create(root, SP, {});
         try { return qsa('[data-control="measure"] button', root).map(txt); } finally { p.destroy(); }
       }
-      a.deepEqual(offered(), ['Total', 'ARR', 'Services', 'Software perpetual', 'Hardware'], 'all five with the fixture (A has software perpetual, D hardware)');
+      a.deepEqual(offered(), ['Order intake', 'ARR', 'Services', 'Software perpetual', 'Hardware'], 'all five with the fixture (A has software perpetual, D hardware)');
       // ARR: the recurring category of each figure. A: 2200, books 2140, -60, -60 / 2200
       var res = build(SP, { mode: 'all' }, { type: 'table', measureId: 'sp.arr' });
       cellIs(a, row(res, 'alpha').cells['sp.oi'], X.region.alpha['sp.arr'], 'A ARR strategic plan');
@@ -257,7 +257,7 @@
       var p = window.T_FIXTURE('miniP4');
       p.regions.forEach(function (r) { r.strategicPlan = (r.strategicPlan || []).filter(function (it) { return it.type !== 'hardware'; }); });
       TAP.data.load(p);
-      a.deepEqual(offered(), ['Total', 'ARR', 'Services', 'Software perpetual'], 'hardware is not offered without a hardware figure');
+      a.deepEqual(offered(), ['Order intake', 'ARR', 'Services', 'Software perpetual'], 'hardware is not offered without a hardware figure');
     });
 
     when([SP], 'TPV-TC-691', 'Organization total: the sum of the plans against the sum of the strategic plans, with each region’s share of the gap', function (a) {
@@ -321,6 +321,34 @@
       // With one type selected, only its category stays on the chart
       var arr = build(SP, { mode: 'all' }, { type: 'table', measureId: 'sp.arr', breakdown: 'category' });
       a.deepEqual(arr.table.rows.map(function (r) { return r.id; }), ['alpha:recurring', 'bravo:recurring', 'charlie:recurring', 'delta:recurring'], 'ARR broken down by category shows the recurring rows only');
+    });
+
+    // The planted cases on the sample (docs/PLANTED-CASES.md R01, R02, R03, R09; figures from SAMPLE_EXPECT)
+    when([SP], 'X-p4-outlook-sample-strategic', 'Sample: Asia Pacific below and Latin America above their strategic plans, the plans together short, Northern Europe left out', function (a) {
+      var E = window.SAMPLE_EXPECT, TOLS = 0.05;
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      try {
+        var res = build(SP, { mode: 'all' }, { type: 'table' });
+        a.near(v(row(res, E.r01.region).cells['sp.plan']), E.r01.plan3, TOLS, 'R01 plan');
+        a.near(v(row(res, E.r01.region).cells['sp.oi']), E.r01.strategicPlan3, TOLS, 'R01 strategic plan');
+        a.near(v(row(res, E.r01.region).cells['sp.variance']), E.r01.variance3, TOLS, 'R01 variance');
+        a.near(v(row(res, E.r01.region).cells['sp.variancePct']), E.r01.variancePct3, 1e-5, 'R01 30.3% below');
+        a.near(v(row(res, E.r02.region).cells['sp.variance']), E.r02.variance3, TOLS, 'R02 variance');
+        a.near(v(row(res, E.r02.region).cells['sp.variancePct']), E.r02.variancePct3, 1e-5, 'R02 24.8% above');
+        Object.keys(E.r01.variancePct).forEach(function (r) {
+          var c = row(res, r).cells['sp.variancePct'];
+          if (E.r01.variancePct[r] === null) a.equal(c.state, 'notProvided', r + ': no strategic plan');
+          else a.near(c.v, E.r01.variancePct[r], 1e-5, r + ' variance %');
+        });
+        var org = build(SP, { mode: 'org' }, { type: 'table' }), top = org.table.rows[0];
+        a.near(v(top.cells['sp.plan']), E.r03.plans3, TOLS, 'R03 the plans together');
+        a.near(v(top.cells['sp.oi']), E.r03.strategicPlans3, TOLS, 'R03 the strategic plans together');
+        a.near(v(top.cells['sp.variance']), E.r03.variance3, TOLS, 'R03 short together');
+        a.near(v(top.cells['sp.variancePct']), E.r03.variancePct3, 1e-5, 'R03 7.9% short, a ratio of sums');
+        var neu = TAP.data.region(E.r09.region).name;
+        a.ok(org.notes.some(function (n) { return n.indexOf(neu) >= 0; }), 'R09 ' + neu + ' is named in the note: ' + org.notes.join(' | '));
+        a.ok(top.cells['sp.variance'].src.excluded.indexOf(E.r09.region) >= 0, 'and left out of the combined variance');
+      } finally { TAP.data.load(window.T_FIXTURE('mini')); }
     });
 
     T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
