@@ -1,8 +1,9 @@
 /*
  * File: config/reports-partners.js
  * Purpose: Report definitions for the Partners view.
- * Provides: adds to window.TAP_REPORTS (pt-reliance, pt-capacity, pt-books, pt-list)
- * Depends on: config/reports.js (schema); builders 'rowBubble', 'list' and 'ptBooks' (js/reports/pt-books.js)
+ * Provides: adds to window.TAP_REPORTS (pt-reliance, pt-capacity, pt-books, pt-routes, pt-list)
+ * Depends on: config/reports.js (schema); builders 'rowBubble', 'list', 'ptBooks' (js/reports/pt-books.js) and
+ *             'dimStack' (js/reports/dim-stack.js)
  * Used by: js/engine/registry.js, js/views/partners.js
  * Owner: CGP stream; the Phase 4 reports: NBPT stream (#453)
  */
@@ -86,6 +87,28 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     breakdowns: [],
     sources: ['DER', 'APP'],
     options: {}
+  };
+
+  // US-4.5.2: order intake by route to market, from the recap. One part per route in the lookup's order; a route
+  // the region gives no figure for has no part and reads "not provided" in the table.
+  window.TAP_REPORTS['pt-routes'] = {
+    id: 'pt-routes',
+    view: 'partners',
+    title: 'Which routes to market does each plan rely on?',
+    explain: {
+      shows: 'Each region’s order intake by route to market, from the recap: its own sales force, customer success, Alliance B as reseller, other resellers, system integrators and partner existing business.',
+      read: 'One bar per region, each as wide as 100%, so the mix can be compared whatever the size of the plan. Each route is a part of the bar, numbered as in the key. The stacked bar view shows the amounts in place of the shares, and the plan year breakdown gives a bar per year. A route with no figure in a region’s recap has no part and reads “not provided” in the table.',
+      lookFor: 'Plans that rely on resellers or system integrators much more than the others, and routes whose share changes from year to year.'
+    },
+    shape: 'parts',
+    builder: 'dimStack',
+    dimension: 'entity',
+    measures: [{ id: 'rt.oi', label: 'Order intake' }],
+    defaultType: 'stacked100',
+    types: ['stacked100', 'stackedBar', 'table'],
+    breakdowns: ['year'],
+    sources: ['DER', 'IN'],
+    options: { by: 'route' }
   };
 
   // US-2.3.4: every named partner, as a sortable list.
