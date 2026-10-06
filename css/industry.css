@@ -1,6 +1,6 @@
 /*
  * File: css/industry.css
- * Purpose: Industry priorities layout: tier grid, quadrant, ratings, commentary, details.
+ * Purpose: Market coverage layout: tier grid, quadrant, ratings, commentary, details.
  * Provides: styles for this area only (.tap-tg*, .tap-ind*)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html

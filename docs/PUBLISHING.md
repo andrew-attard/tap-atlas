@@ -46,7 +46,7 @@ In Chrome and in Edge, with the developer tools open (F12):
 
 1. **The address starts with `https://`** and the browser shows it as secure.
 2. **The landing page** (`docs/index.html`) shows its text and every screenshot. Its button opens the sample edition.
-3. **The Overview appears**, then open every view from the menu: Overview, Industry priorities, New business, Customer growth, Partners, Regions, Insights and Guide. Each one draws its charts.
+3. **The Overview appears**, then open every view from the menu: Overview, Market coverage, New business, Customer growth, Partners, Regions, Insights and Guide. Each one draws its charts.
 4. **No console errors** on the **Console** tab while going through the views.
 5. **No request outside the site.** On the **Network** tab, tick **Disable cache**, reload, and go through every view again. Every row's address starts with the site address above. Nothing goes to another domain: no fonts, no chart library, no analytics.
 6. **The "Sample data" label** is visible at the top of every view.

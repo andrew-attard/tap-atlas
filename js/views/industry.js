@@ -1,6 +1,6 @@
 /*
  * File: js/views/industry.js
- * Purpose: The Industry priorities view: the tier grid at full width, then attractiveness vs ability and the
+ * Purpose: The Market coverage view: the tier grid at full width, then attractiveness vs ability and the
  *          ratings side by side, then the leaders' commentary for the selected industry (US-1.5.7). Selecting an
  *          industry anywhere on the view (grid row, quadrant point, ratings picker, details) updates the rest.
  * Provides: view 'industry' (registered with TAP.views), TAP.industryView (current)
@@ -133,5 +133,5 @@
   }
 
   TAP.industryView = { current: current };
-  TAP.views.register('industry', { title: 'Industry priorities', mount: mount });
+  TAP.views.register('industry', { title: 'Market coverage', mount: mount });
 })(window.TAP);

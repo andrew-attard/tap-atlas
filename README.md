@@ -40,7 +40,7 @@ js/reports/       the dedicated charts (tier grid, quadrant, industry grid, leve
 js/insights/      the insight engine and one rule file per family
 js/panel/         the report panel every chart sits in
 js/ui/            the page frame, comparison bar, side panels, start-up screens, tour, presentation mode, Build a chart
-js/views/         the views: Overview, Industry priorities, New business, Customer growth, Partners, Other sections, Regions, Insights, Guide
+js/views/         the views: Overview, Market coverage, New business, Customer growth, Partners, Other sections, Regions, Insights, Guide
 config/           settings, views, report definitions, insight rules, the running order (no code, only values)
 content/          every word on screen: glossary, Guide text, wording files, organization starter
 css/              one base stylesheet and one per area
@@ -158,7 +158,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/custom-builder.js` | "Build a chart" on the Guide: pickers for measure, dimension and chart type, the custom chart and the session list |
 | `js/views/overview.js` | The Overview: headline, region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards |
-| `js/views/industry.js` | Industry priorities: tier grid, quadrant, ratings, commentary |
+| `js/views/industry.js` | Market coverage: tier grid, quadrant, ratings, commentary |
 | `js/views/new-business.js` | New business: industries, channels, levers, the sub-industry list, success factors, themes |
 | `js/views/customers.js` | Customer growth: segments, growth, exposure, the account bubble and list; also the layout Partners uses |
 | `js/views/partners.js` | Partners: reliance on partners and alliances, partner capacity, the partner list |
@@ -177,7 +177,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/views.js` | The views in menu order and the reports each one shows |
 | `config/reports.js` | The report schema, explained field by field |
 | `config/reports-overview.js` | Report definitions for the Overview |
-| `config/reports-industry.js` | Report definitions for Industry priorities |
+| `config/reports-industry.js` | Report definitions for Market coverage |
 | `config/reports-newbusiness.js` | Report definitions for New business |
 | `config/reports-customers.js` | Report definitions for Customer growth |
 | `config/reports-partners.js` | Report definitions for Partners |

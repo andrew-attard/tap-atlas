@@ -1,6 +1,6 @@
 /*
  * File: config/reports-industry.js
- * Purpose: Report definitions for the Industry priorities view.
+ * Purpose: Report definitions for the Market coverage view.
  * Provides: adds to window.TAP_REPORTS
  * Depends on: config/reports.js (the schema)
  * Used by: js/engine/registry.js, js/views/industry.js

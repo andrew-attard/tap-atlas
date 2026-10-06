@@ -53,7 +53,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 
 | Phase | Delivered | Stories | Test cases | Checks at release |
 |---|---|---|---|---|
-| 1, `v0.1.0` | The app shell and the comparison bar, the report panel and engine, sample data with planted cases, the Overview and Industry priorities views, insights in six rule families, the Guide, glossary and tour, the contract check, and the handover documents for the import | 58 (49 Must, 9 Should) | 270 | 635 automated checks pass in Chrome and Edge; the QA smoke run of 281 steps with no exceptions |
+| 1, `v0.1.0` | The app shell and the comparison bar, the report panel and engine, sample data with planted cases, the Overview and Market coverage views, insights in six rule families, the Guide, glossary and tour, the contract check, and the handover documents for the import | 58 (49 Must, 9 Should) | 270 | 635 automated checks pass in Chrome and Edge; the QA smoke run of 281 steps with no exceptions |
 | 2, `v0.2.0` | The New business, Customer growth and Partners views, the region profile, list reports, drill-down, a dot plot and breakdowns, three more insight families, and reading tips | 37 (22 Must, 13 Should, 2 Could) | 245 | 969 automated checks pass in Chrome and Edge; the QA smoke run of 724 steps per browser with no exceptions |
 | 3, `v0.3.0` | Presentation mode with a running order, custom charts, extra template sections, the handover pack, and this portfolio edition | 18 (10 Must, 7 Should, 1 Could) | 118 | 1,079 automated checks pass in Chrome and Edge; QA scripts on every view: no console errors, nothing below 13 px, no web requests; smoke test with no failures |
 
