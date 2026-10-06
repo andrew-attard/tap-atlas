@@ -5,7 +5,7 @@
  *          the sample edition works from a web host (relative paths, exact file names, nothing tied to file://),
  *          the README's file guide against the folder, the Data Contract's fields and change history, the known-good copy made by scripts/package.sh, the handover guide's parts and its place in the README, the landing page's links, the case study's parts, and the portfolio screenshots (one per view, 1440 x 900, stable names that the pages link to).
  * Provides: CLI `node tools/check-docs3.js [--root dir]`; exit 1 if any check finds a problem; module.exports
- * Depends on: Node 18+; tools/check-docs3-files.js (the screenshot and package checks)
+ * Depends on: Node 18+; tools/check-docs3-files.js (the screenshot and package checks), tools/check-docs4.js (Phase 4)
  * Used by: scripts/verify.sh ("handover and portfolio" step), CI; tests/test-docs3.js lists these cases as skipped
  * Owner: DOCS3 stream
  */
@@ -277,6 +277,7 @@ const CHECKS = [
   { id: 'TPV-TC-627', label: 'one 1440 x 900 screenshot per view in docs/screenshots', run: files.checkShots },
   { id: 'TPV-TC-628', label: 'screenshot names are stable and every page names an existing one', run: files.checkShotNames }
 ];
+CHECKS.push(...require('./check-docs4.js').CHECKS);   // the Phase 4 handover checks (US-4.6.4, PAGES4)
 
 function runAll(root) {
   return CHECKS.map((c) => Object.assign({ id: c.id, label: c.label }, c.run(root)));
