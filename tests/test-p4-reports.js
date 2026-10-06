@@ -2,7 +2,7 @@
  * File: tests/test-p4-reports.js
  * Purpose: Tests for the Phase 4 reports on the New business and Partners views, checked against figures worked by
  *          hand from tests/fixtures/mini-p4.js (never against the builders' own output).
- * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733, 734, 735 and X-p4-*; window.P4R_T (shared helpers)
+ * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733, 734, 735, 737, 738, 739, 741 and X-p4-*; window.P4R_T (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: NBPT stream
@@ -656,6 +656,141 @@
         a.near(line(res, r, 'all').cells['bk.gapShare'].v, X.gapShareByRegion[r], 1e-4, r + ': its share outside the books');
         if (r !== X.region) a.ok(X.gapShareByRegion[r] < 0.06, r + ': under 6%');
       });
+    });
+
+    /* ---------- US-4.5.3 partner types and maturity ---------- */
+
+    /*
+     * Partners on miniP4 (tests/fixtures/mini-p4.js), each with its type, maturity level and three-year order intake
+     * (ARR + services): A1 value-added reseller, Enable, 450 + 90 = 540; A2 system integrator, "Strategic" written as
+     * text, 150 + 30 = 180; A3 no type, no maturity, 90 + 0 = 90; B1 system integrator, Onboard, 150 + 30 = 180;
+     * B2 value-added reseller, Enable, 60 + 15 = 75; D1 referral partner, Recruit, 240 + blank = 240. Region C names none.
+     * Levels in the lookup's order: Recruit, Onboard, Enable, Skill, Strategic, then "Maturity not provided".
+     *   A: partners 0, 0, 1, 0, 1, 1 = 3; order intake 0, 0, 540, 0, 180, 90 = 810
+     *   B: partners 0, 1, 1, 0, 0, 0 = 2; order intake 0, 180, 75, 0, 0, 0 = 255
+     *   D: partners 1, 0, 0, 0, 0, 0 = 1; order intake 240 = 240
+     *   Together: partners 1, 1, 2, 0, 1, 1 = 6; order intake 240, 180, 615, 0, 180, 90 = 1305
+     * By partner type: A's value-added reseller holds A1 (Enable 1, 540), system integrator A2 (Strategic 1, 180), no type
+     * A3 (not provided 1, 90); B's system integrator B1 (Onboard), value-added reseller B2 (Enable); D's referral D1 (Recruit).
+     */
+    var MAT = 'pt-maturity', LEVELS = ['recruit', 'onboard', 'enable', 'skill', 'strategic', 'none'];
+    var LEVEL_NAMES = ['Recruit', 'Onboard', 'Enable', 'Skill', 'Strategic', 'Maturity not provided'];
+    var BY_LEVEL = {
+      count: { alpha: [0, 0, 1, 0, 1, 1, 3], bravo: [0, 1, 1, 0, 0, 0, 2], charlie: [null, null, null, null, null, null, null], delta: [1, 0, 0, 0, 0, 0, 1], org: [1, 1, 2, 0, 1, 1, 6] },
+      oi: { alpha: [0, 0, 540, 0, 180, 90, 810], bravo: [0, 180, 75, 0, 0, 0, 255], delta: [240, 0, 0, 0, 0, 0, 240], org: [240, 180, 615, 0, 180, 90, 1305] }
+    };
+    var PM = { count: 'pt.count.maturity', oi: 'pt.oi.maturity' };
+    function mkey(m, v) { return m + '@maturity:' + v; }
+    function levelCells(a, cells, m, want, what) {
+      LEVELS.forEach(function (v, i) { expectCell(a, cells[mkey(m, v)], want[i], what + ' ' + v); });
+      expectCell(a, cells[m], want[6], what + ' total');
+    }
+
+    T.test('TPV-TC-737', 'Partners and their planned order intake per region and maturity level, Recruit to Strategic, equal the hand-worked figures', function (a) {
+      load();
+      var def = TAP.reports.get(MAT), list = window.TAP_VIEWS.partners.reports;
+      a.ok(def && def.view === 'partners', 'pt-maturity is a Partners report');
+      a.ok(list.indexOf(MAT) > list.indexOf('pt-capacity') && list.indexOf(MAT) < list.indexOf('pt-list'), 'after pt-capacity, before the list');
+      a.deepEqual(TAP.reports.validate(def), [], 'the definition is valid');
+      a.deepEqual(def.measures.map(function (m) { return m.id; }), [PM.count, PM.oi], 'partners, then their order intake');
+      Object.keys(PM).forEach(function (t) {
+        var res = build(MAT, { mode: 'all' }, { type: 'table', measureId: PM[t] });
+        a.equal(res.error, null, t + ': builds');
+        a.deepEqual(labels(res), ['Region'].concat(LEVEL_NAMES).concat(['Total']), t + ': the levels in the lookup’s order, Recruit first');
+        Object.keys(BY_LEVEL[t]).forEach(function (r) {
+          if (r === 'org') return;
+          levelCells(a, row(res, r).cells, PM[t], BY_LEVEL[t][r], t + ' ' + r);
+        });
+        levelCells(a, row(build(MAT, { mode: 'org' }, { type: 'table', measureId: PM[t] }), 'org').cells, PM[t], BY_LEVEL[t].org, t + ' together');
+      });
+      var bars = build(MAT, { mode: 'all' });
+      a.deepEqual(series(bars).map(function (s) { return s.name; }), LEVEL_NAMES, 'the bars stack the levels in the same order');
+      a.deepEqual(bars.missing, ['Region C'], 'Region C names no partner');
+    });
+
+    T.test('TPV-TC-738', 'Broken down by partner type, the type parts add up to each maturity level’s total', function (a) {
+      load();
+      var def = TAP.reports.get(MAT);
+      a.deepEqual(TAP.prepare.breakdowns(def, {}), ['partnerType'], 'partner type is offered');
+      Object.keys(PM).forEach(function (t) {
+        var res = build(MAT, { mode: 'all' }, { type: 'table', breakdown: 'partnerType', measureId: PM[t] });
+        var types = [];
+        res.table.rows.forEach(function (r) { if (r.entityId === 'alpha') types.push(r.group); });
+        a.deepEqual(types, ['var', 'si', 'referral', 'none'], t + ': the types in the lookup’s order, then no type');
+        ['alpha', 'bravo', 'delta'].forEach(function (r) {
+          LEVELS.concat(['total']).forEach(function (v, i) {
+            var key = i < 6 ? mkey(PM[t], v) : PM[t], sum = 0;
+            types.forEach(function (ty) { var c = row(res, r, ty).cells[key]; if (c.state === 'value') sum += c.v; });
+            a.near(sum, BY_LEVEL[t][r][i] || 0, TOL, t + ' ' + r + ' ' + v + ': the types add up');
+          });
+        });
+        // Region A's value-added reseller is A1, at Enable; its partner without a type is A3, without a maturity
+        expectCell(a, row(res, 'alpha', 'var').cells[mkey(PM[t], 'enable')], t === 'count' ? 1 : 540, t + ': A1');
+        expectCell(a, row(res, 'alpha', 'none').cells[mkey(PM[t], 'none')], t === 'count' ? 1 : 90, t + ': A3');
+      });
+      var bars = build(MAT, { mode: 'all' }, { breakdown: 'partnerType' });
+      a.match(bars.option.yAxis.data[0], /^Region A · Value-added reseller$/, 'a bar per region and type, each named');
+    });
+
+    T.test('TPV-TC-739', 'The partner list has type, maturity and distribution columns; each sorts both ways; maturity in the lookup’s order', function (a) {
+      load();
+      var def = TAP.reports.get('pt-list'), keys = def.columns.map(function (c) { return c.key; });
+      ['type', 'maturity', 'distribution'].forEach(function (k) { a.ok(keys.indexOf(k) >= 0, 'column ' + k); });
+      a.ok(keys.indexOf('type') === keys.indexOf('channel') + 1, 'type sits next to the channel');
+      var X = window.TEST_EXPECT.miniP4;
+      var res = build('pt-list', { mode: 'all' });
+      a.deepEqual(res.table.columns.filter(function (c) { return ['type', 'maturity', 'distribution'].indexOf(c.key) >= 0; }).map(function (c) { return c.label; }),
+        ['Type', 'Maturity', 'Distribution at customer value, 3 years'], 'the headings');
+      X.partnerList.forEach(function (p) {
+        var r = res.table.rows.filter(function (x) { return x.id === p[0]; })[0];
+        [['type', 1], ['maturity', 2], ['distribution', 3]].forEach(function (c) { expectCell(a, r.cells[c[0]], p[c[1]], p[0] + ' ' + c[0]); });
+      });
+      function ids(sort) { return build('pt-list', { mode: 'all' }, { opts: { sort: sort } }).table.rows.map(function (r) { return r.id; }); }
+      a.deepEqual(ids('maturity:asc'), X.byMaturity, 'maturity ascending: Recruit first, the partner without one last');
+      a.deepEqual(ids('maturity:desc'), ['alpha:11', 'alpha:10', 'bravo:11', 'bravo:10', 'delta:10', 'alpha:12'], 'maturity descending: Strategic first, the blank still last');
+      a.ok(X.byMaturity.join() !== ids('maturity:asc').sort().join(), 'not the alphabet (Enable, Onboard, Recruit, Strategic)');
+      a.deepEqual(ids('type:asc'), ['delta:10', 'alpha:11', 'bravo:10', 'alpha:10', 'bravo:11', 'alpha:12'], 'type ascending: referral, system integrators, resellers, no type last');
+      a.deepEqual(ids('type:desc'), ['alpha:10', 'bravo:11', 'alpha:11', 'bravo:10', 'delta:10', 'alpha:12'], 'type descending');
+      a.deepEqual(ids('distribution:asc'), ['bravo:11', 'alpha:11', 'bravo:10', 'delta:10', 'alpha:10', 'alpha:12'], 'distribution ascending: 90, 200, 240, 300, 900, blank');
+      a.deepEqual(ids('distribution:desc'), ['alpha:10', 'delta:10', 'bravo:10', 'alpha:11', 'bravo:11', 'alpha:12'], 'distribution descending');
+      // The heading offers the other direction once clicked (as every column does)
+      var box = parse(build('pt-list', { mode: 'all' }, { opts: { sort: 'maturity:asc' } }).html);
+      a.equal(box.querySelector('th[data-tap-col="maturity"] button').getAttribute('data-tap-value'), 'maturity:desc', 'the next click sorts the other way');
+      a.equal(box.querySelector('th[data-tap-col="maturity"]').getAttribute('aria-sort'), 'ascending', 'and the heading says the direction');
+    });
+
+    T.test('X-p4-list-before-p4', 'A file without partner types or distribution: the list shows neither column, as before', function (a) {
+      var res = build('pt-list', { mode: 'all' }), keys = res.table.columns.map(function (c) { return c.key; });
+      a.ok(keys.indexOf('type') < 0 && keys.indexOf('distribution') < 0, 'no Phase 4 column');
+      a.ok(keys.indexOf('maturity') >= 0, 'maturity, as in Phase 2');
+      a.equal(res.notes.length, 0, 'and no note about a missing column');
+    });
+
+    T.test('TPV-TC-741', 'Partners without a maturity are counted under "not provided", never dropped', function (a) {
+      load();
+      var res = build(MAT, { mode: 'all' }, { type: 'table' });
+      a.ok(labels(res).indexOf('Maturity not provided') >= 0, 'the table has the group');
+      expectCell(a, row(res, 'alpha').cells[mkey(PM.count, 'none')], 1, 'Region A: partner A3');
+      expectCell(a, row(build(MAT, { mode: 'all' }, { type: 'table', measureId: PM.oi }), 'alpha').cells[mkey(PM.oi, 'none')], 90, 'with its order intake');
+      ['alpha', 'bravo', 'delta'].forEach(function (r) {
+        var cells = row(res, r).cells, n = (TAP.data.region(r).partners || []).length;
+        a.near(LEVELS.reduce(function (s, v) { return s + cells[mkey(PM.count, v)].v; }, 0), n, TOL, r + ': every partner is counted');
+      });
+      a.ok(series(build(MAT, { mode: 'all' })).some(function (s) { return s.name === 'Maturity not provided'; }), 'the bars name it');
+      // A maturity written as text that is not a level counts as not provided too
+      var plan = window.T_FIXTURE('miniP4');
+      plan.regions[1].partners[0].maturity = 'Platinum';
+      TAP.data.load(plan);
+      expectCell(a, row(build(MAT, { mode: 'all' }, { type: 'table' }), 'bravo').cells[mkey(PM.count, 'none')], 1, 'an unknown level');
+    });
+
+    T.test('X-p4-maturity-no-data', 'A file without maturity lookups: the report says so for every region', function (a) {
+      MODES.forEach(function (m) {
+        var res = build(MAT, m);
+        a.equal(res.error, null, m.mode + ': builds');
+        a.ok(res.empty, m.mode + ': the panel’s own empty state');
+      });
+      a.deepEqual(build(MAT, { mode: 'all' }).missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region is named');
     });
   });
 })(window.TAP);
