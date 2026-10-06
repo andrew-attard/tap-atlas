@@ -35,6 +35,10 @@ Generic on purpose: this copy names no organization, region, file or person. The
   |---|---|---|---|---|---|
   | Overview | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Industry priorities | [ ] | [ ] | [ ] | [ ] | [ ] |
+  | New business | [ ] | [ ] | [ ] | [ ] | [ ] |
+  | Customer growth | [ ] | [ ] | [ ] | [ ] | [ ] |
+  | Partners | [ ] | [ ] | [ ] | [ ] | [ ] |
+  | Outlook (full template) | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Insights | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Guide and glossary | [ ] | n/a | n/a | n/a | n/a |
 
@@ -57,6 +61,29 @@ Generic on purpose: this copy names no organization, region, file or person. The
 - [ ] **11. Save a known-good copy of the folder.**
   Copy the whole internal app folder, data file and organization file included, to approved storage, named with the date.
   *Good:* the copy opens by double-click and shows the same Overview. Its location is written in the run log. Access matches who may see the real plans (whoever has the folder has the data).
+
+## 1a. The full template: checks after the import
+
+Only when the workbooks are the full template (prompt 16 in `docs/COPILOT-PROMPTS.md`, section 4 of `docs/IMPORT-BRIEF.md`). Do these after step 4 and before step 6. Ask Copilot to run the first four on the data file (step 3 of prompt 16); the app's own check repeats them as warnings in the data sources panel.
+
+- [ ] **A. The variance equals the plan minus the strategic plan.**
+  For each region, year and product category with a strategic plan figure, the workbook's variance is the books value of that year and category minus the strategic plan.
+  *Good:* no warning about a strategic plan variance in the data sources panel. On **Outlook**, the strategic plan chart's variance for one region matches the workbook's variance cell.
+- [ ] **B. Revenue is never above order intake.**
+  For each region, year, channel and motion, the revenue outlook is at most the order intake at customer value (the recap) it comes from.
+  *Good:* no revenue warning. On **Outlook**, revenue as a share of order intake is 100% or less for every region and year.
+- [ ] **C. Books value is never above customer value for a reseller channel.**
+  For Partner, Alliance A and Alliance B, the books value of ARR and services is at most the customer value of the same year.
+  *Good:* no books value warning. On **Partners**, the customer value against books value chart shows a difference of zero or more.
+- [ ] **D. The coverage ratio matches its parts.**
+  Where the order intake sheet gives a coverage ratio, it is pipeline over forecast minus actuals, within 5%.
+  *Good:* no coverage warning; the base year chart's actuals month matches the sheet's.
+- [ ] **E. Lookups are complete.**
+  Every solution, partner type, maturity level and route in the data names an entry of its lookup; partner maturity has the five levels, Recruit to Strategic, in that order.
+  *Good:* no unknown-id error. The partner list sorts by maturity from Recruit to Strategic.
+- [ ] **F. Spot-check the new blocks.**
+  For each region, trace one figure from each new block (revenue outlook, books value, strategic plan, route to market, base year) to its cell, as in step 5.
+  *Good:* every checked figure matches its cell, and a region without a part reads "not provided" on Outlook and on its profile, never zero.
 
 ## 2. Before every demo: pre-demo regression
 
@@ -122,6 +149,7 @@ Keep one entry per run in the internal project folder, never in this repository.
 | Test page result (pasted summary) | |
 | Smoke set result, with any failures | |
 | Source spot-checks (region, section, cell, match) | |
+| Full template checks A to F, with any mismatch and the decision taken | |
 | Insights hidden or tuned, and why | |
 | Exceptions and decisions | |
 | Teams share sign-off | |

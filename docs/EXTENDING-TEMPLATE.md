@@ -8,6 +8,8 @@ How to bring another section of the planning template into TAP Atlas, step by st
 | 2. A measure and a report | A chart of a figure from that section, compared across regions, on an existing view | One small measures file, a report definition, wording | Prompt 12 |
 | 3. A new view | A menu entry of its own, with several reports under a header | A view file, the menu list, wording, tests | Prompt 13 |
 
+**Already in the contract.** The full template's recap blocks (revenue outlook, books value, strategic plan, routes to market), its order intake sheet and the new New Business and Partner columns have fields of their own since Phase 4; they are not extra sections. Prompt 16 in `docs/COPILOT-PROMPTS.md` brings them in.
+
 **Generic on purpose.** Every example here is fictional: the section names, columns, figures and region ids are made up. The real template's sheet names, layout and anything organization-specific stay in the internal project folder and in Copilot, never in this repository (D2).
 
 ## The rules for every level

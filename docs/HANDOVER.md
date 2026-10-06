@@ -8,7 +8,7 @@ Generic on purpose: this copy names no organization, region, file or person. Any
 
 TAP Atlas shows every region's territory account plan side by side. Each regional leader fills in the same planning workbook; an import turns the workbooks into one data file; the app reads that file and shows the plans together, so leadership can play each plan back, compare regions and see what is worth discussing.
 
-- **Views:** Overview, Industry priorities, New business, Customer growth, Partners, Other sections (only when the data has extra sections), Regions (one region's profile against the rest), Insights and Guide.
+- **Views:** Overview, Industry priorities, New business, Customer growth, Partners, Outlook (the plans against the strategic plan and the year before the plan, and the revenue outlook), Other sections (only when the data has extra sections), Regions (one region's profile against the rest), Insights and Guide.
 - **One comparison for every chart:** all regions, one against the rest, one against one, a chosen set, or the organization total.
 - **Every figure traces to its source:** file › sheet › cell, through the details panel and the data sources panel. Every chart has a table view.
 - **Insights:** rules in configuration flag observations worth discussing, worded neutrally and ranked.
@@ -43,11 +43,11 @@ Both pages load the same app scripts in the same order; only the data and organi
 
 The import is built and run in Microsoft 365 Copilot from `docs/IMPORT-BRIEF.md`. Real data never goes into the public repository.
 
-1. **Run the import** on the current regional workbooks (prompt 2 in `docs/COPILOT-PROMPTS.md` builds it; after that it is re-run as it is).
+1. **Run the import** on the current regional workbooks (prompt 2 in `docs/COPILOT-PROMPTS.md` builds it, and prompt 16 extends it to the full template; after that it is re-run as it is).
 2. **Save its output** as `data/plan-data.js` in the internal copy of the folder, replacing the old file.
 3. **Double-click `index.html`.** If it stops with "The data file has problems that stop the app from opening", press **Copy the list** and use prompt 6 in `docs/COPILOT-PROMPTS.md`. Fix the import, never the data file by hand.
 4. **Read the data sources panel:** click "Data:" on the comparison bar. It lists every region's file, date and import notes, and any warnings.
-5. **Before a demo,** work through `docs/REAL-DATA-CHECKLIST.md`: the full run, then the pre-demo regression.
+5. **Before a demo,** work through `docs/REAL-DATA-CHECKLIST.md`: the full run (with its full template checks when the workbooks have those parts), then the pre-demo regression.
 
 The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface between the data and the views. Changes to it are additions only, so an import built for an earlier release keeps working (D57).
 
@@ -103,11 +103,15 @@ The rules for every change are in the README: the app opens from a file, classic
 These are open on purpose: each needs the real data, the real template or a decision by the project owner, which the build did not have.
 
 1. **Account names (D54).** Customer growth shows whatever the data file's account `name` field holds (provisionally the real names, D14). There is no setting in the app to swap names for anonymous labels. Decide during the import who receives the folder: for a copy shared with every regional leader, the import can write labels instead of names.
-2. **Partner maturity values (D61).** The allowed values were not in the template copy reviewed (Data Contract open question 3). The app shows maturity as the text the data holds, with no fixed scale and no chart by maturity. Once the real values are confirmed, they can be added as a lookup in the contract.
+2. **Partner maturity values: settled.** The full template gives five levels, Recruit, Onboard, Enable, Skill and Strategic, carried in `lookups.partnerMaturity` with their order; the Partners view counts partners by level and the partner list sorts by it. This is no longer open.
 3. **Rate weights to confirm.** When regions are combined, a rate is the ratio of the summed rows each region's own figure used (D78): hit rate over target accounts with a hit rate, average deal size over expected wins, new business growth and services ratio over three-year ARR potential, customer growth % over current ARR. A row with a rate but a blank weight is left out and the figure is marked partly provided. These weights are proposed defaults still to be confirmed with leadership. The two chart scores (attractiveness and ability to win) use equal weights, and insight ranking uses 0.5 strength, 0.3 money at stake and 0.2 breadth; theme insights always rank after figure-based ones (D80).
 4. **Plan years (Data Contract open question 2).** Confirm the plan years and that year 1 is the first forecast year.
-5. **The rest of the template.** Sections the contract doesn't name one by one arrive as extra sections and show as lists only. A chart or view of their own follows `docs/EXTENDING-TEMPLATE.md`.
-6. **Stories not built.** None: every Phase 3 story was built.
+5. **The rest of the template.** The full template's recap and order intake sheets are in the contract since Phase 4. Sections it still doesn't name one by one arrive as extra sections and show as lists only. A chart or view of their own follows `docs/EXTENDING-TEMPLATE.md`.
+6. **Which base-year forecast.** The order intake sheet gives two forecasts; the contract holds one. Confirm with the data owner which one the import reads (prompt 16 asks).
+7. **Solution and partner type names.** The real names, and any product codes, stay in the data file and the internal project folder. The ids the import gives them must stay the same from one run to the next, or charts by solution change colour and order.
+8. **What the strategic plan is compared with.** The app compares the strategic plan with the plan's books value of the same year and product category, as the template does. If leadership wants it against customer value instead, that is a new measure, not a data change.
+9. **Revenue release shares.** The revenue outlook is read as the template works it out, from central release shares the app does not import. A change to those shares shows up only after the workbooks are recalculated and imported again.
+10. **Stories not built.** None from Phases 1 to 3.
 
 Other limits by design:
 
@@ -121,4 +125,4 @@ Other limits by design:
 
 ## Releases
 
-Each phase ends with a tag and a GitHub release (D58): `v0.1.0` (Phase 1, the first demo and Copilot handover build), `v0.2.0` (Phase 2: New business, Customer growth, Partners, region profiles, lists, drill-down, more insights) `v0.3.0` (Phase 3: presentation mode, custom charts, extra sections, this handover pack and the portfolio edition) and `v0.3.1` (the review pass: bug fixes, robustness to imperfect data and polish, no new features). Present from a release, or from a known-good copy of the folder, never from work in progress.
+Each phase ends with a tag and a GitHub release (D58): `v0.1.0` (Phase 1, the first demo and Copilot handover build), `v0.2.0` (Phase 2: New business, Customer growth, Partners, region profiles, lists, drill-down, more insights) `v0.3.0` (Phase 3: presentation mode, custom charts, extra sections, this handover pack and the portfolio edition) `v0.3.1` (the review pass: bug fixes, robustness to imperfect data and polish, no new features) and `v0.4.0` (Phase 4: the full template, with the Outlook view, solutions, books value, routes to market and partner maturity). Present from a release, or from a known-good copy of the folder, never from work in progress.

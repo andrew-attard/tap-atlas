@@ -16,7 +16,7 @@ Give Copilot these first, in one new chat, before any real workbook. They are en
 | `tests/fixtures/mini-data.js` | A small valid example of the shape: four regions, every section, a full `meta.sourceMap`. It sets `window.TEST_FIXTURES.mini` and has `isSample: true`; the real file sets `window.PLAN_DATA` and has `isSample: false` |
 | `js/core/check.js` and `content/text-data.js` | The app's contract check and the wording of its messages, so Copilot knows what the app will reject and how each problem is reported |
 
-Then add one real workbook, or screenshots of each sheet's header rows, inside Copilot only.
+Then add one real workbook, or screenshots of each sheet's header rows, inside Copilot only. For the full template's parts, prompt 16 in `docs/COPILOT-PROMPTS.md` extends an import that already covers the four sections, and `tests/fixtures/mini-p4.js` is a small valid example of those parts.
 
 **Read with:** `docs/DATA-CONTRACT.md` (the exact shape of the data file; it wins wherever this brief and the contract differ) and `docs/ARCHITECTURE.md` (how the app uses the file).
 
@@ -49,7 +49,7 @@ These carry over from decisions D11, D26, D27 and D1. However the import is buil
 
 ## 3. The planning template
 
-What the copy reviewed contains. Field-level detail, types and source tags are in `docs/DATA-CONTRACT.md`.
+What the first copy reviewed contains; section 4 adds what the full template has on top. Field-level detail, types and source tags are in `docs/DATA-CONTRACT.md`.
 
 One workbook per region, four sections, each on its own sheet. Three-year horizon (Year 1 to Year 3). Money in thousands of one currency.
 
@@ -79,15 +79,53 @@ One workbook per region, four sections, each on its own sheet. Three-year horizo
 
 **Layout traits that matter for reading it:** two-row merged headers, instruction blocks above each table, spare rows marked "keep open", calculation blocks to the right and below. Formulas point to a linked central workbook, so read the stored values; a workbook saved without recalculating can hold stale results (one validation rule catches this).
 
-## 4. The real template has more
+## 4. The full template
 
-The copy reviewed is a first version. The real template has more sections than the four above. The current contract covers only those four, so:
+The copy reviewed first had the four sections above. The full template has more: the recap moves to a sheet of its own with four new blocks, a new order intake sheet covers the year before the plan, the known sheets gain a few columns, and hidden helper sheets hold the dropdown lists. Every new part is an **optional addition** to the contract (D57): a region may carry one part and not another, and a file without any of them reads exactly as before. The "Full template" part of `docs/DATA-CONTRACT.md` has the field-level detail.
+
+**Read every block for the workbook's own region.** The recap sheet has a region filter at the top, and its stored values are for the region the filter was saved on. Read them only when the filter is set to the region the workbook belongs to; otherwise stop this region with an error naming the filter cell (section 5).
+
+### 4.1 Where each new field comes from
+
+Generic block names: the real sheet names, row labels and cells go in the import's mapping, in the internal project folder.
+
+| Contract field | Sheet | Block in the template | Tag | What to write |
+|---|---|---|---|---|
+| `recap[]` (unchanged) | Recap | Order intake outlook at customer value | DER | As before: one item per year, channel, motion and type. Only the sheet name in `meta.sourceMap.recap` changes |
+| `revenue[]` | Recap | Revenue outlook at customer value | DER | The recap item's shape: `year`, `channel`, `motion`, `type` (`arr` or `services`), `value`, `sourceCell`. One item per year, channel, motion and type |
+| `booksValue[]` | Recap | Value through the organization's own books | DER | The recap item's shape, with `type` also `swPerpetual` and `hardware`; the recurring category is `arr` |
+| `strategicPlan[]` | Recap | Order intake against the strategic plan | PRE (`value`), DER (`variance`) | One item per year and product category: `year`, `type` (the category, as in `booksValue`), `value` (the strategic plan figure), `variance` (the block's variance in money, optional), `sourceCell` (the cell of `value`). The plan's own figure and the variance % are not stored: the app works them out |
+| `routes[]` | Recap | Order intake by route to market | DER (some IN) | One item per route, year and type, with `solution` when the block splits a route by solution: `route`, `year`, `type`, `value`, `solution`, `sourceCell` |
+| `baseYear.year`, `baseYear.actualsThrough` | Order intake | The sheet's header: the year and the last month of actuals | PRE | `year` as a number; `actualsThrough` as `"YYYY-MM"` |
+| `baseYear.items[]` | Order intake | Totals by product category | PRE | One item per category: `category`, `budget`, `forecast`, `actuals`, `pipeline` (unweighted), `coverage` (the sheet's coverage ratio, when it gives one), `sourceRow` |
+| `newBusiness[].solution` | New Business | The solution column of each row | IN | The id from `lookups.solutions` that matches the row's solution; `null` when the cell is blank |
+| `partners[].type` | Partner | The partner type column | IN | The id from `lookups.partnerTypes`; `null` when blank |
+| `partners[].maturity` | Partner | The maturity level column | IN | The id from `lookups.partnerMaturity`. The level's name is accepted too |
+| `partners[].supportPct` | Partner | Shared services support %, per plan year | IN | Three decimals (25% is `0.25`), `null` for a blank year |
+| `partners[].distribution` | Partner | Distribution at customer value, per plan year | IN | Three numbers in thousands |
+| `partners[].servicesFromPartners` | Partner | Services order intake the partner delivers itself, per plan year | DER | Three numbers in thousands |
+| `outsourcingPct` | Partner | The outsourcing % at the top of the sheet | IN | One decimal per region; its cell goes in `meta.sourceMap.partners.cells.outsourcingPct` |
+| `customerGrowth.accounts[].riskLevel` | Customer Growth | Risk level | PRE | `"low"` is now allowed, with `"high"`, `"medium"` and `null` |
+| `lookups.productCategories` | Fixed by the contract | The four categories | IMP | Ids `swPerpetual`, `recurring`, `hardware`, `services`, with display names |
+| `lookups.solutions` | Hidden lists sheet | The solutions list | IMP (names PRE) | `{ id, name, category }`: a stable id per solution and the product category it belongs to |
+| `lookups.partnerTypes` | Partner, or the hidden lists sheet where it lists them | The values used in the partner type column | IMP (names PRE) | `{ id, name }`: a stable id per type |
+| `lookups.partnerMaturity` | Hidden lists sheet | The partner maturity list | IMP | `{ id, name, rank }`: Recruit 1, Onboard 2, Enable 3, Skill 4, Strategic 5 |
+| `lookups.routes` | Fixed by the contract | The route to market block's rows | IMP | Ids `ownSales`, `customerSuccess`, `allianceBReseller`, `otherResellers`, `systemIntegrators`, `partnerExisting` |
+| `meta.sourceMap.revenue`, `.booksValue`, `.strategicPlan`, `.routes`, `.baseYear` | | | IMP | The sheet of each part (items carry their own `sourceCell`), and for `baseYear` the column of each field and the cells of `year` and `actualsThrough` |
+
+New columns on the known sheets go in those sheets' `meta.sourceMap` entries: `newBusiness.columns.solution`, `partners.columns.type`, and one column per plan year for `supportPct`, `distribution` and `servicesFromPartners`.
+
+**Left out on purpose, as before:** the monthly phasing on the order intake sheet, order intake per team, the price adjustment, the gross-up from contribution to customer value, the revenue release shares in the settings sheet, and the raw system exports. The app needs none of them to show the plans.
+
+### 4.2 Anything else the template holds
+
+Sections the contract does not name one by one (for example a sheet added to the template later) still come in without a contract change:
 
 - **Write a new section as an extra section.** The contract has an optional, additive place for the sections it doesn't name one by one: `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows (the "Extra sections" part of `docs/DATA-CONTRACT.md`). The app shows every extra section as a list on the **Other sections** view, which appears only when there are any, with file › sheet › cell for each value. Problems in an extra section are warnings, never errors. Level 1 of `docs/EXTENDING-TEMPLATE.md` gives the steps, and prompt 11 in `docs/COPILOT-PROMPTS.md` asks Copilot to extend the import.
 - **To chart a figure from it,** follow level 2 of `docs/EXTENDING-TEMPLATE.md` (prompt 12); for a whole new view, level 3 (prompt 13). Only a section that needs fields of its own, outside the extra-section shape, extends the contract itself: field, type, tag and notes in `docs/DATA-CONTRACT.md`, the contract check (`js/core/check.js`), `meta.sourceMap`, and the measure or report that shows it.
 - Anything else the import writes that the contract doesn't name is ignored by the contract check: neither an error nor a warning (D47), and not shown on screen.
 - **The version rule.** Adding a field or section never changes `meta.schemaVersion`. Raise it only when an existing field changes meaning or shape, and change `TAP.schemaVersion` in `js/core/namespace.js` to match at the same time. A mismatch stops the app with a version message.
-- Allowed values not in the copy reviewed (partner maturity, some rating dropdowns) need confirming against the real template.
+- Allowed values in the dropdowns (some rating scales) are confirmed against the real template. Partner maturity is settled: five levels, Recruit to Strategic, in `lookups.partnerMaturity`.
 
 ## 5. Validation rules
 
@@ -101,6 +139,12 @@ From the contract. The import applies them to every workbook before writing the 
 | Segment matches the thresholds rule | Note on the account's segment cell |
 | Ratings and tiers use only allowed values | Note, and the value is imported as `null` (e.g. a rating cell holding text that isn't an allowed option) |
 | Blanks stay blank | Never converted to `0` or `""` |
+| **Full template:** the strategic plan variance equals the plan minus the strategic plan | Note on the variance cell if the block's variance is not the books value of that year and category minus the strategic plan figure (a workbook saved without recalculating) |
+| **Full template:** revenue is never above order intake | Note if a revenue item is above the recap's order intake for the same year, channel and motion |
+| **Full template:** books value is never above customer value for a reseller channel | Note if, for Partner, Alliance A or Alliance B, the books value of ARR and services is above the recap's customer value for the same year |
+| **Full template:** the coverage ratio matches its parts | Note if the order intake sheet's coverage is more than 5% away from pipeline over forecast minus actuals |
+| **Full template:** every solution, partner type, maturity level and route names an entry of its lookup | Note, and the value is imported as `null` |
+| **Full template:** the recap is read for the workbook's own region | Error if the recap sheet's region filter is set to another region or to all regions |
 
 The **segment rule**, checked in this order: current ARR above the strategic threshold is Strategic; below the scaled threshold is Scaled; 3-year order intake above the growth threshold and ARR above the growth ARR threshold is Growth; otherwise Core.
 
@@ -155,6 +199,7 @@ Before calling the import done, the data file should have:
 - [ ] `sourceRow` on every list item and `sourceCell` on every recap item
 - [ ] `null` for blanks, never `0` or `""`
 - [ ] no personal names
+- [ ] for the full template, where a region's workbook has them: `revenue`, `booksValue`, `strategicPlan`, `baseYear`, `routes` and `outsourcingPct`; `solution` on New Business rows; `type`, `maturity`, `supportPct`, `distribution` and `servicesFromPartners` on partners; the five Phase 4 lookups; and a `meta.sourceMap` entry for each part a region carries. A part a region does not have is left out, never filled with zeros
 
 ## 8. How to check the result
 

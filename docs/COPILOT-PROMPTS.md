@@ -20,11 +20,11 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 |---|---|
 | Pages | `index.html` (internal edition: real data and organization layer), `index-sample.html` (sample data), `tests.html` (test page) |
 | Data | `data/plan-data.js` (real, from the import; internal copy only), `data/sample-plan-data.js` (fictional, made by `tools/generate-sample-data.js`) |
-| Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` (the contract check), `content/text-data.js` (its messages), `js/core/sources.js` (file › sheet › cell) |
-| Look | `js/theme.js` (every colour, font, size and the logo), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/glossary.css`, `css/view-head.css`, `css/newbusiness.css`, `css/customers.css`, `css/profile.css`, `css/themes.css`) |
+| Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` and `js/core/check-p4.js` (the contract check), `content/text-data.js` (its messages), `js/core/sources.js` (file › sheet › cell) |
+| Look | `js/theme.js` (every colour, font, size and the logo), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/glossary.css`, `css/view-head.css`, `css/newbusiness.css`, `css/customers.css`, `css/profile.css`, `css/themes.css`, `css/outlook.css`) |
 | Settings | `config/settings.js` (weights, thresholds, limits) |
-| Reports | `config/reports.js` (the schema), one definitions file per view (`config/reports-overview.js`, `config/reports-industry.js`, `config/reports-newbusiness.js`, `config/reports-customers.js`, `config/reports-partners.js`, `config/reports-themes.js`), `config/views.js`, `config/profile.js` (the reports on a region profile) |
-| Measures | `js/engine/measures.js`, `js/engine/measures-p2.js` (the Phase 2 measures), `js/engine/scores.js` (per-industry measures and the two scores), `js/engine/rows.js` (figures for single rows on lists) |
+| Reports | `config/reports.js` (the schema), one definitions file per view (`config/reports-overview.js`, `config/reports-industry.js`, `config/reports-newbusiness.js`, `config/reports-customers.js`, `config/reports-partners.js`, `config/reports-themes.js`, `config/reports-outlook.js`), `config/views.js`, `config/profile.js` (the reports on a region profile) |
+| Measures | `js/engine/measures.js`, `js/engine/measures-p2.js` (the Phase 2 measures), `js/engine/measures-p4.js` (the full template's measures), `js/engine/scores.js` (per-industry measures and the two scores), `js/engine/rows.js` (figures for single rows on lists) |
 | Charts and lists | `js/engine/build-compare.js`, `js/engine/build-parts.js`, `js/engine/build-xy.js`, `js/engine/build-list.js` (lists), `js/reports/*.js` (the dedicated charts) |
 | Insights | `config/insight-rules.js` (rules, thresholds, wording), `config/comment-themes.js` (recurring theme keywords), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
 | Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/ui/view-head.js` (the newer views' header and tips), `js/views/*.js` (the views, including `js/views/other.js` for extra sections), `js/panel/*.js` (the report panel, drill-down, expanded charts) |
@@ -289,3 +289,24 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 ```
 
 **Expect:** for A, one definition and a one-line change to `config/views.js`; for B, an explanation and a one-line change to the measure's `dims`, or a reason to leave it. Check: open `tests.html` (all pass), then the view, or the Guide's "Build a chart": the measure appears with the new choice, and a chart built from it shows the "Custom chart" badge and the same figures as its table.
+
+## The full template
+
+Prompt 16 brings the parts of the full template into an import that already covers the four sections: the recap blocks, the order intake sheet for the year before the plan, and the new columns. Section 4 of `docs/IMPORT-BRIEF.md` says where each new field comes from.
+
+## 16. Extend the import to the full template
+
+Use once the import covers the four sections and the workbooks are the full template: the recap on its own sheet, the order intake sheet for the year before the plan, and the new columns on New Business and Partner.
+
+**Attach:** `docs/IMPORT-BRIEF.md` (section 4 maps every new field to its sheet and block), `docs/DATA-CONTRACT.md` (the "Full template" part), `tests/fixtures/mini-p4.js` (a small valid example of the new parts), `js/core/check-p4.js` and `content/text-data.js` (what the app's check rejects or warns about), and the import's files. In Copilot only: one real workbook of the full template.
+
+```
+Our workbooks are now the full planning template. Following section 4 of the attached IMPORT-BRIEF.md and the "Full template" part of the data contract, extend our import so it also writes the new parts. mini-p4.js is a small valid example of them; check-p4.js is the check the app runs on them.
+Step 1: From the workbook, list where each field in the brief's section 4.1 table sits: sheet, block, row labels and the cells or columns for each plan year, channel, motion, type, product category and route. List the dropdown values of the hidden lists sheet for solutions and partner maturity, and the partner types the Partner sheet uses, and propose a stable id for each. Say which of the base year's forecasts the sheet treats as current. Wait for my answers.
+Step 2, after I answer: change the import so it writes the five new lookups and, for every region, revenue, booksValue, strategicPlan, baseYear, routes and outsourcingPct, the solution of each New Business row, and type, maturity, supportPct, distribution and servicesFromPartners for each partner, with a sourceCell or sourceRow on every item and a meta.sourceMap entry for each part. Read the recap with its region filter set to the workbook's own region. Keep blanks as null; leave a part out when a workbook has none of it. Change nothing in the four existing sections except the recap's sheet name in meta.sourceMap.
+Step 3: Run these checks on every region and list each mismatch with its sheet and cell: the strategic plan variance equals the plan (the books value of that year and category) minus the strategic plan; revenue is never above the order intake (recap, customer value) of the same year, channel and motion; books value is never above customer value for Partner, Alliance A and Alliance B over ARR and services; the coverage ratio is within 5% of pipeline over forecast minus actuals; every solution, partner type, maturity and route names an entry of its lookup. Write each mismatch as an import note, not as a change to the figures. Tell me how to re-run the import.
+
+Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
+```
+
+**Expect:** a location table and the lookup values to confirm, then changes to the import only, then a list of mismatches per region (an empty list is possible). Check: re-run the import, open `index.html` and read the data sources panel: the app's own check repeats the same comparisons as warnings. Then open **Outlook**, the new charts on **New business** and **Partners**, and one region profile, and work through the full template part of `docs/REAL-DATA-CHECKLIST.md`.
