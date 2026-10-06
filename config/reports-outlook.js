@@ -2,7 +2,7 @@
  * File: config/reports-outlook.js
  * Purpose: Report definitions for the Outlook view (ids in docs/ARCHITECTURE.md section 19.3). Schema: config/reports.js.
  * Provides: adds to window.TAP_REPORTS
- * Depends on: config/reports.js, js/reports/outlook-side.js (builder olSide), js/views/outlook.js (actualsLine, at call time)
+ * Depends on: config/reports.js, js/reports/outlook-side.js (builder olSide), js/reports/dim-stack.js (builder dimStack), js/views/outlook.js (actualsLine, at call time)
  * Used by: js/engine/registry.js, js/views/outlook.js
  * Owner: OUTLOOK stream (#441)
  */
@@ -103,5 +103,28 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     breakdowns: ['category'],
     sources: ['PRE', 'APP'],
     get options() { return { refLines: [{ value: 1, label: TAP.content.text('olCoverage.refLine') }] }; }
+  };
+
+  // US-4.3.1: revenue by plan year, split by motion. NBPT's dimStack builder splits each bar by one dimension (here the
+  // motion) and the panel's breakdown gives a bar per plan year or channel, so no builder of its own is needed.
+  window.TAP_REPORTS['ol-revenue'] = {
+    id: 'ol-revenue',
+    view: 'outlook',
+    title: 'How much revenue do the plans release each year?',
+    explain: {
+      shows: 'Each region’s planned revenue for each plan year, split into new business and customer growth, as the template’s recap works it out. The figures are indicative: they are at today’s recurring revenue level and released from order intake by the template’s own assumptions, so they show what the plans mean for revenue rather than a forecast.',
+      read: 'One bar per region and plan year, its parts the two motions, each numbered as in the key, with the total at the end. Switch between revenue, ARR and services, or break the figures down by channel instead of by year. A region without a revenue outlook reads "not provided" and is left out of combined figures.',
+      lookFor: 'How fast revenue builds over the three years, how much of it comes from customer growth, and regions whose revenue grows differently from their order intake.'
+    },
+    shape: 'parts',
+    builder: 'dimStack',
+    dimension: 'entity',
+    measures: [{ id: 'rv.all.oi', label: 'Revenue' }, { id: 'rv.all.arr', label: 'ARR' }, { id: 'rv.all.services', label: 'Services' }],
+    defaultType: 'stackedBar',
+    types: ['stackedBar', 'table'],
+    breakdowns: ['year', 'channel'],
+    defaultBreakdown: 'year',
+    sources: ['DER'],
+    options: { by: 'motion' }
   };
 })();
