@@ -92,7 +92,7 @@ window.TAP_CONTENT.guide = {
         'The Insights page lists them all, ranked and grouped by family. Any insight can be hidden for the rest of the session.'
       ] },
       { id: 'keys', title: 'Keyboard shortcuts', shortcuts: true, paragraphs: [
-        'When presenting, a number key opens the view at that place in the menu, as listed below. P starts presentation mode, which steps through the running order.',
+        'When presenting, a number key opens the view at that place in the menu, as listed below: 1 to 9 for the first nine, and 0 for the tenth. P starts presentation mode, which steps through the running order.',
         'Esc closes one thing at a time: an open list or definition first, then a side panel, then an expanded chart. In an expanded chart the arrow keys move between the charts, and Backspace goes up a level after a drill-down.'
       ] }
     ]

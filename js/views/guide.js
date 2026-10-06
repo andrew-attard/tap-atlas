@@ -40,11 +40,11 @@
     try { TAP.tour.start(); } catch (e) { if (!/Not built yet/.test(e.message)) throw e; }
   }
 
-  // The number keys, one per view in menu order (1 to 9), from the same list TAP.keys reads.
+  // The number keys, one per view in menu order (1 to 9, then 0 for the tenth, D90), from the same list TAP.keys reads.
   function shortcuts() {
-    var ids = TAP.views.order().slice(0, 9);
+    var ids = TAP.views.order().slice(0, 10);
     return el('ul', { class: 'tap-guide__keys', 'aria-label': t('keysLabel') }, ids.map(function (id, i) {
-      return el('li', { class: 'tap-guide__key', 'data-view': id }, [el('kbd', null, String(i + 1)), el('span', null, TAP.views.title(id))]);
+      return el('li', { class: 'tap-guide__key', 'data-view': id }, [el('kbd', null, String((i + 1) % 10)), el('span', null, TAP.views.title(id))]);
     }));
   }
 

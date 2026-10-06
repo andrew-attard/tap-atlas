@@ -1,8 +1,8 @@
 /*
  * File: js/ui/keys.js
- * Purpose: Keyboard shortcuts for presenting: 1 to 9 open the views in menu order (TAP.views.order(), so a new
- *          view needs no change here; the Guide lists the keys from the same order), P starts presentation mode
- *          (US-3.1.2), and one Esc order across popovers, side panels and expanded charts.
+ * Purpose: Keyboard shortcuts for presenting: 1 to 9 open the views in menu order and 0 the tenth (D90), from
+ *          TAP.views.order(), so a new view needs no change here (the Guide lists the keys from the same order); P starts
+ *          presentation mode (US-3.1.2); and one Esc order across popovers, side panels and expanded charts.
  * Provides: TAP.keys (bind, unbind, viewFor)
  * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js, js/ui/present.js,
  *             js/panel/panel-drill.js (TAP.panelKeys.typing), js/panel/panel-expand.js (collapse) (all read at call time)
@@ -24,10 +24,11 @@
 
   function tourOn() { return !!document.querySelector('.tap-tour, .tap-tour-welcome'); }
 
-  // The view a digit key opens, or null.
+  // The view a digit key opens, or null. 0 comes after 9, as on the keyboard (D90).
   function viewFor(key) {
-    if (!/^[1-9]$/.test(String(key))) return null;
-    return TAP.views.order()[Number(key) - 1] || null;
+    if (!/^[0-9]$/.test(String(key))) return null;
+    var n = Number(key);
+    return TAP.views.order()[n === 0 ? 9 : n - 1] || null;
   }
 
   function closeExpanded() { TAP.panelExpand.collapse(); }   // also leaves full screen
