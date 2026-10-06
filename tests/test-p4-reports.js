@@ -3,6 +3,9 @@
  * Purpose: Tests for the Phase 4 reports on the New business and Partners views, checked against figures worked by
  *          hand from tests/fixtures/mini-p4.js (never against the builders' own output).
  * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733, 734, 735, 737, 738, 739, 741 and X-p4-*; window.P4R_T (shared helpers)
+    });
+
+ * Provides: test cases TPV-TC-714, 715, 717, 718, 728, 729, 731, 733, 734, 735, 724, 725, 727 and X-p4-*; window.P4R_T (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: NBPT stream
@@ -811,6 +814,118 @@
         a.ok(r, 'a line for type ' + ty);
         expectCell(a, r.cells[PM.count], X.types[ty], 'together: partners of type ' + ty);
       });
+    });
+
+    /* ---------- US-4.4.3 solution as a breakdown on the existing new business reports ---------- */
+
+    /*
+     * The levers by solution on miniP4, worked by hand from the rows (tests/fixtures/mini-p4.js). Each lever is read
+     * over the rows that name the solution; counts add up, rates are weighted as the lever's own rule says (hit rate by
+     * target accounts, deal size by implied wins, growth by three-year ARR), so the whole-region figure is the weighted
+     * recomposition of its solution parts, never their mean.
+     *   A: row 20 (Solution 1): 20 target accounts, hit rate 0.25 (5 wins), deal 100, growth 0.1 / 0.1, ARR 1655
+     *      row 21 (Solution 2): 10 target accounts, hit rate 0.1 (1 win), deal 200, growth 0 / 0, ARR 600
+     *      all: 30 accounts, 6 wins, hit rate 6 / 30 = 0.2, deal (100 x 5 + 200 x 1) / 6 = 116.6667,
+     *      growth year 2 (0.1 x 1655 + 0 x 600) / 2255 = 0.0733925
+     *   B: row 20 (Solution 1): 40, 0.5 (20 wins), 50, 0.2 / 0, ARR 3400; row 21 (no solution): 10, 0.2 (2 wins), 100, 0 / 0, ARR 600
+     *      all: 50 accounts, 22 wins, hit rate 0.44, deal (50 x 20 + 100 x 2) / 22 = 54.5455, growth year 2 (0.2 x 3400) / 4000 = 0.17
+     *   C: no row names a solution: row 20 (10 accounts, no hit rate, deal 80) and row 21 (5, 0.2, 1 win, deal 100) count under
+     *      "No solution named": 15 accounts, 1 win, hit rate 0.2 over the rated row, deal 100 (the row with a win)
+     *   D: row 20 (Solution 3): 100, 0.6 (60 wins), 10, 0.5 / 0.5
+     *   Together, Solution 1: hit rate (5 + 20) / (20 + 40) = 0.4166667; deal (100 x 5 + 50 x 20) / 25 = 60;
+     *      growth year 2 (0.1 x 1655 + 0.2 x 3400) / 5055 = 0.1672601
+     * A solution a region has no row for: counts read zero (the rows exist, none is in the solution), rates are not provided.
+     */
+    var LEV = 'nb-levers', LEVERS = ['nb.targetAccounts', 'nb.hitRate', 'nb.avgDealSize', 'nb.wins', 'nb.growthY2', 'nb.growthY3'];
+    var SV = ['sol1', 'sol2', 'sol3', 'none'];
+    // Per region: [Solution 1, Solution 2, Solution 3, No solution named, all]; null = not provided
+    var LEVER_SOL = {
+      'nb.targetAccounts': { alpha: [20, 10, 0, 0, 30], bravo: [40, 0, 0, 10, 50], charlie: [0, 0, 0, 15, 15], delta: [0, 0, 100, 0, 100] },
+      'nb.wins': { alpha: [5, 1, 0, 0, 6], bravo: [20, 0, 0, 2, 22], charlie: [0, 0, 0, 1, 1], delta: [0, 0, 60, 0, 60] },
+      'nb.hitRate': { alpha: [0.25, 0.1, null, null, 0.2], bravo: [0.5, null, null, 0.2, 0.44], charlie: [null, null, null, 0.2, 0.2], delta: [null, null, 0.6, null, 0.6] },
+      'nb.avgDealSize': { alpha: [100, 200, null, null, 116.6666667], bravo: [50, null, null, 100, 54.5454545], charlie: [null, null, null, 100, 100], delta: [null, null, 10, null, 10] },
+      'nb.growthY2': { alpha: [0.1, 0, null, null, 0.0733925], bravo: [0.2, null, null, 0, 0.17], charlie: [null, null, null, 0, 0], delta: [null, null, 0.5, null, 0.5] },
+      'nb.growthY3': { alpha: [0.1, 0, null, null, 0.0733925], bravo: [0, null, null, 0, 0], charlie: [null, null, null, 0, 0], delta: [null, null, 0.5, null, 0.5] }
+    };
+    function skey(m, v) { return m + '@solution:' + v; }
+
+    T.test('TPV-TC-724', '"Solution" is offered on the levers, whose measures list it, and not on the industries or channels, whose measures do not', function (a) {
+      load();
+      var lev = TAP.reports.get(LEV);
+      a.ok(lev.breakdowns.indexOf('solution') >= 0, 'the levers allow it');
+      LEVERS.forEach(function (m) {
+        a.ok(TAP.measures.meta(m).dims.indexOf('solution') >= 0, m + ' lists solution');
+        a.deepEqual(TAP.prepare.breakdowns(lev, { measureId: m }), ['industry', 'solution'], m + ': industry and solution offered');
+      });
+      a.ok(TAP.measures.meta('nb.targetAccountsRated').dims.indexOf('solution') >= 0, 'the hit rate’s weight lists it too');
+      ['nb-industries', 'nb-channels'].forEach(function (id) {
+        var def = TAP.reports.get(id);
+        def.measures.forEach(function (m) {
+          a.ok(TAP.measures.meta(m.id).dims.indexOf('solution') < 0, id + ': ' + m.id + ' does not list solution');
+          a.ok(TAP.prepare.breakdowns(def, { measureId: m.id }).indexOf('solution') < 0, id + ': not offered for ' + m.id);
+        });
+      });
+      // A file whose rows name no solution: not offered on the levers either
+      TAP.data.load(window.T_FIXTURE('mini'));
+      a.deepEqual(TAP.prepare.breakdowns(lev, {}), ['industry'], 'before Phase 4 data: industry only');
+    });
+
+    T.test('TPV-TC-725', 'Each lever broken down by solution equals the hand-worked figures and recomposes to the whole-region figure', function (a) {
+      load();
+      LEVERS.forEach(function (m) {
+        var res = build(LEV, { mode: 'all' }, { type: 'table', breakdown: 'solution', measureId: m });
+        a.equal(res.error, null, m + ': builds');
+        a.deepEqual(res.table.columns.slice(2).map(function (c) { return c.label; }), ['Solution 1', 'Solution 2', 'Solution 3', 'No solution named'], m + ': a column per solution, in order');
+        Object.keys(LEVER_SOL[m]).forEach(function (r) {
+          var cells = row(res, r).cells, want = LEVER_SOL[m][r], num = 0, den = 0, sum = 0;
+          SV.forEach(function (v, i) {
+            var c = cells[skey(m, v)];
+            expectCell(a, c, want[i], m + ' ' + r + ' ' + v);
+            if (c.state !== 'value') return;
+            sum += c.v;
+            if (c.ratio) { num += c.ratio.num; den += c.ratio.den; }
+          });
+          expectCell(a, cells[m], want[4], m + ' ' + r + ' all');
+          if (TAP.measures.meta(m).valueKind === 'count') a.near(sum, want[4], TOL, m + ' ' + r + ': the solutions add up');
+          else if (den > 0) a.near(num / den, want[4], TOL, m + ' ' + r + ': the weighted parts recompose the whole');
+        });
+      });
+      // Regions together, Solution 1
+      var org = build(LEV, { mode: 'org' }, { type: 'table', breakdown: 'solution', measureId: 'nb.hitRate' });
+      expectCell(a, row(org, 'org').cells[skey('nb.hitRate', 'sol1')], 25 / 60, 'together: hit rate in Solution 1');
+      org = build(LEV, { mode: 'org' }, { type: 'table', breakdown: 'solution', measureId: 'nb.avgDealSize' });
+      expectCell(a, row(org, 'org').cells[skey('nb.avgDealSize', 'sol1')], 60, 'together: deal size in Solution 1');
+      org = build(LEV, { mode: 'org' }, { type: 'table', breakdown: 'solution', measureId: 'nb.growthY2' });
+      expectCell(a, row(org, 'org').cells[skey('nb.growthY2', 'sol1')], 845 / 5055, 'together: year 2 growth in Solution 1');
+      // Grouped bars, every group labelled (TPV-TC-726 in code)
+      var bars = build(LEV, { mode: 'all' }, { breakdown: 'solution', measureId: 'nb.targetAccounts' });
+      a.equal(bars.option.series.filter(function (s) { return s.tapRole === 'value'; }).length, 4, 'a group of four bars per region');
+      a.ok(bars.legend.filter(function (l) { return l.role === 'part'; }).length === 4, 'every solution named in the key');
+      var s0 = bars.option.series[0];
+      a.match(s0.label.formatter({ data: s0.data[0] }), /^Solution 1\s+20$/, 'each bar carries its solution’s name and value');
+    });
+
+    T.test('TPV-TC-727', 'Build a chart offers solution and category as dimensions of the measures that support them', function (a) {
+      load();
+      function byId(id) { return TAP.custom.options().filter(function (o) { return o.measureId === id; })[0]; }
+      a.deepEqual(byId('nb.arr').by, ['entity', 'year', 'industry', 'solution'], 'new business ARR by solution');
+      a.deepEqual(byId('nb.targetAccounts').by, ['entity', 'industry', 'solution'], 'target accounts by solution');
+      a.deepEqual(byId('oi.cat').by, ['entity', 'year', 'category'], 'order intake by product category');
+      a.deepEqual(byId('sp.oi').by, ['entity', 'year', 'category'], 'the strategic plan by product category');
+      a.ok(byId('rc.nb.arr').by.indexOf('solution') < 0, 'the recap has no solution');
+      var d = TAP.custom.definition({ measure: 'nb.wins', by: 'solution', type: 'groupedBar' });
+      a.ok(!d.errors, 'a chart of wins by solution is a valid definition');
+      a.deepEqual(TAP.custom.definition({ measure: 'oi.cat', by: 'category', type: 'groupedBar' }).breakdowns, ['category'], 'and one by category');
+    });
+
+    T.test('X-p4-levers-unchanged', 'Nothing else about the levers changes: measures, types, default and the industry breakdown as before', function (a) {
+      var def = TAP.reports.get(LEV);
+      a.deepEqual(def.measures.map(function (m) { return m.id; }), LEVERS, 'the six levers');
+      a.deepEqual(def.types, ['bar', 'dot', 'bubble', 'table'], 'the chart types');
+      a.equal(def.defaultType, 'bar', 'bar first');
+      a.deepEqual(def.breakdowns, ['industry', 'solution'], 'industry, then solution');
+      a.deepEqual(TAP.reports.get('nb-channels').breakdowns, ['year'], 'the channels: plan year only');
+      a.deepEqual(TAP.reports.get('nb-industries').breakdowns, ['year'], 'the industries: plan year only');
     });
   });
 })(window.TAP);
