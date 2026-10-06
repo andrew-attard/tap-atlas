@@ -67,8 +67,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
 
   // US-4.5.1: order intake at customer value next to the value through the organization's books. The builder draws
   // two bars per region and offers the plan year and the split (channel or product category) as its own options.
-  // Its figures are fixed (cv.oi, bk.oi, bk.gap, bk.gapShare, in js/reports/pt-books.js), so there is no measure
-  // switch and no measures list, as for pt-capacity.
+  // Its figures are fixed (cv.oi, bk.oi, bk.gap, bk.gapShare, in js/reports/pt-books.js). The two values are listed
+  // so an insight's "Show me" and Present can name them; they show together, so there is no measure switch.
   window.TAP_REPORTS['pt-books'] = {
     id: 'pt-books',
     view: 'partners',
@@ -81,12 +81,12 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     shape: 'parts',
     builder: 'ptBooks',
     dimension: 'entity',
-    measures: [],
+    measures: [{ id: 'cv.oi', label: 'Customer value' }, { id: 'bk.oi', label: 'Books value' }],
     defaultType: 'stackedBar',
     types: ['stackedBar', 'table'],
     breakdowns: [],
     sources: ['DER', 'APP'],
-    options: {}
+    options: { measuresAs: 'categories' }
   };
 
   // US-4.5.2: order intake by route to market, from the recap. One part per route in the lookup's order; a route
