@@ -706,6 +706,65 @@
       a.ok(org.notes.some(function (n) { return /Region C/.test(n); }), 'the combined share names Region C as left out');
     });
 
+    /* ---------- US-4.4.2 order intake by product category ---------- */
+
+    var OC = 'ol-category', CATS = ['swPerpetual', 'recurring', 'hardware', 'services'];
+    function catKey(c) { return 'oi.cat@category:' + c; }
+
+    when([OC], 'TPV-TC-720', 'Order intake per entity and plan year by software perpetual, recurring, hardware and services equals the hand-worked figures', function (a) {
+      load();
+      var res = build(OC, { mode: 'all' }, { type: 'table', breakdown: null });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity'].concat(CATS.map(catKey), ['oi.cat']), 'the four categories in the lookup’s order, then the total');
+      var exp = X.breakdowns.filter(function (b) { return b.id === 'oi.cat' && b.entity === 'alpha'; })[0];
+      CATS.forEach(function (c) { cellIs(a, row(res, 'alpha').cells[catKey(c)], exp.values[c], 'A ' + c); });
+      cellIs(a, row(res, 'alpha').cells['oi.cat'], X.region.alpha['oi.cat'], 'A total');
+      // B: recurring 3040, services 270, no software perpetual or hardware; D: recurring 2068, services 667, hardware 100
+      cellIs(a, row(res, 'bravo').cells[catKey('recurring')], 3040, 'B recurring');
+      cellIs(a, row(res, 'bravo').cells[catKey('hardware')], null, 'B hardware: no item, not provided');
+      cellIs(a, row(res, 'delta').cells[catKey('services')], 667, 'D services');
+      cellIs(a, row(res, 'delta').cells[catKey('hardware')], 100, 'D hardware');
+      cellIs(a, row(res, 'charlie').cells['oi.cat'], null, 'C not provided');
+      var org = build(OC, { mode: 'org' }, { type: 'table', breakdown: null }).table.rows[0];
+      var oexp = X.breakdowns.filter(function (b) { return b.id === 'oi.cat' && b.entity === 'org'; })[0];
+      CATS.forEach(function (c) { cellIs(a, org.cells[catKey(c)], oexp.values[c], 'organization ' + c); });
+      cellIs(a, org.cells['oi.cat'], oexp.total, 'organization total');
+      // Per plan year: A year 1 software perpetual 50, recurring 690, hardware 20, services 125 = 885; year 3 925
+      var by = build(OC, { mode: 'all' }, { type: 'table', breakdown: 'year' });
+      var y1 = { swPerpetual: 50, recurring: 690, hardware: 20, services: 125 };
+      CATS.forEach(function (c) { cellIs(a, row(by, 'alpha:1').cells[catKey(c)], y1[c], 'A year 1 ' + c); });
+      cellIs(a, row(by, 'alpha:1').cells['oi.cat'], 885, 'A year 1 total');
+      cellIs(a, row(by, 'alpha:3').cells['oi.cat'], X.region.alpha['oi.cat.y3'], 'A year 3 total');
+    });
+
+    when([OC], 'TPV-TC-721', 'Stacked bars and 100% stacked bars are offered; in the 100% stack each entity’s parts add up to 100%', function (a) {
+      load();
+      var def = TAP.reports.get(OC);
+      a.ok(def.types.indexOf('stackedBar') >= 0 && def.types.indexOf('stacked100') >= 0, 'both chart types: ' + def.types.join(', '));
+      a.equal(def.defaultType, 'stackedBar', 'stacked bars first');
+      var chart = build(OC, { mode: 'all' }, { type: 'stacked100', breakdown: null });
+      var parts = chart.option.series.filter(function (s) { return s.tapRole === 'value'; });
+      a.deepEqual(parts.map(function (s) { return s.name; }), ['Software perpetual', 'Recurring', 'Hardware', 'Services'], 'one part per category, named');
+      chart.option.yAxis.data.forEach(function (name, i) {
+        var sum = parts.reduce(function (t, s) { return t + ((s.data[i] || {}).value || 0); }, 0);
+        if (name !== 'Region C') a.near(sum, 100, 1e-6, name + ' adds up to 100%');
+      });
+      a.ok(chart.legend.some(function (l) { return l.label === 'Hardware' && l.mark; }), 'the key numbers each category, so they are told apart without colour');
+    });
+
+    when([OC], 'X-p4-outlook-sample-category', 'Sample: each region’s order intake by product category equals the planted figures', function (a) {
+      var E = window.SAMPLE_EXPECT.p4.regions;
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      try {
+        var res = build(OC, { mode: 'all' }, { type: 'table', breakdown: null });
+        Object.keys(E).forEach(function (r) {
+          var want = E[r].booksByCategory;
+          if (!want) { a.equal(row(res, r).cells['oi.cat'].state, 'notProvided', r + ': no books value'); return; }
+          CATS.forEach(function (c) { a.near(v(row(res, r).cells[catKey(c)]), want[c], 0.05, r + ' ' + c); });
+        });
+      } finally { TAP.data.load(window.T_FIXTURE('mini')); }
+    });
+
     T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
       load();
       var built = REPORTS.filter(function (id) { return !!TAP.reports.get(id); });
