@@ -126,7 +126,7 @@
   function amount(kind, dims) { return { unit: 'money', valueKind: 'amount', kind: kind, dims: dims }; }
   function count(kind, dims) { return { unit: 'count', valueKind: 'count', kind: kind, dims: dims }; }
   function rate(kind, weightBy, dims) { return { unit: 'pct', valueKind: 'rate', kind: kind, weightBy: weightBy, dims: dims }; }
-  var NB = ['year', 'industry'], ROWS = ['industry'], NBS = NB.concat('solution');
+  var NB = ['year', 'industry'], ROWS = ['industry'], NBS = NB.concat('solution'), ROWSS = ROWS.concat('solution');   // S: Phase 4 solution (19.2)
 
   function sums(id, m, getRows, section, field, pick) {
     define(id, m, function (r, ctx) {
@@ -146,11 +146,11 @@
   sums('base.arr', amount('PRE', ROWS), mcRows, 'marketCoverage', 'currentArr', plain('currentArr'));
   sums('base.pipeline', amount('PRE', ROWS), mcRows, 'marketCoverage', 'pipelineTotal', plain('pipelineTotal'));
   sums('base.pipeline12m', amount('PRE', ROWS), mcRows, 'marketCoverage', 'pipelineCreated12m', plain('pipelineCreated12m'));
-  sums('nb.targetAccounts', count('IN', ROWS), nbRows, 'newBusiness', 'targetAccounts', plain('targetAccounts'));
-  sums('nb.targetAccountsRated', count('IN', ROWS), nbRows, 'newBusiness', 'targetAccounts', function () {
+  sums('nb.targetAccounts', count('IN', ROWSS), nbRows, 'newBusiness', 'targetAccounts', plain('targetAccounts'));
+  sums('nb.targetAccountsRated', count('IN', ROWSS), nbRows, 'newBusiness', 'targetAccounts', function () {
     return function (row) { return isNum(row.hitRate) ? row.targetAccounts : null; };
   });
-  sums('nb.wins', count('APP', ROWS), nbRows, 'newBusiness', 'hitRate', function () { return wins; });
+  sums('nb.wins', count('APP', ROWSS), nbRows, 'newBusiness', 'hitRate', function () { return wins; });
   sums('cg.baseArr', amount('PRE', ROWS), accounts, 'customerGrowth', 'currentArr', plain('currentArr'));
 
   function rates(id, m, section, field, val, wt) {
@@ -160,12 +160,12 @@
       return gap(section, r, ctx, m.kind, field) || weightedRows(r, section, field, m.kind, nbRows(r, ctx), ctx, val, wt);
     });
   }
-  rates('nb.hitRate', rate('IN', 'nb.targetAccountsRated', ROWS), 'newBusiness', 'hitRate',
+  rates('nb.hitRate', rate('IN', 'nb.targetAccountsRated', ROWSS), 'newBusiness', 'hitRate',
     function (row) { return row.hitRate; }, function (row) { return row.targetAccounts; });
-  rates('nb.avgDealSize', { unit: 'money', valueKind: 'rate', kind: 'IN', weightBy: 'nb.wins', dims: ROWS }, 'newBusiness',
+  rates('nb.avgDealSize', { unit: 'money', valueKind: 'rate', kind: 'IN', weightBy: 'nb.wins', dims: ROWSS }, 'newBusiness',
     'avgDealSize', function (row) { return row.avgDealSize; }, wins);
   [2, 3].forEach(function (y) {
-    rates('nb.growthY' + y, rate('IN', 'nb.arr', ROWS), 'newBusiness', 'growth.year' + y,
+    rates('nb.growthY' + y, rate('IN', 'nb.arr', ROWSS), 'newBusiness', 'growth.year' + y,
       function (row) { return row.growth ? row.growth['year' + y] : null; }, arr3);
   });
   rates('nb.servicesRatio', rate('PRE', 'nb.arr', ROWS), 'newBusiness', 'servicesRatio', function (row) { return row.servicesRatio; }, arr3);
