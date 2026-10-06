@@ -119,6 +119,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled |
 | `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
 | `js/reports/dim-stack.js` | A figure split by one dimension (solution, route, category, maturity): stacked bars, a heatmap grid and a table |
+| `js/reports/outlook-side.js` | Figures side by side per region (the strategic plan and the plan, the base year and plan year 1, order intake and revenue) with a closing variance, growth or share |
+| `js/reports/outlook-side-draw.js` | Draws the side-by-side chart: named bars per row and the closing line of text |
 | `js/reports/stack-draw.js` | Draws those stacked bars, with each part numbered and keyed, and the heatmap grid |
 | `js/reports/pt-books.js` | Customer value next to books value: two bars per region by channel or product category, with the difference |
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |

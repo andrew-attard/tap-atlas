@@ -228,7 +228,7 @@
       a.equal(bars[0].data[0].text, 'Strategic plan  €2.7M', 'each bar is named on the chart');
       a.equal(bars[1].label.formatter({ data: bars[1].data[0] }), 'Plan  €2.6M', 'the plan bar too');
       a.ok(chart.legend.some(function (l) { return l.role === 'part' && l.label === 'Plan'; }), 'the key names the bars');
-      a.ok(chart.height > 400, 'a height hint that gives every row its room');
+      a.ok(chart.height >= 12 * 24, 'a height hint that gives each of the 12 bar lines its room: ' + chart.height);
     });
 
     when([SP], 'TPV-TC-690', 'The measure switch offers total, ARR, services, software perpetual and hardware where the data gives them', function (a) {

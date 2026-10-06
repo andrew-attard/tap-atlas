@@ -3,7 +3,7 @@
  * Purpose: The Phase 4 measures read from rows: the base year, year 1 growth over it and pipeline coverage, new
  *          business by solution, order intake by route to market, and partners by maturity and type (US-4.1.4; ids in
  *          docs/ARCHITECTURE.md section 19.2).
- * Provides: measures registered with TAP.measures (by.*, nb.<t>.sol, rt.oi, pt.count.maturity, pt.oi.maturity)
+ * Provides: measures registered with TAP.measures (by.* including by.plan, nb.<t>.sol, rt.oi, pt.count.maturity, pt.oi.maturity)
  * Depends on: js/engine/measures.js (define, derive, kit), measures-p2.js (kit2), measures-p4.js (kit4), js/core/content.js
  * Used by: reports, insights, the region profile and Build a chart
  * Owner: ENGINE4 stream (#439)
@@ -35,14 +35,21 @@
     M.define('by.' + f, k4.p4(k.amount('PRE', ['category'])), baseSum(f));
   });
 
-  // Plan year 1 over the base year, minus 1. Year 1 is the books value of the categories the base-year figure is
-  // given for, so the two are like for like. ctx.against picks the base-year figure: the forecast unless 'budget'.
+  // The base-year figure growth is measured against: the forecast unless ctx.against says 'budget'
+  function againstOf(ctx) { return ctx.against === 'budget' ? 'budget' : 'forecast'; }
+  // Plan year 1 on the base year's basis: the books value of the categories the base-year figure is given for,
+  // so the two are like for like (as sp.plan is for the strategic plan).
+  M.define('by.plan', k4.p4(k.amount('DER', ['category'])), function (r, ctx) {
+    ctx = ctx || {};
+    var against = againstOf(ctx);
+    var types = baseRows(r, ctx).filter(function (it) { return k.isNum(it[against]); }).map(function (it) { return k4.CAT_TYPE[it.category]; });
+    return k4.items(r, 'booksValue', 'DER', { year: 1 }, function (it) { return types.indexOf(it.type) >= 0; });
+  });
+  // Plan year 1 (by.plan) over the base year, minus 1.
   M.define('by.growth', k4.p4(k2.rate('APP', 'by.forecast', ['category'])), function (r, ctx) {
     ctx = ctx || {};
-    var against = ctx.against === 'budget' ? 'budget' : 'forecast', base = M.get('by.' + against)(r, ctx);
-    var types = baseRows(r, ctx).filter(function (it) { return k.isNum(it[against]); }).map(function (it) { return k4.CAT_TYPE[it.category]; });
-    var y1 = k4.items(r, 'booksValue', 'DER', { year: 1 }, function (it) { return types.indexOf(it.type) >= 0; });
-    var s = k4.made(r, 'by.growth', {}, [['bk.oi', y1], ['by.' + against, base]]);
+    var against = againstOf(ctx), base = M.get('by.' + against)(r, ctx), y1 = M.get('by.plan')(r, ctx);
+    var s = k4.made(r, 'by.growth', {}, [['by.plan', y1], ['by.' + against, base]]);
     if (y1.state !== 'value' || base.state !== 'value') return k.blank('APP', s);
     var out = k2.ratioCell(y1.v - base.v, base.v, s);
     if (out.state === 'value' && (y1.partial || base.partial)) { out.partial = true; out.note = y1.note || base.note; }

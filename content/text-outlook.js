@@ -27,5 +27,15 @@ Object.assign(window.TAP_CONTENT.text, {
       'ol-revshare': 'revenue against order intake',
       'ol-category': 'order intake by product category'
     }
+  },
+
+  // The side-by-side charts (js/reports/outlook-side.js): the closing line after each row's bars
+  olSide: {
+    endBoth: '{label} {amount} ({rate})',
+    endOne: '{label} {value}',
+    amountOf: '{label}',
+    rateOf: '{label}, %',
+    // A region's row under a combined total in the table
+    partOf: '{region}, in {total}'
   }
 });
