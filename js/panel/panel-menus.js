@@ -242,7 +242,8 @@
   // and whatever the builder offers.
   function spec(p, b) {
     var def = b.def, o = def.options || {}, type = b.ctx.type, own = [];
-    var ms = def.measures || [];
+    // Only measures the loaded file has data for (TAP.measures.available is true for every non-optional measure)
+    var ms = (def.measures || []).filter(function (m) { return !TAP.measures.available || TAP.measures.available(m.id); });
     // No switch where the axes come from x and y, or where the measures are the categories
     var xy = def.shape === 'xy' || def.shape === 'xyz' || (type === 'bubble' && (def.shape === 'parts' || !!(def.x && def.y)));
     if (ms.length > 1 && o.measuresAs !== 'categories' && !xy) {

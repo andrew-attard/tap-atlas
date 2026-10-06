@@ -106,6 +106,7 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
         budget: { label: 'Base year budget', short: 'Budget' },
         forecast: { label: 'Base year forecast', short: 'Forecast' },
         actuals: { label: 'Base year actuals so far', short: 'Actuals' },
+        plan: { label: 'Plan year 1, on the base year’s basis', short: 'Plan year 1' },
         pipeline: { label: 'Unweighted pipeline, base year', short: 'Pipeline' },
         growth: { label: 'Plan year 1 over the base year', short: 'Year 1 growth' },
         coverage: { label: 'Pipeline coverage', short: 'Coverage' }
