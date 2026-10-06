@@ -142,6 +142,13 @@ window.TAP_CONTENT.guide = {
         'The base year is the year before the plan. Its budget, forecast and actuals so far come from company systems, with the open pipeline; pipeline coverage divides that pipeline by the order intake still to win.',
         'The revenue outlook is the revenue the order intake brings in each plan year. Only part of a year’s order intake becomes revenue in that same year, so a year’s revenue is normally below its order intake.'
       ] },
+      { id: 'sheets', title: 'Where each sheet of the workbook shows', link: null, paragraphs: [
+        'Market coverage: the Industry priorities view (tiers, attractiveness against ability to win, the six ratings). New business: the New business view. Customer growth: the Customer growth view. Partner: the Partners view, from "Do the partners have the people behind their planned contribution?" on, with the partner list.',
+        'Recap, order intake at customer value: the Overview ("How big is each region’s plan, and where does it come from?"), the New business view ("Which channels carry each region’s new business?") and the Partners view ("How much does each plan rely on partners and alliances?").',
+        'Recap, the rest of the sheet: the strategic plan comparison is the first chart of the Outlook view ("How does each plan compare with its strategic plan?"); the revenue outlook is "How much revenue do the plans release each year?" and "How much of each year’s order intake turns into revenue that year?" on the Outlook view; the value through the organization’s books is "How much of each plan runs through the organization’s own books?" on the Partners view and "What mix of products does each plan rest on?" on the Outlook view; order intake by route to market is "Which routes to market does each plan rely on?" on the Partners view.',
+        'Order intake (the year before the plan): "How does year 1 of each plan compare with this year?" and "Does this year’s pipeline cover what is still to win?" on the Outlook view. The month-by-month figures and the splits by team are not shown: the app reads the year’s totals by product category.',
+        'Any figure in the app names its sheet and cell: select it, or open "Data" next to the comparison bar.'
+      ] },
       { id: 'books', title: 'How to read customer value and books value', link: { view: 'partners' }, paragraphs: [
         'Customer value is what the customer pays. Books value is the part that runs through the organization’s own books: a reseller keeps a margin, and a partner may deliver some services itself.',
         'The two are compared over ARR and services, which both hold. Software perpetual and hardware run through the books only, so they show in the product category figures.'
