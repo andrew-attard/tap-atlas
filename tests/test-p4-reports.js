@@ -833,8 +833,10 @@
      *      "No solution named": 15 accounts, 1 win, hit rate 0.2 over the rated row, deal 100 (the row with a win)
      *   D: row 20 (Solution 3): 100, 0.6 (60 wins), 10, 0.5 / 0.5
      *   Together, Solution 1: hit rate (5 + 20) / (20 + 40) = 0.4166667; deal (100 x 5 + 50 x 20) / 25 = 60;
-     *      growth year 2 (0.1 x 1655 + 0.2 x 3400) / 5055 = 0.1672601
+     *      growth year 2 (0.1 x 1655 + 0.2 x 3400) / 5055 = 845.5 / 5055 = 0.1672601
      * A solution a region has no row for: counts read zero (the rows exist, none is in the solution), rates are not provided.
+     * "No solution named" is listed only when some region has a figure other than zero under it: every row without a
+     * solution plans no growth, so the two growth levers have no such column (undefined below).
      */
     var LEV = 'nb-levers', LEVERS = ['nb.targetAccounts', 'nb.hitRate', 'nb.avgDealSize', 'nb.wins', 'nb.growthY2', 'nb.growthY3'];
     var SV = ['sol1', 'sol2', 'sol3', 'none'];
@@ -844,8 +846,8 @@
       'nb.wins': { alpha: [5, 1, 0, 0, 6], bravo: [20, 0, 0, 2, 22], charlie: [0, 0, 0, 1, 1], delta: [0, 0, 60, 0, 60] },
       'nb.hitRate': { alpha: [0.25, 0.1, null, null, 0.2], bravo: [0.5, null, null, 0.2, 0.44], charlie: [null, null, null, 0.2, 0.2], delta: [null, null, 0.6, null, 0.6] },
       'nb.avgDealSize': { alpha: [100, 200, null, null, 116.6666667], bravo: [50, null, null, 100, 54.5454545], charlie: [null, null, null, 100, 100], delta: [null, null, 10, null, 10] },
-      'nb.growthY2': { alpha: [0.1, 0, null, null, 0.0733925], bravo: [0.2, null, null, 0, 0.17], charlie: [null, null, null, 0, 0], delta: [null, null, 0.5, null, 0.5] },
-      'nb.growthY3': { alpha: [0.1, 0, null, null, 0.0733925], bravo: [0, null, null, 0, 0], charlie: [null, null, null, 0, 0], delta: [null, null, 0.5, null, 0.5] }
+      'nb.growthY2': { alpha: [0.1, 0, null, undefined, 0.0733925], bravo: [0.2, null, null, undefined, 0.17], charlie: [null, null, null, undefined, 0], delta: [null, null, 0.5, undefined, 0.5] },
+      'nb.growthY3': { alpha: [0.1, 0, null, undefined, 0.0733925], bravo: [0, null, null, undefined, 0], charlie: [null, null, null, undefined, 0], delta: [null, null, 0.5, undefined, 0.5] }
     };
     function skey(m, v) { return m + '@solution:' + v; }
 
@@ -875,11 +877,13 @@
       LEVERS.forEach(function (m) {
         var res = build(LEV, { mode: 'all' }, { type: 'table', breakdown: 'solution', measureId: m });
         a.equal(res.error, null, m + ': builds');
-        a.deepEqual(res.table.columns.slice(2).map(function (c) { return c.label; }), ['Solution 1', 'Solution 2', 'Solution 3', 'No solution named'], m + ': a column per solution, in order');
+        var none = LEVER_SOL[m].alpha[3] !== undefined, want0 = ['Solution 1', 'Solution 2', 'Solution 3'].concat(none ? ['No solution named'] : []);
+        a.deepEqual(res.table.columns.slice(2).map(function (c) { return c.label; }), want0, m + ': a column per solution, in order');
         Object.keys(LEVER_SOL[m]).forEach(function (r) {
           var cells = row(res, r).cells, want = LEVER_SOL[m][r], num = 0, den = 0, sum = 0;
           SV.forEach(function (v, i) {
             var c = cells[skey(m, v)];
+            if (want[i] === undefined) { a.equal(c, undefined, m + ' ' + r + ' ' + v + ': no column'); return; }
             expectCell(a, c, want[i], m + ' ' + r + ' ' + v);
             if (c.state !== 'value') return;
             sum += c.v;
@@ -887,7 +891,7 @@
           });
           expectCell(a, cells[m], want[4], m + ' ' + r + ' all');
           if (TAP.measures.meta(m).valueKind === 'count') a.near(sum, want[4], TOL, m + ' ' + r + ': the solutions add up');
-          else if (den > 0) a.near(num / den, want[4], TOL, m + ' ' + r + ': the weighted parts recompose the whole');
+          else if (den > 0 && want[3] !== undefined) a.near(num / den, want[4], TOL, m + ' ' + r + ': the weighted parts recompose the whole');
         });
       });
       // Regions together, Solution 1
@@ -896,7 +900,7 @@
       org = build(LEV, { mode: 'org' }, { type: 'table', breakdown: 'solution', measureId: 'nb.avgDealSize' });
       expectCell(a, row(org, 'org').cells[skey('nb.avgDealSize', 'sol1')], 60, 'together: deal size in Solution 1');
       org = build(LEV, { mode: 'org' }, { type: 'table', breakdown: 'solution', measureId: 'nb.growthY2' });
-      expectCell(a, row(org, 'org').cells[skey('nb.growthY2', 'sol1')], 845 / 5055, 'together: year 2 growth in Solution 1');
+      expectCell(a, row(org, 'org').cells[skey('nb.growthY2', 'sol1')], 845.5 / 5055, 'together: year 2 growth in Solution 1');
       // Grouped bars, every group labelled (TPV-TC-726 in code)
       var bars = build(LEV, { mode: 'all' }, { breakdown: 'solution', measureId: 'nb.targetAccounts' });
       a.equal(bars.option.series.filter(function (s) { return s.tapRole === 'value'; }).length, 4, 'a group of four bars per region');

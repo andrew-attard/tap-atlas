@@ -134,7 +134,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     size: { options: ['nb.avgDealSize'], default: 'nb.avgDealSize' },
     defaultType: 'bar',
     types: ['bar', 'dot', 'bubble', 'table'],
-    breakdowns: ['industry'],
+    breakdowns: ['industry', 'solution'],   // solution: Phase 4 (US-4.4.3); offered once rows name one
     sources: ['IN', 'APP'],
     options: {}
   };
