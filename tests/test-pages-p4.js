@@ -177,6 +177,35 @@
       a.ok(text.length <= 80 && sentences(text) === 1, 'one short line: ' + text.length + ' characters');
     });
 
+    // D90: with ten menu items, key 0 opens the tenth view and 1 to 9 keep their places. Stand-in entries fill the
+    // menu to ten while the Outlook view is built (as TPV-TC-504 does for a ninth), removed again below.
+    T.test('X-p4-pages-key-zero', 'Key 0 opens the tenth view in the menu, and the Guide lists it as 0', function (a) {
+      a.equal(TAP.keys.viewFor('0'), TAP.views.order()[9] || null, 'as the menu is: the tenth view, or nothing');
+      var order = window.TAP_VIEWS.order, saved = order.slice();
+      while (TAP.views.order().length < 10) order.splice(order.indexOf('guide'), 0, 'insights');
+      var ten = TAP.views.order();
+      try {
+        a.equal(ten.length, 10, 'ten views in the menu');
+        a.equal(TAP.keys.viewFor('0'), ten[9], 'key 0 opens the tenth, ' + ten[9]);
+        a.equal(TAP.keys.viewFor('9'), ten[8], 'key 9 still opens the ninth');
+        a.equal(TAP.keys.viewFor('1'), ten[0], 'key 1 still opens the first');
+        var root = T.dom.mount(), handle = TAP.views.get('guide').mount(root);
+        try {
+          var items = qsa('[data-guide="howTo"] .tap-guide__key', root);
+          a.equal(items.length, 10, 'the Guide lists ten keys');
+          a.deepEqual(items.map(function (li) { return txt(li.querySelector('kbd')); }), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+            'in menu order, the tenth as 0');
+          a.equal(items[9] && items[9].getAttribute('data-view'), ten[9], 'the line for 0 names the view key 0 opens');
+        } finally { handle.destroy(); }
+        TAP.keys.bind();
+        try {
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true, cancelable: true }));
+          a.equal(TAP.store.get().view, ten[9], 'pressing 0 opens the tenth view');
+        } finally { TAP.keys.unbind(); }
+      } finally { order.length = 0; Array.prototype.push.apply(order, saved); }
+      a.match(howTo('keys').paragraphs.join(' '), /\b0\b/, 'the shortcuts paragraph names key 0');
+    });
+
     T.test('TPV-TC-747', 'Every Phase 4 report has all three parts of its explanation', function (a) {
       var stubs = TAP.stub.list().length;
       P4_REPORTS.forEach(function (id) {
