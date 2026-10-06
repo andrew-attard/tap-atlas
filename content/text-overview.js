@@ -65,14 +65,6 @@ Object.assign(window.TAP_CONTENT.text, {
       sourcesLabel: 'Where the figures in this sentence come from',
       sourcesTitle: 'Where the headline figures come from'
     },
-    // Top insights (US-1.5.3)
-    insights: {
-      title: 'Top insights',
-      all: 'See all insights',
-      showMe: 'Show me',
-      hide: 'Hide for this session',
-      none: 'No insights for this comparison.'
-    },
     // The side panel a figure opens
     source: {
       title: 'Where this figure comes from',

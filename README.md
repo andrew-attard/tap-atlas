@@ -156,7 +156,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
 | `js/ui/present*.js` | Presentation mode: steps through the running order full screen, and records a running order from the screen |
 | `js/ui/custom-builder.js` | "Build a chart" on the Guide: pickers for measure, dimension and chart type, the custom chart and the session list |
-| `js/views/overview.js` | The Overview: headline, top insights, region cards, ambition chart |
+| `js/views/overview.js` | The Overview: headline, region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards |
 | `js/views/industry.js` | Industry priorities: tier grid, quadrant, ratings, commentary |
 | `js/views/new-business.js` | New business: industries, channels, levers, the sub-industry list, success factors, themes |
