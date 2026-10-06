@@ -36,8 +36,7 @@
     TAP.insights.reset();
     return p;
   }
-  function rg(p, id) { return p.regions.filter(function (r) { return r.id === id; })[0]; }
-  function ids(list) { return list.map(function (x) { return x.id; }); }
+  function rg(p, id) { return p.regions.filter(function (r) { return r.id === id; })[0]; } function ids(list) { return list.map(function (x) { return x.id; }); }
   function banned(s) { return window.TAP_RULES.wording.banned.filter(function (w) { return new RegExp('(^|[^A-Za-z])' + w + '([^A-Za-z]|$)', 'i').test(s); }); }
   function times(v) { return F.num(v, { decimals: 2 }) + '×'; }
   // Runs body with the outlook rules switched off, then switches them back on
@@ -80,8 +79,8 @@
 
     T.test('X-insights4-existing', 'The 47 earlier sample insights keep their wording and order among themselves', function (a) {
       sample();
-      var before = withoutOutlook(function () { return all().map(function (x) { return x.id + ' | ' + x.sentence; }); });
-      var after = all().filter(function (x) { return x.family !== 'outlook'; }).map(function (x) { return x.id + ' | ' + x.sentence; });
+      function said(x) { return x.id + ' | ' + x.sentence; }
+      var before = withoutOutlook(function () { return all().map(said); }), after = all().filter(function (x) { return x.family !== 'outlook'; }).map(said);
       a.equal(before.length, 47, '47 insights without the outlook rules');
       a.deepEqual(after, before, 'the same insights, in the same order');
     });
@@ -98,8 +97,9 @@
           if (!def) { a.ok(x.reportId === null && x.fallback === 'details', x.id + ': ' + report + ' not built yet, details meanwhile'); return; }
           a.equal(x.reportId, report, x.id + ': on ' + report);
           a.equal(x.highlight.mark, r.highlight, x.id + ': marks its ' + r.highlight);
+          // A report that switches between measures must offer the quoted one; one showing them all together has no switch
           var listed = (def.measures || []).map(function (m) { return m.id; });
-          if (listed.length) a.ok(listed.indexOf(measure) >= 0, x.id + ': ' + report + ' can show ' + measure);
+          if (listed.length > 1 && (def.options || {}).measuresAs !== 'categories') a.ok(listed.indexOf(measure) >= 0, x.id + ': ' + report + ' can show ' + measure);
         });
       });
     });
