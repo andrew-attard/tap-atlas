@@ -13,7 +13,8 @@
  *   templates (optional wording variants a finding can pick), compare (true: a comparison between regions, so at
  *   least TAP_SETTINGS.insights.minRegions must provide the value), attach (reports it belongs to, the first one
  *   is where "Show me" goes), highlight (what to mark there), fallback ('details': with no Phase 1 report, "Show me"
- *   opens the region's details).
+ *   opens the region's details), optional (true: a part of the template a file may not have; without it the rule is
+ *   skipped quietly instead of logged).
  * Strength runs from 0 to 1: a finding that sits twice as far past its threshold as the threshold itself scores 1.
  * Money at stake is the share of the organization's current ARR (or pipeline) the finding involves.
  * Placeholders in {braces} are filled in by the rule code.
@@ -196,6 +197,42 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{theme} {verb} up in the {where} of {n} regions.',
     attach: ['nb-themes'], highlight: 'bar' });
 
+  /* ---------- outlook (US-4.6.2): the Phase 4 parts; optional, so a file without them skips these quietly ---------- */
+  function outlook(o) { rule(Object.assign({ family: 'outlook', optional: true }, o)); }
+  outlook({ id: 'spGap', description: 'A region whose three-year plan (order intake through the organization’s books, on the strategic plan’s basis) is at least 15% below or above its strategic plan.',
+    reads: ['strategicPlan.value', 'booksValue.value'], params: { gap: 0.15 },
+    scoring: 'Strength: the difference as a share of the strategic plan, against twice the threshold. Money: the difference.',
+    template: '{region}’s three-year plan is {share} {direction} its strategic plan ({plan} against {strategic}).',
+    attach: ['ol-strategic'], highlight: 'bar' });
+  outlook({ id: 'spTotal', description: 'The plans of every region that gives a strategic plan, together at least 5% below or above those strategic plans (a ratio of the summed figures). Regions without a strategic plan are named and left out.',
+    reads: ['strategicPlan.value', 'booksValue.value'], params: { gap: 0.05 }, compare: true,
+    scoring: 'Strength: the difference as a share of the strategic plans, against twice the threshold. Money: the difference.',
+    template: 'Together, the regions’ three-year plans are {share} {direction} their strategic plans ({plan} against {strategic}).',
+    templates: { gaps: 'Together, the three-year plans of the {n} regions with a strategic plan are {share} {direction} their strategic plans ({plan} against {strategic}). Not included, with no strategic plan: {regions}.' },
+    attach: ['ol-strategic'], highlight: 'bar' });
+  outlook({ id: 'y1Jump', description: 'A region whose plan for year 1 (books value) is at least 30% above its base-year forecast, set beside the other regions with a base year together.',
+    reads: ['baseYear.items.forecast', 'booksValue.value'], params: { jump: 0.3 }, compare: true,
+    scoring: 'Strength: the growth against twice the threshold. Money: the year 1 order intake above the forecast.',
+    template: '{region}’s plan for year 1 is {share} above its base-year forecast ({y1} against {forecast}); together, the other regions with a base year plan {avg} {direction} theirs. Worth discussing.',
+    attach: ['ol-baseyear'], highlight: 'bar' });
+  outlook({ id: 'lowCoverage', description: 'A region whose base-year pipeline covers less than 1.5 times the order intake still to win this year (forecast minus actuals), set beside the other regions with a base year together.',
+    reads: ['baseYear.items.pipeline'], params: { coverage: 1.5 }, compare: true,
+    scoring: 'Strength: how far the coverage sits below the threshold, as a share of it. Money: the order intake still to win.',
+    template: '{region}’s base-year pipeline ({pipeline}) covers {coverage} the order intake still to win ({left}); together, the other regions with a base year cover {avg}. Worth discussing.',
+    attach: ['ol-coverage'], highlight: 'bar' });
+  outlook({ id: 'booksGap', description: 'A region where at least 10% of its customer value (ARR and services, the types both values hold) does not run through the organization’s books, set beside the other regions together, with the share for the channel most of the difference comes from.',
+    reads: ['booksValue.value', 'recap.value'], params: { share: 0.1 }, compare: true,
+    scoring: 'Strength: the share against twice the threshold. Money: the difference.',
+    template: '{share} of {region}’s customer value ({gap} of {cv}) does not run through the organization’s books, against {avg} for the other regions together. Through {channel} alone it is {channelShare}.',
+    templates: { one: '{share} of {region}’s customer value ({gap} of {cv}) does not run through the organization’s books, against {avg} for the other regions together.' },
+    attach: ['pt-books'], highlight: 'bar' });
+  outlook({ id: 'solutionReliance', description: 'One solution carrying at least half of a region’s three-year new business order intake (rows that name no solution count in the total, never as a solution).',
+    reads: ['newBusiness.solution'], params: { share: 0.5 },
+    scoring: 'Strength: the share against twice the threshold. Money: the order intake on that solution.',
+    template: '{solution} carries {share} of {region}’s three-year new business order intake ({amount} of {total}).',
+    templates: { all: '{solution} carries all of {region}’s three-year new business order intake ({total}).' },
+    attach: ['nb-solutions'], highlight: 'cell' });
+
   /* ---------- wording guide (US-1.7.10) ---------- */
   R.wording = {
     guide: [
@@ -238,7 +275,9 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       noCode: 'it has no rule code.', banned: 'its sentence used the word "{word}", which the wording guide avoids.',
       unfilled: 'its sentence had a gap ({gap}).', notList: 'it did not return a list of findings.',
       badFinding: 'one of its findings was incomplete (it needs a key, a list of regions and a list of figures).',
-      noProvided: 'it compares regions but did not say how many provide the value.'
+      noProvided: 'it compares regions but did not say how many provide the value.',
+      outlook: { below: 'below', above: 'above', together: 'the {n} regions with a strategic plan together', year1: 'Plan year 1 (books value), {where}', left: 'Order intake still to win, {where}',
+        share: 'Share of new business order intake, {solution}, {where}' }
     }
   };
 })(window.TAP_RULES);

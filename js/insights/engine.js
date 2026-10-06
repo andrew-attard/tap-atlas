@@ -79,7 +79,8 @@
       if (rule.enabled === false) return;
       if (!code[rule.id]) { if (!stubbed(rule.family)) fail(out, rule, ph.noCode); return; }
       try {
-        if (!hasInput(rule)) { fail(out, rule, fill(ph.noData, { fields: (rule.reads || []).join(', ') })); return; }
+        // An optional rule reads a part of the template a file may not have (Phase 4): without it, it is quietly skipped
+        if (!hasInput(rule)) { if (!rule.optional) fail(out, rule, fill(ph.noData, { fields: (rule.reads || []).join(', ') })); return; }
         var found = code[rule.id](context(rule)), bad = malformed(rule, found), mine = [], seen = {};
         if (bad) { fail(out, rule, bad); return; }
         found.forEach(function (f) {
