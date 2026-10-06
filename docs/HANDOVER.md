@@ -120,9 +120,12 @@ Other limits by design:
 - **Light theme only, no animation,** for a shared screen (D24).
 - **Region colours repeat after eight regions**; the data sources panel then shows a warning.
 - **Region ids `rest` and `org` are refused** by the data check (D82): the app uses them for the combined bars.
+- **Ten views in the menu.** The number keys 1 to 9 open the first nine and 0 the tenth. At 125% and 150% zoom the menu wraps onto two lines and the Outlook view's first chart starts below the first screen.
+- **Two crowded charts.** The new business levers broken down by solution or by industry draw seven groups of seven bars, too dense at half width: use the table or the full-screen chart. The partner list has 15 columns and scrolls sideways inside its box at 1280 px.
+- **Strategy and outlook insights may lead the Overview** (D91): on the sample, two of the top three are about the strategic plan. `config/settings.js` (`familyWeights.outlook`) or the rules' thresholds in `config/insight-rules.js` move them.
 - **First screen at 1280 x 800.** On Customer growth and Partners the first chart starts just below the first screen (the header of a half-width panel takes the space). Scroll once, open the chart full screen, or present it.
 - **GitHub Pages is not switched on** (D59). `docs/PUBLISHING.md` has the steps for when that is decided.
 
 ## Releases
 
-Each phase ends with a tag and a GitHub release (D58): `v0.1.0` (Phase 1, the first demo and Copilot handover build), `v0.2.0` (Phase 2: New business, Customer growth, Partners, region profiles, lists, drill-down, more insights) `v0.3.0` (Phase 3: presentation mode, custom charts, extra sections, this handover pack and the portfolio edition) `v0.3.1` (the review pass: bug fixes, robustness to imperfect data and polish, no new features) and `v0.4.0` (Phase 4: the full template, with the Outlook view, solutions, books value, routes to market and partner maturity). Present from a release, or from a known-good copy of the folder, never from work in progress.
+Each phase ends with a tag and a GitHub release (D58): `v0.1.0` (Phase 1, the first demo and Copilot handover build), `v0.2.0` (Phase 2: New business, Customer growth, Partners, region profiles, lists, drill-down, more insights), `v0.3.0` (Phase 3: presentation mode, custom charts, extra sections, this handover pack and the portfolio edition), `v0.3.1` (the review pass: bug fixes, robustness to imperfect data and polish, no new features) and `v0.4.0` (Phase 4: the full template, D84). Present from a release, or from a known-good copy of the folder, never from work in progress.

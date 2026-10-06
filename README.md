@@ -8,7 +8,7 @@ TAP Atlas is a small app that runs in the browser. Each regional leader fills in
 
 This README is for the maintainer working with a chat assistant such as Microsoft 365 Copilot. It says what every file does, and which files to share for each kind of change. Detail lives in `docs/`.
 
-> **Status:** Phase 1 is released as `v0.1.0` and Phase 2 (the New business, Customer growth and Partners views, region profiles, list reports, drill-down and more insights) as `v0.2.0`. Phase 3 adds presentation mode, custom charts, extra template sections, the handover pack and the portfolio edition, for `v0.3.0`. The sample edition runs end to end. The internal edition needs the real data file from the import.
+> **Status:** Phase 1 is released as `v0.1.0`, Phase 2 (the New business, Customer growth and Partners views, region profiles, list reports, drill-down and more insights) as `v0.2.0`, Phase 3 (presentation mode, custom charts, extra template sections, the handover pack and the portfolio edition) as `v0.3.0`, the review pass as `v0.3.1`, and Phase 4 (the full template: the Outlook view with the strategic plan, base year, coverage, revenue and product categories; solutions; customer value against books value; route to market and partner maturity) as `v0.4.0`. The sample edition runs end to end. The internal edition needs the real data file from the import.
 
 ## Open it
 
