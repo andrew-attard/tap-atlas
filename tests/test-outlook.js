@@ -634,6 +634,69 @@
       } finally { TAP.data.load(window.T_FIXTURE('mini')); }
     });
 
+    /* ---------- US-4.3.2 order intake against revenue ---------- */
+
+    var RS = 'ol-revshare', RS_KEYS = ['rc.all.oi', 'rv.all.oi', 'rv.share'];
+    // Order intake (customer value) and revenue, year 1 / 2 / 3, from the comment block of mini-p4-expected.js:
+    //   A 900 / 900 / 1020 = 2820 and 450 / 760 / 1000 = 2210; B 1260 / 1100 / 1320 = 3680 and 635 / 1100 / 1220 = 2955;
+    //   D 1000 / 1235 / 1500 = 3735 and 610 / 850 / 1500 = 2960
+    var RS_YEARS = { alpha: [[900, 450], [900, 760], [1020, 1000]], bravo: [[1260, 635], [1100, 1100], [1320, 1220]],
+      delta: [[1000, 610], [1235, 850], [1500, 1500]] };
+
+    when([RS], 'TPV-TC-710', 'Order intake, revenue and the share released in the same year, per entity and year, equal the hand-worked figures', function (a) {
+      load();
+      var res = build(RS, { mode: 'all' }, { type: 'table' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity'].concat(RS_KEYS), 'order intake, revenue and the share');
+      ['alpha', 'bravo', 'delta'].forEach(function (r) {
+        cellIs(a, row(res, r).cells['rc.all.oi'], X.region[r]['cv.oi'], r + ' order intake over three years');
+        cellIs(a, row(res, r).cells['rv.all.oi'], X.region[r]['rv.all.oi'], r + ' revenue over three years');
+        cellIs(a, row(res, r).cells['rv.share'], X.region[r]['rv.share'], r + ' share');
+      });
+      var by = build(RS, { mode: 'all' }, { type: 'table', breakdown: 'year' });
+      Object.keys(RS_YEARS).forEach(function (r) {
+        RS_YEARS[r].forEach(function (y, i) {
+          var x = row(by, r + ':' + (i + 1));
+          cellIs(a, x.cells['rc.all.oi'], y[0], r + ' year ' + (i + 1) + ' order intake');
+          cellIs(a, x.cells['rv.all.oi'], y[1], r + ' year ' + (i + 1) + ' revenue');
+          cellIs(a, x.cells['rv.share'], y[1] / y[0], r + ' year ' + (i + 1) + ' share');
+        });
+      });
+      cellIs(a, row(by, 'alpha:1').cells['rv.share'], X.region.alpha['rv.share.y1'], 'A year 1 against the expected file');
+      cellIs(a, row(by, 'delta:1').cells['rv.share'], X.region.delta['rv.share.y1'], 'D year 1 against the expected file');
+      // The chart: order intake and revenue as two named bars, the share written after them
+      var chart = build(RS, { mode: 'all' });
+      a.deepEqual(chart.option.series.filter(function (s) { return s.tapRole === 'value'; }).map(function (s) { return s.name; }),
+        ['Order intake', 'Revenue'], 'two bars per region');
+      var end = chart.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
+      a.equal(end.label.formatter({ dataIndex: 0 }), 'Released in the same year 78%', 'Region A: 2210 / 2820');
+    });
+
+    when([RS], 'TPV-TC-711', 'One vs the rest and organization total: the released share is the ratio of the summed figures, not the mean', function (a) {
+      load();
+      var org = build(RS, { mode: 'org' }, { type: 'table' }).table.rows[0];
+      cellIs(a, org.cells['rv.share'], X.combined.orgTotal['rv.share'], 'organization: 8125 / 10235');
+      a.ok(Math.abs(org.cells['rv.share'].v - X.meanOfRatios['rv.share']) > 1e-4, 'not the mean of the regions’ shares');
+      var rest = build(RS, { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' }, { type: 'table' });
+      cellIs(a, row(rest, 'rest').cells['rv.share'], X.combined.restOfAlphaAverage['rv.share'], 'the rest: 5915 / 7415');
+      cellIs(a, row(rest, 'alpha').cells['rv.share'], X.region.alpha['rv.share'], 'Region A beside it');
+    });
+
+    when([RS], 'TPV-TC-712', 'A region without revenue reads "not provided" for revenue and the share, never zero', function (a) {
+      load();
+      var res = build(RS, { mode: 'all' }, { type: 'table' }), c = row(res, 'charlie');
+      cellIs(a, c.cells['rv.all.oi'], null, 'C revenue');
+      cellIs(a, c.cells['rv.share'], null, 'C share');
+      a.equal(c.cells['rc.all.oi'].state, 'value', 'its order intake still shows');
+      var chart = build(RS, { mode: 'all' }), bars = chart.option.series.filter(function (s) { return s.tapRole === 'value'; });
+      var ci = chart.option.yAxis.data.indexOf('Region C');
+      a.equal(bars[1].data[ci].text, TAP.content.text('chart.npFor', { name: 'Revenue' }), 'the revenue bar says not provided');
+      var end = chart.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
+      a.ok(/not provided/.test(end.label.formatter({ dataIndex: ci })), 'and so does the share: ' + end.label.formatter({ dataIndex: ci }));
+      var org = build(RS, { mode: 'org' }, { type: 'table' });
+      a.ok(org.notes.some(function (n) { return /Region C/.test(n); }), 'the combined share names Region C as left out');
+    });
+
     T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
       load();
       var built = REPORTS.filter(function (id) { return !!TAP.reports.get(id); });
