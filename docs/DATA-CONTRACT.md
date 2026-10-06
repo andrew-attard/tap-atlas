@@ -392,7 +392,7 @@ regions: [{ id: 'north', ..., extra: { events: [
   { sourceRow: 9, event: 'Healthcare roundtable', invited: 15, budget: null, perAccount: null } ] } }]
 ```
 
-The example is the sample's fictional section, shortened. Extra sections are for data only: anything the app should calculate, chart or compare needs a measure and a report definition: see `docs/EXTENDING-TEMPLATE.md`.
+The example is the fictional section the tests use, shortened (the sample data has no extra section, D93). Extra sections are for data only: anything the app should calculate, chart or compare needs a measure and a report definition: see `docs/EXTENDING-TEMPLATE.md`.
 
 ---
 

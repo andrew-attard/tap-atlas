@@ -54,7 +54,7 @@ extraSections: [
 4. **Check it.** Open `index.html`. The app opens even if the section is malformed; read the data sources panel (the "Data:" date on the comparison bar) for warnings such as `meta.extraSections[0].columns[3].unit (section "6. Enablement"): expected a unit: money, pct, count or text, found "euros"`. Fix the import, not the data file, and run it again.
 5. **Spot-check** one value per region on the Other sections view: click its row and compare the cell the details name (`Region North plan.xlsx › 6. Enablement › E7`) with the workbook.
 
-The sample data carries one such section, "5. Events" (made by `tools/sample-extra.js`), so the view can be seen in `index-sample.html` before the real data exists.
+The sample data carries no extra section (D93), so `index-sample.html` shows no Other sections. To see the view, open a data file with an extra section: the tests use a fictional "5. Events" section (made by `tools/sample-extra.js` and added to a copy of the sample by `T_WITH_EXTRA` in `tests/test-setup.js`).
 
 ## Level 2: a measure and a report (configuration)
 
@@ -62,7 +62,7 @@ Use when a figure from the section should be compared as a chart: totals per reg
 
 **How it works.** A *measure* turns a region's rows into one figure (a cell with its source); a *report definition* says which measures to chart and how (the schema is in `config/reports.js`, the measures in `docs/ARCHITECTURE.md` section 9). The engine combines regions, draws, and exports; no chart code is needed for an existing shape.
 
-**Worked example (fictional), on the sample's "5. Events" section:** "How much does each region put into customer events?"
+**Worked example (fictional), on the test "5. Events" section:** "How much does each region put into customer events?"
 
 1. **Write the measure** in a new file for local measures, **js/engine/measures-local.js** (the two built-in measures files are full), with the usual header. It sums the budget over the region's rows through `TAP.rows`, so each figure keeps its source rows:
 
@@ -98,7 +98,7 @@ window.TAP_REPORTS['cg-events'] = {
 };
 ```
 
-5. **Check it.** In `tests.html`, the report-definition tests validate the new definition. Then open the view in `index-sample.html`: the chart, the table view and the source line ("North America plan.xlsx › 5. Events › F8:F10") all work. A definition with an error shows it in its own panel only.
+5. **Check it.** In `tests.html`, the report-definition tests validate the new definition. Then open the view on a data file that carries the section (the sample has none): the chart, the table view and the source line ("North America plan.xlsx › 5. Events › F8:F10") all work. A definition with an error shows it in its own panel only.
 
 A measure must never read a field the contract doesn't list, and never fill a blank with zero: return `k.blank` when nothing was provided, as above.
 
