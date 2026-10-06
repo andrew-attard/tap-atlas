@@ -1,9 +1,10 @@
 /*
  * File: tools/sample-extra.js
- * Purpose: The sample's one extra template section (US-3.2.1): a fictional "Events" sheet with a few rows per
- *          region, added to the plan as meta.extraSections and per-region extra, plus the figures the tests check.
- * Provides: module.exports ({apply, expect, comment})
- * Depends on: nothing (fixed rows, no random numbers, so the rest of the sample stays byte-identical)
+ * Purpose: The test extra template section (US-3.2.1): a fictional "Events" sheet with a few rows per region.
+ *          The sample itself carries no extra section (D93): the section goes into SAMPLE_EXPECT.extra.fixture,
+ *          with the figures the tests check, and the tests add it to a copy of the sample (T_WITH_EXTRA).
+ * Provides: module.exports ({fixture, expect, SECTION})
+ * Depends on: nothing (fixed rows, no random numbers)
  * Used by: tools/generate-sample-data.js
  *
  * Every event, format and note is invented. Money is in thousands; budget per account is the workbook's own
@@ -60,13 +61,11 @@ function rowsFor(regionId) {
   });
 }
 
-// Adds the section to the plan. Regions with no rows get no "extra" at all.
-function apply(plan) {
-  plan.meta.extraSections = [SECTION];
-  plan.regions.forEach(function (r) {
-    const rows = rowsFor(r.id);
-    if (rows.length) r.extra = { events: rows };
-  });
+// The section and its rows per region, for the tests to add to a copy of the sample.
+function fixture(plan) {
+  const rows = {};
+  plan.regions.forEach(function (r) { const list = rowsFor(r.id); if (list.length) rows[r.id] = list; });
+  return { section: SECTION, rows: rows };
 }
 
 // The figures the tests check, worked out from the fixed rows above (never by the app's code).
@@ -87,17 +86,11 @@ function expect(plan) {
     sources.push({ src: { regionId: s[0], section: 'extra:events', field: s[2], row: s[1], kind: s[4] },
       text: reg.source.fileName + ' › ' + SECTION.title + ' › ' + s[3] + s[1], calculated: s[4] === 'DER' });
   });
-  return { id: SECTION.id, title: SECTION.title, intro: SECTION.intro,
+  return { fixture: fixture(plan), id: SECTION.id, title: SECTION.title, intro: SECTION.intro,
     columns: SECTION.columns.map(function (c) { return c.key; }), labels: SECTION.columns.map(function (c) { return c.label; }),
     rows: rows, total: Object.keys(rows).reduce(function (t, k) { return t + rows[k]; }, 0),
     values: [['na', 8, 'budget', 45], ['na', 10, 'perAccount', 0.67], ['mea', 9, 'perAccount', 1.5], ['neu', 9, 'event', 'Facility leaders forum']],
     blank: blank, long: long, sources: sources };
 }
 
-function comment(x) {
-  return ['Extra section "' + x.title + '" (US-3.2.1): ' + x.total + ' rows; ' +
-    Object.keys(x.rows).filter(function (k) { return !x.rows[k]; }).join(', ') + ' has none. Long note: ' +
-    x.long.region + ' row ' + x.long.row + '. Blank budget: ' + x.blank[0] + ' row ' + x.blank[1] + '.'];
-}
-
-module.exports = { apply: apply, expect: expect, comment: comment, SECTION: SECTION };
+module.exports = { fixture: fixture, expect: expect, SECTION: SECTION };
