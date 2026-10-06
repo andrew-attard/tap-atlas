@@ -42,7 +42,7 @@
       var pct = u.m('sp.variancePct', r), plan = u.m('sp.plan', r), sp = u.m('sp.oi', r), gap = u.m('sp.variance', r);
       if (Math.abs(pct.v) < p.gap - SLACK) return null;
       var where = u.name(r);
-      return { key: r, regionIds: [r], measureId: 'sp.variancePct',
+      return { key: r, regionIds: [r], measureId: 'sp.oi',
         vars: { region: where, share: u.pct(Math.abs(pct.v)), direction: direction(u, pct.v), plan: u.money(plan.v), strategic: u.money(sp.v) },
         figures: [u.fig('sp.variancePct', where, pct), u.fig('sp.plan', where, plan), u.fig('sp.oi', where, sp), u.fig('sp.variance', where, gap)],
         strength: u.shareStrength(Math.abs(pct.v), p.gap), money: u.moneyShare(Math.abs(gap.v), 'arr') };
@@ -57,7 +57,7 @@
     var gap = together('sp.variance', ids), missing = u.regions().filter(function (r) { return ids.indexOf(r) < 0; });
     if (u.value(pct) === null || Math.abs(pct.v) < p.gap - SLACK) return [];
     var where = u.phrase('outlook.together', { n: ids.length });
-    return [{ key: 'org', regionIds: ids, provided: ids.length, measureId: 'sp.variancePct', variant: missing.length ? 'gaps' : null,
+    return [{ key: 'org', regionIds: ids, provided: ids.length, measureId: 'sp.oi', variant: missing.length ? 'gaps' : null,
       vars: { n: ids.length, share: u.pct(Math.abs(pct.v)), direction: direction(u, pct.v), plan: u.money(plan.v), strategic: u.money(sp.v),
         regions: u.list(missing.map(u.name)) },
       figures: [u.fig('sp.variancePct', where, pct), u.fig('sp.plan', where, plan), u.fig('sp.oi', where, sp), u.fig('sp.variance', where, gap)],
