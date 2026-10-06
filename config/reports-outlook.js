@@ -155,4 +155,26 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
       }
     }
   };
+
+  // US-4.4.2: order intake by product category, NBPT's dimStack builder split by category; the panel's year breakdown
+  // gives a stack per region and plan year.
+  window.TAP_REPORTS['ol-category'] = {
+    id: 'ol-category',
+    view: 'outlook',
+    title: 'What mix of products does each plan rest on?',
+    explain: {
+      shows: 'Each region’s planned order intake through the organization’s books by product category: software perpetual, recurring (ARR), hardware and services, for the three plan years together or year by year.',
+      read: 'One bar per region, its parts the four categories, each numbered as in the key, with the total at the end. The 100% view compares the mix rather than the size. Break the figures down by plan year to see the mix change over the plan. A category a region gives no figure for reads "not provided".',
+      lookFor: 'Plans that rest mostly on one category, regions whose mix sits apart from the others, and shifts in the mix from year 1 to year 3.'
+    },
+    shape: 'parts',
+    builder: 'dimStack',
+    dimension: 'entity',
+    measures: [{ id: 'oi.cat', label: 'Product category' }],
+    defaultType: 'stackedBar',
+    types: ['stackedBar', 'stacked100', 'table'],
+    breakdowns: ['year'],
+    sources: ['DER'],
+    options: { by: 'category' }
+  };
 })();
