@@ -351,6 +351,104 @@
       } finally { TAP.data.load(window.T_FIXTURE('mini')); }
     });
 
+    /* ---------- US-4.2.3 year 1 against the base year ---------- */
+
+    var BY = 'ol-baseyear', BY_KEYS = ['by.budget', 'by.forecast', 'by.actuals', 'by.plan', 'by.growth'];
+
+    when([BY], 'TPV-TC-694', 'Budget, latest forecast and actuals so far next to plan year 1, with the growth over the forecast, equal the hand-worked figures', function (a) {
+      load();
+      var res = build(BY, { mode: 'all' }, { type: 'table' });
+      a.equal(res.error, null, 'builds');
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity'].concat(BY_KEYS), 'the table holds the five figures');
+      ['alpha', 'bravo', 'delta'].forEach(function (r) {
+        BY_KEYS.forEach(function (k) { cellIs(a, row(res, r).cells[k], X.region[r][k], r + ' ' + k); });
+      });
+      BY_KEYS.forEach(function (k) { cellIs(a, row(res, 'charlie').cells[k], null, 'charlie ' + k); });
+      a.ok(res.missing.indexOf('Region C') >= 0, 'Region C is named as having no base year');
+      // Combined: (2800 - 2625) / 2625, a ratio of sums
+      var org = build(BY, { mode: 'org' }, { type: 'table' }).table.rows[0];
+      BY_KEYS.forEach(function (k) { cellIs(a, org.cells[k], X.combined.orgTotal[k], 'organization ' + k); });
+      // The chart: four named bars per region and the growth written after them
+      var chart = build(BY, { mode: 'all' });
+      var bars = chart.option.series.filter(function (s) { return s.tapRole === 'value'; });
+      a.deepEqual(bars.map(function (s) { return s.name; }), ['Budget', 'Forecast', 'Actuals so far', 'Plan year 1'], 'four bars per region');
+      var end = chart.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
+      a.equal(end.label.formatter({ dataIndex: 0 }), 'Year 1 over the forecast +8%', 'Region A: (865 - 800) / 800 = +8.1%');
+      a.ok(chart.option.series.some(function (s) { return s.tapRole === 'notProvided'; }), 'Region C has the not-provided mark');
+    });
+
+    when([BY], 'TPV-TC-695', 'The growth switch offers budget and forecast, the forecast by default; on the budget the growth equals the hand-worked figure', function (a) {
+      load();
+      var res = build(BY, { mode: 'all' });
+      var ctl = (res.controls || []).filter(function (c) { return c.key === 'against'; })[0];
+      a.ok(ctl, 'a switch for the figure growth is measured against');
+      a.deepEqual(ctl.options.map(function (o) { return o.value; }), ['forecast', 'budget'], 'forecast and budget');
+      a.equal(ctl.value, 'forecast', 'the latest forecast by default');
+      var on = build(BY, { mode: 'all' }, { type: 'table', opts: { against: 'budget' } });
+      // (865 - 760) / 760, (1130 - 1000) / 1000, (805 - 670) / 670
+      var exp = { alpha: 0.1381579, bravo: 0.13, delta: 135 / 670 };
+      Object.keys(exp).forEach(function (r) { cellIs(a, row(on, r).cells['by.growth'], exp[r], r + ' growth over the budget'); });
+      a.ok(on.table.columns.some(function (c) { return c.key === 'by.growth' && /budget/.test(c.label); }), 'the growth column names the budget');
+      var org = build(BY, { mode: 'org' }, { type: 'table', opts: { against: 'budget' } }).table.rows[0];
+      cellIs(a, org.cells['by.growth'], 0.1522634, 'organization: (2800 - 2430) / 2430');
+      // The panel draws the switch and follows it
+      var root = T.dom.mount(), p = TAP.panel.create(root, BY, {});
+      try {
+        var seg = root.querySelector('[data-control="against"]');
+        a.ok(seg, 'the panel shows the switch');
+        var budget = qsa('button', seg).filter(function (b) { return /Budget/.test(txt(b)); })[0];
+        a.ok(budget, 'with a Budget choice');
+        budget.click();
+        var after = root.querySelector('[data-control="against"] [aria-pressed="true"]');
+        a.ok(after && /Budget/.test(txt(after)), 'Budget is now the choice');
+      } finally { p.destroy(); }
+    });
+
+    when([BY], 'TPV-TC-696', 'With two forecasts in the workbook, the default growth is measured against the later one (the contract’s forecast)', function (a) {
+      // The import keeps the later of the workbook's two forecasts as `forecast`; an earlier forecast carried along
+      // under another name is never read. Region A: forecast 800, the earlier one 750.
+      var p = window.T_FIXTURE('miniP4');
+      p.regions[0].baseYear.items.forEach(function (it) { it.forecastEarlier = it.forecast - 50 / 3; });
+      TAP.data.load(p);
+      var res = build(BY, { mode: 'all' }, { type: 'table' });
+      cellIs(a, row(res, 'alpha').cells['by.forecast'], 800, 'the forecast shown is the later one');
+      cellIs(a, row(res, 'alpha').cells['by.growth'], (865 - 800) / 800, 'growth over the later forecast');
+      a.ok(Math.abs(v(row(res, 'alpha').cells['by.growth']) - (865 - 750) / 750) > 0.01, 'not over the earlier one');
+    });
+
+    when([BY], 'TPV-TC-698', 'The explanation says the actuals cover part of the year only and names the month they run to', function (a) {
+      load();
+      var def = TAP.reports.get(BY);
+      function all() { return TAP.explain.sections(BY).map(function (s) { return s.paras.join(' '); }).join(' '); }
+      a.match(all(), /part of the year/, 'actuals cover part of the year');
+      a.match(all(), /August 2026/, 'names the month of the data (2026-08)');
+      a.ok(typeof def.explain.read === 'string' && typeof def.explain.lookFor === 'string', 'the explanation parts are text');
+      var p = window.T_FIXTURE('miniP4');
+      p.regions.forEach(function (r) { if (r.baseYear) r.baseYear.actualsThrough = '2026-05'; });
+      TAP.data.load(p);
+      a.match(all(), /May 2026/, 'follows the data');
+      p.regions.forEach(function (r) { if (r.baseYear) r.baseYear.actualsThrough = null; });
+      TAP.data.load(p);
+      a.match(all(), /part of the year/, 'without a month the explanation still says so');
+    });
+
+    when([BY], 'X-p4-outlook-sample-baseyear', 'Sample: Middle East & Africa year 1 is 60.3% above its base-year forecast; Central Europe has no base year', function (a) {
+      var E = window.SAMPLE_EXPECT;
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      try {
+        var res = build(BY, { mode: 'all' }, { type: 'table' }), r4 = row(res, E.r04.region);
+        a.near(v(r4.cells['by.plan']), E.r04.year1, 0.05, 'R04 year 1');
+        a.near(v(r4.cells['by.forecast']), E.r04.forecast, 0.05, 'R04 forecast');
+        a.near(v(r4.cells['by.growth']), E.r04.growth, 1e-5, 'R04 60.3% above');
+        Object.keys(E.r04.growthByRegion).forEach(function (r) {
+          var c = row(res, r).cells['by.growth'];
+          if (E.r04.growthByRegion[r] === null) a.equal(c.state, 'notProvided', r + ': no base year');
+          else a.near(c.v, E.r04.growthByRegion[r], 1e-5, r + ' growth');
+        });
+        a.ok(res.missing.indexOf(TAP.data.region(E.r10.region).name) >= 0, 'R10 Central Europe is named');
+      } finally { TAP.data.load(window.T_FIXTURE('mini')); }
+    });
+
     T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
       load();
       var built = REPORTS.filter(function (id) { return !!TAP.reports.get(id); });
