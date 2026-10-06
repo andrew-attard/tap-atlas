@@ -16,7 +16,7 @@
 
   var X = window.SAMPLE_EXPECT, F = TAP.format;
   // Each rule, the report that shows its figure and the measure its sentence quotes (D79)
-  var RULES = { spGap: ['ol-strategic', 'sp.variancePct'], spTotal: ['ol-strategic', 'sp.variancePct'],
+  var RULES = { spGap: ['ol-strategic', 'sp.oi'], spTotal: ['ol-strategic', 'sp.oi'],
     y1Jump: ['ol-baseyear', 'by.growth'], lowCoverage: ['ol-coverage', 'by.coverage'], booksGap: ['pt-books', 'bk.gapShare'],
     solutionReliance: ['nb-solutions', 'nb.oi.sol'] };
   var IDS = Object.keys(RULES);
