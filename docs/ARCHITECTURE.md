@@ -747,6 +747,17 @@ All return cells as in section 9. Money sums; shares and ratios combine as a rat
 
 **As built (ENGINE4):** `TAP.measures.available(id)` is false when no region has a value for a Phase 4 measure (`meta.optional`); Build a chart and the Outlook view's "no data" line use it. `by.coverage` cells are kind PRE only when one base-year item carries the workbook's ratio; several categories together are worked out by the app (APP). A `sp.<type>` measure asked for another category is not applicable. A list with no item for a channel, type, route or category is "not provided"; a row-based figure (solutions, partner maturity) with no row in the group is zero. The partner list's `type` and `distribution` columns appear only when the file has them (`TAP.rows.optional`); a cell may carry `rank`, which lists sort by (maturity in the lookup's order).
 
+**As built (the rest of Phase 4):**
+- `by.plan` (DER): plan year 1 books value on the base-year basis, honouring `ctx.against` (forecast by default, or budget); `by.growth` reads it, so the growth traces to its parts. `TAP.prepare.run` passes `ctx.opts.against`, else `def.options.against`.
+- `by.coverage` has the unit `ratio`: `TAP.format.cell` prints two decimals and "×" ("1.09×"), on axes too.
+- `sp.plan` sums books value for each year and category the strategic plan gives a figure for; `by.growth` takes year 1 books value over the categories the base-year figure is given for (like for like).
+- On `nb.arr`, `nb.services`, `nb.oi` and the six lever measures, a row naming no solution counts under `none` in every region, so the columns always add up; `nb.<t>.sol` is "not provided" for a region where no row names a solution.
+- `TAP.prepare.dimHasData(measureId, dim)`: a Phase 4 dimension is offered in the panel's breakdown menu and in Build a chart only when some region has a non-zero figure under a lookup value. The panel's measure switch lists only measures `TAP.measures.available` allows.
+- `category` and `route` breakdown values fall back to the contract's fixed ids when a file leaves the lookup out.
+- `TAP.sources.address`: a sum over several fixed cells of the new lists reads as a block ("E90:G91"), or first to last with a count.
+- Builders: `dimStack` (`js/reports/dim-stack.js`, drawing in `stack-draw.js`): one measure split by the values of one dimension (`options.by`), as stacked bars, 100% bars, a heatmap and a table, numbered parts; used by `nb-solutions`, `pt-routes`, `pt-maturity`, `ol-revenue`, `ol-category`. `ptBooks` (`pt-books`), `olSide` (`js/reports/outlook-side.js`: two or more named bars per entity with a closing figure; `ol-strategic`, `ol-baseyear`, `ol-revshare`) and `olCoverage` (`ol-coverage`, the compare chart plus pipeline and still-to-win columns).
+- A drill Target may carry `solution` (a solution id or `none`); the list builder then keeps only new business rows for that solution (17.4, 17.6).
+
 **Breakdowns:** `TAP.reports.BREAKDOWNS` gains `solution`, `category`, `route`, `maturity` and `partnerType`; context keys `{solution, category, route, maturity, partnerType}`; values come from the lookups in their order, plus "not named" (`none`) for rows with no value. The Build a chart dimensions follow (US-3.5.2).
 
 ### 19.3 Views and reports
@@ -759,7 +770,7 @@ All return cells as in section 9. Money sums; shares and ratios combine as a rat
 
 ### 19.4 Insights (`js/insights/rules-outlook.js`, INSIGHTS4)
 
-New family `outlook` (weight in `TAP_SETTINGS.insights.familyWeights`, figure-based, so it ranks with the others, D80). Rules: `spGap` (a region's plan far below or above its strategic plan), `spTotal` (the plans together against the strategic plans), `y1Jump` (year 1 far above the base-year forecast), `lowCoverage`, `booksGap` (a large share of customer value not running through the books), `solutionReliance` (one solution carrying most of a region's new business). Each attaches to the report that shows its figure and names `measureId` (D79).
+New family `outlook` (weight in `TAP_SETTINGS.insights.familyWeights`, figure-based, so it ranks with the others, D80). Rules: `spGap` (a region's plan far below or above its strategic plan), `spTotal` (the plans together against the strategic plans), `y1Jump` (year 1 far above the base-year forecast), `lowCoverage`, `booksGap` (a large share of customer value not running through the books), `solutionReliance` (one solution carrying most of a region's new business). Each attaches to the report that shows its figure and names `measureId` (D79): `sp.oi` for `spGap` and `spTotal` (the measure `ol-strategic` draws the variance under), `by.growth`, `by.coverage`, `bk.gapShare`, `nb.oi.sol`. The rules carry `optional: true`: a rule so marked whose inputs are absent from every region is skipped without a `failures()` entry, so a file without the Phase 4 parts shows no new notes (D57). Thresholds are in `config/insight-rules.js` (D91).
 
 ### 19.5 Ownership (Phase 4)
 

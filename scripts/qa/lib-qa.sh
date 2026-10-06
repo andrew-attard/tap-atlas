@@ -120,7 +120,7 @@ qa_run() {
   case "$page" in /*) url="$page" ;; *) url="$TAP_ROOT/$page" ;; esac
   url="$(file_url "$(browser_path_for "$url")")$query"
   local flags=(--headless=new --disable-gpu --no-first-run --no-default-browser-check
-    --disable-extensions --allow-file-access-from-files
+    --disable-extensions --allow-file-access-from-files --disable-ipc-flooding-protection
     "--user-data-dir=$(browser_path_for "$profile")"
     "--virtual-time-budget=${TAP_VTIME_BUDGET:-30000}"
     --enable-logging=stderr --v=0 --enable-features=LogJsConsoleMessages)
