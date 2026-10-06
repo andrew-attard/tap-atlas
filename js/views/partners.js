@@ -1,7 +1,7 @@
 /*
  * File: js/views/partners.js
  * Purpose: The Partners view: reliance on partners and alliances, partner capacity, customer value against books
- *          value and the partner list (Epic 2.3, Epic 4.5), under the shared view header. Reports sit two by two
+ *          value, routes to market and the partner list (Epic 2.3, Epic 4.5), under the shared view header. Reports sit two by two
  *          (D24), as on the Customer growth view; a list, and a report that needs the width, take a full row.
  *          A report not defined yet takes no slot.
  * Provides: view 'partners' (registered with TAP.views), TAP.partnersView (rows)

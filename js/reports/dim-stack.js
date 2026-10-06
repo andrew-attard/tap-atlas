@@ -8,7 +8,8 @@
  * Provides: builder 'dimStack' (registered with TAP.builders); TAP.dimStack (model)
  * Depends on: js/reports/stack-draw.js, js/engine/prepare.js, js/engine/measures.js, js/engine/scope.js,
  *             js/engine/shapes.js (drawing kit), js/core/content.js, js/theme.js (all at call time)
- * Used by: config/reports-newbusiness.js (nb-solutions), js/panel/panel.js (through TAP.builders)
+ * Used by: config/reports-newbusiness.js (nb-solutions), config/reports-partners.js (pt-routes), js/panel/panel.js
+ *          (through TAP.builders)
  * Owner: NBPT stream (#449)
  *
  * Clicks: a cell or a segment gives a target with the regions behind it and figure.key "<measure>@<dimension>:<value>".
