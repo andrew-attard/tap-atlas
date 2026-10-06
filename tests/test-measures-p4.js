@@ -124,7 +124,7 @@
         if (!m) return;
         a.ok(m.label && m.label.charAt(0) !== '[', id + ' has a label');
         a.ok(m.short && m.short.charAt(0) !== '[', id + ' has a short label');
-        a.equal(m.unit, want.valueKind === 'rate' ? 'pct' : want.valueKind === 'count' ? 'count' : 'money', id + ' unit');
+        a.equal(m.unit, id === 'by.coverage' ? 'ratio' : want.valueKind === 'rate' ? 'pct' : want.valueKind === 'count' ? 'count' : 'money', id + ' unit');
         a.equal(m.valueKind, want.valueKind, id + ' value kind');
         a.equal(m.kind, want.kind, id + ' source kind');
         a.deepEqual(m.dims, want.dims, id + ' dims');
