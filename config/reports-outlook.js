@@ -127,4 +127,32 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     sources: ['DER'],
     options: { by: 'motion' }
   };
+
+  // US-4.3.2: order intake against the revenue it releases, with the share released in the same year written after
+  // the bars. The side-by-side builder of the strategic plan report draws it.
+  window.TAP_REPORTS['ol-revshare'] = {
+    id: 'ol-revshare',
+    view: 'outlook',
+    title: 'How much of each year’s order intake turns into revenue that year?',
+    explain: {
+      shows: 'Each region’s order intake next to the revenue the plans release, for the three plan years together or year by year, and the share of the order intake released as revenue in the same year.',
+      read: 'Two bars per region: order intake and revenue, with the share written after them. Revenue lags order intake because recurring revenue builds up over the year a deal is won, and the template releases it by its own assumptions. Shares combine as the summed revenue over the summed order intake. A region without a revenue outlook reads "not provided" and is left out of combined shares.',
+      lookFor: 'Regions whose share released in the same year differs from the others, and how the share grows from year 1 to year 3.'
+    },
+    shape: 'compare',
+    builder: 'olSide',
+    dimension: 'entity',
+    // One measure, so no switch: the share; the bars are set in options.side
+    measures: [{ id: 'rv.share', label: 'Revenue release' }],
+    defaultType: 'bar',
+    types: ['bar', 'table'],
+    breakdowns: ['year', 'channel'],
+    sources: ['DER', 'APP'],
+    options: {
+      side: {
+        bars: [{ id: 'rc.all.oi', label: 'Order intake' }, { id: 'rv.all.oi', label: 'Revenue' }],
+        end: { label: 'Released in the same year', rate: 'rv.share' }
+      }
+    }
+  };
 })();
