@@ -349,7 +349,8 @@
         a.ok(TAP.measures.meta(id).dims.indexOf('solution') >= 0, id + ' lists solution');
         a.deepEqual(TAP.measures.meta(id).dims.slice(0, 2), ['year', 'industry'], id + ' keeps year and industry');
       });
-      ['cg.arr', 'amb.arr', 'nb.hitRate'].forEach(function (id) { a.ok(TAP.measures.meta(id).dims.indexOf('solution') < 0, id + ' does not'); });
+      // The levers (nb.hitRate among them) list solution since US-4.4.3 (D89); customer growth and the ambition do not
+      ['cg.arr', 'amb.arr'].forEach(function (id) { a.ok(TAP.measures.meta(id).dims.indexOf('solution') < 0, id + ' does not'); });
       X.nbBySolution.forEach(function (b) {
         var x = bdCols(b.id, 'solution', b.entity), sum = 0, what = b.id + ' by solution for ' + b.entity;
         a.deepEqual(x.cols.map(function (c) { return c.breakdown.value; }), Object.keys(b.values), what + ': the columns');
