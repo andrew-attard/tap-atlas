@@ -18,7 +18,8 @@
   var VIEW = 'outlook';
 
   // Rows of the page: at most two side by side (D24). The strategic plan report leads at full width.
-  var LAYOUT = [['ol-strategic'], ['ol-baseyear', 'ol-coverage'], ['ol-revenue', 'ol-revshare'], ['ol-category']];
+  // The revenue report has a stack per region and plan year, so it takes a row of its own.
+  var LAYOUT = [['ol-strategic'], ['ol-baseyear', 'ol-coverage'], ['ol-revenue'], ['ol-revshare', 'ol-category']];
   // The figures the view rests on: with none of them in the file, there is nothing to show.
   var DATA = ['sp.oi', 'by.budget', 'by.forecast', 'by.actuals', 'by.pipeline', 'rv.all.oi', 'oi.cat'];
 
