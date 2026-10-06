@@ -282,20 +282,29 @@
     }
 
     T.test('X-int-keys-views', 'Number keys switch views in menu order; other digits and modifier keys do nothing', function (a) {
-      withKeys(function () {
+      // The keys only set the store: no app runs here, so the address bar is left alone. Chrome stops following the
+      // address after about 200 changes in ten seconds, and later routing tests would see the old address.
+      var keep = TAP.store.get().view;
+      TAP.data.load(sample());
+      TAP.keys.bind();
+      try {
         var order = TAP.views.order();
         // Ten with the sample: its extra section adds Other sections (Phase 3, US-3.2.2) and Phase 4 adds Outlook.
-        // The keys are 1 to 9, so the first nine views have one each.
+        // Keys 1 to 9 open the first nine views and 0 the tenth (D90).
         a.equal(order.length, 10, 'ten views');
         order.slice(0, 9).reverse().forEach(function (id, i) {
           press(String(9 - i));
           a.equal(TAP.store.get().view, id, String(9 - i) + ' opens ' + id);
         });
         press('0');
-        a.equal(TAP.store.get().view, order[0], '0 does nothing');
+        a.equal(TAP.store.get().view, order[9], '0 opens the tenth view, ' + order[9]);
         press('2', null, { ctrlKey: true });
-        a.equal(TAP.store.get().view, order[0], 'Ctrl+2 is left to the browser');
-      });
+        a.equal(TAP.store.get().view, order[9], 'Ctrl+2 is left to the browser');
+      } finally {
+        TAP.keys.unbind();
+        TAP.store.set({ view: keep });
+        TAP.data.load(T_FIXTURE('mini'));
+      }
     });
 
     // Review fix #376 (SV-10): the Regions key opens the region picker, as the menu does (US-2.4.1)
