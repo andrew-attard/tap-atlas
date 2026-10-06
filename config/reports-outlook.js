@@ -26,7 +26,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     builder: 'olSide',
     dimension: 'entity',
     measures: [
-      { id: 'sp.oi', label: 'Total' },
+      { id: 'sp.oi', label: 'Order intake' },
       { id: 'sp.arr', label: 'ARR' },
       { id: 'sp.services', label: 'Services' },
       { id: 'sp.swPerpetual', label: 'Software perpetual' },

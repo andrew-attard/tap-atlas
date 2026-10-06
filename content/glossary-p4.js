@@ -64,6 +64,9 @@ window.TAP_CONTENT.glossary = Object.assign(window.TAP_CONTENT.glossary || {}, {
   swPerpetual: { term: 'Software perpetual', aliases: ['perpetual software', 'perpetual licence'],
     short: 'Software sold once, for a single payment, rather than as a subscription. It is one of the four product categories.',
     why: 'It appears only in the books value and the strategic plan, not in the recap, which holds ARR and services.', related: ['productCategory', 'arr'] },
+  hardware: { term: 'Hardware', aliases: ['hardware order intake'],
+    short: 'Physical equipment the organization sells. It is one of the four product categories.',
+    why: 'Like software perpetual, it appears only in the books value and the strategic plan, not in the recap.', related: ['productCategory', 'swPerpetual'] },
 
   // Partner types and maturity
   partnerType: { term: 'Partner type', aliases: ['value-added reseller', 'system integrator', 'referral partner'],
