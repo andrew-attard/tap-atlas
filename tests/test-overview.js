@@ -509,11 +509,13 @@
       withInsights(list, function () {
         var m = mountView();
         try {
-          a.equal(qsa('[data-part="insights"], [data-insight]', m.host).length, 0, 'no insight list or insight items');
+          // The ambition chart's panel keeps its own insight list (D92 removes only the Overview's block), so look outside it
+          var outside = function (n) { return !n.closest('.tap-ov__panel'); };
+          a.equal(qsa('[data-part="insights"], [data-insight]', m.host).filter(outside).length, 0, 'no insight list or insight items');
           // The wording any insight's buttons use, on the Insights page, in a panel or under a view title
           var words = ['Show me', 'Hide for this session', TAP.content.text('insightsPage.showMe'), TAP.content.text('insightsPage.hide'),
             TAP.content.text('viewHead.showMe')];
-          var buttons = qsa('button', m.host).map(txt).filter(function (s) { return words.indexOf(s) >= 0; });
+          var buttons = qsa('button', m.host).filter(outside).map(txt).filter(function (s) { return words.indexOf(s) >= 0; });
           a.deepEqual(buttons, [], 'no Show me or Hide buttons');
           a.equal(qsa('a[href="#insights"]', m.host).length, 0, 'no link to the Insights page');
           a.ok(txt(qs('.tap-ov__sentence', m.host)).length > 0, 'the headline still shows');
