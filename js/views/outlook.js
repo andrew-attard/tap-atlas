@@ -4,7 +4,7 @@
  *          the revenue outlook and order intake by product category (Epics 4.2 and 4.3, US-4.4.2), under the shared
  *          view header. The strategic plan report comes first at full width, so a chart is on the first screen.
  *          A file without these parts of the template shows one plain line instead of empty panels.
- * Provides: view 'outlook' (registered with TAP.views), TAP.outlookView (layout, shown, hasData)
+ * Provides: view 'outlook' (registered with TAP.views), TAP.outlookView (layout, shown, hasData, actualsLine)
  * Depends on: js/ui/view-head.js, js/panel/panel.js, js/engine/registry.js, js/engine/measures-p4.js
  *             (TAP.measures.available), js/core/dom.js, js/core/content.js, js/core/format.js (all at call time)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
@@ -41,6 +41,20 @@
     return layout().map(function (r) { return r.filter(hasData); }).filter(function (r) { return r.length; });
   }
 
+  // The base-year report's line on the actuals, naming the months they run to ("YYYY-MM" in the data), latest first.
+  function actualsLine() {
+    var names = t('months').split(' '), seen = [];
+    try {
+      TAP.data.regions().forEach(function (r) {
+        var m = /^(\d{4})-(\d{2})$/.exec((r.baseYear && r.baseYear.actualsThrough) || '');
+        if (m && +m[2] >= 1 && +m[2] <= 12 && seen.indexOf(m[0]) < 0) seen.push(m[0]);
+      });
+    } catch (e) { /* no data loaded yet */ }
+    if (!seen.length) return t('actualsPart');
+    var months = seen.sort().reverse().map(function (ym) { return t('month', { month: names[+ym.slice(5) - 1], year: ym.slice(0, 4) }); });
+    return t('actualsTo', { months: TAP.format.list(months) });
+  }
+
   function mount(root) {
     TAP.dom.clear(root);
     var page = el('div', { class: 'tap-vh-page tap-ol', 'data-view': VIEW });
@@ -69,6 +83,6 @@
     } };
   }
 
-  TAP.outlookView = { layout: layout, shown: shown, hasData: hasData };
+  TAP.outlookView = { layout: layout, shown: shown, hasData: hasData, actualsLine: actualsLine };
   TAP.views.register(VIEW, { title: 'Outlook', mount: mount });
 })(window.TAP);

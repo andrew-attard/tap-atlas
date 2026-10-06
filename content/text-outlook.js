@@ -26,7 +26,12 @@ Object.assign(window.TAP_CONTENT.text, {
       'ol-revenue': 'the revenue outlook',
       'ol-revshare': 'revenue against order intake',
       'ol-category': 'order intake by product category'
-    }
+    },
+    // US-4.2.3: the base-year report's explanation names the month the actuals run to ({months})
+    months: 'January February March April May June July August September October November December',
+    month: '{month} {year}',
+    actualsTo: 'The actuals cover part of the year only: they run to {months}, so they sit below the full-year budget and forecast.',
+    actualsPart: 'The actuals cover part of the year only, up to the month the workbook gives, so they sit below the full-year budget and forecast.'
   },
 
   // The side-by-side charts (js/reports/outlook-side.js): the closing line after each row's bars
