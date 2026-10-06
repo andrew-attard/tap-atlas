@@ -537,6 +537,103 @@
       } finally { TAP.data.load(window.T_FIXTURE('mini')); }
     });
 
+    /* ---------- US-4.3.1 revenue by year ---------- */
+
+    var RV = 'ol-revenue';
+    // Revenue by year and motion, hand-worked from the comment block of mini-p4-expected.js:
+    //   A NB 300+60 / 600+100 / 800+140 = 360 / 700 / 940, CG 75+15 / 50+10 / 50+10 = 90 / 60 / 60 (all 450 / 760 / 1000)
+    //   B all 635 / 1100 / 1220 with CG 75 + 10 = 85 in year 1 only: NB 550 / 1100 / 1220, CG 85 / 0 / 0
+    //   D NB 300+150 / 600+140 / 1200+300 = 450 / 740 / 1500, CG 90+70 / 88+22 / 0 = 160 / 110 / 0 (all 610 / 850 / 1500)
+    var RV_YEARS = { alpha: [[360, 90], [700, 60], [940, 60]], bravo: [[550, 85], [1100, 0], [1220, 0]], delta: [[450, 160], [740, 110], [1500, 0]] };
+    function partKey(res, m, motion) { return m + '@motion:' + motion; }
+
+    when([RV], 'TPV-TC-703', 'Revenue per entity and plan year, stacked by new business and customer growth, equals the hand-worked figures', function (a) {
+      load();
+      var def = TAP.reports.get(RV);
+      a.equal(def.defaultBreakdown, 'year', 'opens with a stack per plan year');
+      var res = build(RV, { mode: 'all' }, { type: 'table', breakdown: 'year' });
+      a.equal(res.error, null, 'builds');
+      Object.keys(RV_YEARS).forEach(function (r) {
+        RV_YEARS[r].forEach(function (y, i) {
+          var x = row(res, r + ':' + (i + 1));
+          a.ok(x, r + ' year ' + (i + 1) + ' has a row');
+          cellIs(a, x.cells[partKey(res, 'rv.all.oi', 'nb')], y[0], r + ' year ' + (i + 1) + ' new business');
+          cellIs(a, x.cells[partKey(res, 'rv.all.oi', 'cg')], y[1], r + ' year ' + (i + 1) + ' customer growth');
+          cellIs(a, x.cells['rv.all.oi'], y[0] + y[1], r + ' year ' + (i + 1) + ' total');
+        });
+      });
+      cellIs(a, row(res, 'alpha:2').cells['rv.all.oi'], X.region.alpha['rv.all.oi.y2'], 'A year 2 against the expected file');
+      cellIs(a, row(res, 'bravo:1').cells['rv.all.oi'], X.region.bravo['rv.all.oi.y1'], 'B year 1 against the expected file');
+      [1, 2, 3].forEach(function (y) { cellIs(a, row(res, 'charlie:' + y).cells['rv.all.oi'], null, 'C year ' + y + ' not provided'); });
+      a.ok(res.missing.indexOf('Region C') >= 0, 'Region C is named as not provided');
+      // The three-year figures, with no breakdown: A 2000 + 210
+      var all = build(RV, { mode: 'all' }, { type: 'table', breakdown: null });
+      cellIs(a, row(all, 'alpha').cells[partKey(all, 'rv.all.oi', 'nb')], X.region.alpha['rv.nb.oi'], 'A new business over three years');
+      cellIs(a, row(all, 'alpha').cells[partKey(all, 'rv.all.oi', 'cg')], X.region.alpha['rv.cg.oi'], 'A customer growth over three years');
+      cellIs(a, row(all, 'delta').cells['rv.all.oi'], X.region.delta['rv.all.oi'], 'D over three years');
+      var org = build(RV, { mode: 'org' }, { type: 'table', breakdown: null });
+      cellIs(a, org.table.rows[0].cells['rv.all.oi'], X.combined.orgTotal['rv.all.oi'], 'organization total, C left out');
+      // The chart: stacked bars with a part for each motion, named in the key
+      var chart = build(RV, { mode: 'all' }, { type: 'stackedBar', breakdown: 'year' });
+      a.deepEqual(chart.option.series.filter(function (s) { return s.tapRole === 'value'; }).map(function (s) { return s.name; }),
+        ['New business', 'Customer growth'], 'one part per motion');
+      a.ok(chart.legend.some(function (l) { return l.label === 'Customer growth'; }), 'the key names the motions');
+      a.ok(chart.option.yAxis.data.length === 12, 'a stack per region and plan year');
+    });
+
+    when([RV], 'TPV-TC-704', 'ARR and services are measures and channel a breakdown; the channel parts add up to each total', function (a) {
+      load();
+      var def = TAP.reports.get(RV);
+      a.deepEqual(def.measures.map(function (m) { return m.id; }), ['rv.all.oi', 'rv.all.arr', 'rv.all.services'], 'total, ARR and services');
+      a.ok(TAP.prepare.breakdowns(def, {}).indexOf('channel') >= 0, 'a channel breakdown');
+      // ARR: A NB 1700 + CG 175; services: A NB 300 + CG 35
+      var arr = build(RV, { mode: 'all' }, { type: 'table', breakdown: null, measureId: 'rv.all.arr' });
+      cellIs(a, row(arr, 'alpha').cells['rv.all.arr'], X.region.alpha['rv.all.arr'], 'A ARR');
+      cellIs(a, row(arr, 'alpha').cells[partKey(arr, 'rv.all.arr', 'nb')], X.region.alpha['rv.nb.arr'], 'A new business ARR');
+      var sv = build(RV, { mode: 'all' }, { type: 'table', breakdown: null, measureId: 'rv.all.services' });
+      cellIs(a, row(sv, 'alpha').cells['rv.all.services'], X.region.alpha['rv.all.services'], 'A services');
+      cellIs(a, row(sv, 'delta').cells[partKey(sv, 'rv.all.services', 'cg')], X.region.delta['rv.cg.services'], 'D customer growth services');
+      // By channel: A direct 1460 + partner 750 = 2210; B direct 1830 + Alliance A 1125 = 2955; D direct 1170
+      var ch = build(RV, { mode: 'all' }, { type: 'table', breakdown: 'channel' });
+      cellIs(a, row(ch, 'alpha:direct').cells['rv.all.oi'], 1460, 'A direct');
+      cellIs(a, row(ch, 'alpha:partner').cells['rv.all.oi'], 750, 'A partner');
+      cellIs(a, row(ch, 'bravo:allianceA').cells['rv.all.oi'], 1125, 'B Alliance A');
+      cellIs(a, row(ch, 'delta:direct').cells['rv.all.oi'], 1170, 'D direct');
+      ['alpha', 'bravo', 'delta'].forEach(function (r) {
+        var sum = ch.table.rows.filter(function (x) { return x.entityId === r; }).reduce(function (t, x) { return t + (v(x.cells['rv.all.oi']) || 0); }, 0);
+        a.near(sum, X.region[r]['rv.all.oi'], TOL, r + ': the channels add up to the total');
+      });
+    });
+
+    when([RV], 'TPV-TC-706', 'The explanation says the revenue is indicative, at today’s recurring revenue level, and released by the template’s assumptions', function (a) {
+      var e = TAP.reports.get(RV).explain, all = [e.shows, e.read, e.lookFor].join(' ');
+      a.match(all, /indicative/, 'indicative');
+      a.match(all, /today’s recurring revenue level/, 'at today’s recurring revenue level');
+      a.match(all, /released from (the )?order intake by the template’s own assumptions/, 'released by the template’s own assumptions');
+    });
+
+    when([RV], 'TPV-TC-708', 'Sample: every revenue value is calculated in the workbook (DER) and traces to the Recap’s revenue block', function (a) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      try {
+        var sheet = window.PLAN_DATA.meta.sourceMap.revenue.sheet, n = 0;
+        var res = build(RV, { mode: 'all' }, { type: 'table', breakdown: 'year' });
+        res.table.rows.forEach(function (r) {
+          Object.keys(r.cells).forEach(function (k) {
+            var c = r.cells[k];
+            if (k === 'entity' || k === 'group' || !c || c.state !== 'value') return;
+            n++;
+            a.equal(c.kind, 'DER', r.id + ' ' + k + ' is calculated in the workbook');
+            var ad = TAP.sources.address(c.src);
+            a.ok(ad.calculated, r.id + ' ' + k + ' reads as calculated');
+            a.ok(ad.text.indexOf('› ' + sheet + ' ›') > 0, r.id + ' ' + k + ' traces to ' + sheet + ': ' + ad.text);
+          });
+        });
+        a.ok(n > 40, 'checked ' + n + ' values');
+        var one = TAP.sources.address(TAP.measures.get('rv.nb.arr')('na', { channel: 'direct', year: 1 }).src);
+        a.equal(one.text, 'North America plan.xlsx › ' + sheet + ' › E5', 'one cell names its file, sheet and cell');
+      } finally { TAP.data.load(window.T_FIXTURE('mini')); }
+    });
+
     T.test('X-p4-outlook-modes', 'Every Outlook report that is built validates, and in all five modes builds with a table whose cells carry sources', function (a) {
       load();
       var built = REPORTS.filter(function (id) { return !!TAP.reports.get(id); });
