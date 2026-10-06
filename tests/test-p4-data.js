@@ -382,13 +382,21 @@
       close(year1('mea') / field('mea', 'forecast') - 1, X.r04.growth, 'R04');
       a.ok(X.r04.growth >= 0.5, 'R04: at least 50% above');
       X.p4.withBaseYear.forEach(function (id) { if (id !== 'mea') a.ok(year1(id) / field(id, 'forecast') - 1 < 0.2, 'R04: ' + id + ' under 20%'); });
-      // R05: one region with low pipeline coverage
+      // R05: one region with low pipeline coverage. Row by row, the workbook's ratio stands where it gives one (the
+      // amount still to win is read back from it), else pipeline over forecast minus actuals; the region is a ratio of sums
+      function coverage(id) {
+        var items = R[id].baseYear.items;
+        return field(id, 'pipeline') / sum(items.map(function (it) { return it.coverage !== null ? it.pipeline / it.coverage : it.forecast - it.actuals; }));
+      }
       a.equal(X.r05.region, 'na');
-      close(field('na', 'pipeline') / (field('na', 'forecast') - field('na', 'actuals')), X.r05.coverage, 'R05');
+      close(coverage('na'), X.r05.coverage, 'R05');
+      close(field('na', 'pipeline') / (field('na', 'forecast') - field('na', 'actuals')), X.p4.regions.na.baseYear.pipelineOverLeft, 'R05 over forecast minus actuals');
+      a.ok(Math.abs(X.r05.coverage - X.p4.regions.na.baseYear.pipelineOverLeft) < 0.005, 'R05: the two readings agree to two decimals');
       a.ok(X.r05.coverage < 1.25, 'R05: under 1.25x');
-      X.p4.withBaseYear.forEach(function (id) {
-        if (id !== 'na') a.ok(field(id, 'pipeline') / (field(id, 'forecast') - field(id, 'actuals')) > 2, 'R05: ' + id + ' above 2x');
-      });
+      X.p4.withBaseYear.forEach(function (id) { if (id !== 'na') a.ok(coverage(id) > 2, 'R05: ' + id + ' above 2x'); });
+      // The engine agrees with the planted figure (ENGINE4's by.coverage, when it is there)
+      var cov = TAP.measures.get('by.coverage');
+      if (cov) { TAP.data.load(sample()); close(cov('na', {}).v, X.r05.coverage, 'R05 by.coverage'); }
       // R06: one region with a large gap between customer value and books value
       a.equal(X.r06.region, 'seu');
       close(gapShare('seu'), X.r06.gapShare, 'R06');
