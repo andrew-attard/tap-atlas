@@ -410,5 +410,20 @@
         } finally { TAP.notes.clear('presentation'); TAP.data.load(T_FIXTURE('mini')); }
       });
     })();
+
+    // Where each workbook sheet shows: every chart the Guide names exists with that exact title
+    T.test('X-p4-guide-sheets', 'The Guide names each sheet of the workbook and the exact charts that show it', function (a) {
+      var sec = window.TAP_CONTENT.guide.planning.sections.filter(function (x) { return x.id === 'sheets'; })[0];
+      a.ok(sec, 'the Guide has the section');
+      var text = (sec ? sec.paragraphs : []).join(' ');
+      ['Market coverage', 'New business', 'Customer growth', 'Partner', 'Recap', 'Order intake'].forEach(function (w) {
+        a.ok(text.indexOf(w) >= 0, 'names the ' + w + ' sheet');
+      });
+      ['ov-ambition', 'nb-channels', 'pt-reliance', 'pt-capacity', 'ol-strategic', 'ol-revenue', 'ol-revshare', 'pt-books', 'ol-category', 'pt-routes',
+        'ol-baseyear', 'ol-coverage'].forEach(function (id) {
+        var def = TAP.reports.get(id);
+        a.ok(def && text.indexOf(def.title) >= 0, id + ' is named by its title: ' + (def ? def.title : 'missing'));
+      });
+    });
   });
 })(window.TAP);
