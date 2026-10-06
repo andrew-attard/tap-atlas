@@ -227,22 +227,6 @@
   }
 
   function insightSteps() {
-    step('insights: hide one on Overview', function () {
-      var b = $$('.tap-ov-insight__hide').filter(shown)[0] || $$('[data-action="hide-insight"]').filter(shown)[0];
-      expect(b, 'no hide button');
-      var n = TAP.insights.hidden().length;
-      click(b);
-      expect(TAP.insights.hidden().length === n + 1, 'hidden count did not go up');
-    });
-    step('insights: Show me on Overview', function () {
-      var b = $$('.tap-ov-insight__show').filter(shown)[0];
-      expect(b, 'no Show me button');
-      var before = JSON.stringify([state().view, state().highlight, TAP.layers.top()]);
-      click(b);
-      var after = JSON.stringify([state().view, state().highlight, TAP.layers.top()]);
-      expect(after !== before, 'Show me changed nothing (view, highlight and side panel unchanged)');
-      return after;
-    });
     step('insights: reset after Show me', function () {
       esc();
       if (state().view !== 'overview') click($('.tap-menu__item[data-view="overview"]'));

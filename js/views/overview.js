@@ -1,11 +1,11 @@
 /*
  * File: js/views/overview.js
- * Purpose: The Overview view: the headline sentence and top insights (US-1.5.3), the region cards (US-1.5.1) and
- *          the ambition chart (US-1.5.2), redrawn as soon as the comparison changes.
+ * Purpose: The Overview view: the headline sentence (US-1.5.3), the region cards (US-1.5.1) and the ambition chart
+ *          (US-1.5.2), redrawn as soon as the comparison changes. Top insights are not shown here (D92).
  * Provides: view 'overview' (registered with TAP.views)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/data.js,
  *             js/core/format.js, js/engine/measures.js, js/engine/scope.js, js/ui/layers.js,
- *             js/views/overview-cards.js, js/insights/engine.js, js/panel/panel.js, content/text-overview.js
+ *             js/views/overview-cards.js, js/panel/panel.js, content/text-overview.js
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {
@@ -162,53 +162,6 @@
     if (old) host.replaceChild(lead, old); else host.appendChild(lead);
   }
 
-  /* ---------- top insights (US-1.5.3) ---------- */
-
-  // "Show me" asks the chart to highlight; an insight with no Phase 1 chart opens the region's details instead.
-  function showMe(x) {
-    if (!x.reportId && x.fallback === 'details') TAP.layers.openDetails(x.highlight);
-    else TAP.bus.emit('showme', { insightId: x.id, target: x.highlight });
-  }
-
-  // Hiding goes through the engine, which updates state.hiddenInsights; the view redraws on that change.
-  function insightItem(x, seen) {
-    var p = el('p', { class: 'tap-ov-insight__sentence' });
-    TAP.dom.html(p, TAP.content.mark(x.sentence, seen));
-    var regions = (x.regionIds || []).map(function (id) {
-      var sw = el('span', { class: 'tap-swatch', 'aria-hidden': 'true' });
-      sw.style.backgroundColor = TAP.scope.colorOf(id);
-      return el('span', { class: 'tap-ov-insight__region' }, [sw, ' ', nameOf(id)]);
-    });
-    return el('article', { class: 'tap-ov-insight', 'data-insight': x.id }, [
-      x.label ? el('span', { class: 'tap-ov-insight__label' }, x.label) : null,
-      p,
-      regions.length ? el('div', { class: 'tap-ov-insight__regions' }, regions) : null,
-      el('div', { class: 'tap-ov-insight__actions' }, [
-        el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-ov-insight__show', onclick: function () { showMe(x); } },
-          t('insights.showMe')),
-        el('button', { type: 'button', class: 'tap-btn tap-btn--ghost tap-ov-insight__hide',
-          onclick: function () { TAP.insights.hide(x.id); } }, t('insights.hide'))
-      ])
-    ]);
-  }
-
-  function drawInsights(host, cmp, seen) {
-    TAP.dom.clear(host);
-    var link = el('a', { class: 'tap-ov__all-insights', href: '#insights',
-      onclick: function (e) { e.preventDefault(); TAP.store.set({ view: 'insights' }); } }, t('insights.all'));
-    host.appendChild(sectionHead(t('insights.title'), link));
-    var list;
-    // The opening screen never shows an error here: a failing engine reads as "no insights" (the reason goes to the console).
-    try {
-      list = TAP.insights.top(cmp, null, 3) || [];
-    } catch (e) {
-      console.warn('Overview: top insights unavailable:', e.message);
-      list = [];
-    }
-    if (!list.length) host.appendChild(el('p', { class: 'tap-muted' }, t('insights.none')));
-    else host.appendChild(el('div', { class: 'tap-ov-insights' }, list.map(function (x) { return insightItem(x, seen); })));
-  }
-
   /* ---------- the view ---------- */
 
   // The ambition panel. A panel that isn't built yet shows its own message, so the rest of the view still works.
@@ -231,20 +184,15 @@
     TAP.dom.clear(root);
     var headline = el('div', { class: 'tap-ov__headline', 'data-part': 'headline' },
       el('h1', { class: 'tap-ov__title' }, t('title')));
-    var insights = el('section', { class: 'tap-ov__insights', 'data-part': 'insights', 'aria-label': t('insights.title') });
     var cardsHost = el('div', { class: 'tap-ov-cards' });
     var hint = el('span', { class: 'tap-ov__hint' });
     var cards = el('section', { class: 'tap-ov__cards', 'data-part': 'cards', 'aria-label': t('cards.title') },
       [sectionHead(t('cards.title'), hint), cardsHost]);
     var panelHost = el('div', { class: 'tap-ov__panel', 'data-part': 'panel', 'data-report': 'ov-ambition' });
-    root.appendChild(el('div', { class: 'tap-ov' }, [headline, insights, cards, panelHost]));
+    root.appendChild(el('div', { class: 'tap-ov' }, [headline, cards, panelHost]));
 
-    // Headline and insights share one set of marked terms, so a term is marked once at the top of the page.
-    function drawText() {
-      var cmp = TAP.store.get().cmp, seen = {};
-      drawHeadline(headline, cmp, seen);
-      drawInsights(insights, cmp, seen);
-    }
+    // A fresh set of marked terms each time, so the headline marks each glossary term once.
+    function drawText() { drawHeadline(headline, TAP.store.get().cmp, {}); }
     function drawCards() {
       TAP.overviewCards.render(cardsHost);
       var combinedOnly = TAP.scope.entities(TAP.store.get().cmp).every(function (e) { return e.kind === 'combined'; });
@@ -261,7 +209,6 @@
       if (dead) return;
       if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
       if (changed.indexOf('cmp') >= 0) { drawText(); drawCards(); }
-      else if (changed.indexOf('hiddenInsights') >= 0) drawText();
     });
     // Keeps the card rows even when the window or zoom changes.
     var ro = window.ResizeObserver ? new window.ResizeObserver(function () { TAP.overviewCards.layout(cardsHost); }) : null;

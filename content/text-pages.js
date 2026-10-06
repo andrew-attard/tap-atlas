@@ -36,7 +36,7 @@ Object.assign(window.TAP_CONTENT.text, {
   // A view without a line here shows none. "Hide tips" hides them all until the page is reloaded.
   viewTips: {
     hide: 'Hide tips',
-    overview: 'Start with the headline and the top insights, then compare the region cards.',
+    overview: 'Start with the headline, then compare the region cards.',
     industry: 'Start with the tier grid to see where regions agree and differ.',
     newBusiness: 'Start with the industry grid, then compare the channels and the levers.',
     customers: 'Start with the segments, then compare the growth each region assumes.',
