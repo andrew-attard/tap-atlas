@@ -931,5 +931,28 @@
       a.deepEqual(TAP.reports.get('nb-channels').breakdowns, ['year'], 'the channels: plan year only');
       a.deepEqual(TAP.reports.get('nb-industries').breakdowns, ['year'], 'the industries: plan year only');
     });
+
+    /* ---------- the sample's planted case R07 (docs/PLANTED-CASES.md) ---------- */
+
+    // R07: Northern Europe's Solution 2 carries 68.3% of its three-year new business order intake (7,763.3);
+    // no solution carries more than 38.4% of any other region's. Figures from SAMPLE_EXPECT.r07 (the generator's).
+    T.test('X-p4-sample-r07', 'On the sample, new business by solution shows Northern Europe leaning on Solution 2', function (a) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var X = window.SAMPLE_EXPECT.r07, res = build(SOL, { mode: 'all' }, { type: 'table', measureId: 'nb.oi.sol' });
+      a.equal(res.error, null, 'builds');
+      Object.keys(X.topByRegion).forEach(function (r) {
+        var cells = row(res, r).cells, top = X.topByRegion[r], total = cells['nb.oi.sol'];
+        a.equal(total.state, 'value', r + ': a total');
+        a.near(cells[key('nb.oi.sol', top.id)].v / total.v, top.share, 1e-4, r + ': ' + top.id + ' carries its share');
+      });
+      a.near(row(res, X.region).cells[key('nb.oi.sol', X.solution)].v, X.oi, 0.05, 'Northern Europe, Solution 2: 7,763.3');
+      // The levers by solution on the sample: target accounts per solution add up to the region's
+      var lev = build(LEV, { mode: 'all' }, { type: 'table', breakdown: 'solution', measureId: 'nb.targetAccounts' });
+      window.SAMPLE_EXPECT.regions.forEach(function (r) {
+        var cells = row(lev, r).cells, sum = 0;
+        Object.keys(cells).forEach(function (k) { if (k.indexOf('nb.targetAccounts@solution:') === 0 && cells[k].state === 'value') sum += cells[k].v; });
+        a.near(sum, window.SAMPLE_EXPECT.totals[r]['nb.targetAccounts'], TOL, r + ': target accounts by solution add up');
+      });
+    });
   });
 })(window.TAP);
