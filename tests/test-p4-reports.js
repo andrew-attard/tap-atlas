@@ -620,5 +620,42 @@
       });
       a.deepEqual(build(ROUTES, { mode: 'all' }).missing, ['Region A', 'Region B', 'Region C', 'Region D'], 'every region is named');
     });
+
+    /* ---------- pt-books names its figures (glossary terms "Customer value" and "Books value", #467) ---------- */
+
+    T.test('X-p4-books-measures', 'pt-books lists customer value and books value as its measures, with no measure switch', function (a) {
+      load();
+      var def = TAP.reports.get(BOOKS);
+      a.deepEqual(def.measures.map(function (m) { return [m.id, m.label]; }), [['cv.oi', 'Customer value'], ['bk.oi', 'Books value']],
+        'the two figures it draws, named as the glossary names them');
+      def.measures.forEach(function (m) { a.ok(TAP.content.term(m.label), m.label + ' is a glossary term'); });
+      a.deepEqual(TAP.reports.validate(def), [], 'the definition is valid');
+      a.equal((def.options || {}).measuresAs, 'categories', 'both show together');
+      var spec = TAP.panelMenus.spec({ st: { measureId: null, opts: {} }, opts: {} }, { def: def, ctx: { type: def.defaultType }, res: null });
+      a.ok(!spec.own.some(function (c) { return c.key === 'measure'; }), 'no measure switch in the controls');
+      a.ok(!spec.own.some(function (c) { return c.key === 'breakdown'; }), 'no breakdown menu');
+      var res = build(BOOKS, { mode: 'all' }, { type: 'table' });
+      checkLines(a, res, { alpha: BY_CHANNEL.all.alpha }, 'unchanged figures');
+    });
+
+    /* ---------- the sample's planted case R06 (docs/PLANTED-CASES.md) ---------- */
+
+    // R06: Southern Europe, customer value 12,474.1 against books value over ARR and services 10,160: 18.6% (2,314.1)
+    // outside the books, 39.5% for its Partner channel; every other region under 6%. Figures from SAMPLE_EXPECT.r06 and,
+    // for the Partner channel's share, the planted-case table.
+    T.test('X-p4-sample-r06', 'On the sample, customer value against books value shows the planted gap of Southern Europe', function (a) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var X = window.SAMPLE_EXPECT.r06, res = build(BOOKS, { mode: 'all' }, { type: 'table' });
+      a.equal(res.error, null, 'builds');
+      var seu = line(res, X.region, 'all').cells;
+      a.near(seu['cv.oi'].v, X.cv3, 0.05, 'Southern Europe: customer value 12,474.1');
+      a.near(seu['bk.gap'].v, X.gap3, 0.05, 'Southern Europe: 2,314.1 outside the books');
+      a.near(seu['bk.gapShare'].v, X.gapShare, 1e-4, 'Southern Europe: 18.6% of customer value');
+      a.near(line(res, X.region, 'partner').cells['bk.gapShare'].v, 0.395, 5e-4, 'Southern Europe, Partner channel: 39.5%');
+      Object.keys(X.gapShareByRegion).forEach(function (r) {
+        a.near(line(res, r, 'all').cells['bk.gapShare'].v, X.gapShareByRegion[r], 1e-4, r + ': its share outside the books');
+        if (r !== X.region) a.ok(X.gapShareByRegion[r] < 0.06, r + ': under 6%');
+      });
+    });
   });
 })(window.TAP);
