@@ -74,6 +74,7 @@ window.TEST_EXPECT.miniP4 = {
       'sp.variancePct.y1': -0.0388889,   // -35 / 900
       'by.budget': 760, 'by.forecast': 800, 'by.actuals': 520, 'by.pipeline': 540,
       // Year 1 books value of the categories the base year gives: 50 + 690 + 125 = 865 against the forecast of 800
+      'by.plan': 865,                // year 1 books value of the base year's categories: 50 + 690 + 125
       'by.growth': 0.08125,          // (865 - 800) / 800
       // Pipeline over forecast minus actuals: (0 + 480 + 60) / (0 + 240 + 40); recurring uses the workbook's 2 = 480 / 240
       'by.coverage': 1.9285714,      // 540 / 280
@@ -97,7 +98,8 @@ window.TEST_EXPECT.miniP4 = {
       'sp.plan': 3310, 'sp.variance': 110,
       'sp.variancePct': 0.034375,    // 110 / 3200
       'by.budget': 1000, 'by.forecast': 1100, 'by.actuals': 640, 'by.pipeline': 530,
-      'by.growth': 0.0272727,        // year 1 books 1040 + 90 = 1130; (1130 - 1100) / 1100
+      'by.plan': 1130,               // year 1 books 1040 + 90
+      'by.growth': 0.0272727,        // (1130 - 1100) / 1100
       // Both items carry the workbook's ratio: 500 / 1.25 = 400 and 30 / 0.5 = 60 still to win
       'by.coverage': 1.1521739,      // 530 / 460
       'rv.nb.arr': 2600, 'rv.nb.services': 270, 'rv.nb.oi': 2870, 'rv.cg.arr': 75, 'rv.cg.services': 10, 'rv.cg.oi': 85,
@@ -112,7 +114,7 @@ window.TEST_EXPECT.miniP4 = {
     charlie: {
       'bk.oi': null, 'bk.arr': null, 'bk.oi.direct': null, 'cv.oi': null, 'bk.gap': null, 'bk.gapShare': null,
       'sp.oi': null, 'sp.arr': null, 'sp.plan': null, 'sp.variance': null, 'sp.variancePct': null,
-      'by.budget': null, 'by.forecast': null, 'by.actuals': null, 'by.pipeline': null, 'by.growth': null, 'by.coverage': null,
+      'by.budget': null, 'by.forecast': null, 'by.actuals': null, 'by.pipeline': null, 'by.plan': null, 'by.growth': null, 'by.coverage': null,
       'rv.nb.arr': null, 'rv.cg.oi': null, 'rv.all.oi': null, 'rv.share': null,
       'nb.arr.sol': null, 'nb.services.sol': null, 'nb.oi.sol': null, 'oi.cat': null, 'rt.oi': null,
       'pt.count.maturity': null, 'pt.oi.maturity': null
@@ -128,7 +130,8 @@ window.TEST_EXPECT.miniP4 = {
       'sp.variance': -515, 'sp.variance.y3': -110,
       'sp.variancePct': -0.166129,   // -515 / 3100
       'by.budget': 670, 'by.forecast': 725, 'by.actuals': 455, 'by.pipeline': 130,
-      'by.growth': 0.1103448,        // year 1 books 580 + 195 + 30 = 805; (805 - 725) / 725
+      'by.plan': 805,                // year 1 books 580 + 195 + 30
+      'by.growth': 0.1103448,        // (805 - 725) / 725
       // Services has no pipeline, so it is left out: (100 + 30) / (200 + 20)
       'by.coverage': 0.5909091,      // 130 / 220
       'rv.nb.arr': 2100, 'rv.nb.services': 590, 'rv.nb.oi': 2690, 'rv.cg.arr': 178, 'rv.cg.services': 92, 'rv.cg.oi': 270,
@@ -158,7 +161,8 @@ window.TEST_EXPECT.miniP4 = {
       'sp.variance': -530,
       'sp.variancePct': -0.0588889,  // -530 / 9000 (the mean of the three would be -0.0593501)
       'by.budget': 2430, 'by.forecast': 2625, 'by.actuals': 1615, 'by.pipeline': 1200,
-      'by.growth': 0.0666667,        // (865 + 1130 + 805 - 2625) / 2625 = 175 / 2625 (mean 0.0729558)
+      'by.plan': 2800,               // 865 + 1130 + 805
+      'by.growth': 0.0666667,        // (2800 - 2625) / 2625 = 175 / 2625 (mean 0.0729558)
       'by.coverage': 1.25,           // (540 + 530 + 130) / (280 + 460 + 220) = 1200 / 960 (mean 1.2238848)
       'rv.nb.arr': 6400, 'rv.all.arr': 6828, 'rv.all.services': 1297,
       'rv.all.oi': 8125,             // 2210 + 2955 + 2960
@@ -214,6 +218,8 @@ window.TEST_EXPECT.miniP4 = {
     { id: 'by.forecast', region: 'alpha', ctx: { category: 'recurring' }, v: 640 },
     { id: 'by.budget', region: 'bravo', ctx: { category: 'hardware' }, v: null },
     { id: 'by.pipeline', region: 'delta', ctx: { category: 'services' }, v: null },
+    { id: 'by.plan', region: 'alpha', ctx: { category: 'recurring' }, v: 690 },
+    { id: 'by.plan', region: 'alpha', ctx: { against: 'budget' }, v: 865 },           // the same categories carry a budget
     { id: 'by.growth', region: 'alpha', ctx: { against: 'budget' }, v: 0.1381579 },      // (865 - 760) / 760
     { id: 'by.growth', region: 'bravo', ctx: { against: 'budget' }, v: 0.13 },           // (1130 - 1000) / 1000
     { id: 'by.growth', region: 'alpha', ctx: { category: 'recurring' }, v: 0.078125 },   // (690 - 640) / 640
