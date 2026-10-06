@@ -239,7 +239,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `tools/lint.js` | Checks the house rules: headers, file size, no web calls, no stray colours |
 | `tools/check-docs.js` | Checks every path the docs name exists |
 | `tools/build-case-study.js` | Writes `docs/case-study.html` from `docs/CASE-STUDY.md`; `--check` says whether it is current |
-| `tools/check-docs3.js`, `tools/check-docs3-files.js` | Check the handover and portfolio files: the sample edition works from a web host, the landing page's links, the handover guide, the screenshots and the package script |
+| `tools/check-docs3.js`, `tools/check-docs3-files.js`, `tools/check-docs4.js` | Check the handover and portfolio files: the sample edition works from a web host, the landing page's links, the handover guide, the screenshots and the package script; and that the import brief names every field the full template adds |
 | `tools/build-pages.js` | Writes the script list into the three pages |
 | `tools/build-auto-cases.js` | Writes `tests/auto-cases.js` from the Test Plan |
 | `tools/parse-results.js` | Reads a headless test run and reports the results |
@@ -296,6 +296,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
 | The running order for a meeting | `config/running-order.js`, `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | **Present** in `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
 | Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or the Guide's "Build a chart" |
+| The full template's parts in the import | `docs/IMPORT-BRIEF.md` (section 4), `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-p4.js`, `js/core/check-p4.js`, `content/text-data.js`, the import's files (prompt 16) | The data sources panel in `index.html`, then the full template checks in `docs/REAL-DATA-CHECKLIST.md` |
 | Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, the import's files (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |
 | A general wording change | The `content/text-*.js` file or `content/ui-text.js` that holds the phrase | The screen that shows it |
 
