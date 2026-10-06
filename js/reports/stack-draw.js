@@ -93,7 +93,7 @@
     if (!pct) series.push(totalSeries(d, totals));
     if (np.length) series.push(kit.npSeries(np));
     var vax = pct ? { type: 'value', max: 100, axisLabel: { fontSize: th.type.chart, formatter: function (v) { return TAP.format.pct(v / 100); } } }
-      : kit.valueAxis({ unit: d.unit });
+      : kit.valueAxis({ unit: d.unit }, d.unit === 'count' ? { minInterval: 1 } : null);   // counts: whole numbers on the axis
     return { grid: kit.grid({ right: d.right || th.space[12] * 2 }), tooltip: { trigger: 'item' }, xAxis: vax,
       yAxis: { type: 'category', inverse: true, data: d.rows.map(function (r) { return r.label; }),
         axisLabel: { fontSize: th.type.chart, interval: 0 } },
