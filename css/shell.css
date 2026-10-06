@@ -36,10 +36,11 @@
 
 /* Menu: one line at 1280 px (D72). The current view is bold with an ink bar; red is kept for actions and highlights */
 .tap-menu { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 var(--tap-sp-1); flex: 1; min-width: 0; }
-/* Nine views fit one line at 1280 px; narrower (125% and 150% zoom) the menu wraps, so every view stays reachable */
+/* Ten views fit one line at 1280 px at body size, the D24 floor (D90); narrower (125% and 150% zoom) the menu wraps,
+   so every view stays reachable */
 .tap-menu__item {
   display: flex; align-items: center; min-height: 40px; padding: 0 var(--tap-sp-2);
-  font: inherit; font-size: var(--tap-fs-lead); font-weight: 600; color: var(--tap-ink); white-space: nowrap;
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink); white-space: nowrap;
   background: transparent; border: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
   cursor: pointer;
 }
