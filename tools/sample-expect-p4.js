@@ -67,13 +67,19 @@ function regionFigures(r, years) {
     });
   } else out.strategicPlan = null;
 
-  // Base year: plan year 1 (books) against the forecast and the budget; pipeline against what is still to win
+  // Base year: plan year 1 (books) against the forecast and the budget; pipeline against what is still to win.
+  // Coverage follows the Data Contract row by row: the workbook's ratio stands where it gives one (so the amount
+  // still to win is read back from it, pipeline over the ratio), else pipeline over forecast minus actuals. The
+  // region's figure is the summed pipeline over the summed amounts, which is what the app shows; the plain
+  // pipeline over forecast minus actuals is kept beside it (`pipelineOverLeft`). The two agree to two decimals.
   if (r.baseYear) {
     const it = r.baseYear.items, tot = function (f) { return sum(it.map(function (x) { return x[f]; }).filter(num)); };
     const left = tot('forecast') - tot('actuals');
+    const toWin = function (x) { return num(x.coverage) && x.coverage > 0 ? x.pipeline / x.coverage : x.forecast - x.actuals; };
     out.baseYear = { year: r.baseYear.year, actualsThrough: r.baseYear.actualsThrough, budget: tot('budget'), forecast: tot('forecast'),
       actuals: tot('actuals'), pipeline: tot('pipeline'), stillToWin: left, year1: books[0],
-      growth: clean(books[0] / tot('forecast') - 1), growthOnBudget: clean(books[0] / tot('budget') - 1), coverage: clean(tot('pipeline') / left),
+      growth: clean(books[0] / tot('forecast') - 1), growthOnBudget: clean(books[0] / tot('budget') - 1),
+      coverage: clean(tot('pipeline') / sum(it.map(toWin))), pipelineOverLeft: clean(tot('pipeline') / left),
       coverageGiven: it.every(function (x) { return num(x.coverage); }), byCategory: {} };
     it.forEach(function (x) {
       const y1 = out.booksByType[x.category === 'recurring' ? 'arr' : x.category][0];
@@ -82,14 +88,18 @@ function regionFigures(r, years) {
     });
   } else out.baseYear = null;
 
-  // New business by solution, from the rows (customer value): three-year ARR, services and order intake
+  // New business by solution, from the rows (customer value): three-year ARR, services and order intake. A group
+  // with no row is zero; a group whose only rows have a blank potential (the G1 row) is not provided, never zero.
   const rows = r.newBusiness.filter(function (x) { return x.arrPotential.every(num); });
   const nbOi = sum(rows.map(function (x) { return sum(x.arrPotential) + sum(x.servicesPotential); }));
   out.solutions = {};
   P.lookups.solutions.map(function (s) { return s.id; }).concat([null]).forEach(function (id) {
-    const mine = rows.filter(function (x) { return (x.solution || null) === id; });
+    const named = r.newBusiness.filter(function (x) { return (x.solution || null) === id; });
+    const mine = named.filter(function (x) { return x.arrPotential.every(num); });
     const arr = sum(mine.map(function (x) { return sum(x.arrPotential); })), svc = sum(mine.map(function (x) { return sum(x.servicesPotential); }));
-    out.solutions[id || 'none'] = { rows: mine.length, arr: clean(arr), services: clean(svc), oi: clean(arr + svc), share: clean((arr + svc) / nbOi) };
+    const blank = named.length > 0 && !mine.length;
+    out.solutions[id || 'none'] = blank ? { rows: named.length, arr: null, services: null, oi: null, share: null }
+      : { rows: named.length, arr: clean(arr), services: clean(svc), oi: clean(arr + svc), share: clean((arr + svc) / nbOi) };
   });
   out.rowsWithoutSolution = r.newBusiness.filter(function (x) { return !x.solution; }).length;
   const top = Object.keys(out.solutions).filter(function (k) { return k !== 'none'; })

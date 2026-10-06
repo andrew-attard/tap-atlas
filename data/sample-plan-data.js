@@ -37,7 +37,7 @@
  *   R02 latam plan 10001 against a strategic plan of 8011: 24.8%
  *   R03 plans together 71432 against strategic plans of 77593: -7.9% (na -6.2%, latam 24.8%, neu none, seu -8.2%, ceu -8.9%, mea -5.2%, apac -30.3%)
  *   R04 mea year 1 2132.6 against a base-year forecast of 1330: 60.3% (na 8.2%, latam 12.1%, neu 6.3%, seu 10.1%, ceu none, mea 60.3%, apac 4.3%)
- *   R05 na pipeline 2526 over 2308 still to win: 1.094454 (na 1.09, latam 2.59, neu 3.18, seu 2.79, ceu none, mea 2.39, apac 3.47)
+ *   R05 na pipeline 2526 over 2308 still to win: 1.09367 (na 1.09, latam 2.59, neu 3.18, seu 2.79, ceu none, mea 2.39, apac 3.47)
  *   R06 seu books value (ARR and services) 10160 of customer value 12474.1: 18.6% outside the books (na 5.6%, latam 3.1%, neu 3.8%, seu 18.6%, ceu 5.0%, mea 2.5%, apac 2.7%)
  *   R07 neu sol2 68.3% of new business (na sol1 30.9%, latam sol1 33.2%, neu sol2 68.3%, seu sol2 30.3%, ceu sol4 28.9%, mea sol1 38.4%, apac sol3 36.6%)
  *   R08 partners by maturity: recruit 5, onboard 3, enable 6, skill 7, strategic 6, none 1; by type: var 16, si 7, referral 4, none 1
