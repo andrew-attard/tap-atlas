@@ -75,6 +75,7 @@
   function axisFormatter(unit) {
     if (unit === 'money') return function (v) { return v === 0 ? '0' : TAP.format.money(v); };
     if (unit === 'pct') return function (v) { return TAP.format.pct(v); };
+    if (unit === 'ratio') return function (v) { return TAP.format.cell({ v: v, state: 'value' }, { unit: 'ratio' }); };
     return function (v) { return TAP.format.num(v); };
   }
 
