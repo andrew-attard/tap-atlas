@@ -305,7 +305,8 @@
     }
     function cmp(c) { return Object.assign(TAP.store.defaults().cmp, c); }
 
-    T.test('TPV-TC-075', 'Each of the five comparison modes gives exactly the expected regions and combined figures', function (a) {
+    // D99: four modes on screen; the engine still resolves an old 'pair' (one vs one) for code that passes one in.
+    T.test('TPV-TC-075', 'Each comparison mode gives exactly the expected regions and combined figures', function (a) {
       a.deepEqual(pick(TAP.scope.entities(cmp({ mode: 'all' }))), [region('alpha', 'region', 0, 'Region A'),
         region('bravo', 'region', 1, 'Region B'), region('charlie', 'region', 2, 'Region C'), region('delta', 'region', 3, 'Region D')], 'all');
 
@@ -320,13 +321,15 @@
         region('delta', 'muted', 3, 'Region D')], 'one, rest shown individually in grey');
 
       a.deepEqual(pick(TAP.scope.entities(cmp({ mode: 'pair', focus: 'charlie', second: 'alpha' }))), [
-        region('charlie', 'focus', 2, 'Region C'), region('alpha', 'second', 0, 'Region A')], 'pair');
+        region('charlie', 'focus', 2, 'Region C'), region('alpha', 'second', 0, 'Region A')], 'pair, read by the engine only');
 
       a.deepEqual(pick(TAP.scope.entities(cmp({ mode: 'set', set: ['delta', 'alpha'] }))), [
         region('alpha', 'region', 0, 'Region A'), region('delta', 'region', 3, 'Region D')], 'set, in file order');
+      a.deepEqual(pick(TAP.scope.entities(cmp({ mode: 'set', set: ['charlie'] }))), [region('charlie', 'region', 2, 'Region C')],
+        'a selection of one region (D99)');
 
       a.deepEqual(pick(TAP.scope.entities(cmp({ mode: 'org' }))), [{ id: 'org', kind: 'combined', regionIds: ALL, how: 'total',
-        role: 'combined', color: TH.combined, label: 'Organization total (4 regions)' }], 'org');
+        role: 'combined', color: TH.combined, label: 'All 4 regions combined' }], 'org: all regions combined (D99)');
     });
 
     T.test('TPV-TC-075', 'The comparison sentence and the regions in scope follow the mode', function (a) {
@@ -336,9 +339,10 @@
         [{ mode: 'one', focus: 'charlie', restAgg: 'total' }, 'Showing Region C against the total of the other 3 regions', ALL],
         [{ mode: 'one', focus: 'charlie', restAs: 'individual' }, 'Showing Region C against the other 3 regions', ALL],
         [{ mode: 'pair', focus: 'delta', second: 'bravo' }, 'Showing Region D against Region B', ['bravo', 'delta']],
-        [{ mode: 'set', set: ['charlie', 'alpha', 'bravo'] }, 'Showing 3 chosen regions: Region A, Region B and Region C',
+        [{ mode: 'set', set: ['charlie', 'alpha', 'bravo'] }, 'Showing 3 selected regions: Region A, Region B and Region C',
           ['alpha', 'bravo', 'charlie']],
-        [{ mode: 'org' }, 'Showing the organization total across all 4 regions', ALL]
+        [{ mode: 'set', set: ['charlie'] }, 'Showing Region C only', ['charlie']],
+        [{ mode: 'org' }, 'All 4 regions combined into one figure, as if they were one region', ALL]
       ];
       cases.forEach(function (c) {
         a.equal(TAP.scope.sentence(cmp(c[0])), c[1]);
@@ -370,7 +374,7 @@
       var plan = T_FIXTURE('mini');
       plan.regions = plan.regions.slice(0, 2);
       TAP.data.load(plan);
-      a.equal(TAP.scope.sentence(cmp({ mode: 'set', set: ['bravo'] })), 'Showing 1 chosen region: Region B');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'set', set: ['bravo'] })), 'Showing Region B only', 'one selected region is named, never "1 regions"');
       a.equal(TAP.scope.sentence(cmp({ mode: 'all' })), 'Showing all 2 regions side by side');
       plan.regions = plan.regions.slice(0, 1);
       TAP.data.load(plan);
@@ -387,11 +391,12 @@
       a.equal(TAP.scope.sentence(cmp({ mode: 'one', focus: 'alpha', restAs: 'individual' })), 'Showing Region A against the other region');
       a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha' }))[1].label, 'Average of the other region');
       a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha', restAgg: 'total' }))[1].label, 'Total of the other region');
-      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'Showing the organization total across all 2 regions', 'two still reads as a count');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'All 2 regions combined into one figure, as if they were one region', 'two still reads as a count');
       plan.regions = plan.regions.slice(0, 1);
       TAP.data.load(plan);
       a.equal(TAP.scope.sentence(cmp({ mode: 'all' })), 'Showing the one region in the data');
-      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'Showing the organization total of its one region');
+      a.equal(TAP.scope.sentence(cmp({ mode: 'org' })), 'The one region in the data, as one combined figure');
+      a.equal(TAP.scope.entities(cmp({ mode: 'org' }))[0].label, 'The one region, combined', 'never "All 1 region combined"');
     });
 
     T.test('X-scope-colours', 'Each region keeps its colour by file order; past 8 regions colours repeat with a note', function (a) {

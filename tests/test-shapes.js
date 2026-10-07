@@ -189,7 +189,8 @@
       a.deepEqual(cats({ mode: 'one', focus: 'alpha', restAs: 'individual' }), ['Region A', 'Region B', 'Region C', 'Region D']);
       a.deepEqual(cats({ mode: 'pair', focus: 'delta', second: 'bravo' }), ['Region D', 'Region B']);
       a.deepEqual(cats({ mode: 'set', set: ['delta', 'alpha'] }), ['Region A', 'Region D']);
-      a.deepEqual(cats({ mode: 'org' }), ['Organization total (4 regions)']);
+      a.deepEqual(cats({ mode: 'set', set: ['charlie'] }), ['Region C'], 'a selection of one region (D99)');
+      a.deepEqual(cats({ mode: 'org' }), ['All 4 regions combined']);
       var org = build('ov-ambition', 'stackedBar', { mode: 'org' });
       a.near(org.table.rows[0].cells['amb.arr'].v, X.combined.orgTotal['amb.arr'], TOL);
       var rest = build('ov-ambition', 'stackedBar', { mode: 'one', focus: 'alpha' });

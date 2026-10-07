@@ -25,7 +25,7 @@
     builders: ['register', 'get', 'names'],
     views: ['register', 'get', 'order', 'title', 'list'],
     agg: ['combine'],
-    scope: ['entities', 'sentence', 'regionIds', 'colorOf'],
+    scope: ['entities', 'sentence', 'regionIds', 'colorOf', 'upgrade'],
     measures: ['get', 'meta', 'define', 'list', 'combined'],
     scores: ['attractiveness', 'ability', 'quadrant'],
     shapes: ['types', 'label'],

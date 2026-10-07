@@ -539,8 +539,8 @@
         var cases = {
           all: { mode: 'all' },
           one: { mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'average' },
-          pair: { mode: 'pair', focus: ids[0], second: ids[1] },
           set: { mode: 'set', set: ids.slice(0, 3) },
+          setOne: { mode: 'set', set: ids.slice(0, 1) },
           org: { mode: 'org' }
         };
         Object.keys(cases).forEach(function (m) {
@@ -551,7 +551,8 @@
           a.ok(last.indexOf(bar.querySelector('.tap-cmp__sentence')) >= 0 && last.indexOf(bar.querySelector('.tap-cmp__date')) >= 0,
             m + ': the sentence and the data date share the last row');
           a.ok(rows[0].parts.indexOf(bar.querySelector('.tap-cmp__mode')) >= 0, m + ': the modes lead the first row');
-          a.ok(h <= 120, m + ': the bar is ' + h + ' px high (was about 220 in one vs the rest)');
+          // D99: "selected" is longer than "chosen", so the three longest names may wrap the sentence once
+          a.ok(h <= (m === 'set' ? 150 : 120), m + ': the bar is ' + h + ' px high (was about 220 in one vs the rest)');
         });
         // Every region in the set: the button only counts them, so the controls stay one line
         TAP.store.set({ cmp: { mode: 'set', set: ids.slice() } });
