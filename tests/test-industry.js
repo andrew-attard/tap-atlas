@@ -2,7 +2,7 @@
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
  * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-*,
- *           X-d101-ratings-grid (the ratings grid) (US-1.5.7 commentary checks are X-industry-comments-*)
+ *           X-d101-ratings-grid (the ratings grid), X-d102-ratings-insights (the rating insights on it) (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -1353,6 +1353,88 @@
           a.equal(getComputedStyle(full).display !== 'none', w > 1000, w + ' px: ' + (w > 1000 ? 'full headings' : 'short headings, explained in the key'));
         } finally { p.destroy(); }
       });
+    });
+  });
+
+  /* ---------- D102: the rating insights also show on the ratings chart ---------- */
+
+  T.suite('ratings-insights', function () {
+    var RULES = ['strongRating', 'weakRating', 'groupPriority', 'notYetWinnable'];
+    function onRatings() { return TAP.insights.ranked(cmp({ mode: 'all' }), { reportId: 'ind-ratings' }); }
+    // Hides every other insight on the ratings chart for the test, so the one wanted is the panel's only one.
+    function only(id) { onRatings().forEach(function (x) { if (x.id !== id) TAP.insights.hide(x.id); }); }
+    function showMe(p) {
+      p.el.querySelector('[data-action="insights"]').click();
+      var list = Array.prototype.slice.call(p.el.querySelectorAll('.tap-panel__insight'));
+      var btn = list.length === 1 ? list[0].querySelector('[data-action="select-insight"]') : null;
+      if (btn) btn.click();
+      return !!btn;
+    }
+    function outlined(p) {
+      return Array.prototype.map.call(p.el.querySelectorAll('.tap-rg__cell.is-hl'), function (c) {
+        return c.getAttribute('data-tap-region') + '|' + c.getAttribute('data-key');
+      }).sort();
+    }
+    function withPanel(industryId, fn) {
+      var p = TAP.panel.create(T.dom.mount(), 'ind-ratings', { industryId: industryId });
+      try { fn(p); } finally { p.destroy(); (TAP.insights.hidden() || []).slice().forEach(function (id) { TAP.insights.unhide(id); }); }
+    }
+    function industryOther(than) { return TAP.data.industries({ rated: true }).filter(function (d) { return d.id !== than; })[0].id; }
+
+    T.test('X-d102-ratings-insights', 'On the sample the ratings chart has insights, from the four rating rules only', function (a) {
+      sample();
+      var list = onRatings();
+      a.ok(list.length > 0, 'the ratings chart’s insight count is above zero (' + list.length + ')');
+      a.deepEqual(list.filter(function (x) { return RULES.indexOf(x.ruleId) < 0; }).map(function (x) { return x.id; }), [], 'only the four rules attach');
+      RULES.forEach(function (r) { a.ok(list.some(function (x) { return x.ruleId === r; }), r + ' attaches'); });
+      list.forEach(function (x) { a.ok(x.reportId === 'ind-quad' || x.reportId === 'ind-tiers', x.id + ': "Show me" elsewhere still opens its first chart'); });
+      withPanel(null, function (p) {
+        var n = Number((p.el.querySelector('[data-action="insights"]').textContent.match(/\d+/) || ['0'])[0]);
+        a.equal(n, list.length, 'the panel shows that count');
+      });
+    });
+
+    T.test('X-d102-ratings-insights', '"Show me" on a strong-rating insight sets the industry and outlines the rating behind it', function (a) {
+      sample();
+      var X = window.SAMPLE_EXPECT.p04, ins = onRatings().filter(function (x) { return x.ruleId === 'strongRating' && x.regionIds[0] === X.region; })[0];
+      a.ok(ins, 'the planted strong rating (P04) is on the ratings chart');
+      only(ins.id);
+      withPanel(industryOther(X.industry), function (p) {
+        a.ok(showMe(p), 'its "Show me" is in the panel’s list');
+        a.match(p.el.querySelector('.tap-panel__title').textContent, new RegExp(TAP.data.industry(X.industry).name), 'the chart switched to its industry');
+        a.deepEqual(outlined(p), [X.region + '|ind.references'], 'the region’s references cell, and only that, is outlined');
+      });
+    });
+
+    T.test('X-d102-ratings-insights', '"Show me" on a group priority outlines the ability to win average of the regions it names', function (a) {
+      sample();
+      var X = window.SAMPLE_EXPECT.p03, ins = onRatings().filter(function (x) { return x.ruleId === 'groupPriority' && x.industryIds[0] === X.industry; })[0];
+      a.ok(ins, 'the planted group priority (P03) is on the ratings chart');
+      only(ins.id);
+      withPanel(industryOther(X.industry), function (p) {
+        a.ok(showMe(p), 'its "Show me" is in the panel’s list');
+        a.deepEqual(outlined(p), X.lowAbility.map(function (r) { return r + '|ind.ability'; }).sort(), 'the four regions’ ability to win averages');
+      });
+    });
+
+    T.test('X-d102-ratings-insights', 'The Insights page lists each insight once, though four rules now attach to one more chart', function (a) {
+      sample();
+      var root = T.dom.mount(), view = TAP.views.get('insights').mount(root);
+      try {
+        var ids = Array.prototype.map.call(root.querySelectorAll('[data-insight]'), function (n) { return n.getAttribute('data-insight'); });
+        a.ok(ids.length > 0, 'the page lists insights');
+        a.deepEqual(ids.filter(function (id, i) { return ids.indexOf(id) !== i; }), [], 'no insight twice');
+        onRatings().forEach(function (x) { a.equal(ids.filter(function (id) { return id === x.id; }).length, 1, x.id + ' once'); });
+      } finally { view.destroy(); }
+    });
+
+    T.test('X-d102-ratings-insights', 'A presentation step can outline rating cells: mark ratingCell with the measures named', function (a) {
+      var hl = { reportId: 'ind-ratings', regionIds: ['bravo'], industryIds: ['ind1'], mark: 'ratingCell', measureIds: ['ind.expertise', 'ind.ability'] };
+      var box = parse(ratingsRes('grid', { mode: 'all' }, 'ind1', { highlight: hl }).html);
+      var on = Array.prototype.map.call(box.querySelectorAll('.is-hl'), function (c) { return c.getAttribute('data-tap-region') + '|' + c.getAttribute('data-key'); });
+      a.deepEqual(on.sort(), ['bravo|ind.ability', 'bravo|ind.expertise'], 'the named cells of the named region');
+      var other = parse(ratingsRes('grid', { mode: 'all' }, 'ind2', { highlight: hl }).html);
+      a.equal(other.querySelectorAll('.is-hl').length, 0, 'nothing outlined while the chart shows another industry');
     });
   });
 })(window.TAP);
