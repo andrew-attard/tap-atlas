@@ -2,7 +2,8 @@
  * File: js/views/industry.js
  * Purpose: The Market coverage view in two parts (D105). All industries: the tier grid, then attractiveness vs
  *          ability, both at full width. One industry: the view's only industry picker and a line saying why that
- *          industry is shown, then its ratings beside the leaders' commentary (US-1.5.7). The industry in focus is
+ *          industry is shown, then its ratings and below them the leaders' commentary (US-1.5.7), both at full width
+ *          so the grid keeps its full column headings. The industry in focus is
  *          the one picked (picker, grid row, bubble, details), else the one the regions shown disagree on most; the
  *          charts above mark it.
  * Provides: view 'industry' (registered with TAP.views), TAP.industryView (current)
@@ -106,7 +107,7 @@
   function mount(root) {
     TAP.dom.clear(root);
     var tiers = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' }), quad = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' });
-    var ratings = el('div', { class: 'tap-ind__slot' });
+    var ratings = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' });
     var notes = el('section', { class: 'tap-ind-comments', 'aria-label': t('commentary.label') });
     var sel = el('select', { class: 'tap-field tap-ind__select', id: 'tap-ind-picker' }), why = el('p', { class: 'tap-ind__why', role: 'status' });
     sel.addEventListener('change', function () { TAP.bus.emit('industry:select', { industryId: sel.value }); });
@@ -124,7 +125,7 @@
           el('div', { class: 'tap-ind__picker' }, [el('label', { for: 'tap-ind-picker' }, t('industryView.pickLabel')), sel]),
           why
         ]),
-        el('div', { class: 'tap-ind__pair' }, [ratings, notes])
+        ratings, notes
       ])
     ]));
     // Every chart on the view marks or shows the industry in focus, and follows it as it changes (D105)

@@ -84,14 +84,10 @@
 .tap-ind__picker label { font-size: var(--tap-fs-body); }
 .tap-ind__select { min-width: min(100%, 18rem); font-size: var(--tap-fs-body); }
 .tap-ind__why { margin: 0; flex: 1 1 100%; max-width: 76ch; font-size: var(--tap-fs-lead); }
-/* At most two panels side by side (D24), the same height so they read as a pair; one column on narrow screens */
-.tap-ind__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr)); gap: var(--tap-sp-6); align-items: stretch; }
-.tap-ind__pair > .tap-ind__slot { display: flex; flex-direction: column; }
-.tap-ind__pair > .tap-ind__slot > .tap-panel { flex: 1 1 auto; }
 
 
 /* ---------- leaders' commentary (US-1.5.7). Long comments are never cut: the list scrolls. Framed as a chart panel,
-   so it reads as a pair with the ratings beside it (D105) ---------- */
+   under the ratings it goes with (D105) ---------- */
 .tap-ind-comments { display: flex; flex-direction: column; min-width: 0; background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); }
 .tap-ind-comments__head { display: flex; flex-direction: column; gap: var(--tap-sp-2); padding: 20px var(--tap-sp-6) var(--tap-sp-4); }
 .tap-ind-comments__title { margin: 0; font-size: var(--tap-fs-h2); }
@@ -164,7 +160,7 @@
 
 .tap-rg__key { display: flex; flex-wrap: wrap; gap: var(--tap-sp-1) var(--tap-sp-3); margin: 0; font-size: var(--tap-fs-label); color: var(--tap-muted); }
 
-/* Half-width panels (D24, two side by side): short headings, which the key's last line spells out */
+/* A genuinely narrow panel (853 px at 150%, or two side by side): short headings, which the key's last line spells out */
 @container (max-width: 56rem) {
   .tap-rg { --tap-rg-name: 6.5rem; --tap-rg-gap: var(--tap-sp-2); }
   .tap-rg__full { display: none; }
