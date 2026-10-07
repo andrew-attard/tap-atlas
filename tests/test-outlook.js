@@ -163,7 +163,7 @@
       var root = T.dom.mount(), g = TAP.views.get('guide').mount(root);
       try {
         var keys = qsa('.tap-guide__key', root).map(function (li) { return li.getAttribute('data-view'); });
-        a.deepEqual(keys, order.slice(0, 9), 'the Guide lists the keys in menu order');
+        a.deepEqual(keys, order.slice(0, 10), 'the Guide lists the keys in menu order (1 to 9, then 0 for the tenth, D90)');
         a.equal(keys[keys.indexOf('partners') + 1], VIEW, 'with Outlook after Partners');
       } finally { if (g && g.destroy) g.destroy(); }
       // Tour steps that point at a view's menu button come in menu order
