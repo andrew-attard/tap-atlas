@@ -48,7 +48,7 @@ for b in $browsers; do
 done
 
 # Opened states (expanded chart, side panels, popovers, tour) through the QA page's ?act=, in All regions
-acts="${QA_ACTS-expand:overview expand:industry type:industry explain:overview sources:overview glossary:overview details:overview term:overview tour:overview}"
+acts="${QA_ACTS-expand:overview expand:industry type:industry explain:overview sources:overview details:overview term:overview tour:overview}"
 for b in $browsers; do
   for a in $acts; do
     for s in 1280x800@1.25 853x533@1.5; do

@@ -1,9 +1,10 @@
 /*
  * File: js/views/guide.js
- * Purpose: The Guide view: how to use the app, planning explained, glossary, reset charts (US-1.6.1).
+ * Purpose: The Guide view: how to use the app, planning explained, reset charts (US-1.6.1). No glossary list: terms
+ *          are defined where they appear (D98).
  * Provides: view 'guide' (registered with TAP.views)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js (guide, text, mark),
- *             js/core/storage.js, js/core/store.js (view, bus), js/ui/glossary.js (render), js/ui/tour.js (start)
+ *             js/core/storage.js, js/core/store.js (view, bus), js/ui/tour.js (start)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  *
  * Every word comes from content/guide.js (sections) and content/text-pages.js (guidePage.*: headings and buttons).
@@ -88,10 +89,8 @@
   function mount(root) {
     var g = TAP.content.guide(), titles = {}, handles = [];
     (g.contents || []).forEach(function (c) { titles[c.id] = c.title; });
-    // Sections added by other streams join the contents list, before the glossary entry
-    var contents = (g.contents || []).filter(function (c) { return c.id !== 'glossary'; })
-      .concat(TAP.guideExtras.map(function (x) { return { id: x.id, title: x.title }; }))
-      .concat((g.contents || []).filter(function (c) { return c.id === 'glossary'; }));
+    // Sections added by other streams join the contents list after the Guide's own
+    var contents = (g.contents || []).concat(TAP.guideExtras.map(function (x) { return { id: x.id, title: x.title }; }));
     TAP.dom.clear(root);
     var toc = el('nav', { class: 'tap-guide__toc', 'aria-label': t('contents') }, [
       el('h2', { class: 'tap-guide__toch' }, t('contents')),
@@ -99,7 +98,6 @@
         return el('li', null, el('button', { type: 'button', class: 'tap-guide__tocitem', onclick: function () { jump(root, c.id); } }, c.title));
       }))
     ]);
-    var glossary = el('div', { class: 'tap-guide__gloss' });
     var page = el('div', { class: 'tap-guide' }, [
       el('header', { class: 'tap-guide__head' }, [
         el('p', { class: 'tap-guide__kicker' }, t('kicker')),
@@ -109,9 +107,8 @@
       toc,
       section('howTo', titles.howTo || (g.howTo || {}).title, howTo(g.howTo || {})),
       section('planning', titles.planning || (g.planning || {}).title, planning(g.planning || {}))
-    ].concat(extras(handles), [section('glossary', titles.glossary, [glossary])]));
+    ].concat(extras(handles)));
     root.appendChild(page);
-    TAP.glossary.render(glossary);
     return { destroy: function () {
       handles.forEach(function (h) { if (h && typeof h.destroy === 'function') h.destroy(); });
       TAP.dom.clear(root);

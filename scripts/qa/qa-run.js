@@ -66,13 +66,12 @@
     QA.done();
   }
 
-  // Optional state to open before the checks, so screenshots can show it: ?act=expand|sources|glossary|details|tour|explain|type
+  // Optional state to open before the checks, so screenshots can show it: ?act=expand|sources|details|tour|explain|type|term
   function act(name) {
     var first = document.querySelector('.tap-panel[data-report]');
     var click = function (sel, root) { var n = (root || document).querySelector(sel); if (n) n.click(); return n; };
     if (name === 'expand' && first) TAP.store.set({ expanded: first.getAttribute('data-report') });
     if (name === 'sources') click('.tap-cmp__date');
-    if (name === 'glossary') TAP.layers.open('glossary', {});
     if (name === 'details') click('.tap-ov-card__open') || (first && TAP.layers.openDetails({ reportId: first.getAttribute('data-report'),
       regionIds: [TAP.data.regions()[0].id] }));
     if (name === 'tour') TAP.tour.start();

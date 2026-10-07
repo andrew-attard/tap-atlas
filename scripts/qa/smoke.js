@@ -131,15 +131,16 @@
     });
     step('glossary: Esc closes the popover', function () { esc(); });
     step('glossary: popover closed', function () { expect(!$('.tap-popover'), 'popover still open'); });
-    step('glossary: open the full glossary from a popover', function () {
+    // D98: no glossary list; the popover has the definition and why it matters, and closes with its close button
+    step('glossary: the popover has no link to a list', function () {
       click($$('.tap-term').filter(shown)[0]);
-      var link = $('.tap-popover [data-glossary-link]');
-      expect(link, 'no glossary link in the popover');
-      click(link);
+      expect(shown($('.tap-popover')), 'no popover');
+      expect(!$('.tap-popover [data-glossary-link]'), 'a glossary link in the popover');
     });
-    step('glossary: side panel is open', function () { expect(TAP.layers.top() === 'glossary', 'top layer is ' + TAP.layers.top()); });
-    step('glossary: Esc', function () { esc(); });
-    step('glossary: closed', function () { expect(!TAP.layers.top(), 'still open: ' + TAP.layers.top()); });
+    step('glossary: the close button closes it', function () {
+      click($('.tap-popover__close'));
+      expect(!$('.tap-popover'), 'popover still open');
+    });
   }
 
   function detailsSteps() {

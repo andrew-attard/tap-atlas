@@ -1,6 +1,6 @@
 /*
  * File: content/ui-text.js
- * Purpose: General on-screen wording (app name, tour, guide and glossary screens), so wording changes need no code.
+ * Purpose: General on-screen wording (app name, the term popover, organization file problems), so wording changes need no code.
  *          Each stream keeps its own wording in content/text-<area>.js; all of it lands in TAP_CONTENT.text.
  * Provides: window.TAP_CONTENT.text
  * Depends on: nothing
@@ -13,17 +13,9 @@ window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = Object.assign(window.TAP_CONTENT.text || {}, {
   app: { name: 'TAP Atlas' },
 
-  // The term popover and the A to Z glossary list (US-1.6.3, US-1.6.4)
+  // The term popover (US-1.6.4). There is no A to Z glossary list (D98)
   glossary: {
-    searchLabel: 'Search the glossary',
-    placeholder: 'Type a term, for example hit rate',
-    count: 'Showing {n} of {total} terms',
-    none: 'No terms match "{q}". Try a shorter word.',
     why: 'Why it matters:',
-    aliases: 'Also called:',
-    related: 'Related:',
-    orgBadge: 'Organization term',
-    open: 'See the full glossary entry',
     close: 'Close the definition'
   },
 

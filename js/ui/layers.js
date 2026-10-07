@@ -1,14 +1,14 @@
 /*
  * File: js/ui/layers.js
- * Purpose: Side panels that open over the page without blocking it (details, data sources, glossary, explanations).
+ * Purpose: Side panels that open over the page without blocking it (details, data sources, explanations).
  *          One is open at a time; opening another replaces it. Esc closes it, after any nearer popover.
  * Provides: TAP.layers (open, close, openDetails, top)
  * Depends on: js/core/store.js (state.layer), js/core/dom.js, js/core/icons.js, js/core/content.js,
  *             js/core/format.js, js/core/sources.js (addresses), js/reports/details.js (TAP.details.build),
- *             js/ui/sources-panel.js, js/ui/glossary.js
- * Used by: panels, cards, the comparison bar, the glossary popover, the explanation panel
+ *             js/ui/sources-panel.js
+ * Used by: panels, cards, the comparison bar, the explanation panel
  *
- * open(name, payload): built-in panels are 'sources', 'details' ({target}) and 'glossary' ({termId}). Any other
+ * open(name, payload): built-in panels are 'sources' and 'details' ({target}). Any other
  * name draws payload.title and calls payload.render(bodyEl), so other streams can add panels without code here.
  */
 (function (TAP) {
@@ -57,9 +57,7 @@
 
   var PANELS = {
     sources: { wide: true, draw: function (body) { TAP.sourcesPanel.render(body); return t('sourcesPanel.title'); } },
-    details: { draw: drawDetails },
-    // CONTENT draws the list (and its styles); it opens on payload.termId
-    glossary: { draw: function (body, p) { TAP.glossary.render(body, { termId: p.termId }); return t('layers.glossary'); } }
+    details: { draw: drawDetails }
   };
 
   // Draws the body; a part that isn't built yet shows its own "Not built yet" message instead.
@@ -115,7 +113,7 @@
     var node = build(name, payload);
     host().appendChild(node);
     current = { name: name, payload: payload, node: node };
-    // The body is drawn once the frame is on the page, so a panel can scroll to an entry (the glossary does)
+    // The body is drawn once the frame is on the page, so a panel can scroll to an entry
     var title = TAP.dom.qs('.tap-layer__title', node);
     var heading = drawBody(name, payload, TAP.dom.qs('.tap-layer__body', node));
     TAP.dom.text(title, (payload && payload.title) || heading || '');

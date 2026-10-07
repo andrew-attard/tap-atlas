@@ -1,11 +1,10 @@
 /*
  * File: js/ui/glossary.js
- * Purpose: Shows a term's definition where it appears (a small popover), and the searchable A to Z glossary list.
- * Provides: TAP.glossary (popover, render, close)
- * Depends on: js/core/content.js (terms, text), js/core/dom.js, js/core/icons.js, js/core/store.js (opens the Guide),
- *             js/ui/layers.js
- * Used by: every panel that shows TAP.content.mark() output (clicks are picked up here, page-wide),
- *          the glossary side panel and js/views/guide.js
+ * Purpose: Shows a term's definition where it appears: a small popover with the term, its short definition and why
+ *          it matters (US-1.6.4). There is no A to Z list; definitions stay where the terms appear (D98).
+ * Provides: TAP.glossary (popover, close)
+ * Depends on: js/core/content.js (terms, text), js/core/dom.js, js/core/icons.js, js/core/store.js (closes on a view change)
+ * Used by: every panel that shows TAP.content.mark() output (clicks are picked up here, page-wide)
  */
 (function (TAP) {
   'use strict';
@@ -25,14 +24,6 @@
     if (open.anchor && open.anchor.setAttribute) open.anchor.setAttribute('aria-expanded', 'false');
     if (open.el.parentNode) open.el.parentNode.removeChild(open.el);
     open = null;
-  }
-
-  // The full entry: the glossary side panel when there is one, otherwise the glossary on the Guide page.
-  function openFull(termId) {
-    close();
-    try { TAP.layers.open('glossary', { termId: termId }); return; } catch (e) { /* side panels not built yet */ }
-    TAP.store.set({ view: 'guide' });
-    setTimeout(function () { target(document, termId); }, 0);
   }
 
   function place(pop, anchor) {
@@ -56,9 +47,7 @@
           TAP.icons.svg('x'))
       ]),
       el('p', { class: 'tap-popover__short', text: entry.short }),
-      entry.why ? el('p', { class: 'tap-popover__why' }, [el('strong', { text: t('why') + ' ' }), entry.why]) : null,
-      el('button', { type: 'button', class: 'tap-popover__link', 'data-glossary-link': termId,
-        onclick: function () { openFull(termId); } }, t('open'))
+      entry.why ? el('p', { class: 'tap-popover__why' }, [el('strong', { text: t('why') + ' ' }), entry.why]) : null
     ]);
     pop.addEventListener('mouseenter', function () { clearTimeout(hoverTimer); });
     pop.addEventListener('mouseleave', function () { if (open && !open.pinned) closeSoon(); });
@@ -123,92 +112,5 @@
     if (anchor && anchor.focus && document.contains(anchor)) anchor.focus();
   }, true);
 
-  // ---- A to Z list with search ----
-
-  function target(root, termId) {
-    var entry = root.querySelector('[data-entry="' + String(termId).replace(/["\\]/g, '') + '"]');
-    if (!entry) return null;
-    TAP.dom.qsa('.tap-gloss__entry.is-target', root).forEach(function (n) { n.classList.remove('is-target'); });
-    entry.hidden = false;
-    entry.classList.add('is-target');
-    if (entry.parentNode) entry.parentNode.hidden = false;
-    if (document.contains(entry) && entry.scrollIntoView) entry.scrollIntoView({ block: 'start' });
-    return entry;
-  }
-
-  function entryEl(e, jump) {
-    var el = TAP.dom.el;
-    return el('div', { class: 'tap-gloss__entry', 'data-entry': e.id }, [
-      el('p', { class: 'tap-gloss__head' }, [
-        el('span', { class: 'tap-gloss__term', text: e.term }),
-        e.layer === 'organization' ? el('span', { class: 'tap-badge tap-badge--accent', text: t('orgBadge') }) : null
-      ]),
-      el('p', { class: 'tap-gloss__short', text: e.short }),
-      e.why ? el('p', { class: 'tap-gloss__why' }, [el('strong', { text: t('why') + ' ' }), e.why]) : null,
-      (e.aliases || []).length ? el('p', { class: 'tap-gloss__meta' }, [el('strong', { text: t('aliases') + ' ' }), e.aliases.join(', ')]) : null,
-      (e.related || []).length ? el('p', { class: 'tap-gloss__meta' }, [el('strong', { text: t('related') + ' ' })].concat(
-        e.related.map(function (id) {
-          var r = TAP.content.terms()[id];
-          return r ? el('button', { type: 'button', class: 'tap-gloss__rel', onclick: function () { jump(id); } }, r.term) : null;
-        }))) : null
-    ]);
-  }
-
-  // Draws the glossary into el. opts.termId opens the list on that entry. Returns {el, filter(query)}.
-  function render(root, opts) {
-    opts = opts || {};
-    var el = TAP.dom.el, all = TAP.content.terms();
-    var list = Object.keys(all).map(function (id) { return all[id]; }).sort(function (a, b) {
-      return String(a.term).toLowerCase().localeCompare(String(b.term).toLowerCase());
-    });
-    var uid = 'tap-gloss-search-' + Math.random().toString(36).slice(2, 8);
-    var input = el('input', { type: 'search', id: uid, class: 'tap-field tap-gloss__search', placeholder: t('placeholder'), autocomplete: 'off' });
-    var count = el('p', { class: 'tap-gloss__count tap-muted', 'aria-live': 'polite' });
-    var none = el('p', { class: 'tap-gloss__none', hidden: true });
-    var body = el('div', { class: 'tap-gloss__list' });
-
-    function jump(id) {
-      if (input.value) { input.value = ''; filter(''); }
-      var n = target(body, id);
-      var head = n && n.querySelector('.tap-gloss__term');
-      if (head) { head.setAttribute('tabindex', '-1'); head.focus(); }
-    }
-
-    var groups = {};
-    list.forEach(function (e) {
-      var letter = String(e.term).charAt(0).toUpperCase();
-      if (!groups[letter]) {
-        groups[letter] = el('section', { class: 'tap-gloss__group' }, el('h3', { class: 'tap-gloss__letter', text: letter }));
-        body.appendChild(groups[letter]);
-      }
-      groups[letter].appendChild(entryEl(e, jump));
-    });
-
-    // Matches the term and its other names, so "hit" finds Hit rate and "recurring revenue" finds ARR.
-    function filter(q) {
-      q = String(q || '').trim().toLowerCase();
-      var n = 0;
-      TAP.dom.qsa('.tap-gloss__entry', body).forEach(function (node) {
-        var e = all[node.getAttribute('data-entry')];
-        var hit = !q || [e.term].concat(e.aliases || []).some(function (w) { return String(w).toLowerCase().indexOf(q) >= 0; });
-        node.hidden = !hit;
-        if (hit) n++;
-      });
-      Object.keys(groups).forEach(function (k) { groups[k].hidden = !groups[k].querySelector('.tap-gloss__entry:not([hidden])'); });
-      TAP.dom.text(count, t('count', { n: n, total: list.length }));
-      none.hidden = n > 0;
-      TAP.dom.text(none, t('none', { q: q }));
-    }
-
-    input.addEventListener('input', function () { filter(input.value); });
-    TAP.dom.clear(root);
-    root.appendChild(el('div', { class: 'tap-gloss' }, [
-      el('label', { class: 'tap-gloss__label', for: uid, text: t('searchLabel') }), input, count, none, body
-    ]));
-    filter('');
-    if (opts.termId) target(body, opts.termId);
-    return { el: root, filter: function (q) { input.value = q || ''; filter(q); } };
-  }
-
-  TAP.glossary = { popover: popover, render: render, close: close };
+  TAP.glossary = { popover: popover, close: close };
 })(window.TAP);

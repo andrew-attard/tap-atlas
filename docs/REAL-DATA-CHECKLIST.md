@@ -40,7 +40,7 @@ Generic on purpose: this copy names no organization, region, file or person. The
   | Partners | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Outlook (full template) | [ ] | [ ] | [ ] | [ ] | [ ] |
   | Insights | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Guide and glossary | [ ] | n/a | n/a | n/a | n/a |
+  | Guide | [ ] | n/a | n/a | n/a | n/a |
 
   *Good:* every chart draws, nothing shows "Not built yet" or an error, the sentence above the charts names the right regions, region labels use the short names, and no figure looks implausible against what you know of the plans.
 
@@ -119,7 +119,7 @@ Run this before each demo, not only on the first run, on the folder you will pre
 | TPV-TC-123 | Selecting an industry in the grid, the scatter and the ratings chart updates the commentary panel |
 | TPV-TC-138 | The Insights page lists every insight, ranked, grouped by family with a one-line explanation each |
 | TPV-TC-172 | The Guide has three sections and a contents list whose links jump to each |
-| TPV-TC-182 | Clicking a marked term shows its definition and a glossary link; hovering also shows it |
+| TPV-TC-182 | Clicking a marked term shows its definition and why it matters; hovering also shows it |
 | TPV-TC-193 | The contract check finds no errors in the sample data file (automated, on the test page) |
 | TPV-TC-218 | `tests.html` with no internet runs every automated test and shows a pass or fail summary |
 

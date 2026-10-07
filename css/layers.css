@@ -1,10 +1,10 @@
 /*
  * File: css/layers.css
- * Purpose: Side panels: details, data sources, glossary, explanations.
+ * Purpose: Side panels: details, data sources, explanations.
  * Provides: styles for this area only (.tap-layer, .tap-details__*, .tap-src__*)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
- * Owner: SHELL stream (CONTENT adds the glossary section). Colours and font sizes come from theme variables only.
+ * Owner: SHELL stream. Colours and font sizes come from theme variables only.
  */
 
 /* The frame: right edge, full height, no backdrop, so the page stays visible and usable for viewers */

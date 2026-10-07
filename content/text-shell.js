@@ -41,8 +41,7 @@ Object.assign(window.TAP_CONTENT.text, {
   layers: {
     close: 'Close',
     escHint: 'Esc to close',
-    none: 'None.',
-    glossary: 'Glossary'
+    none: 'None.'
   },
 
   // The data sources panel (US-1.1.5). Import notes appear here and nowhere else.

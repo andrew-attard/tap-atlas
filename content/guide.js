@@ -8,8 +8,8 @@
  * THE SHAPE (js/views/guide.js renders it; read it through TAP.content.guide(), which lays the organization
  * layer over it)
  *
- *   contents   The short contents list at the top: [{ id, title }]. The ids are the page's three sections:
- *              'howTo', 'planning' and 'glossary' (the glossary list itself comes from TAP.glossary.render).
+ *   contents   The short contents list at the top: [{ id, title }]. The ids are the page's two sections:
+ *              'howTo' and 'planning'. There is no glossary section: definitions show where terms appear (D98).
  *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'], link: { view: 'newBusiness' } (optional),
  *              shortcuts: true (optional: the number keys are listed under it, built from the menu order) }] }
  *              "How to use this app", with one section per view that needs explaining (each linking to its view).
@@ -27,8 +27,7 @@ window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.guide = {
   contents: [
     { id: 'howTo', title: 'How to use this app' },
-    { id: 'planning', title: 'Territory account planning explained' },
-    { id: 'glossary', title: 'Glossary' }
+    { id: 'planning', title: 'Territory account planning explained' }
   ],
 
   howTo: {

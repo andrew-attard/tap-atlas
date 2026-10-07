@@ -3,10 +3,10 @@
  * Purpose: The general glossary: every business term and acronym in plain English (US-1.6.3).
  * Provides: window.TAP_CONTENT.glossary
  * Depends on: nothing
- * Used by: js/core/content.js, js/ui/glossary.js, js/views/guide.js
+ * Used by: js/core/content.js, js/ui/glossary.js (the term popover)
  *
  * Entry format: id: { term, aliases: [], short: 'one or two sentences', why: 'why it matters here', related: [ids] }
- * - term is the name shown in the A to Z list; aliases are other words for the same thing (plural "s" is automatic).
+ * - term is the name shown in the term's popover; aliases are other words for the same thing (plural "s" is automatic).
  * - Words are marked on screen wherever they appear, so an alias must not be an everyday word.
  * - No word may belong to two entries. The organization layer (content/organization.js) adds its own terms
  *   and wins over an entry here with the same id.
