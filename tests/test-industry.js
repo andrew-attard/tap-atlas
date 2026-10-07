@@ -1379,7 +1379,31 @@
       var p = TAP.panel.create(T.dom.mount(), 'ind-ratings', { industryId: industryId });
       try { fn(p); } finally { p.destroy(); (TAP.insights.hidden() || []).slice().forEach(function (id) { TAP.insights.unhide(id); }); }
     }
-    function industryOther(than) { return TAP.data.industries({ rated: true }).filter(function (d) { return d.id !== than; })[0].id; }
+    function countOf(p) { return Number((p.el.querySelector('[data-action="insights"]').textContent.match(/\d+/) || ['0'])[0]); }
+
+    T.test('X-d102-ratings-insights', 'The ratings chart lists only the insights about the industry it shows; with none it shows 0 and no takeaway', function (a) {
+      sample();
+      var root = T.dom.mount(), view = TAP.views.get('industry').mount(root);
+      function panel(id) { return { el: root.querySelector('.tap-panel[data-report="' + id + '"]') }; }
+      try {
+        // Healthcare has no strong or weak rating, no group priority rated low and is not in the not-yet-winnable area
+        // on the sample (the dump of every sample insight); Pharma and Biotech has only the planted strong rating (P04)
+        TAP.store.set({ industry: 'healthcare' });
+        var r = panel('ind-ratings');
+        a.equal(countOf(r), 0, 'Healthcare: 0 insights on the ratings chart');
+        a.ok(r.el.querySelector('[data-action="insights"]').disabled, 'the usual no-insight state');
+        a.equal(r.el.querySelector('.tap-panel__takeaway').textContent.trim(), '', 'no takeaway borrowed from another industry');
+        a.equal(countOf(panel('ind-quad')), TAP.insights.ranked(cmp({ mode: 'all' }), { reportId: 'ind-quad' }).length, 'the quadrant keeps all its insights');
+        TAP.store.set({ industry: window.SAMPLE_EXPECT.p04.industry });
+        r = panel('ind-ratings');
+        a.equal(countOf(r), 1, 'Pharma and Biotech: one insight');
+        a.match(r.el.querySelector('.tap-panel__takeaway').textContent, /Pharma and Biotech/, 'the takeaway is about it');
+        r.el.querySelector('[data-action="insights"]').click();
+        var texts = Array.prototype.map.call(r.el.querySelectorAll('.tap-panel__insight-text'), function (n) { return n.textContent; });
+        a.equal(texts.length, 1, 'the list holds it alone');
+        a.match(texts[0], /Northern Europe rates its references in Pharma and Biotech as strong/, 'the planted strong rating');
+      } finally { view.destroy(); }
+    });
 
     T.test('X-d102-ratings-insights', 'On the sample the ratings chart has insights, from the four rating rules only', function (a) {
       sample();
@@ -1388,20 +1412,19 @@
       a.deepEqual(list.filter(function (x) { return RULES.indexOf(x.ruleId) < 0; }).map(function (x) { return x.id; }), [], 'only the four rules attach');
       RULES.forEach(function (r) { a.ok(list.some(function (x) { return x.ruleId === r; }), r + ' attaches'); });
       list.forEach(function (x) { a.ok(x.reportId === 'ind-quad' || x.reportId === 'ind-tiers', x.id + ': "Show me" elsewhere still opens its first chart'); });
-      withPanel(null, function (p) {
-        var n = Number((p.el.querySelector('[data-action="insights"]').textContent.match(/\d+/) || ['0'])[0]);
-        a.equal(n, list.length, 'the panel shows that count');
+      var X = window.SAMPLE_EXPECT.p04, mine = list.filter(function (x) { return x.industryIds.indexOf(X.industry) >= 0; });
+      withPanel(X.industry, function (p) {
+        a.equal(countOf(p), mine.length, 'the panel counts the insights about the industry it shows (' + mine.length + ')');
       });
     });
 
-    T.test('X-d102-ratings-insights', '"Show me" on a strong-rating insight sets the industry and outlines the rating behind it', function (a) {
+    T.test('X-d102-ratings-insights', '"Show me" on a strong-rating insight outlines the rating behind it', function (a) {
       sample();
       var X = window.SAMPLE_EXPECT.p04, ins = onRatings().filter(function (x) { return x.ruleId === 'strongRating' && x.regionIds[0] === X.region; })[0];
       a.ok(ins, 'the planted strong rating (P04) is on the ratings chart');
       only(ins.id);
-      withPanel(industryOther(X.industry), function (p) {
+      withPanel(X.industry, function (p) {
         a.ok(showMe(p), 'its "Show me" is in the panel’s list');
-        a.match(p.el.querySelector('.tap-panel__title').textContent, new RegExp(TAP.data.industry(X.industry).name), 'the chart switched to its industry');
         a.deepEqual(outlined(p), [X.region + '|ind.references'], 'the region’s references cell, and only that, is outlined');
       });
     });
@@ -1411,7 +1434,7 @@
       var X = window.SAMPLE_EXPECT.p03, ins = onRatings().filter(function (x) { return x.ruleId === 'groupPriority' && x.industryIds[0] === X.industry; })[0];
       a.ok(ins, 'the planted group priority (P03) is on the ratings chart');
       only(ins.id);
-      withPanel(industryOther(X.industry), function (p) {
+      withPanel(X.industry, function (p) {
         a.ok(showMe(p), 'its "Show me" is in the panel’s list');
         a.deepEqual(outlined(p), X.lowAbility.map(function (r) { return r + '|ind.ability'; }).sort(), 'the four regions’ ability to win averages');
       });
