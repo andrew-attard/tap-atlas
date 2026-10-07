@@ -208,6 +208,6 @@ Before calling the import done, the data file should have:
 3. If the app stops with "The data file has problems that stop the app from opening", press **Copy the list**. Each line names the field, region, item and what was expected, for example `regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found 'Tier 2'`.
 4. Paste the list into Copilot with the import code and `docs/DATA-CONTRACT.md` (prompt 6 in `docs/COPILOT-PROMPTS.md`). Fix the import, not the data file, so the fix repeats on the next run.
 5. Repeat until the app opens. Then open the data sources panel (click the "Data:" date on the comparison bar) and read every region's import notes and dates.
-6. Spot-check at least one figure per section per region: hover it or use table view, read its file › sheet › cell, and confirm it in the workbook.
+6. Spot-check at least one figure per section per region: select the data icon beside it (in its details or the table view), read its file › sheet › cell, and confirm it in the workbook.
 
 The full run, step by step, is in `docs/REAL-DATA-CHECKLIST.md`.

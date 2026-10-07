@@ -156,6 +156,7 @@ Zero is a value (`v: 0`). A blank is `notProvided` with `v: null`. Not applicabl
   - `text` reads like `"Region C plan.xlsx › 1. Market Coverage › E17"`.
   - `calculated` is true for DER ("calculated in the workbook").
   - For combined sources, `text` says how the value was combined and `regions` lists the region names.
+  - On screen a file address sits behind the data icon beside its figure (`TAP.sourceTip`, section 11, D100); copied tables and insights keep it as text. How a combined figure was combined stays in words.
 - `imports()` returns, per region, `{regionId, name, fileName, fileModified, importedAt, notes}`.
 - `datesDiffer()` and `dataDate()` give the latest import date, for "Data: 2 Oct 2026".
 
@@ -379,6 +380,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 | `TAP.explain.open(reportId, {cmp})` / `sections(reportId, cmp)` | The explanation side panel; `cmp` is a panel's own comparison when it has one. `sections` returns the content as data (PAGES) |
 | `TAP.tour.offer()` / `start()` / `stop()` | The welcome card (offered by `app.start` on the real page only) / the tour itself / remove both. Also `steps()` and `fullscreen()` (PAGES) |
 | `TAP.overviewCards.render(el)` | The region cards for the current scope (OVERVIEW) |
+| `TAP.sourceTip.icon(src, kind, {where, label})` / `html(...)` | The data icon beside a figure (D100, `js/ui/source-tip.js`): a button, or the same as HTML text for builders that return HTML; null or `''` when there is no file behind the figure (`src` null, or combined by this app). `kind` defaults to `src.kind`; `where` replaces the address text (a list row's "file, row 12"); `label` names the figure for screen readers. Hover shows a popover with `TAP.format.kind(kind).text` and `TAP.sources.address(src).text`; click, tap, Enter or Space keeps it open; Esc or its close button closes it, before any side panel. One popover at a time. Also `where(src, opts)`, `open(btn)`, `close()`, `current()` |
 
 **Formatting: `TAP.format`** (`js/core/format.js`). `money(v, {scale, currency})` (chart style, €1.2M; `v` is in thousands unless `scale` says otherwise), `moneyExact`, `pct(v, {exact})`, `num(v, {decimals})`, `rating(v, field)`, `tier(v)`, `cell(cell, {unit, exact, field})`, `kind(k)` (returns `{glyph, label, text}`), `date(iso, {time})`, `list(names)`. The theme's keys are documented in `js/theme.js` itself.
 
@@ -466,7 +468,7 @@ js/ui/app.js
 ## 15. CSS
 
 - `css/base.css` (lead): reset, typography and the Modernist base styles. It reads only the CSS variables that `js/theme.js` writes onto `:root` (`--tap-*`).
-- One stylesheet per stream: `css/shell.css` and `layers.css` (SHELL), `glossary.css` (CONTENT), `panel.css` (PANEL), `overview.css` (OVERVIEW), `industry.css` (INDUSTRY), `pages.css` (PAGES).
+- One stylesheet per stream: `css/shell.css` and `layers.css` (SHELL), `glossary.css` (CONTENT), `panel.css` (PANEL), `overview.css` (OVERVIEW), `industry.css` (INDUSTRY), `pages.css` (PAGES). `source-tip.css` styles the data icon and its popover (D100).
 - No colour literals and no `px` font sizes outside `js/theme.js` and `css/base.css`.
 
 ## 16. Ownership
