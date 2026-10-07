@@ -60,6 +60,7 @@ From a terminal (WSL or Linux, with Node 18+ and Chrome or Edge):
 ```
 scripts/verify.sh                    # lint, denylist scan, data-file guard, headless tests in Chrome and Edge
 scripts/verify.sh --browser chrome   # one browser only
+scripts/verify.sh --browser none     # every check but the browser tests (CI runs them)
 scripts/verify.sh --release          # stricter: warnings fail, tests with no test yet fail
 node tools/lint.js                   # lint only (add --self-test to check the linter)
 scripts/test-headless.sh tests.html chrome
@@ -67,4 +68,4 @@ scripts/screenshot.sh tests.html "" 1280 800 1.25 /tmp/shot.png
 scripts/open-pr.sh "<title>" <body-file>
 ```
 
-Test filters: `tests.html?only=TPV-TC-077` runs one case, `tests.html?suite=format` runs one suite, and `?release=1` makes missing tests fail. Run `scripts/verify.sh` before opening a pull request; CI runs lint and the Chrome tests on every pull request.
+Test filters: `tests.html?only=TPV-TC-077` runs one case, `tests.html?suite=format` runs one suite, and `?release=1` makes missing tests fail. Before opening a pull request, run the suites for what you changed (`scripts/test-headless.sh "tests.html?suite=<name>" chrome`) and `scripts/verify.sh --browser none`; CI runs lint and the full Chrome tests on every pull request. Both browsers and `--release` run at the release gate (D103).
