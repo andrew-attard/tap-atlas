@@ -25,7 +25,7 @@ Generic on purpose: this copy names no organization, region, file or person. The
   *Good:* every region is listed with its source file name, file date and import date. Every import note has been read, and each one is either accepted (written in the run log) or fixed in the workbook and re-imported. If import dates differ, the panel says so and you know why. No note about a broken organization file.
 
 - [ ] **5. Spot-check sources against the workbooks.**
-  For each region, pick at least one figure per section (Market Coverage, New Business, Customer Growth, Partner and Recap). Read its file › sheet › cell in the tooltip or the table view's source column, open that workbook at that cell, and compare.
+  For each region, pick at least one figure per section (Market Coverage, New Business, Customer Growth, Partner and Recap). Read its file › sheet › cell behind the data icon beside it (in its details panel or the table view's source column), open that workbook at that cell, and compare.
   *Good:* every checked figure matches its cell. Calculated figures say "calculated in the workbook" and still point to a cell. Combined figures (totals, averages) list the regions they came from. Each check is listed in the run log.
 
 - [ ] **6. Walk every view in each comparison mode.**

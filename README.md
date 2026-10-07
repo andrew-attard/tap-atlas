@@ -132,7 +132,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/panel/panel.js` | The report panel: title, takeaway, chart or table, legend, source line, controls |
 | `js/panel/panel-build.js` | What a panel draws: checks the report and runs its builder |
 | `js/panel/panel-chart.js` | Draws the chart, legend and notes inside a panel |
-| `js/panel/panel-table.js` | The table view, sortable, with a source column, copyable into Excel |
+| `js/panel/panel-table.js` | The table view, sortable, with a source column (the data icon on screen, the address when copied), copyable into Excel |
 | `js/panel/panel-menus.js` | The panel's toolbar, menus and controls |
 | `js/panel/panel-export.js` | Saves or copies a chart as an image |
 | `js/panel/panel-insights.js` | The takeaway line and the panel's short insight list |
@@ -148,6 +148,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/compare-bar.js` | The comparison bar: four modes (all regions, selected regions, one vs the rest, all regions combined), the plain sentence, the data date |
 | `js/ui/layers.js` | Side panels (details, data sources, explanations), one at a time |
 | `js/ui/sources-panel.js` | The data sources panel: files, dates, import notes, skipped rules |
+| `js/ui/source-tip.js` | The data icon beside a figure: its popover shows the kind of value and file › sheet › cell (D100) |
 | `js/ui/system-screens.js` | Full-page messages when the app can't start, with a copyable problem list |
 | `js/ui/glossary.js` | Term popovers: a marked term's definition and why it matters, where the term appears |
 | `js/ui/explain.js` | The plain-English explanation of a report |
@@ -201,7 +202,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |
-| `css/*.css` | One stylesheet per area: shell, layers, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes, present, custom, outlook |
+| `css/*.css` | One stylesheet per area: shell, layers, source-tip, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes, present, custom, outlook |
 | `css/view-head.css` | The shared header and two-panel layout of the newer views |
 
 ### `data/` and `docs/`
@@ -264,7 +265,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 1. `js/theme.js` loads first. It sets `TAP_THEME` and writes the `--tap-*` CSS variables every stylesheet reads.
 2. `config/` and `content/` files set plain globals: `TAP_SETTINGS`, `TAP_VIEWS`, `TAP_REPORTS`, `TAP_RULES` and `TAP_CONTENT`. In `index.html`, `content/organization.js` sets `TAP_ORG`, which is laid over the general wording.
 3. The data file sets `PLAN_DATA`. On start, `js/core/data.js` runs the contract check (`js/core/check.js`). Errors stop the app with a copyable list; warnings go to the data sources panel.
-4. Every figure comes from one place, `js/engine/measures.js`. Reports, cards and insights all read it, so figures can't drift apart. Each figure carries its source, so it can be traced to file › sheet › cell.
+4. Every figure comes from one place, `js/engine/measures.js`. Reports, cards and insights all read it, so figures can't drift apart. Each figure carries its source, so it can be traced to file › sheet › cell: the data icon beside it shows where (`js/ui/source-tip.js`, D100).
 5. A report definition in `config/` names its measures and chart types. The builders in `js/engine/` and `js/reports/` draw it inside a panel. No chart code is needed for a new report of an existing shape.
 
 So: **data** says what the plans hold, **config** says what to show and how to weigh it, **content** says it in words, and **the theme** decides how it looks. Code reads all four but holds none of them.
