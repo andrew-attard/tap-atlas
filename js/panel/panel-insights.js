@@ -53,6 +53,9 @@
     if (items) tg.items = items.map(function (x) { return Object.assign({}, x); });
     if (theme) tg.theme = theme;
     if (m) tg.measureId = m;   // the measure the sentence quotes (D79)
+    // Every measure the insight's figures quote, so a chart showing several side by side marks just those (D102)
+    var ms = hl.measureIds || (ins.figures || []).map(function (f) { return f.measureId; }).filter(function (id, i, all) { return id && all.indexOf(id) === i; });
+    if (ms.length) tg.measureIds = ms.slice();
     return tg;
   }
 
@@ -65,6 +68,12 @@
         var deep = !!(p.drill && p.drill.depth()), off = p.st.selected === ins.id, tg = target(ins, deep ? p.drill.current() : p.id);
         var sm = TAP.showme, ids = ins.regionIds;
         if (!off && TAP.panelBuild.ownMeasure(tg.reportId, tg.measureId)) p.st.measureId = tg.measureId;   // D79
+        // A one-industry chart (the ratings) shows the insight's industry first, as its own picker would (D102)
+        var o = (TAP.reports.get(tg.reportId) || {}).options || {};
+        if (!off && o.industryPicker && tg.industryIds.length === 1) {
+          p.opts.industryId = tg.industryIds[0];
+          TAP.bus.emit('industry:select', { industryId: tg.industryIds[0] });
+        }
         // A region the chart can't show on its own: the comparison widens first (top level only: a comparison change
         // returns the panel to its top level). The panel's own comparison goes first; a comparison its page fixed
         // (presentation, a profile) widens for this panel only, never the shared one (D74); else "Show me" widens it.
