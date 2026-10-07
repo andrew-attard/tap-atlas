@@ -18,8 +18,9 @@
   // Text and categories can't be drawn as a value on an axis (US-3.5.2).
   var NOT_VALUES = ['text', 'category'];
   // Compare types a one-measure chart never offers: a radar draws several measures as its axes, a bubble needs a
-  // size measure. With a second dimension, plain bars would draw the same grouped bars twice.
-  var NEVER = ['radar', 'bubble'];
+  // size measure, and the grid is the ratings chart's own (D101). With a second dimension, plain bars would draw the
+  // same grouped bars twice.
+  var NEVER = ['radar', 'bubble', 'grid'];
 
   // Figures that exist only for one industry (ctx.industryId): the ind.* measures, or any measure whose
   // metadata says it needs an industry. They have no region total, so they are offered by industry only.

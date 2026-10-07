@@ -1,7 +1,7 @@
 /*
  * File: css/industry.css
  * Purpose: Market coverage layout: tier grid, quadrant, ratings, commentary, details.
- * Provides: styles for this area only (.tap-tg*, .tap-ind*)
+ * Provides: styles for this area only (.tap-tg*, .tap-rg*, .tap-ind*)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: INDUSTRY stream. Colours and font sizes come from theme variables only.
@@ -107,4 +107,56 @@
 .tap-panel__legend-item--industry { align-items: flex-start; font-weight: 400; line-height: 1.35; }
 .tap-panel__legend-item--industry .tap-panel__key--none {
   background: var(--tap-ground); border: var(--tap-control-w) solid var(--tap-ink); color: var(--tap-ink);
+}
+
+/* ---------- ratings grid (US-1.5.6, D101): the ratings under the two scores, each group closing with its average.
+   Ratings take the tier palette, lightest for 1 and darkest for 3; the number is always in the cell. ---------- */
+.tap-rg-box { container-type: inline-size; display: flex; flex-direction: column; gap: var(--tap-sp-3); padding: var(--tap-sp-1); }
+.tap-rg { display: flex; flex-direction: column; gap: 3px; --tap-rg-name: 10rem; --tap-rg-gap: var(--tap-sp-3); }
+.tap-rg__row { display: grid; gap: 3px; align-items: stretch; min-height: 2.75rem;
+  grid-template-columns: minmax(var(--tap-rg-name), 1.4fr) repeat(var(--tap-rg-cols), minmax(0, 1fr)); }
+.tap-rg__row--groups, .tap-rg__row--head { min-height: 0; }
+.tap-rg__row--head { align-items: end; padding-bottom: var(--tap-sp-2); border-bottom: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-rg__group { padding-bottom: var(--tap-sp-1); border-bottom: var(--tap-rule-w) solid var(--tap-ink); font-size: var(--tap-fs-label); font-weight: 800; }
+.tap-rg__corner { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
+.tap-rg__col { font-size: var(--tap-fs-label); font-weight: 600; line-height: 1.2; text-align: center; overflow-wrap: break-word; }
+.tap-rg__col--avg { font-weight: 800; }
+.tap-rg .is-start { margin-left: var(--tap-rg-gap); }
+.tap-rg__short, .tap-rg__npdash, .tap-rg__key-short { display: none; }
+
+.tap-rg__name { display: flex; align-items: center; gap: var(--tap-sp-2); padding-right: var(--tap-sp-2); font-size: var(--tap-fs-body); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.tap-rg__bar { flex: none; align-self: stretch; width: 6px; }
+.tap-rg__row.is-focus .tap-rg__name { font-weight: 800; }
+.tap-rg__row.is-focus .tap-rg__bar { width: 10px; }
+.tap-rg__row.is-muted .tap-rg__name { color: var(--tap-muted); }
+/* Combined figures: a rule above the first one sets them apart from the regions */
+.tap-rg__row.is-combined .tap-rg__name { font-style: italic; }
+.tap-rg__row.is-first-combined { margin-top: var(--tap-sp-1); padding-top: var(--tap-sp-1); border-top: var(--tap-rule-w) solid var(--tap-ink); }
+
+.tap-rg__cell {
+  display: flex; align-items: center; justify-content: center; min-width: 0; padding: 0 var(--tap-sp-1);
+  font: inherit; font-size: var(--tap-fs-body); font-weight: 700; font-variant-numeric: tabular-nums;
+  border: var(--tap-rule-w) solid transparent; cursor: pointer; position: relative; background: transparent; color: var(--tap-ink);
+}
+.tap-rg__cell--r3 { background: var(--tap-tier1); color: var(--tap-tier1-fg); border-color: var(--tap-tier1); }
+.tap-rg__cell--r2 { background: var(--tap-tier2); color: var(--tap-tier2-fg); border-color: var(--tap-tier2); }
+.tap-rg__cell--r1 { background: var(--tap-tier3); color: var(--tap-tier3-fg); border-color: var(--tap-tier3); }
+/* Averages are not shaded: a heavier figure on the paper, in a ruled box */
+.tap-rg__cell--avg { font-weight: 800; background: var(--tap-paper); border-color: var(--tap-ink); }
+.tap-rg__cell--np { line-height: 1.15; color: var(--tap-np-fg); border: var(--tap-rule-w) dashed var(--tap-np-border); background: transparent;
+  font-size: var(--tap-fs-chartMin); font-weight: 600; font-style: italic; text-align: center; }
+.tap-rg__row.is-muted .tap-rg__cell { opacity: 0.6; }
+.tap-rg__cell.is-hl { outline: var(--tap-highlight-w) solid var(--tap-accent); outline-offset: 2px; z-index: 2; opacity: 1; }
+.tap-rg__cell:hover { outline: var(--tap-focus-w) solid var(--tap-ink); outline-offset: 1px; }
+
+.tap-rg__key { display: flex; flex-wrap: wrap; gap: var(--tap-sp-1) var(--tap-sp-3); margin: 0; font-size: var(--tap-fs-label); color: var(--tap-muted); }
+
+/* Half-width panels (D24, two side by side): short headings, which the key's last line spells out */
+@container (max-width: 56rem) {
+  .tap-rg { --tap-rg-name: 6.5rem; --tap-rg-gap: var(--tap-sp-2); }
+  .tap-rg__full { display: none; }
+  .tap-rg__short, .tap-rg__key-short { display: inline; }
+  .tap-rg__col { font-size: var(--tap-fs-chartMin); }
+  .tap-rg__npword { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tap-rg__npdash { display: inline; }
 }

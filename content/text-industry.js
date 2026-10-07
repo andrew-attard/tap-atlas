@@ -86,6 +86,24 @@ Object.assign(window.TAP_CONTENT.text, {
     takeawayEvery: '{n} of {total} points (one per region and industry) sit in “{area}”.'
   },
 
+  // US-1.5.6, D101: the six ratings as a grid, grouped under the two scores
+  ratingsGrid: {
+    corner: 'Region',
+    groups: { attractiveness: 'Attractiveness', ability: 'Ability to win' },
+    average: 'Average',
+    averageOf: '{group} average',
+    // Short column headings for a half-width panel; the last line of the key spells them out
+    short: { growthPotential: 'Grow.', criticality: 'Crit.', competitiveIntensity: 'Comp.', references: 'Refs.', expertise: 'Exp.',
+      productFit: 'Fit', average: 'Avg.' },
+    cellAria: '{name}, {measure}: {value}',
+    notProvided: 'not provided',
+    keyScale: '1 = low · 3 = high, higher is more favourable.',
+    keyCompetitive: 'Competitive intensity: 3 = the region leads its competitors.',
+    keyAverage: 'Average: the score each row has on the attractiveness chart.',
+    keyNp: 'Outlined: not provided.',
+    keyShort: 'Grow.: growth potential · Crit.: criticality · Comp.: competitive intensity · Refs.: references · Exp.: expertise · Avg.: average.'
+  },
+
   // US-1.2.9: the details side panel
   details: {
     regionIndustry: '{industry} · {region}',
@@ -122,3 +140,6 @@ Object.assign(window.TAP_CONTENT.text, {
     cumulativeOi: 'Cumulative order intake'
   }
 });
+
+// The grid's name in the chart type menu (D101), added to the list content/text-engine.js starts
+window.TAP_CONTENT.text.chartTypes = Object.assign(window.TAP_CONTENT.text.chartTypes || {}, { grid: 'Grid' });
