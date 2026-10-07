@@ -194,7 +194,19 @@
     // Build a chart (D96), for the checks below.
     function withEleven(fn) { return withApp(function () { return fn(startApp(window.T_WITH_EXTRA())); }); }
 
-    T.test('X-shell-menu-nine', 'Eleven items at 1280, 1024 (125%) and 853 px (150%): every menu item fully visible, no sideways scroll (D72, D96)', function (a) {
+    // D104: ten items (the sample, and the full template, D93) keep one line at 1280 px. With an extra section the
+    // eleventh, Other sections, makes the menu wrap: Build a chart and the Guide go to the second line together,
+    // right-aligned, never the Guide alone. Narrower (125% and 150% zoom) every item stays visible.
+    T.test('X-shell-menu-nine', 'Ten items on one line at 1280 px; eleven wrap with Build a chart and the Guide together on the second line (D96, D104)', function (a) {
+      function tools(root) { return ['build', 'guide'].map(function (id) { return qs('.tap-menu__item[data-view="' + id + '"]', root).getBoundingClientRect(); }); }
+      function top(r) { return Math.round(r.top); }
+      withApp(function () {
+        var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        root.style.width = '1280px';
+        var items = menuItems(root), top0 = top(items[0].getBoundingClientRect());
+        a.equal(items.length, 10, 'ten items on the sample');
+        a.equal(items.filter(function (b) { return top(b.getBoundingClientRect()) !== top0; }).length, 0, 'ten items: one line at 1280 px');
+      });
       withEleven(function (root) {
         ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
         a.equal(menuItems(root).length, 11, 'eleven items in the menu');
@@ -209,11 +221,14 @@
           }).map(function (b) { return b.textContent; });
           a.deepEqual(hidden, [], w + ' px: every item fully visible');
           a.ok(nav.scrollWidth <= nav.clientWidth + 1 && root.scrollWidth <= root.clientWidth + 1, w + ' px: no horizontal scroll');
+          var t = tools(root), plan = items.filter(function (b) { return ['build', 'guide'].indexOf(b.getAttribute('data-view')) < 0; });
+          a.equal(top(t[0]), top(t[1]), w + ' px: Build a chart and the Guide on the same line');
+          a.ok(t[1].left >= t[0].right && t[1].left - t[0].right <= 24, w + ' px: the Guide straight after Build a chart');
+          a.ok(Math.abs(box.right - t[1].right) < 2, w + ' px: the two right-aligned');
           if (w === 1280) {
-            var top0 = Math.round(items[0].getBoundingClientRect().top);
-            a.equal(items.filter(function (b) { return Math.round(b.getBoundingClientRect().top) !== top0; }).length, 0, '1280 px: one line');
-            var ins = qs('.tap-menu__item[data-view="insights"]', root).getBoundingClientRect(), build = qs('.tap-menu__item[data-view="build"]', root).getBoundingClientRect();
-            a.ok(build.left - ins.right > 24, '1280 px: Build a chart stands apart, right of Insights (' + Math.round(build.left - ins.right) + ' px)');
+            var top0 = top(items[0].getBoundingClientRect());
+            a.equal(plan.filter(function (b) { return top(b.getBoundingClientRect()) !== top0; }).length, 0, '1280 px: every plan view on the first line');
+            a.ok(top(t[0]) > top0, '1280 px: the two on the second line');
           }
         });
         a.ok(parseFloat(getComputedStyle(menuItems(root)[0]).fontSize) >= 16, 'menu text at least 16 px');
