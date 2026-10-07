@@ -461,8 +461,11 @@
 
     T.test('X-int-qa10-toolbar', 'QA-10: a half-width panel keeps its toolbar on one row, and every tool keeps a spoken name', function (a) {
       withApp(function (root) {
-        TAP.store.set({ view: 'industry' });
-        ['ind-ratings'].forEach(function (id) {   // since D105 the quadrant is full width; the ratings sit beside the comments
+        // Since D105 every Market coverage chart is full width, so the half-width panels are those of a paired view
+        TAP.store.set({ view: 'customers' });
+        var halves = qsa('.tap-vh-pair .tap-panel', root).map(function (n) { return n.getAttribute('data-report'); });
+        a.ok(halves.length >= 2, 'the Customer growth view pairs its charts (' + halves.join(', ') + ')');
+        halves.forEach(function (id) {
           var p = panelEl(root, id), tops = qsa('.tap-panel__tools > .tap-panel__tool', p).map(function (b) { return Math.round(b.getBoundingClientRect().top); });
           a.ok(p.getBoundingClientRect().width < 44 * 16, id + ' is a half-width panel (' + Math.round(p.getBoundingClientRect().width) + ' px)');
           a.equal(tops.filter(function (t) { return Math.abs(t - tops[0]) > 8; }).length, 0, id + ': one row of tools (' + tops.join(', ') + ')');
@@ -472,7 +475,8 @@
             a.ok((b.getAttribute('aria-label') || b.textContent).trim().length > 2, id + ' ' + act + ': it still has a name');
           });
         });
-        ['ind-tiers', 'ind-quad'].forEach(function (id) {
+        TAP.store.set({ view: 'industry' });
+        ['ind-tiers', 'ind-quad', 'ind-ratings'].forEach(function (id) {
           var wide = panelEl(root, id).querySelector('[data-action="table"] > span:not(.tap-icon)');
           a.ok(wide.getBoundingClientRect().width > 20, id + ': a full-width panel keeps the words');
         });
