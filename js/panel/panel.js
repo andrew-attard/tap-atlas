@@ -104,7 +104,8 @@
     // A choice made in a menu closes it: focus then goes back to the button that opened it, not the page body
     var opener = a0 && a0.closest && p.root.contains(a0) && a0.closest('.tap-panel__pop') ? POP_BUTTON[p.shownPop] : null;
     p.seen = {};   // glossary terms are marked once per panel
-    var b = build(p, s), info = I.get(cmpOf(p, s), p.drill.current()), ok = !b.errors.length && b.res && !b.res.empty;
+    var b = build(p, s), one = TAP.panelBuild.oneIndustry(b.def) && !p.drill.depth();   // a one-industry chart: its industry's insights only
+    var info = I.get(cmpOf(p, s), p.drill.current(), one ? b.industryId : null), ok = !b.errors.length && b.res && !b.res.empty;
     p.drewHl = !!(b.ctx && b.ctx.highlight);
     var big = s.expanded === p.id;
     if (p.root.isConnected) p.wasConnected = true;
