@@ -17,7 +17,7 @@
  *   explain      Three short texts for the explanation panel (US-1.6.5):
  *                  { shows: 'What this shows', read: 'How to read it', lookFor: 'What to look for' }
  *   shape        The data shape (D18), which decides the chart types that make sense:
- *                  'compare' one value per region or category        bar, dot, radar (3 or fewer), table
+ *                  'compare' one value per region or category        bar, dot, radar (3 or fewer), grid (the ratings), table
  *                  'parts'   parts of a whole per region             stackedBar, stacked100, treemap, table,
  *                                                                    bubble (needs x, y and size; drawn by the
  *                                                                    parts builder)
