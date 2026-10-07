@@ -7,7 +7,7 @@
  *           fitBreakdown)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
  *             js/engine/shapes.js, js/engine/scope.js, js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js,
- *             js/ui/explain.js, js/panel/panel-insights.js, js/ui/present.js (Add to running order) (all read at call time)
+ *             js/ui/explain.js, js/panel/panel-insights.js, js/ui/present.js (Add to presentation) (all read at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (state p.st; p.set, p.toggle, p.setType)
  */
 (function (TAP) {
@@ -106,17 +106,19 @@
 
   /* ---------- compare this chart differently (US-1.1.4) ---------- */
 
-  var MODES = ['all', 'one', 'pair', 'set', 'org'];
+  // The bar's four modes, in its order (D99); an old 'pair' is read as a selection of its regions.
+  var MODES = ['all', 'set', 'one', 'org'];
   function regionIds() { return TAP.data.regions().map(function (r) { return r.id; }); }
 
-  // Fills in what a mode needs, from the regions in file order (never a fixed name), as the comparison bar does.
+  // Fills in what a mode needs, from the regions in file order (never a fixed name), as the comparison bar does:
+  // a new selection starts with the focus region alone (D99), and one in use keeps its regions.
   function fill(c, patch) {
+    c = TAP.scope.upgrade(c);
     var ids = regionIds(), n = Object.assign({}, c, patch);
     if (ids.indexOf(n.focus) < 0) n.focus = ids[0] || null;
-    if (n.mode === 'pair' && (ids.indexOf(n.second) < 0 || n.second === n.focus)) n.second = ids.filter(function (x) { return x !== n.focus; })[0] || null;
     if (n.mode === 'set') {
-      var set = ids.filter(function (id) { return (n.set || []).indexOf(id) >= 0; });
-      n.set = set.length >= 2 ? set : ids.filter(function (id) { return id === n.focus; }).concat(ids.filter(function (id) { return id !== n.focus; })).slice(0, 2);
+      var set = c.mode === 'set' ? ids.filter(function (id) { return (n.set || []).indexOf(id) >= 0; }) : [];
+      n.set = set.length ? set : ids.filter(function (id) { return id === n.focus; });
     }
     return n;
   }
@@ -132,12 +134,7 @@
       select('cmp-mode', t('compareMode'), c.mode, MODES.map(function (m) { return { value: m, label: TAP.content.text('compare.modes.' + m) }; }),
         function (m) { setCustom({ mode: m }); })
     ]);
-    if (c.mode === 'one' || c.mode === 'pair') row.appendChild(select('cmp-focus', t('compareFocus'), c.focus, regionOpts(), function (v) { setCustom({ focus: v }); }));
-    if (c.mode === 'pair') {
-      row.appendChild(el('span', null, TAP.content.text('compare.second')));
-      row.appendChild(select('cmp-second', t('compareSecond'), c.second, regionOpts().filter(function (o) { return o.value !== c.focus; }),
-        function (v) { setCustom({ second: v }); }));
-    }
+    if (c.mode === 'one') row.appendChild(select('cmp-focus', t('compareFocus'), c.focus, regionOpts(), function (v) { setCustom({ focus: v }); }));
     if (c.mode === 'set') {
       var chips = el('div', { class: 'tap-panel__chips', role: 'group', 'aria-label': TAP.content.text('compare.setLabel'), 'data-control': 'cmp-set' });
       TAP.data.regions().forEach(function (r) {
@@ -145,7 +142,7 @@
         chips.appendChild(el('button', { type: 'button', class: 'tap-panel__chip', 'data-value': r.id, 'aria-pressed': String(on), onclick: function () {
           var set = c.set.filter(function (x) { return x !== r.id; });
           if (!on) set.push(r.id);
-          if (set.length >= 2) setCustom({ set: set });   // a set needs at least two regions
+          if (set.length) setCustom({ set: set }); else p.say(TAP.content.text('compare.setMin'));   // one region stays (D99)
         } }, [el('span', { class: 'tap-swatch', style: 'background:' + TAP.scope.colorOf(r.id), 'aria-hidden': 'true' }),
           TAP.content.regionName(r), el('span', { class: 'tap-panel__tick', 'aria-hidden': 'true' }, on ? '✓' : '')]));
       });
@@ -181,7 +178,7 @@
     var big = TAP.store.get().expanded === p.id;
     item(big ? 'collapse-menu' : 'expand', big ? 'shrink' : 'expand', t(big ? 'closeExpanded' : 'expand'), function () { p.st.pop = null; p.expand(!big); });
     item('fullscreen', 'fullscreen', t('fullscreen'), function () { p.st.pop = null; p.fullscreen(); p.render(); });
-    // US-3.1.3: keep this chart, as it is on screen, as a step of a running order (js/ui/present-record.js)
+    // US-3.1.3: "Add to presentation" keeps this chart, as it is on screen, as a step (js/ui/present-record.js)
     item('record', 'layers', TAP.content.text('present.add'), function () { p.st.pop = null; p.render(); p.say(TAP.present.fromPanel(p, b)); });
     box.appendChild(el('div', { class: 'tap-panel__sep', role: 'separator' }));
     // Images are of the chart itself, so they are offered on chart views only (US-1.2.10)

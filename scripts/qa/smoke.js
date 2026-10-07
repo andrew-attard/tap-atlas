@@ -79,7 +79,7 @@
   }); }
 
   function modeSteps(v) {
-    ['all', 'one', 'pair', 'set', 'org'].forEach(function (m) {
+    ['all', 'set', 'one', 'org'].forEach(function (m) {
       step(v + ': mode ' + m, function () { click($('.tap-cmp__mode[data-mode="' + m + '"]')); });
       step(v + ': mode ' + m + ' applied', function () {
         expect(state().cmp.mode === m, 'state.cmp.mode is ' + state().cmp.mode);
@@ -99,11 +99,6 @@
           choose(s, opts[opts.length - 1].value);
         });
       }
-      if (m === 'pair') step(v + ': pair, change second', function () {
-        var s = $('[data-picker="second"] select'), opts = $$('option', s);
-        if (opts.length < 2) return 'only one region: no second region to choose';
-        choose(s, opts[1].value);
-      });
       if (m === 'set') step(v + ': set, add a region', function () {
         var off = $$('.tap-cmp__chip[aria-pressed="false"]')[0];
         if (off) click(off);
@@ -298,7 +293,7 @@
     if (normal) welcomeSteps();
     vs.forEach(function (v) {
       goView(v); modeSteps(v);
-      ['all', 'pair', 'one'].forEach(function (m) { panelSteps(v, m); });
+      ['all', 'set', 'one'].forEach(function (m) { panelSteps(v, m); });
       step(v + ': back to all regions after the panels', function () { click($('.tap-cmp__mode[data-mode="all"]')); });
     });
     goView(vs[0]);

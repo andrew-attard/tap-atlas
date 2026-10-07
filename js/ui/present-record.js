@@ -62,11 +62,12 @@
 
   /* ---------- from a panel (the More menu) ---------- */
 
-  // The comparison as a step writes it: only the keys its mode uses.
+  // The comparison as a step writes it: only the keys its mode uses. Never 'pair': an old one vs one is written as
+  // a selection of its regions (D99).
   function cmpOf(c) {
+    c = TAP.scope.upgrade(c);
     var out = { mode: c.mode };
-    if (c.mode === 'one' || c.mode === 'pair') out.focus = c.focus;
-    if (c.mode === 'pair') out.second = c.second;
+    if (c.mode === 'one') out.focus = c.focus;
     if (c.mode === 'set') out.set = (c.set || []).slice();
     if (c.mode === 'one') { out.restAs = c.restAs; out.restAgg = c.restAgg; }
     return out;
@@ -129,11 +130,11 @@
     ' *              or \'none\' for no breakdown on a chart that starts with one',
     ' *   industry   the industry id a one-industry chart shows (the ratings, for example)',
     ' *   cmp        what to compare, as in the comparison bar:',
-    ' *                mode     \'all\' (all regions), \'one\' (one against the rest), \'pair\' (one against one),',
-    ' *                         \'set\' (a chosen set) or \'org\' (the organization total)',
-    ' *                focus    the region id the comparison is about (\'one\' and \'pair\')',
-    ' *                second   the other region id (\'pair\')',
-    ' *                set      a list of at least two region ids (\'set\')',
+    ' *                mode     \'all\' (all regions), \'set\' (selected regions), \'one\' (one against the rest)',
+    ' *                         or \'org\' (all regions combined). An older \'pair\' (one against one, with focus',
+    ' *                         and second) is still read, as a selection of its two regions',
+    ' *                focus    the region id the comparison is about (\'one\')',
+    ' *                set      a list of one region id or more (\'set\')',
     ' *                restAgg  the rest as an \'average\' or a \'total\' (\'one\'); rest is accepted as a shorter name',
     ' *                restAs   the rest \'combined\' into one figure or shown \'individual\'ly (\'one\')',
     ' *              The comparison applies to that step only. Leaving presentation mode restores the screen as it was.',
@@ -186,7 +187,7 @@
     if (s.breakdown) parts.push(t('guide.by', { dim: TAP.content.text(s.breakdown === 'none' ? 'panel.breakdownNone' : 'panel.breakdowns.' + s.breakdown) }));
     var ind = s.industry && TAP.data.industry(s.industry);
     if (ind) parts.push(ind.name);
-    try { if (s.cmp) parts.push(TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, s.cmp))); } catch (e) { /* unknown region */ }
+    try { if (s.cmp) parts.push(TAP.scope.sentence(TAP.scope.upgrade(Object.assign(TAP.store.defaults().cmp, s.cmp)))); } catch (e) { /* unknown region */ }
     return parts.join(' · ');
   }
 

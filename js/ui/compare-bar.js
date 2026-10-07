@@ -1,6 +1,6 @@
 /*
  * File: js/ui/compare-bar.js
- * Purpose: The comparison bar: five modes, only the pickers a mode needs, the plain sentence, an explanation of
+ * Purpose: The comparison bar: four modes (D99), only the pickers a mode needs, the plain sentence, an explanation of
  *          combined figures and the data date (which opens the data sources panel). It writes only state.cmp.
  *          Two rows (D50): the mode and its pickers on one line, then the sentence, the data date and the page-wide
  *          actions the shell hands over (opts.actions: Take the tour, Present; D72).
@@ -13,7 +13,9 @@
 (function (TAP) {
   'use strict';
 
-  var MODES = ['all', 'one', 'pair', 'set', 'org'];
+  // All regions, Selected regions, One vs the rest, All regions combined (D99). One vs one ('pair') is not offered;
+  // an old setting naming it is read as a selection of its regions (TAP.scope.upgrade).
+  var MODES = ['all', 'set', 'one', 'org'];
   var t = function (key, vars) { return TAP.content.text(key, vars); };
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var active = null;   // cleanup for the bar on screen
@@ -29,22 +31,15 @@
   function colour(id) { return TAP.scope.colorOf(id); }
 
   // Switching mode fills in whatever the new mode needs, from the regions in file order (never a fixed name).
+  // A selection starts with the focus region alone, or the first region (D99); one already in use keeps its regions.
   function modePatch(mode) {
     var c = cmp(), all = ids(), p = { mode: mode };
     var focus = known(c.focus) ? c.focus : all[0];
-    if (mode === 'one' || mode === 'pair') p.focus = focus;
-    if (mode === 'pair' && (!known(c.second) || c.second === focus)) p.second = all.filter(function (id) { return id !== focus; })[0] || null;
+    if (mode === 'one') p.focus = focus;
     if (mode === 'set') {
-      var set = inFileOrder((c.set || []).filter(known));
-      if (set.length < 2) set = inFileOrder([focus].concat(all.filter(function (id) { return id !== focus; }).slice(0, 1)));
-      p.set = set;
+      var set = c.mode === 'set' ? inFileOrder((c.set || []).filter(known)) : [];
+      p.set = set.length ? set : inFileOrder([focus]);
     }
-    return p;
-  }
-
-  function focusPatch(id) {
-    var c = cmp(), p = { focus: id };
-    if (c.mode === 'pair' && c.second === id) p.second = ids().filter(function (x) { return x !== id; })[0] || null;
     return p;
   }
 
@@ -83,9 +78,8 @@
     ui.modes = seg(t('compare.modesLabel'), MODES.map(function (m) { return { value: m, label: t('compare.modes.' + m) }; }),
       function (m) { say(); write(modePatch(m)); }, 'tap-cmp__mode');
 
-    ui.focusLabel = el('span', { class: 'tap-cmp__label' });
-    ui.focus = regionSelect(function (id) { say(); write(focusPatch(id)); });
-    ui.second = regionSelect(function (id) { say(); write({ second: id }); });
+    ui.focusLabel = el('span', { class: 'tap-cmp__label' }, t('compare.focus'));
+    ui.focus = regionSelect(function (id) { say(); write({ focus: id }); });
     ui.rest = seg(t('compare.rest'), [{ value: 'individual', label: t('compare.restIndividual') },
       { value: 'average', label: t('compare.restAverage') }, { value: 'total', label: t('compare.restTotal') }],
       function (v) { say(); write(restPatch(v)); });
@@ -101,13 +95,13 @@
     });
     function toggle(id) {
       var set = (cmp().set || []).slice(), i = set.indexOf(id);
-      if (i >= 0 && set.length <= 2) { say(t('compare.setMin')); return; }
+      if (i >= 0 && set.length <= 1) { say(t('compare.setMin')); return; }   // at least one region stays (D99)
       if (i >= 0) set.splice(i, 1); else set.push(id);
       say();
       write({ set: inFileOrder(set) });
     }
 
-    // A chosen set is one button with the count; the regions open below it by click (D50)
+    // Selected regions is one button with the count; the regions open below it by click (D50)
     ui.setCount = el('span', { class: 'tap-cmp__setcount' });
     ui.setPop = el('div', { class: 'tap-cmp__setpop', id: 'tap-cmp-setpop', hidden: true }, [
       ui.chips, status,
@@ -134,7 +128,6 @@
 
     ui.pickers = {
       focus: field('focus', ui.focusLabel, ui.focus),
-      second: field('second', el('span', { class: 'tap-cmp__label' }, t('compare.second')), ui.second),
       rest: field('rest', el('span', { class: 'tap-cmp__label' }, t('compare.rest')), ui.rest),
       set: field('set', null, [ui.setBtn, ui.setPop])
     };
@@ -155,7 +148,7 @@
     TAP.dom.append(root, [
       el('div', { class: 'tap-cmp__row tap-cmp__row--controls' }, [
         el('span', { class: 'tap-cmp__title' }, t('compare.label')), ui.modes,
-        ui.pickers.focus, ui.pickers.second, ui.pickers.rest, ui.pickers.set
+        ui.pickers.focus, ui.pickers.rest, ui.pickers.set
       ]),
       el('div', { class: 'tap-cmp__row tap-cmp__row--sentence' }, [
         el('p', { class: 'tap-cmp__say' }, [ui.sentence, ui.explain]), ui.date, actions || null, ui.pop
@@ -194,16 +187,11 @@
   function render(ui) {
     var c = cmp();
     press(ui.modes, c.mode);
-    // With one region there is no second region and no rest to pick
-    var others = ids().length > 1;
-    var need = { focus: c.mode === 'one' || c.mode === 'pair', second: c.mode === 'pair' && others, rest: c.mode === 'one' && others,
-      set: c.mode === 'set' };
+    // With one region there is no rest to pick
+    var need = { focus: c.mode === 'one', rest: c.mode === 'one' && ids().length > 1, set: c.mode === 'set' };
     Object.keys(need).forEach(function (k) { ui.pickers[k].hidden = !need[k]; });
     if (!need.set) ui.showSet(false);
-    TAP.dom.text(ui.focusLabel, t(c.mode === 'one' ? 'compare.focus' : 'compare.region'));
     if (c.focus) ui.focus.value = c.focus;
-    TAP.dom.qsa('option', ui.second).forEach(function (o) { o.disabled = o.value === c.focus; });
-    if (c.second) ui.second.value = c.second;
     press(ui.rest, restValue(c));
     TAP.dom.text(ui.setCount, t('compare.setButton', { n: (c.set || []).length, total: ids().length }));
     TAP.dom.qsa('.tap-cmp__chip', ui.chips).forEach(function (b) {
@@ -220,11 +208,12 @@
     if (note) TAP.dom.append(ui.pop, [el('h3', { class: 'tap-cmp__pop-title' }, note.label), el('p', null, note.text)]);
   }
 
-  // A comparison can name regions the data doesn't have (an opening state from the address bar, or other data).
-  // Fill in what the mode needs from the data instead, so the pickers and the sentence agree.
+  // A comparison can name regions the data doesn't have (an opening state from the address bar, or other data), or
+  // the old one vs one. Fill in what the mode needs from the data instead, so the pickers and the sentence agree.
   function repair() {
+    if (cmp().mode === 'pair') write(TAP.scope.upgrade(cmp()));
     var c = cmp(), p = modePatch(c.mode), fix = {};
-    ['focus', 'second', 'set'].forEach(function (k) {
+    ['focus', 'set'].forEach(function (k) {
       if (k in p && JSON.stringify(p[k]) !== JSON.stringify(c[k])) fix[k] = p[k];
     });
     if (Object.keys(fix).length) write(fix);

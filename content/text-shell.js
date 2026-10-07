@@ -16,19 +16,18 @@ Object.assign(window.TAP_CONTENT.text, {
   compare: {
     label: 'Compare',
     modesLabel: 'Comparison mode',
-    modes: { all: 'All regions', one: 'One vs the rest', pair: 'One vs one', set: 'Chosen set', org: 'Organization total' },
+    // Four modes, in the bar's order (D99). One vs one is no longer offered; old settings read it as a selection.
+    modes: { all: 'All regions', set: 'Selected regions', one: 'One vs the rest', org: 'All regions combined' },
     focus: 'Focus region',
-    region: 'Region',
-    second: 'against',
     // The others in one vs the rest, as one control: one by one, or combined as their average or total (D50)
     rest: 'The others',
     restIndividual: 'Individually',
     restAverage: 'Average',
     restTotal: 'Total',
-    setLabel: 'Regions in the set',
+    setLabel: 'Selected regions',
     setButton: '{n} of {total} regions',
     setDone: 'Done',
-    setMin: 'A set needs at least two regions.',
+    setMin: 'At least one region stays selected, so the charts have something to show. Select another region first.',
     explain: 'What the combined figure means',
     dataDate: 'Data: {date}'
   },
