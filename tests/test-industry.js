@@ -990,15 +990,13 @@
   function heading(root) { return root.querySelector('.tap-ind-comments__title').textContent; }
 
   T.suite('industry-comments', function () {
-    T.test('X-industry-view-layout', 'D105: the tier grid and the quadrant at full width, then the ratings and the commentary side by side', function (a) {
+    T.test('X-industry-view-layout', 'D105: the tier grid, the quadrant, the ratings and then the commentary, each at full width', function (a) {
       withView(function (root) {
         var ids = Array.prototype.map.call(root.querySelectorAll('.tap-panel'), function (p) { return p.getAttribute('data-report'); });
         a.deepEqual(ids, ['ind-tiers', 'ind-quad', 'ind-ratings'], 'three panels in order');
-        var pair = root.querySelector('.tap-ind__pair');
-        a.equal(pair.children.length, 2, 'two side by side, never more');
-        a.equal(pair.querySelectorAll('.tap-panel').length, 1, 'the ratings chart');
-        a.ok(pair.querySelector('.tap-ind-comments'), 'and the commentary beside it');
-        a.equal(root.querySelectorAll('.tap-ind__slot--wide').length, 2, 'the tier grid and the quadrant take the full width');
+        a.equal(root.querySelectorAll('.tap-ind__slot--wide').length, 3, 'all three charts take the full width');
+        var all = Array.prototype.slice.call(root.querySelectorAll('.tap-panel, .tap-ind-comments'));
+        a.ok(/tap-ind-comments/.test(all[all.length - 1].className), 'the commentary comes last');
       });
     });
 
@@ -1476,17 +1474,18 @@
     function pick(sel, id) { sel.value = id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
     function quadChart(root) { return window.echarts.getInstanceByDom(root.querySelector('.tap-panel[data-report="ind-quad"] .tap-panel__chart')); }
 
-    T.test('X-d105-industry-layout', 'Two parts in order, with their headings: all industries (tier grid, quadrant), then one industry (ratings beside the comments)', function (a) {
+    T.test('X-d105-industry-layout', 'Two parts in order, with their headings: all industries (tier grid, quadrant), then one industry (the ratings, the comments below)', function (a) {
       withView(function (root) {
         var parts = Array.prototype.map.call(root.querySelectorAll('.tap-ind__part'), function (p) { return p.getAttribute('data-part'); });
         a.deepEqual(parts, ['all', 'one'], 'All industries, then One industry');
         a.equal(partOf(root, 'all').querySelector('.tap-ind__part-title').textContent, 'All industries');
         a.equal(partOf(root, 'one').querySelector('.tap-ind__part-title').textContent, 'One industry');
         a.deepEqual(reportsIn(partOf(root, 'all')), ['ind-tiers', 'ind-quad'], 'the tier grid, then the attractiveness chart');
-        var pair = partOf(root, 'one').querySelector('.tap-ind__pair');
-        a.deepEqual(reportsIn(pair), ['ind-ratings'], 'the ratings in the pair');
-        a.ok(pair.querySelector('.tap-ind-comments'), 'beside the leaders’ comments');
-        a.equal(pair.children.length, 2, 'two side by side, never more (D24)');
+        var one = partOf(root, 'one'), r = one.querySelector('.tap-panel[data-report="ind-ratings"]'), c = one.querySelector('.tap-ind-comments');
+        a.deepEqual(reportsIn(one), ['ind-ratings'], 'the ratings chart in the part');
+        a.ok(c && r.getBoundingClientRect().bottom <= c.getBoundingClientRect().top, 'the leaders’ comments below it');
+        a.ok(Math.abs(r.getBoundingClientRect().width - one.getBoundingClientRect().width) < 2, 'the ratings take the full row');
+        a.ok(Math.abs(c.getBoundingClientRect().width - one.getBoundingClientRect().width) < 2, 'and so do the comments');
       });
     });
 
