@@ -6,7 +6,7 @@
  *          Headings of both carry the value kind glyph and word, with a one-line key underneath (US-2.6.4).
  * Provides: TAP.panelTable (render, list, toText, clipboard)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js, js/core/sources.js,
- *             js/panel/panel-chart.js (html, at call time)
+ *             js/panel/panel-chart.js (html, at call time), js/ui/source-tip.js (the source column's data icon, D100)
  * Used by: js/panel/panel.js
  */
 (function (TAP) {
@@ -177,7 +177,8 @@
       tbody.appendChild(el('tr', { class: isFocus ? 'is-focus' : null, 'data-entity': r.entityId }, cols.map(function (c, i) {
         return el('td', { class: (c.align === 'right' ? 'num' : '') + (c.key === SRC ? ' tap-panel__src' : '') || null }, [
           i === 0 && isFocus ? el('span', { class: 'tap-panel__focus-mark', title: t('focusRow') }, ['▸ ', el('span', { class: 'tap-sr' }, t('focusRow') + ': ')]) : null,
-          cellText(r, c)
+          // On screen a file address is the data icon (D100); a combined figure keeps its words; copied text keeps both
+          c.key === SRC ? TAP.sourceTip.icon(r.src, null, { label: cellText(r, cols[0]) }) || cellText(r, c) : cellText(r, c)
         ]);
       })));
     });

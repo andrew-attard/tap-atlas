@@ -65,7 +65,6 @@
 .tap-pf-word { display: flex; flex-direction: column; gap: var(--tap-sp-1); }
 .tap-pf-word__kind { font-size: var(--tap-fs-label); font-weight: 600; color: var(--tap-muted); }
 .tap-pf-word__text { margin: 0; font-size: var(--tap-fs-body); }
-.tap-pf-word__src { font-size: var(--tap-fs-label); color: var(--tap-muted); }
 
 /* ---------- "Open profile" on an Overview card ---------- */
 .tap-ov-card__profile {

@@ -78,6 +78,7 @@ Object.assign(window.TAP_CONTENT.text, {
     yearly: { arr: 'ARR', services: 'Services', incrementalArr: 'Incremental ARR', servicesOi: 'Services order intake' },
     sourceRow: 'Source row',
     rowText: '{where} › row {row}',
+    rowOnly: 'Row {row}',
     missing: 'Row {row} of {region} is not in the data',
     thresholdsHead: 'Segment thresholds: {regions}',
     thresholdsTitle: '{region}: segment thresholds',

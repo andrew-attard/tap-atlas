@@ -8,7 +8,7 @@
  *          industry filter, details) updates the success factors panel.
  * Provides: view 'newBusiness' (registered with TAP.views), TAP.newBusinessView (layout, factors)
  * Depends on: js/ui/view-head.js, js/panel/panel.js, js/engine/registry.js, js/engine/scope.js, js/core/dom.js,
- *             js/core/content.js, js/core/store.js, js/core/data.js, js/core/sources.js, js/core/format.js,
+ *             js/core/content.js, js/core/store.js, js/core/data.js, js/ui/source-tip.js, js/core/format.js,
  *             js/theme.js (all at call time)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  * Owner: NB stream (#197, #202)
@@ -63,17 +63,17 @@
   }
 
   function entry(f) {
-    var where = TAP.sources.address(f.src), label = [f.subVertical, f.market].filter(Boolean).join(' · ');
+    var name = TAP.content.regionName(TAP.data.region(f.regionId)), label = [f.subVertical, f.market].filter(Boolean).join(' · ');
     return el('article', { class: 'tap-nbf__entry', 'data-region': f.regionId }, [
       el('span', { class: 'tap-nbf__bar', style: 'background:' + f.color, 'aria-hidden': 'true' }),
       el('div', { class: 'tap-nbf__body' }, [
         el('div', { class: 'tap-nbf__head' }, [
-          el('span', { class: 'tap-nbf__name' }, TAP.content.regionName(TAP.data.region(f.regionId))),
+          el('span', { class: 'tap-nbf__name' }, name),
           label ? el('span', { class: 'tap-nbf__where' }, label) : null,
-          f.focus ? el('span', { class: 'tap-nbf__focus' }, t('nbFactors.focus')) : null
+          f.focus ? el('span', { class: 'tap-nbf__focus' }, t('nbFactors.focus')) : null,
+          TAP.sourceTip.icon(f.src, 'IN', { label: [name, label].filter(Boolean).join(' · ') })   // where it was written (D100)
         ]),
-        el('p', { class: 'tap-nbf__text' }, f.text),
-        el('span', { class: 'tap-nbf__src' }, TAP.format.kind('IN').text + (where ? ' · ' + where.text : ''))
+        el('p', { class: 'tap-nbf__text' }, f.text)
       ])
     ]);
   }

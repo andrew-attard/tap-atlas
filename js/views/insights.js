@@ -5,7 +5,7 @@
  *          session" with an "N hidden · Show hidden" note (US-1.7.11).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
- *             js/core/sources.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
+ *             js/core/sources.js, js/ui/source-tip.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
  *             js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails),
  *             config/settings.js (family weights)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
@@ -158,18 +158,25 @@
       else if (x.fallback === 'details') TAP.layers.openDetails(x.highlight);
     }
 
+    // Each figure carries the data icon for where it comes from (D100); a source no figure shows stays listed:
+    // by region with its icon, or in words when this app worked it out.
     function details(x) {
+      var figs = x.figures || [], keys = figs.map(function (f) { return JSON.stringify((f.cell || {}).src || null); });
+      var rest = (x.sources || []).filter(function (s) { return s && keys.indexOf(JSON.stringify(s)) < 0; });
       return el('div', { class: 'tap-ins__details', id: 'tap-ins-d-' + x.id.replace(/[^\w-]/g, '_') }, [
         el('h4', { class: 'tap-ins__dh' }, t('figures')),
-        el('dl', { class: 'tap-ins__figs' }, (x.figures || []).map(function (f) {
-          return [el('dt', null, f.label), el('dd', null, figureValue(f))];
+        el('dl', { class: 'tap-ins__figs' }, figs.map(function (f) {
+          var c = f.cell || {};
+          return [el('dt', null, f.label), el('dd', null, el('span', { class: 'tap-ins__fig' },
+            [figureValue(f), TAP.sourceTip.icon(c.src, c.kind, { label: f.label })]))];
         }).reduce(function (a, b) { return a.concat(b); }, [])),
         el('h4', { class: 'tap-ins__dh' }, t('rule')),
         el('p', { class: 'tap-ins__rule' }, x.description || ''),
-        el('h4', { class: 'tap-ins__dh' }, t('sources')),
-        el('ul', { class: 'tap-ins__srcs' }, (x.sources || []).map(function (s) {
-          return el('li', null, [s.kind ? TAP.format.kind(s.kind).text + ' · ' : '', addressOf(s)]);
-        }))
+        rest.length ? el('h4', { class: 'tap-ins__dh' }, t('sources')) : null,
+        rest.length ? el('ul', { class: 'tap-ins__srcs' }, rest.map(function (s) {
+          var tip = TAP.sourceTip.icon(s, s.kind), reg = s.regionId && TAP.data.region(s.regionId);
+          return el('li', null, tip ? [reg ? TAP.content.regionName(reg) : '', tip] : [s.kind ? TAP.format.kind(s.kind).text + ' · ' : '', addressOf(s)]);
+        })) : null
       ]);
     }
 

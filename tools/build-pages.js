@@ -42,14 +42,14 @@ const APP = [
   'js/panel/panel-chart.js', 'js/panel/panel-table.js', 'js/panel/panel-menus.js', 'js/panel/panel-export.js',
   'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel-build.js', 'js/panel/panel.js',
   'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
-  'js/ui/glossary.js', 'js/ui/explain.js', 'js/ui/tour.js',
+  'js/ui/glossary.js', 'js/ui/source-tip.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
   'js/views/customers.js', 'js/views/partners.js', 'js/views/outlook.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/ui/custom-builder.js', 'js/views/build.js', 'js/views/guide.js',
   'js/ui/app.js'
 ];
 
-const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.css', 'css/panel.css',
+const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.css', 'css/source-tip.css', 'css/panel.css',
   'css/overview.css', 'css/industry.css', 'css/pages.css', 'css/view-head.css', 'css/newbusiness.css', 'css/customers.css',
   'css/profile.css', 'css/themes.css', 'css/present.css', 'css/custom.css', 'css/outlook.css'];
 

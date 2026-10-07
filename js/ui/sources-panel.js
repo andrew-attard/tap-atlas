@@ -99,6 +99,8 @@
     TAP.dom.append(root, [
       el('p', { class: 'tap-src__kicker' }, t(meta.isSample ? 'sourcesPanel.kindSample' : 'sourcesPanel.kindPlan', { v: meta.schemaVersion })),
       el('p', { class: 'tap-src__summary' }, t(n === 1 ? 'sourcesPanel.summaryOne' : 'sourcesPanel.summary', { date: TAP.format.date(TAP.sources.dataDate()), n: n })),
+      // How to find a single figure's file, sheet and cells: the data icon beside it (D100)
+      el('p', { class: 'tap-src__how' }, [TAP.icons.svg('data', { size: 18 }), el('span', null, t('sourcesPanel.iconHelp'))]),
       TAP.sources.datesDiffer()
         ? el('p', { class: 'tap-src__differ', role: 'note' }, [TAP.icons.svg('warning', { size: 18 }), t('sourcesPanel.datesDiffer')])
         : null

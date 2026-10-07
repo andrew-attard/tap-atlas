@@ -2,7 +2,7 @@
  * File: js/reports/themes.js
  * Purpose: Finds recurring themes in commentary and success factors with the keyword rules in config/comment-themes.js, and draws the themes report (US-2.5.1).
  * Provides: TAP.themes (all, match, config), builder 'themes'
- * Depends on: config/comment-themes.js, content/text-themes.js, js/core/data.js, js/core/content.js, js/core/sources.js,
+ * Depends on: config/comment-themes.js, content/text-themes.js, js/core/data.js, js/core/content.js, js/ui/source-tip.js,
  *             js/core/dom.js, js/engine/scope.js, js/engine/shapes.js (drawing kit), js/engine/registry.js
  * Used by: js/insights/rules-themes.js, config/reports-themes.js (nb-themes), js/panel/panel.js
  * Owner: INSIGHTS2 stream (#72)
@@ -70,7 +70,6 @@
 
   function rname(id) { return TAP.content.regionName(TAP.data.region(id)); }
   function industries(ids) { return TAP.format.list(ids.map(function (id) { var d = TAP.data.industry(id); return d ? d.name : id; })); }
-  function address(src) { try { return TAP.sources.address(src).text || ''; } catch (e) { return ''; } }
   function focusOf(cmp) { return cmp && (cmp.mode === 'one' || cmp.mode === 'pair') ? cmp.focus : null; }
 
   function hlTheme(ctx) { return ctx.highlight && ctx.highlight.reportId === ctx.def.id ? ctx.highlight.theme || null : null; }
@@ -106,8 +105,9 @@
       return '<div class="tap-themes__region' + (g.regionId === focus ? ' is-focus' : '') + '" data-region="' + esc(g.regionId) + '">' +
         '<h4 class="tap-themes__name">' + esc(rname(g.regionId)) + '</h4><ul class="tap-themes__list">' + g.quotes.map(function (q) {
           var from = t('from.' + q.field, { industry: industries(q.industryIds) }) + (q.rows > 1 ? ' (' + t('rows', { n: q.rows }) + ')' : '');
-          return '<li class="tap-themes__quote"><q>' + esc(q.text) + '</q> <span class="tap-themes__src">' + esc(from) + ' · ' +
-            esc(address(q.src)) + '</span></li>';
+          // Where in the workbook it was written sits behind the data icon (D100)
+          return '<li class="tap-themes__quote"><q>' + esc(q.text) + '</q> <span class="tap-themes__src">' + esc(from) + '</span>' +
+            TAP.sourceTip.html(q.src, 'IN', { label: from }) + '</li>';
         }).join('') + '</ul></div>';
     }).join('') + '</section>';
   }

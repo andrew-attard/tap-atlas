@@ -47,6 +47,8 @@ Object.assign(window.TAP_CONTENT.text, {
   // The data sources panel (US-1.1.5). Import notes appear here and nowhere else.
   sourcesPanel: {
     title: 'Data sources',
+    // D100: addresses sit behind the data icon, so the panel says how to find them
+    iconHelp: 'Where a figure comes from: select the data icon beside it to see the file, sheet and cells it was read from, and whether it is a leader’s input, a system figure or calculated in the workbook.',
     kindSample: 'Sample data · data format {v}',
     kindPlan: 'Plan data · data format {v}',
     summary: 'Data: {date} · {n} import notes',
@@ -59,6 +61,13 @@ Object.assign(window.TAP_CONTENT.text, {
     noNotes: 'No import notes.',
     other: 'Other things to check',
     failures: 'Insight rules that were skipped'
+  },
+
+  // The data icon beside a figure and its popover (D100, js/ui/source-tip.js)
+  sourceTip: {
+    label: 'Where this comes from',
+    labelOf: 'Where this comes from: {label}',
+    close: 'Close'
   },
 
   // Start-up screens (US-1.1.1, US-1.8.2). They replace the views when the data can't be used.

@@ -8,7 +8,7 @@
  *          charts above mark it.
  * Provides: view 'industry' (registered with TAP.views), TAP.industryView (current)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/store.js, js/core/content.js, js/core/format.js,
- *             js/core/sources.js, js/core/data.js, js/theme.js, js/engine/scope.js, js/engine/measures.js,
+ *             js/ui/source-tip.js, js/core/data.js, js/theme.js, js/engine/scope.js, js/engine/measures.js,
  *             js/reports/tier-grid.js (TAP.tierStats), js/panel/panel.js
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
@@ -51,18 +51,18 @@
     var cell = TAP.measures.get('ind.commentary')(r.id, { industryId: industryId });
     if (cell.state !== 'value' || cell.v == null || String(cell.v).trim() === '') return null;   // blanks are simply not listed
     var tier = TAP.measures.get('ind.tier')(r.id, { industryId: industryId });
-    var ok = tier.state === 'value', where = TAP.sources.address(cell.src);
+    var ok = tier.state === 'value', name = TAP.content.regionName(TAP.data.region(r.id));
     return el('article', { class: 'tap-ind-comment', 'data-region': r.id }, [
       el('span', { class: 'tap-ind-comment__bar', style: 'background:' + r.color, 'aria-hidden': 'true' }),
       el('div', { class: 'tap-ind-comment__body' }, [
         el('div', { class: 'tap-ind-comment__head' }, [
-          el('span', { class: 'tap-ind-comment__name' }, TAP.content.regionName(TAP.data.region(r.id))),
+          el('span', { class: 'tap-ind-comment__name' }, name),
           el('span', { class: 'tap-ind-comment__tier ' + (ok ? 'tap-ind-comment__tier--t' + tier.v : 'tap-ind-comment__tier--np') },
             ok ? TAP.format.tier(tier.v) : t('states.notProvided')),
-          r.focus ? el('span', { class: 'tap-ind-comment__focus' }, t('commentary.focus')) : null
+          r.focus ? el('span', { class: 'tap-ind-comment__focus' }, t('commentary.focus')) : null,
+          TAP.sourceTip.icon(cell.src, cell.kind, { label: name })   // where it was written (D100)
         ]),
-        el('p', { class: 'tap-ind-comment__text' }, String(cell.v)),
-        el('span', { class: 'tap-ind-comment__src' }, TAP.format.kind(cell.kind).text + (where ? ' · ' + where.text : ''))
+        el('p', { class: 'tap-ind-comment__text' }, String(cell.v))
       ])
     ]);
   }
