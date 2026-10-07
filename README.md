@@ -41,7 +41,7 @@ js/insights/      the insight engine and one rule file per family
 js/panel/         the report panel every chart sits in
 js/ui/            the page frame, comparison bar, side panels, start-up screens, tour, presentation mode, Build a chart
 js/views/         the views: Overview, Market coverage, New business, Customer growth, Partners, Other sections, Regions, Insights, Guide
-config/           settings, views, report definitions, insight rules, the running order (no code, only values)
+config/           settings, views, report definitions, insight rules, the presentation (no code, only values)
 content/          every word on screen: glossary, Guide text, wording files, organization starter
 css/              one base stylesheet and one per area
 data/             the data files
@@ -154,7 +154,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/tour.js` | The optional welcome tour |
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
-| `js/ui/present*.js` | Presentation mode: steps through the running order full screen, and records a running order from the screen |
+| `js/ui/present*.js` | Presentation mode: plays a presentation full screen, one step at a time, and records one from the screen ("Add to presentation") |
 | `js/ui/custom-builder.js` | "Build a chart" on the Guide: pickers for measure, dimension and chart type, the custom chart and the session list |
 | `js/views/overview.js` | The Overview: headline, region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards |
@@ -167,7 +167,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/insights.js` | The Insights page: every insight, ranked and grouped |
 | `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
 | `js/views/outlook.js` | Outlook: the plans against the strategic plan and the base year, pipeline coverage, revenue and product categories |
-| `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (running order, Build a chart), glossary |
+| `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (Your presentation, Build a chart), glossary |
 
 ### `config/`
 
@@ -186,7 +186,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/profile.js` | The reports a region profile shows, in order |
 | `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, on/off switch, where it attaches |
-| `config/running-order.js` | The running order for presentation mode: the meeting's steps, in order |
+| `config/running-order.js` | The presentation file: the set list of charts that **Present** plays, in order, each with its own comparison and highlight (D97) |
 
 ### `content/` and `css/`
 
@@ -297,7 +297,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | Organization wording | `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and the `content/text-*.js` file that holds the phrase (prompt 3) | The data sources panel in `index.html` shows no organization message |
 | A data file error | `docs/DATA-CONTRACT.md`, `js/core/check.js`, `content/text-data.js`, the import's files, and the copied problem list (prompt 6) | `index.html` opens; read the data sources panel |
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
-| The running order for a meeting | `config/running-order.js`, `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | **Present** in `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
+| The presentation for a meeting | the presentation file (`config/running-order.js`), `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | **Present** in `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
 | Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or the Guide's "Build a chart" |
 | The full template's parts in the import | `docs/IMPORT-BRIEF.md` (section 4), `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-p4.js`, `js/core/check-p4.js`, `content/text-data.js`, the import's files (prompt 16) | The data sources panel in `index.html`, then the full template checks in `docs/REAL-DATA-CHECKLIST.md` |
 | Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, the import's files (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |

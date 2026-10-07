@@ -38,7 +38,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 | D48 | Missing values in three states: zero, not provided, not applicable | A blank cell is never shown as zero |
 | D57 | `v0.1.0` stays the demo and handover build; the Data Contract only grows, and additions never change its version | An import built for the first demo keeps working through later phases |
 | D59, D67 | The portfolio edition is built in the repository but not published | Publishing is the project owner's call |
-| D65, D66, D68 | Running order in configuration; unknown template sections as optional extra sections; custom charts limited by measure metadata | Repeatable demos, no guessing at the real template, and no misleading charts such as summed rates |
+| D65, D66, D68 | The presentation in configuration; unknown template sections as optional extra sections; custom charts limited by measure metadata | Repeatable demos, no guessing at the real template, and no misleading charts such as summed rates |
 
 ## The delivery method
 
@@ -55,7 +55,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 |---|---|---|---|---|
 | 1, `v0.1.0` | The app shell and the comparison bar, the report panel and engine, sample data with planted cases, the Overview and Market coverage views, insights in six rule families, the Guide, glossary and tour, the contract check, and the handover documents for the import | 58 (49 Must, 9 Should) | 270 | 635 automated checks pass in Chrome and Edge; the QA smoke run of 281 steps with no exceptions |
 | 2, `v0.2.0` | The New business, Customer growth and Partners views, the region profile, list reports, drill-down, a dot plot and breakdowns, three more insight families, and reading tips | 37 (22 Must, 13 Should, 2 Could) | 245 | 969 automated checks pass in Chrome and Edge; the QA smoke run of 724 steps per browser with no exceptions |
-| 3, `v0.3.0` | Presentation mode with a running order, custom charts, extra template sections, the handover pack, and this portfolio edition | 18 (10 Must, 7 Should, 1 Could) | 118 | 1,079 automated checks pass in Chrome and Edge; QA scripts on every view: no console errors, nothing below 13 px, no web requests; smoke test with no failures |
+| 3, `v0.3.0` | Presentation mode with a presentation file, custom charts, extra template sections, the handover pack, and this portfolio edition | 18 (10 Must, 7 Should, 1 Could) | 118 | 1,079 automated checks pass in Chrome and Edge; QA scripts on every view: no console errors, nothing below 13 px, no web requests; smoke test with no failures |
 
 In total: 113 stories, 633 test cases and 74 decisions, built in four days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2 and about 25 in Phase 3.
 

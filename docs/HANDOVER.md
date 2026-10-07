@@ -12,7 +12,7 @@ TAP Atlas shows every region's territory account plan side by side. Each regiona
 - **One comparison for every chart:** all regions, one against the rest, one against one, a chosen set, or the organization total.
 - **Every figure traces to its source:** file › sheet › cell, through the details panel and the data sources panel. Every chart has a table view.
 - **Insights:** rules in configuration flag observations worth discussing, worded neutrally and ranked.
-- **For presenting:** large type, no hover-only details, no animation, a running order for presentation mode (`config/running-order.js`), and "Build a chart" on the Guide for charts made in the meeting.
+- **For presenting:** large type, no hover-only details, no animation, presentation mode, which plays a set list of charts full screen, one step at a time, from the presentation file (`config/running-order.js`), and "Build a chart" on the Guide for charts made in the meeting.
 - **No server:** plain HTML, CSS and JavaScript opened from the folder by double-click, in Chrome or Edge. Nothing loads from the web.
 
 ## The two editions
@@ -29,7 +29,7 @@ Both pages load the same app scripts in the same order; only the data and organi
 | Folder | Holds |
 |---|---|
 | `js/` | The app's code: core, engine (figures and charts), reports, insights, panel, screens and views |
-| `config/` | Values only: settings and weights, views, report definitions, insight rules, the running order |
+| `config/` | Values only: settings and weights, views, report definitions, insight rules, the presentation |
 | `content/` | Every word on screen: glossary, Guide text, wording per area, the organization layer starter |
 | `css/` | One base stylesheet and one per area. Colours and sizes come from `js/theme.js` |
 | `data/` | The data files |
@@ -92,7 +92,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | A report on the region profile | `config/profile.js` | 9 |
 | A column on a list | the list's `config/reports-*.js` file, `js/engine/rows.js` | 10 |
 | Another template section | `docs/EXTENDING-TEMPLATE.md` | 11 to 13 |
-| The running order for a meeting | `config/running-order.js` | 14 |
+| The presentation for a meeting | the presentation file | 14 |
 | Keeping a chart built in the meeting, or offering a measure in "Build a chart" | `js/engine/custom.js` and the view's `config/reports-*.js` file | 15 |
 | Wording | the `content/text-*.js` file that holds the phrase | none needed |
 
@@ -115,7 +115,7 @@ These are open on purpose: each needs the real data, the real template or a deci
 
 Other limits by design:
 
-- **Nothing is written to the folder.** Charts built in the meeting are kept for the session only (six at most). A running order recorded from the screen is copied as text and pasted into `config/running-order.js` by hand.
+- **Nothing is written to the folder.** Charts built in the meeting are kept for the session only (six at most). A presentation made from the screen ("Add to presentation" in a chart's More menu, listed under "Your presentation" in the Guide) is kept in that browser only; "Copy as file text" gives the text to paste over the presentation file by hand.
 - **Small choices are remembered per browser** (chart types, the tour), through the browser's storage. Another laptop starts fresh.
 - **Light theme only, no animation,** for a shared screen (D24).
 - **Region colours repeat after eight regions**; the data sources panel then shows a warning.
