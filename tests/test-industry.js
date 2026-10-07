@@ -1009,8 +1009,10 @@
         a.match(b.textContent, /Region B/, 'labelled by region');
         a.match(b.textContent, /Opportunistic only\./, 'the comment');
         a.match(b.textContent, /Tier 3/, 'the tier');
-        a.ok(b.textContent.indexOf('Region B plan.xlsx › 1. Market Coverage › N12') >= 0, 'the source cell');
-        a.ok(b.textContent.indexOf(TAP.format.kind('IN').text) >= 0, 'the kind of value');
+        a.ok(b.textContent.indexOf('plan.xlsx') < 0, 'no address as text (D100)');
+        var tip = window.T_TIP_TEXT(b.querySelector('.tap-srctip'));
+        a.ok(tip.indexOf('Region B plan.xlsx › 1. Market Coverage › N12') >= 0, 'the source cell, behind the data icon');
+        a.ok(tip.indexOf(TAP.format.kind('IN').text) >= 0, 'the kind of value');
         TAP.store.set({ industry: 'ind2' });
         a.equal(comments(root).length, 0, 'nobody commented on ind2: nothing listed');
         a.ok(!/no comment|0 comments|not commented/i.test(root.querySelector('.tap-ind-comments').textContent), 'and no "no comment" label or count');

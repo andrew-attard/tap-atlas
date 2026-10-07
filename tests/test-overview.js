@@ -159,18 +159,19 @@
     T.test('X-overview-card-source', 'Every card figure names its source and shows it when clicked (TPV-TC-092)', function (a) {
       var el = cards(), f = fig(el, 'alpha', 'nb.arr');
       var where = TAP.sources.address(TAP.measures.get('nb.arr')('alpha', {}).src).text;
-      a.ok(f.getAttribute('title').indexOf(where) >= 0, 'the title names file › sheet › cell');
+      a.ok(f.getAttribute('title').indexOf(where) < 0, 'the title leaves the address to the data icon (D100)');
       qsa('[data-measure]', card(el, 'alpha')).forEach(function (n) {
-        a.ok(!!n.getAttribute('title'), n.getAttribute('data-measure') + ' has a source title');
+        a.ok(!!n.getAttribute('title'), n.getAttribute('data-measure') + ' has a title');
       });
       spy(TAP.layers, 'openDetails', function (details) {
         spy(TAP.layers, 'open', function (calls) {
           f.click();
           a.equal(details.length, 0, 'a figure click does not open the card details');
           a.equal(calls.length, 1, 'a side panel opened');
-          var body = document.createElement('div');
+          var body = T.dom.mount();
           calls[0][1].render(body);
-          a.ok(txt(body).indexOf(where) >= 0, 'the panel shows the source address');
+          a.ok(txt(body).indexOf(where) < 0, 'no address as text (D100)');
+          a.ok(window.T_TIP_TEXT(qs('.tap-srctip', body)).indexOf(where) >= 0, 'the panel’s data icon shows the source address');
           a.ok(txt(body).indexOf(TAP.format.moneyExact(2255)) >= 0, 'and the exact value');
         });
       });
@@ -481,14 +482,15 @@
           a.equal(calls.length, 1, 'a side panel opens');
           a.equal(calls[0][0], 'headline-sources', 'the headline sources panel');
           a.ok(!!calls[0][1].title, 'with a title');
-          var body = document.createElement('div');
+          var body = T.dom.mount();
           calls[0][1].render(body);
-          var s = txt(body);
+          var s = txt(body), tips = qsa('.tap-srctip', body).map(window.T_TIP_TEXT).join(' | ');
           a.ok(s.indexOf(TAP.format.moneyExact(window.SAMPLE_EXPECT.headline.ambArr)) >= 0, 'the exact ambition');
           a.ok(s.indexOf(TAP.sources.address(TAP.measures.combined('amb.arr', { kind: 'combined', regionIds: window.SAMPLE_EXPECT.regions, how: 'total' }, {}).src).text) >= 0,
             'how the ambition was combined');
           var edu = TAP.measures.get('ind.tier')('na', { industryId: 'education' });
-          a.ok(s.indexOf(TAP.sources.address(edu.src).text) >= 0, 'the file › sheet › cell behind the Tier 2 count');
+          a.ok(s.indexOf(TAP.sources.address(edu.src).text) < 0, 'no address as text (D100)');
+          a.ok(tips.indexOf(TAP.sources.address(edu.src).text) >= 0, 'the file › sheet › cell behind the Tier 2 count, behind its data icon');
         });
       } finally { m.handle.destroy(); }
     });

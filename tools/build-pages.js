@@ -56,7 +56,7 @@ const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.cs
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [
   'tests/test-setup.js', 'tests/test-contracts.js', 'tests/test-core.js', 'tests/test-theme.js', 'tests/test-format.js',
-  'tests/test-data.js', 'tests/test-check.js', 'tests/test-sources.js',
+  'tests/test-data.js', 'tests/test-check.js', 'tests/test-sources.js', 'tests/test-source-tip.js',
   'tests/test-combine.js', 'tests/test-measures.js', 'tests/test-shapes.js',
   'tests/test-shell.js', 'tests/test-compare-modes.js', 'tests/test-content.js', 'tests/test-panel.js',
   'tests/test-overview.js', 'tests/test-industry.js', 'tests/test-insights.js', 'tests/test-rules.js', 'tests/test-ranking.js', 'tests/test-guardrails.js', 'tests/test-pages.js', 'tests/test-integrator.js',

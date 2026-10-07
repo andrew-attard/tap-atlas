@@ -202,7 +202,7 @@
     when(THEMES, 'TPV-TC-466', 'A selected theme’s quotes are grouped by region, focus region first, each with its source', function (a) {
       themeSample();
       var res = themeBuild({ mode: 'one', focus: 'mea' }, { theme: 'marketing' });
-      var div = document.createElement('div');
+      var div = T.dom.mount();
       TAP.dom.html(div, res.html);
       var want = X.q06.themes.filter(function (t) { return t.id === 'marketing'; })[0].regions;
       var got = [].map.call(div.querySelectorAll('.tap-themes__region'), function (el) { return el.getAttribute('data-region'); });
@@ -210,7 +210,8 @@
       a.deepEqual(got.slice().sort(), want.slice().sort(), 'every region that mentions it');
       a.deepEqual(got.slice(1), want.filter(function (r) { return r !== 'mea'; }), 'then file order');
       [].forEach.call(div.querySelectorAll('.tap-themes__quote'), function (q) {
-        a.match(q.querySelector('.tap-themes__src').textContent, / plan\.xlsx › (2\. New Business|1\. Market Coverage) › [A-Z]+\d+$/, 'source: ' + q.textContent);
+        a.ok(q.querySelector('.tap-themes__src').textContent.indexOf('plan.xlsx') < 0, 'no address as text (D100)');
+        a.match(window.T_TIP_TEXT(q.querySelector('.tap-srctip')), / plan\.xlsx › (2\. New Business|1\. Market Coverage) › [A-Z]+\d+$/, 'source: ' + q.textContent);
       });
       a.ok(div.querySelector('[data-tap-value="marketing"]').classList.contains('is-selected'), 'the bar shows as selected');
     });

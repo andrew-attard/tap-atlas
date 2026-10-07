@@ -445,7 +445,9 @@
         a.ok(d.indexOf(TAP.format.moneyExact(363.4)) >= 0, 'figure value as an exact amount');
         a.ok(d.indexOf('Year-1 new business ARR potential at least 3 times') >= 0, 'the rule behind it');
         var where = TAP.sources.address({ regionId: 'latam', section: 'marketCoverage', field: 'pipelineCreated12m', row: null, rows: [], year: null, cell: null, kind: 'PRE' }).text;
-        a.ok(d.indexOf(where) >= 0, 'its sources by file, sheet and cell');
+        a.ok(d.indexOf(where) < 0, 'no address as text (D100)');
+        var tips = qsa('.tap-srctip', it.querySelector('.tap-ins__details')).map(window.T_TIP_TEXT).join(' | ');
+        a.ok(tips.indexOf(where) >= 0, 'its sources by file, sheet and cell, behind the data icons');
         var tiers = item(root, 'consensus:education');
         tiers.querySelector('.tap-ins__toggle').click();
         a.ok(txt(item(root, 'consensus:education').querySelector('.tap-ins__details')).indexOf('Tier 2') >= 0, 'a tier reads as Tier 2');

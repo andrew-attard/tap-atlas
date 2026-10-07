@@ -591,7 +591,8 @@
       a.equal(g1.length, 1, 'growth for year 1 is shown once');
       a.equal(g1[0].cell.v, 0.5, 'growth year 1');
       a.equal(g3[0].cell.v, 0, 'growth year 3');
-      a.match(find(/^Source row$/).text, /Region A plan\.xlsx › 3\. Customer Growth › row 11$/, 'source row');
+      a.match(find(/^Source row$/).where, /Region A plan\.xlsx › 3\. Customer Growth › row 11$/, 'source row, behind the data icon (D100)');
+      a.ok(String(find(/^Source row$/).text).indexOf('plan.xlsx') < 0, 'the row itself shows no address as text');
       rows.filter(function (r) { return r.cell && r.cell.kind; }).forEach(function (r) { a.ok(r.cell.src, r.label + ' has a source'); });
       var multi = TAP.details.build({ items: [{ section: 'customerGrowth', regionId: 'alpha', row: 13 }] }), mrows = [];
       multi.groups.forEach(function (g) { mrows = mrows.concat(g.rows); });
