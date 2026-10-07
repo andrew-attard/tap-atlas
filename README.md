@@ -109,6 +109,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 |---|---|
 | `js/reports/tier-grid.js` | The tier grid: industries against regions, coloured by tier |
 | `js/reports/quadrant.js` | Attractiveness against ability to win, in four labelled areas |
+| `js/reports/ratings-grid.js` | The six ratings for one industry as a grid, grouped under attractiveness and ability to win, each closing with its average |
 | `js/reports/details.js` | Collects everything about one clicked item for the details panel |
 | `js/reports/details-rows.js` | Details for one list row (a new business row, an account or a partner): every field with its source |
 | `js/reports/tier-stats.js` | How much regions agree on each industry's tier, shared by the tier grid and the views |
