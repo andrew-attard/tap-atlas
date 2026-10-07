@@ -120,7 +120,7 @@ window.TAP_CONTENT.guide = {
       { id: 'marketCoverage', title: '1. Market coverage', link: { view: 'industry' }, paragraphs: [
         'The leader rates a fixed list of industries and chooses which to prioritize. For each industry they give six ratings, a tier and a comment.',
         'System figures sit next to the ratings: current ARR, pipeline and pipeline created in the last 12 months. They show where the region already does business.',
-        'This section is what the Market coverage view shows: tiers by region, attractiveness against ability to win, and the six ratings for one industry.'
+        'This section is what the Market coverage view shows, in two parts. All industries: tiers by region, then attractiveness against ability to win. One industry: the six ratings and the leaders’ comments for the industry picked at the top of that part, or chosen in the grid or on the chart.'
       ] },
       { id: 'newBusiness', title: '2. New business', link: { view: 'newBusiness' }, paragraphs: [
         'For Tier 1 and Tier 2 industries only, the leader breaks each industry into sub-verticals in a geographic market. Each row says how many accounts to target, the expected hit rate and the average deal size.',
