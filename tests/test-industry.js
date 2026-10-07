@@ -1,7 +1,8 @@
 /*
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
- * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-* (US-1.5.7 commentary checks are X-industry-comments-*)
+ * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-*,
+ *           X-d101-ratings-grid (the ratings grid) (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -1071,7 +1072,13 @@
   /* ---------- US-1.5.6 how regions rate one industry ---------- */
 
   var RATINGS = ['growthPotential', 'criticality', 'competitiveIntensity', 'references', 'expertise', 'productFit'];
-  function ratingsRes(type, c, industryId) { return TAP.builders.get('compare')(ctxFor('ind-ratings', type, c, { industryId: industryId })); }
+  // The report's own builder (the grid, D101), and the generic compare builder that still draws the bars, and dots or a
+  // radar for any definition that asks for them.
+  function ratingsRes(type, c, industryId, extra) {
+    var def = TAP.reports.get('ind-ratings');
+    return TAP.builders.get(def.builder || def.shape)(ctxFor('ind-ratings', type, c, Object.assign({ industryId: industryId }, extra || {})));
+  }
+  function dotsRes(type, c, industryId) { return TAP.builders.get('compare')(ctxFor('ind-ratings', type, c, { industryId: industryId })); }
   function rawRow(regionId, industryId) {
     return TAP.data.region(regionId).marketCoverage.filter(function (d) { return d.industryId === industryId; })[0];
   }
@@ -1091,7 +1098,7 @@
 
   T.suite('industry-ratings', function () {
     T.test('TPV-TC-262', 'The chosen industry’s six ratings, by region, match the data file', function (a) {
-      var res = ratingsRes('dot', { mode: 'all' }, 'ind4');
+      var res = ratingsRes('grid', { mode: 'all' }, 'ind4');
       ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) {
         var row = res.table.rows.filter(function (x) { return x.entityId === r; })[0], raw = rawRow(r, 'ind4');
         RATINGS.forEach(function (f) { a.equal(row.cells['ind.' + f].v, raw[f], r + ' ' + f); });
@@ -1120,35 +1127,36 @@
       a.equal(TAP.industryView.current(cmp({ mode: 'pair', focus: R[0], second: R[4] })), splitByHand([R[0], R[4]]), 'sample, a pair');
     });
 
-    T.test('X-industry-ratings-wording', 'Ratings carry their wording into the table and tooltips', function (a) {
-      var res = ratingsRes('dot', { mode: 'all' }, 'ind1');
+    T.test('X-industry-ratings-wording', 'Ratings carry their wording into the table and the grid cells’ spoken names', function (a) {
+      var res = ratingsRes('grid', { mode: 'all' }, 'ind1');
       var col = res.table.columns.filter(function (c) { return c.key === 'ind.growthPotential'; })[0];
       var row = res.table.rows.filter(function (x) { return x.entityId === 'alpha'; })[0];
       a.equal(TAP.format.cell(row.cells['ind.growthPotential'], { unit: col.unit, field: col.field, exact: true }), 'Strong dynamics, business to take (3)');
+      var cell = parse(res.html).querySelector('[data-tap-region="alpha"][data-key="ind.growthPotential"]');
+      a.match(cell.getAttribute('aria-label'), /Strong dynamics, business to take \(3\)/, 'the grid cell says the wording too');
     });
 
-    T.test('TPV-TC-265', 'Dot plot by default, bar and table offered, radar only with 3 or fewer regions', function (a) {
+    T.test('TPV-TC-265', 'Grid by default (D101), bar and table offered; no dot plot or radar', function (a) {
       var def = TAP.reports.get('ind-ratings');
-      a.equal(def.defaultType, 'dot');
-      [1, 2, 3].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['dot', 'bar', 'radar', 'table'], n + ' regions'); });
-      [4, 7].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['dot', 'bar', 'table'], n + ' regions: no radar'); });
-      a.equal(TAP.scope.entities(cmp({ mode: 'one', focus: 'alpha' })).length, 2, 'one vs the rest as one figure: two entities, radar allowed');
+      a.equal(def.defaultType, 'grid');
+      [1, 2, 3, 4, 7].forEach(function (n) { a.deepEqual(TAP.shapes.types(def, n), ['grid', 'bar', 'table'], n + ' regions'); });
     });
 
     T.test('TPV-TC-266', 'In each comparison mode the entities drawn match the comparison scope', function (a) {
       [{ mode: 'all' }, { mode: 'one', focus: 'alpha' }, { mode: 'one', focus: 'bravo', restAs: 'individual' },
         { mode: 'pair', focus: 'charlie', second: 'delta' }, { mode: 'set', set: ['alpha', 'delta'] }, { mode: 'org' }].forEach(function (c) {
         var want = TAP.scope.entities(cmp(c)).map(function (e) { return e.id; });
-        ['dot', 'bar'].forEach(function (type) {
+        ['grid', 'bar'].forEach(function (type) {
           var res = ratingsRes(type, c, 'ind1');
           a.deepEqual(res.table.rows.map(function (r) { return r.entityId; }), want, c.mode + ' ' + type + ': table');
           var drawn = [];
-          points(res).forEach(function (d) { if (drawn.indexOf(d.entityId) < 0) drawn.push(d.entityId); });
+          if (type === 'grid') drawn = Array.prototype.map.call(parse(res.html).querySelectorAll('[data-entity]'), function (r) { return r.getAttribute('data-entity'); });
+          else points(res).forEach(function (d) { if (drawn.indexOf(d.entityId) < 0) drawn.push(d.entityId); });
           a.deepEqual(drawn.slice().sort(), want.slice().sort(), c.mode + ' ' + type + ': chart');
         });
       });
     });
-    T.test('X-industry-ratings-numbers', 'QA-4: with more than 3 regions each dot carries its region number, in file order, matching the legend', function (a) {
+    T.test('X-industry-ratings-numbers', 'QA-4 (generic compare builder, six ratings as categories): with more than 3 regions each dot carries its region number, in file order, matching the legend', function (a) {
       sample();
       var R = sampleIds(), ind = TAP.data.industries({ rated: true })[0].id;
       function valueSeries2(res) { return series(res).filter(function (s) { return s.tapRole === 'value'; }); }
@@ -1157,7 +1165,7 @@
         valueSeries2(res).forEach(function (s) { (s.data || []).forEach(function (d) { out[d.entityId] = s.label && s.label.show ? s.label.formatter : null; }); });
         return out;
       }
-      var all = ratingsRes('dot', { mode: 'all' }, ind), n = numbers(all);
+      var all = dotsRes('dot', { mode: 'all' }, ind), n = numbers(all);
       R.forEach(function (id, i) { a.equal(n[id], String(i + 1), id + ' is number ' + (i + 1)); });
       a.deepEqual(all.legend.map(function (l) { return l.mark; }), R.map(function (id, i) { return i + 1; }), 'the legend carries the same numbers');
       valueSeries2(all).forEach(function (s) { a.ok(s.symbolSize >= 18, s.name + ': dots big enough for a number'); });
@@ -1179,20 +1187,20 @@
       a.ok(pts.every(function (p) { var o = p.d.symbolOffset || [0, 0]; return Math.abs(o[1]) <= p.size; }), 'a swarm is at most two lines, so a row stays compact');
       a.equal(all.height, undefined, 'no height hint: the chart keeps its normal height');
       // Stable across modes: a set keeps each region's own number
-      var set = numbers(ratingsRes('dot', { mode: 'set', set: [R[1], R[3], R[5], R[6]] }, ind));
+      var set = numbers(dotsRes('dot', { mode: 'set', set: [R[1], R[3], R[5], R[6]] }, ind));
       a.deepEqual([set[R[1]], set[R[3]], set[R[5]], set[R[6]]], ['2', '4', '6', '7'], 'a set of four keeps the file numbers');
-      var one = numbers(ratingsRes('dot', { mode: 'one', focus: R[4], restAs: 'individual' }, ind));
+      var one = numbers(dotsRes('dot', { mode: 'one', focus: R[4], restAs: 'individual' }, ind));
       a.equal(one[R[4]], '5', 'one against the rest drawn one by one: the focus keeps its number');
       // Three or fewer groups: the look is unchanged
-      var pair = ratingsRes('dot', { mode: 'pair', focus: R[0], second: R[1] }, ind);
+      var pair = dotsRes('dot', { mode: 'pair', focus: R[0], second: R[1] }, ind);
       a.ok(valueSeries2(pair).every(function (s) { return !(s.label && s.label.show); }), 'a pair has no numbers');
       a.ok(pair.legend.every(function (l) { return l.mark == null; }), 'and no legend numbers');
       a.ok(series(pair).every(function (x) { return (x.data || []).every(function (d) { return !d.symbolOffset; }); }), 'and no swarm');
     });
 
-    T.test('X-industry-ratings-values', 'QA-4: numbering never changes a value, tooltip or table cell', function (a) {
+    T.test('X-industry-ratings-values', 'QA-4 (generic compare builder): numbering never changes a value, tooltip or table cell', function (a) {
       sample();
-      var ind = TAP.data.industries({ rated: true })[2].id, res = ratingsRes('dot', { mode: 'all' }, ind), n = 0;
+      var ind = TAP.data.industries({ rated: true })[2].id, res = dotsRes('dot', { mode: 'all' }, ind), n = 0;
       series(res).filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) {
         s.data.forEach(function (d) {
           var row = res.table.rows.filter(function (r) { return r.entityId === d.entityId; })[0];
@@ -1203,8 +1211,8 @@
       });
       a.ok(n >= 40, 'every dot checked (' + n + ')');
     });
-    T.test('X-industry-ratings-radar-fit', 'Polish (a): radar names fit a half-width panel: smaller radius, long names on two lines', function (a) {
-      var res = ratingsRes('radar', { mode: 'pair', focus: 'alpha', second: 'bravo' }, 'ind1'), r = res.option.radar;
+    T.test('X-industry-ratings-radar-fit', 'Polish (a), generic compare builder: radar names fit a half-width panel: smaller radius, long names on two lines', function (a) {
+      var res = dotsRes('radar', { mode: 'pair', focus: 'alpha', second: 'bravo' }, 'ind1'), r = res.option.radar;
       a.equal(r.radius, '58%', 'radius leaves room for the names');
       var f = r.axisName.formatter;
       a.equal(f('Competitive intensity'), 'Competitive\nintensity', 'a long name breaks at its middle space');
@@ -1213,6 +1221,138 @@
       a.deepEqual(r.indicator.map(function (i) { return i.name; }), ['Growth potential', 'Criticality', 'Competitive intensity', 'References', 'Expertise', 'Product fit'],
         'the names themselves are unchanged');
       a.ok(r.axisName.fontSize >= TH.type.chartMin, 'at 13 px or more');
+    });
+  });
+
+  /* ---------- D101: the six ratings as a grid, grouped under the two scores ---------- */
+
+  T.suite('ratings-grid', function () {
+    var KEYS = ['ind.growthPotential', 'ind.criticality', 'ind.competitiveIntensity', 'ind.attractiveness',
+      'ind.references', 'ind.expertise', 'ind.productFit', 'ind.ability'];
+    function attrs(box, sel, name) { return Array.prototype.map.call(box.querySelectorAll(sel), function (n) { return n.getAttribute(name); }); }
+    function gridCell(box, entity, key) { return box.querySelector('[data-entity="' + entity + '"] [data-key="' + key + '"]'); }
+    function tableRow(res, id) { return res.table.rows.filter(function (r) { return r.entityId === id; })[0]; }
+    // The attractiveness chart's own figures for the same comparison and industry (its table reads the exact cells).
+    function quadRow(c, industryId, entityId, every) {
+      var res = TAP.builders.get('quadrant')(ctxFor('ind-quad', 'bubble', c, { opts: every ? { industryFilter: industryId } : {} }));
+      return res.table.rows.filter(function (r) { return r.entityId === entityId && r.industryId === industryId; })[0];
+    }
+
+    T.test('X-d101-ratings-grid', 'The grid is the default: one row per comparison entity, eight columns in the two groups', function (a) {
+      var def = TAP.reports.get('ind-ratings');
+      a.equal(def.defaultType, 'grid', 'the grid is the default type');
+      sample();
+      var ind = window.SAMPLE_EXPECT.p16.industry, res = ratingsRes(def.defaultType, { mode: 'all' }, ind), box = parse(res.html);
+      a.deepEqual(attrs(box, '[data-entity]', 'data-entity'), sampleIds(), 'one row per region, in file order');
+      a.deepEqual(Array.prototype.map.call(box.querySelectorAll('.tap-rg__group'), function (g) { return g.textContent; }),
+        ['Attractiveness', 'Ability to win'], 'two groups');
+      a.deepEqual(attrs(box, '[data-col]', 'data-col'), KEYS, 'three ratings, then the group’s average, for each group');
+      sampleIds().forEach(function (id) {
+        a.deepEqual(attrs(box.querySelector('[data-entity="' + id + '"]'), '[data-key]', 'data-key'), KEYS, id + ': eight cells');
+      });
+      a.deepEqual(res.table.columns.map(function (c) { return c.key; }), ['entity'].concat(KEYS), 'the table has the same columns');
+    });
+
+    T.test('X-d101-ratings-grid', 'For two sample regions the cells are the file’s ratings and the averages the attractiveness chart’s scores', function (a) {
+      sample();
+      var X = window.SAMPLE_EXPECT.p16, ind = X.industry, res = ratingsRes('grid', { mode: 'all' }, ind), box = parse(res.html);
+      ['na', 'seu'].forEach(function (r) {
+        var raw = rawRow(r, ind), row = tableRow(res, r);
+        RATINGS.forEach(function (f) {
+          a.equal(row.cells['ind.' + f].v, raw[f], r + ' ' + f + ' in the table');
+          a.equal(gridCell(box, r, 'ind.' + f).textContent.trim(), String(raw[f]), r + ' ' + f + ' in the grid');
+        });
+        a.near(row.cells['ind.attractiveness'].v, X.scores[r].a, 1e-5, r + ': attractiveness (planted)');
+        a.near(row.cells['ind.ability'].v, X.scores[r].b, 1e-5, r + ': ability to win (planted)');
+        a.equal(gridCell(box, r, 'ind.attractiveness').textContent.trim(), X.scores[r].a.toFixed(1), r + ': one decimal');
+        a.equal(gridCell(box, r, 'ind.ability').textContent.trim(), X.scores[r].b.toFixed(1), r + ': one decimal');
+        var q = quadRow({ mode: 'all' }, ind, r, true);
+        a.near(row.cells['ind.attractiveness'].v, q.cells['ind.attractiveness'].v, 1e-12, r + ': the chart’s y');
+        a.near(row.cells['ind.ability'].v, q.cells['ind.ability'].v, 1e-12, r + ': the chart’s x');
+      });
+    });
+
+    T.test('X-d101-ratings-grid', 'One vs the rest adds the combined row, with the attractiveness chart’s combined scores', function (a) {
+      sample();
+      var ind = window.SAMPLE_EXPECT.p16.industry, c = { mode: 'one', focus: 'na' }, res = ratingsRes('grid', c, ind), box = parse(res.html);
+      var want = TAP.scope.entities(cmp(c));
+      a.deepEqual(attrs(box, '[data-entity]', 'data-entity'), want.map(function (e) { return e.id; }), 'the focus region, then the rest');
+      var rest = box.querySelector('[data-entity="rest"]');
+      a.ok(rest && rest.classList.contains('is-combined'), 'the combined row is marked as combined');
+      a.ok(rest.textContent.indexOf(want[1].label) >= 0, 'and named: ' + want[1].label);
+      var row = tableRow(res, 'rest'), q = quadRow(c, ind, 'rest');
+      a.near(row.cells['ind.attractiveness'].v, q.cells['ind.attractiveness'].v, 1e-12, 'attractiveness as the chart combines it');
+      a.near(row.cells['ind.ability'].v, q.cells['ind.ability'].v, 1e-12, 'ability to win as the chart combines it');
+      a.equal(gridCell(box, 'rest', 'ind.growthPotential').textContent.trim(), row.cells['ind.growthPotential'].v.toFixed(1),
+        'a combined rating shows one decimal');
+    });
+
+    T.test('X-d101-ratings-grid', 'Dot plot and radar are no longer offered; a stored or presented one falls back or is skipped', function (a) {
+      var def = TAP.reports.get('ind-ratings');
+      a.deepEqual(def.types, ['grid', 'bar', 'table'], 'grid, bar and table');
+      [2, 3, 7].forEach(function (n) {
+        var t = TAP.shapes.types(def, n);
+        a.ok(t.indexOf('dot') < 0 && t.indexOf('radar') < 0, n + ' regions: no dot plot, no radar');
+      });
+      a.equal(TAP.panelMenus.types(def, 4, { type: 'dot' }).current, 'grid', 'a remembered dot plot shows the grid');
+      a.equal(TAP.panelMenus.types(def, 2, { type: 'radar' }).current, 'grid', 'a remembered radar shows the grid');
+      ['dot', 'radar'].forEach(function (type) {
+        var res = TAP.present.check([{ report: 'ind-ratings', type: type }]);
+        a.equal(res.ok.length, 0, 'a presentation step asking for ' + type + ' is not shown');
+        a.equal(res.skipped.length, 1, 'it is skipped with the usual message');
+      });
+      TAP.notes.clear();
+    });
+
+    T.test('X-d101-ratings-grid', 'Every cell shows its number; ratings are shaded light to dark, averages stand apart, blanks read "not provided"', function (a) {
+      var res = ratingsRes('grid', { mode: 'all' }, 'ind1'), box = parse(res.html);
+      var gp = gridCell(box, 'alpha', 'ind.growthPotential');
+      a.equal(gp.textContent.trim(), '3', 'the number is in the cell');
+      a.ok(gp.classList.contains('tap-rg__cell--r3'), 'a 3 takes the darkest shade');
+      var avg = gridCell(box, 'alpha', 'ind.attractiveness');
+      a.equal(avg.textContent.trim(), '2.7', 'Region A attractiveness 2.67 shows as 2.7');
+      a.ok(avg.classList.contains('tap-rg__cell--avg'), 'an average is marked as one');
+      a.ok(!/tap-rg__cell--r\d/.test(avg.className), 'and is not shaded like a rating');
+      var blank = gridCell(box, 'charlie', 'ind.references');
+      a.ok(blank.classList.contains('tap-rg__cell--np'), 'Region C left references blank: outlined');
+      a.match(blank.textContent, /not provided/, 'and says not provided');
+      a.ok(gridCell(box, 'charlie', 'ind.ability').classList.contains('tap-rg__cell--np'),
+        'its ability to win is not provided, as on the attractiveness chart');
+      a.equal(tableRow(res, 'charlie').cells['ind.ability'].state, 'notProvided', 'in the table too');
+    });
+
+    T.test('X-d101-ratings-grid', 'The key explains the scale and competitive intensity; About names the attractiveness chart; a click names the cell', function (a) {
+      var res = ratingsRes('grid', { mode: 'all' }, 'ind1'), key = parse(res.html).querySelector('.tap-rg__key').textContent;
+      a.ok(key.indexOf('1 = low · 3 = high, higher is more favourable') >= 0, 'the scale');
+      a.ok(key.indexOf('3 = the region leads its competitors') >= 0, 'competitive intensity');
+      var ex = TAP.reports.get('ind-ratings').explain;
+      a.match(ex.shows + ' ' + ex.read, /place on the attractiveness chart/, 'About: the averages are each region’s place on the attractiveness chart');
+      var t = res.target({ data: { regionId: 'alpha', industryId: 'ind1' } });
+      a.deepEqual([t.reportId, t.regionIds, t.industryIds], ['ind-ratings', ['alpha'], ['ind1']], 'a region cell: that region’s details');
+      var rest = ratingsRes('grid', { mode: 'one', focus: 'alpha' }, 'ind1').target({ data: { regionId: 'rest', industryId: 'ind1' } });
+      a.deepEqual(rest.regionIds, ['bravo', 'charlie', 'delta'], 'a combined cell: the regions it combines');
+      a.equal(res.target({ data: null }), null, 'nothing clicked: no target');
+    });
+
+    T.test('X-d101-ratings-grid', 'At half width (1280 px) and 853 px at 150%, numbers stay 16 px and headings 13 px, with no sideways scroll', function (a) {
+      sample();
+      [600, 540, 1100].forEach(function (w) {
+        var host = T.dom.mount();
+        host.style.width = w + 'px';
+        var p = TAP.panel.create(host, 'ind-ratings', { industryId: window.SAMPLE_EXPECT.p16.industry });
+        try {
+          var grid = p.el.querySelector('.tap-rg'), px = function (n) { return parseFloat(getComputedStyle(n).fontSize); };
+          a.ok(grid, w + ' px: the grid is drawn');
+          Array.prototype.forEach.call(grid.querySelectorAll('[data-key]'), function (n) { if (px(n) < 16) a.ok(false, w + ' px: a cell at ' + px(n) + ' px'); });
+          Array.prototype.forEach.call(grid.querySelectorAll('.tap-rg__col, .tap-rg__group, .tap-rg__name'), function (n) {
+            if (px(n) < 13) a.ok(false, w + ' px: a heading at ' + px(n) + ' px');
+          });
+          var box = p.el.querySelector('.tap-panel__html');
+          a.ok(box.scrollWidth <= box.clientWidth + 1, w + ' px: no sideways scroll (' + box.scrollWidth + ' in ' + box.clientWidth + ')');
+          var full = grid.querySelector('.tap-rg__col .tap-rg__full');
+          a.equal(getComputedStyle(full).display !== 'none', w > 1000, w + ' px: ' + (w > 1000 ? 'full headings' : 'short headings, explained in the key'));
+        } finally { p.destroy(); }
+      });
     });
   });
 })(window.TAP);

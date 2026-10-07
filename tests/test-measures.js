@@ -454,6 +454,8 @@
       return { ds: TAP.prepare.run(d, ctx), res: TAP.builders.get(d.builder || d.shape)(ctx) };
     }
     function series(res, role) { return (res.option.series || []).filter(function (s) { return s.tapRole === role; }); }
+    // The six ratings as dots, drawn by the generic compare builder (the ratings report itself is a grid since D101)
+    function ratingDots() { return Object.assign({}, TAP.reports.get('ind-ratings'), { builder: null, defaultType: 'dot' }); }
     function npFor(res, id) {
       return series(res, 'notProvided').some(function (s) { return s.data.some(function (d) { return d.entityId === id; }); });
     }
@@ -480,7 +482,7 @@
     });
 
     T.test('TPV-TC-081', 'A blank is "not provided": an outlined mark with a label, a named gap, never a zero', function (a) {
-      var x = run(TAP.reports.get('ind-ratings'), null, { type: 'dot', industryId: 'ind1' });
+      var x = run(ratingDots(), null, { type: 'dot', industryId: 'ind1' });
       var c = row(x.res, 'charlie').cells['ind.references'];
       a.deepEqual([c.state, c.v], ['notProvided', null]);
       a.equal(TAP.format.cell(c, { unit: 'rating', field: 'references' }), 'not provided', 'table text');
@@ -504,7 +506,7 @@
       a.deepEqual(tier3.res.table.rows.map(function (r) { return r.entityId; }), ['delta'], 'only the region with Retail as Tier 2');
       a.deepEqual(tier3.res.missing, [], 'nobody is missing');
       ['alpha', 'bravo', 'charlie'].forEach(function (r) { a.ok(!npFor(tier3.res, r), r + ' has no gap mark'); });
-      var other = run(TAP.reports.get('ind-ratings'), null, { type: 'dot', industryId: 'other' });
+      var other = run(ratingDots(), null, { type: 'dot', industryId: 'other' });
       a.equal(other.res.empty, true, 'no ratings on the Other row: nothing to draw');
       a.deepEqual(other.res.missing, [], 'and no region is missing');
       a.equal(other.res.option, null);
