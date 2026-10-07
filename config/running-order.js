@@ -34,7 +34,7 @@
  *                restAs   the rest 'combined' into one figure or shown 'individual'ly ('one')
  *              The comparison applies to that step only. Leaving presentation mode restores the screen as it was.
  *   highlight  what to outline: {regionIds: [...], industryIds: [...], mark: 'bar'}; mark is 'bar', 'points',
- *              'cell', 'industryRow', 'regionColumn' or 'quadrant', as the chart draws it
+ *              'cell', 'industryRow', 'regionColumn', 'quadrant' or 'ratingCell' (measureIds: [...]), as the chart draws it
  * A step that names a chart, measure, region or insight this data doesn't have is left out when presentation
  * starts, and listed in the data sources panel. The rest still run.
  */
