@@ -816,7 +816,7 @@
     });
 
     T.test('TPV-TC-361', 'Every row names the region file and the new business row it came from', function (a) {
-      var res = list({ mode: 'all' }), box = document.createElement('div');
+      var res = list({ mode: 'all' }), box = T.dom.mount();
       res.table.rows.forEach(function (r) {
         var where = TAP.sources.address(r.src).text, reg = TAP.data.region(r.regionId);
         a.ok(where.indexOf(reg.source.fileName) === 0, r.id + ': the region file');
@@ -825,7 +825,9 @@
       });
       TAP.dom.html(box, res.html);
       var src = box.querySelector('tr[data-tap-row="newBusiness:delta:20"] [data-tap-col="source"]');
-      a.ok(src && src.textContent.indexOf('Region D plan.xlsx') >= 0 && /20/.test(src.textContent), 'the list shows the source row');
+      a.ok(src && src.textContent.indexOf('plan.xlsx') < 0, 'no address as text (D100)');
+      var tip = window.T_TIP_TEXT(src && src.querySelector('.tap-srctip'));
+      a.ok(tip.indexOf('Region D plan.xlsx') >= 0 && /20/.test(tip), 'the list’s data icon shows the source row: ' + tip);
     });
 
     T.test('X-nb-rows-view', 'The list takes the full width, with the success factors straight below it', function (a) {
@@ -903,7 +905,8 @@
     T.test('TPV-TC-367', 'Each entry names its source cell', function (a) {
       withView(function (root) {
         TAP.store.set({ industry: 'ind1' });
-        var src = entries(root).map(function (e) { return e.querySelector('.tap-nbf__src').textContent; });
+        a.equal(root.querySelectorAll('.tap-nbf__src').length, 0, 'no address line under an entry (D100)');
+        var src = entries(root).map(function (e) { return window.T_TIP_TEXT(e.querySelector('.tap-srctip')); });
         a.ok(src[0].indexOf('Region A plan.xlsx › 2. New Business › N20') >= 0, 'Region A row 20, column N');
         a.ok(src[1].indexOf('Region B plan.xlsx › 2. New Business › N20') >= 0, 'Region B row 20, column N');
         a.ok(src[0].indexOf(TAP.format.kind('IN').text) >= 0, 'with the kind of value');

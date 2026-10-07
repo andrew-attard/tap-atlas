@@ -864,8 +864,10 @@
           var row = qs('.tap-details__row', layer());
           a.ok(txt(row).indexOf('Target accounts') >= 0, 'label');
           a.ok(txt(row).indexOf(TAP.format.cell(cell, { unit: 'count', exact: true })) >= 0, 'value, formatted');
-          a.ok(txt(row).indexOf(TAP.format.kind('IN').text) >= 0, 'kind of value, glyph and word');
-          a.ok(txt(row).indexOf(TAP.sources.address(cell.src).text) >= 0, 'file › sheet › cell');
+          a.ok(txt(row).indexOf(TAP.sources.address(cell.src).text) < 0, 'no address as text (D100)');
+          var tip = window.T_TIP_TEXT(qs('.tap-srctip', row));
+          a.ok(tip.indexOf(TAP.format.kind('IN').text) >= 0, 'its data icon shows the kind of value, glyph and word');
+          a.ok(tip.indexOf(TAP.sources.address(cell.src).text) >= 0, 'and file › sheet › cell');
         });
       });
     });

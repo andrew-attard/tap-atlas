@@ -565,8 +565,12 @@
       FAKE = function () { return { table: t0 }; };
       var tbl = showTable(s.panel('x-fake')), last = qsa('thead th', tbl).length - 1;
       a.equal(txt(qsa('thead th', tbl)[last]).replace(/[▲▼]/g, '').trim(), 'Source');
-      a.deepEqual(column(tbl, last), t0.rows.map(function (r) { return TAP.sources.address(r.src).text; }));
-      a.match(column(tbl, last)[0], /Region A plan\.xlsx › /, 'names the file');
+      a.deepEqual(column(tbl, last), t0.rows.map(function () { return ''; }), 'no address as text on screen (D100)');
+      qsa('tbody tr', tbl).forEach(function (tr, i) {
+        var want = TAP.sources.address(t0.rows[i].src).text, got = window.T_TIP_TEXT(tr.children[last].querySelector('.tap-srctip'));
+        a.ok(got.indexOf(want) >= 0, 'row ' + i + ': its data icon shows ' + want);
+      });
+      a.match(window.T_TIP_TEXT(qs('tbody tr .tap-srctip', tbl)), /Region A plan\.xlsx › /, 'names the file');
     }));
 
     T.test('TPV-TC-066', 'Copy to clipboard gives tab-separated text with the source column and the data label', scene(function (a, s) {
