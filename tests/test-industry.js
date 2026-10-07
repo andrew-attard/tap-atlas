@@ -2,7 +2,8 @@
  * File: tests/test-industry.js
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
  * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-*,
- *           X-d101-ratings-grid (the ratings grid), X-d102-ratings-insights (the rating insights on it) (US-1.5.7 commentary checks are X-industry-comments-*)
+ *           X-d101-ratings-grid (the ratings grid), X-d102-ratings-insights (the rating insights on it),
+ *           X-d105-industry-layout (the view in two parts) (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -401,18 +402,19 @@
       a.equal(TAP.reports.get('ind-quad').defaultType, 'bubble');
     });
 
-    T.test('X-industry-quad-filter', 'The industry filter shows one industry across every region in scope', function (a) {
-      var res = quad('bubble', { mode: 'all' }, { opts: { industryFilter: 'ind4' } });
+    T.test('X-industry-quad-filter', 'D105: "Every region" with an industry in focus shows that industry across every region in scope; no filter of its own', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { industryId: 'ind4', opts: { everyRegion: true } });
       a.deepEqual(points(res).map(function (d) { return d.industryId; }), ['ind4', 'ind4', 'ind4', 'ind4'], 'only ind4, per region');
       a.equal(pointOf(res, 'bravo', 'ind4').label.formatter, 'Region B', 'labelled by region');
-      var c = res.controls.filter(function (x) { return x.key === 'industryFilter'; })[0];
-      a.equal(c.kind, 'select');
-      a.equal(c.options.length, 5, 'all industries plus each rated industry');
-      a.equal(c.value, 'ind4');
+      a.equal(res.controls.filter(function (x) { return x.key === 'industryFilter'; }).length, 0, 'no industry filter on the chart');
       var e = res.controls.filter(function (x) { return x.key === 'everyRegion'; })[0];
       a.deepEqual(e.options.map(function (o) { return o.value; }), [false, true], 'average or every region');
-      res = quad('bubble', { mode: 'set', set: ['alpha', 'delta'] }, { opts: { industryFilter: 'ind1' } });
+      res = quad('bubble', { mode: 'set', set: ['alpha', 'delta'] }, { industryId: 'ind1', opts: { everyRegion: true } });
       a.equal(points(res).length, 2, 'follows the comparison scope');
+      a.equal(quad('bubble', { mode: 'all' }, { industryId: 'ind4', opts: { industryFilter: 'ind1', everyRegion: true } }).controls
+        .filter(function (x) { return x.key === 'industryFilter'; }).length, 0, 'an old filter choice is ignored quietly');
+      a.deepEqual(points(quad('bubble', { mode: 'all' }, { industryId: 'ind4', opts: { industryFilter: 'ind1', everyRegion: true } }))
+        .map(function (d) { return d.industryId; }), ['ind4', 'ind4', 'ind4', 'ind4'], 'and the industry in focus is drawn');
     });
 
     T.test('X-review-SV-16', 'With two regions, the quadrant names the rest "the other region" (#372)', function (a) {
@@ -439,8 +441,8 @@
       a.ok(found > 0, 'the mini fixture has combined ratings with a whole-number mean (' + found + ')');
     });
 
-    T.test('X-review-RI-19', 'With one industry filtered, the table numbers each row as its bubble is numbered (the region)', function (a) {
-      var res = quad('bubble', { mode: 'all' }, { opts: { industryFilter: 'ind4' } });
+    T.test('X-review-RI-19', 'With every region for one industry in focus, the table numbers each row as its bubble is numbered (the region)', function (a) {
+      var res = quad('bubble', { mode: 'all' }, { industryId: 'ind4', opts: { everyRegion: true } });
       // Hand-worked: the regions' places in file order, alpha 1 to delta 4
       var want = { 'Region A': '1', 'Region B': '2', 'Region C': '3', 'Region D': '4' };
       a.equal(res.table.rows.length, 4, 'one row per region');
@@ -488,8 +490,8 @@
 
     T.test('X-industry-quad-axes', 'Both axes always run over the full score range, 1 to 3, so the four areas are equal', function (a) {
       [[{ mode: 'all' }, {}], [{ mode: 'all' }, { everyRegion: true }], [{ mode: 'one', focus: 'delta' }, {}],
-        [{ mode: 'all' }, { industryFilter: 'ind3' }]].forEach(function (p) {
-        var res = quad('bubble', p[0], { opts: p[1] }), label = JSON.stringify(p);
+        [{ mode: 'all' }, { everyRegion: true, ind: 'ind3' }]].forEach(function (p) {
+        var res = quad('bubble', p[0], { opts: p[1], industryId: p[1].ind || null }), label = JSON.stringify(p);
         a.deepEqual([res.option.xAxis.min, res.option.xAxis.max], [1, 3], label + ': x from 1 to 3');
         a.deepEqual([res.option.yAxis.min, res.option.yAxis.max], [1, 3], label + ': y from 1 to 3');
         valueSeries(res).forEach(function (s) { a.equal(s.clip, false, label + ': bubbles on the edge are not cut'); });
@@ -614,7 +616,7 @@
       a.ok(sw({ mode: 'one', focus: 'alpha' }), 'one against the rest: offered');
       a.ok(sw({ mode: 'set', set: ['alpha', 'bravo', 'charlie'] }), 'a set: offered (it averages)');
       a.equal(sw({ mode: 'pair', focus: 'alpha', second: 'bravo' }), null, 'a pair: left out, each region already has its own bubble');
-      a.ok(quad('bubble', { mode: 'pair', focus: 'alpha', second: 'bravo' }).controls.some(function (x) { return x.key === 'industryFilter'; }), 'the industry filter stays');
+      a.ok(!quad('bubble', { mode: 'pair', focus: 'alpha', second: 'bravo' }).controls.some(function (x) { return x.key === 'industryFilter'; }), 'no industry filter of its own (D105)');
     });
 
     T.test('X-industry-quad-leaders', 'Leader lines only where a label moved away from its bubble; short ones when every region is drawn', function (a) {
@@ -751,9 +753,9 @@
       });
     });
 
-    T.test('X-industry-quad-filter-numbers', 'QA-3: with an industry filter each point carries its region number, matching the legend', function (a) {
+    T.test('X-industry-quad-filter-numbers', 'QA-3: with every region for the industry in focus each point carries its region number, matching the legend', function (a) {
       sample();
-      var res = quad('bubble', { mode: 'all' }, { size: { w: 540, h: 560 }, opts: { industryFilter: TAP.data.industries({ rated: true })[0].id } });
+      var res = quad('bubble', { mode: 'all' }, { size: { w: 540, h: 560 }, industryId: TAP.data.industries({ rated: true })[0].id, opts: { everyRegion: true } });
       var key = {};
       res.legend.forEach(function (l) { if (l.mark != null) key[l.mark] = l.label; });
       points(res).forEach(function (d) {
@@ -777,7 +779,7 @@
             bubbleSameAsTable(a, quad(type, c, { opts: { everyRegion: every } }), c.mode + ' ' + type + (every ? ' every' : ''));
           });
         });
-        bubbleSameAsTable(a, quad('bubble', c, { opts: { industryFilter: 'ind4' } }), c.mode + ' filtered');
+        bubbleSameAsTable(a, quad('bubble', c, { industryId: 'ind4', opts: { everyRegion: true } }), c.mode + ' filtered');
       });
     });
 
@@ -988,14 +990,15 @@
   function heading(root) { return root.querySelector('.tap-ind-comments__title').textContent; }
 
   T.suite('industry-comments', function () {
-    T.test('X-industry-view-layout', 'Tier grid at full width, then the quadrant and ratings side by side, then the commentary', function (a) {
+    T.test('X-industry-view-layout', 'D105: the tier grid and the quadrant at full width, then the ratings and the commentary side by side', function (a) {
       withView(function (root) {
         var ids = Array.prototype.map.call(root.querySelectorAll('.tap-panel'), function (p) { return p.getAttribute('data-report'); });
         a.deepEqual(ids, ['ind-tiers', 'ind-quad', 'ind-ratings'], 'three panels in order');
         var pair = root.querySelector('.tap-ind__pair');
-        a.equal(pair.querySelectorAll('.tap-panel').length, 2, 'two panels side by side, never more');
-        var all = Array.prototype.slice.call(root.querySelectorAll('.tap-panel, .tap-ind-comments'));
-        a.ok(/tap-ind-comments/.test(all[all.length - 1].className), 'the commentary comes last');
+        a.equal(pair.children.length, 2, 'two side by side, never more');
+        a.equal(pair.querySelectorAll('.tap-panel').length, 1, 'the ratings chart');
+        a.ok(pair.querySelector('.tap-ind-comments'), 'and the commentary beside it');
+        a.equal(root.querySelectorAll('.tap-ind__slot--wide').length, 2, 'the tier grid and the quadrant take the full width');
       });
     });
 
@@ -1234,7 +1237,7 @@
     function tableRow(res, id) { return res.table.rows.filter(function (r) { return r.entityId === id; })[0]; }
     // The attractiveness chart's own figures for the same comparison and industry (its table reads the exact cells).
     function quadRow(c, industryId, entityId, every) {
-      var res = TAP.builders.get('quadrant')(ctxFor('ind-quad', 'bubble', c, { opts: every ? { industryFilter: industryId } : {} }));
+      var res = TAP.builders.get('quadrant')(ctxFor('ind-quad', 'bubble', c, { industryId: every ? industryId : null, opts: every ? { everyRegion: true } : {} }));
       return res.table.rows.filter(function (r) { return r.entityId === entityId && r.industryId === industryId; })[0];
     }
 
@@ -1458,6 +1461,99 @@
       a.deepEqual(on.sort(), ['bravo|ind.ability', 'bravo|ind.expertise'], 'the named cells of the named region');
       var other = parse(ratingsRes('grid', { mode: 'all' }, 'ind2', { highlight: hl }).html);
       a.equal(other.querySelectorAll('.is-hl').length, 0, 'nothing outlined while the chart shows another industry');
+    });
+  });
+
+  /* ---------- D105: Market coverage in two parts, all industries then one industry ---------- */
+
+  T.suite('industry-layout', function () {
+    function partOf(root, name) { return root.querySelector('.tap-ind__part[data-part="' + name + '"]'); }
+    function reportsIn(el) { return Array.prototype.map.call(el.querySelectorAll('.tap-panel'), function (p) { return p.getAttribute('data-report'); }); }
+    function picker(root) { return partOf(root, 'one').querySelector('.tap-ind__part-head select'); }
+    function why(root) { return root.querySelector('.tap-ind__why').textContent; }
+    function ratingsTitleOf(root) { return root.querySelector('.tap-panel[data-report="ind-ratings"] .tap-panel__title').textContent; }
+    function commentsTitle(root) { return root.querySelector('.tap-ind-comments__title').textContent; }
+    function pick(sel, id) { sel.value = id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    function quadChart(root) { return window.echarts.getInstanceByDom(root.querySelector('.tap-panel[data-report="ind-quad"] .tap-panel__chart')); }
+
+    T.test('X-d105-industry-layout', 'Two parts in order, with their headings: all industries (tier grid, quadrant), then one industry (ratings beside the comments)', function (a) {
+      withView(function (root) {
+        var parts = Array.prototype.map.call(root.querySelectorAll('.tap-ind__part'), function (p) { return p.getAttribute('data-part'); });
+        a.deepEqual(parts, ['all', 'one'], 'All industries, then One industry');
+        a.equal(partOf(root, 'all').querySelector('.tap-ind__part-title').textContent, 'All industries');
+        a.equal(partOf(root, 'one').querySelector('.tap-ind__part-title').textContent, 'One industry');
+        a.deepEqual(reportsIn(partOf(root, 'all')), ['ind-tiers', 'ind-quad'], 'the tier grid, then the attractiveness chart');
+        var pair = partOf(root, 'one').querySelector('.tap-ind__pair');
+        a.deepEqual(reportsIn(pair), ['ind-ratings'], 'the ratings in the pair');
+        a.ok(pair.querySelector('.tap-ind-comments'), 'beside the leaders’ comments');
+        a.equal(pair.children.length, 2, 'two side by side, never more (D24)');
+      });
+    });
+
+    T.test('X-d105-industry-layout', 'One industry select on the view, in the One industry header; it drives the ratings and the comments', function (a) {
+      withView(function (root) {
+        var all = root.querySelectorAll('select');
+        a.equal(all.length, 1, 'exactly one select on the view');
+        var sel = picker(root);
+        a.ok(sel && sel === all[0], 'in the One industry header');
+        a.ok(sel.id && root.querySelector('label[for="' + sel.id + '"]'), 'with a label');
+        var names = Array.prototype.map.call(sel.options, function (o) { return o.textContent; });
+        a.deepEqual(names, TAP.data.industries({ rated: true }).map(function (d) { return d.name; }).sort(function (x, y) { return x.localeCompare(y); }), 'rated industries, A to Z');
+        a.equal(root.querySelector('.tap-panel[data-report="ind-ratings"] [data-control="industry"]'), null, 'the ratings chart has no picker of its own');
+        pick(sel, 'ind4');
+        a.match(ratingsTitleOf(root), /Utilities/, 'the ratings follow');
+        a.match(commentsTitle(root), /Utilities/, 'the comments follow');
+        a.equal(why(root), TAP.content.text('industryView.whyPicked', { industry: 'Utilities' }), 'the line says it is shown because it was picked');
+      });
+    });
+
+    T.test('X-d105-industry-layout', 'By default the line names the most split industry; a grid row or a bubble updates the picker and the line', function (a) {
+      withView(function (root) {
+        a.equal(picker(root).value, 'ind2', 'the most split industry on the mini data (Education)');
+        a.equal(why(root), TAP.content.text('industryView.whyDefault', { industry: 'Education' }), 'the default line names it');
+        root.querySelector('.tap-panel[data-report="ind-tiers"] .tap-tg__name[data-tap-industry="ind3"]').click();
+        a.equal(picker(root).value, 'ind3', 'a grid row moves the picker');
+        a.equal(why(root), TAP.content.text('industryView.whyPicked', { industry: 'Retail' }), 'and the line');
+        TAP.bus.emit('industry:select', { industryId: 'ind1' });   // what a bubble click sends
+        a.equal(picker(root).value, 'ind1', 'a bubble moves the picker');
+        a.match(why(root), /Showing Healthcare\./);
+      });
+    });
+
+    T.test('X-d105-industry-layout', 'The industry in focus is marked as selected in the tier grid and on the attractiveness chart', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind4' });
+        var rows = root.querySelectorAll('.tap-panel[data-report="ind-tiers"] .tap-tg__row[aria-selected="true"]');
+        a.equal(rows.length, 1, 'one grid row is selected');
+        a.ok(rows[0].querySelector('[data-tap-industry="ind4"]'), 'the Utilities row');
+        a.match(rows[0].textContent, new RegExp(TAP.content.text('tierGrid.selected')), 'with a word as well as the outline');
+        var sel = (quadChart(root).getOption().series || []).filter(function (s) { return s.tapRole === 'selection'; })[0];
+        a.ok(sel && sel.data.length >= 1 && sel.data.every(function (d) { return d.industryId === 'ind4'; }), 'a ring round the Utilities bubble');
+      });
+      var res = quad('bubble', { mode: 'all' }, { industryId: 'ind4', highlight: { reportId: 'ind-quad', industryIds: ['ind1'], mark: 'points' } });
+      var roles = series(res).map(function (s) { return s.tapRole; });
+      a.ok(roles.indexOf('selection') >= 0 && roles.indexOf('highlight') >= 0, 'the selection and a "Show me" highlight can show at once');
+      a.ok(points(res).filter(function (d) { return d.industryId === 'ind4'; }).every(function (d) { return d.label.fontWeight >= 700; }), 'its label is bold');
+      a.ok(series(quad('bubble', { mode: 'all' })).every(function (s) { return s.tapRole !== 'selection'; }), 'no industry in focus: no selection');
+    });
+
+    T.test('X-d105-industry-layout', 'The attractiveness chart has no industry filter; "Every region" draws one point per region for the industry in focus', function (a) {
+      withView(function (root) {
+        TAP.store.set({ industry: 'ind1' });
+        var quadEl = root.querySelector('.tap-panel[data-report="ind-quad"]');
+        a.equal(quadEl.querySelector('[data-control="industryFilter"]'), null, 'no industry filter');
+        quadEl.querySelector('[data-control="everyRegion"] [data-value="true"]').click();
+        var pts = [];
+        quadChart(root).getOption().series.filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) { pts = pts.concat(s.data); });
+        a.deepEqual(pts.map(function (d) { return d.industryId; }), ['ind1', 'ind1', 'ind1', 'ind1'], 'Healthcare only');
+        a.deepEqual(pts.map(function (d) { return d.entityId; }).sort(), ['alpha', 'bravo', 'charlie', 'delta'], 'one point per region');
+      });
+    });
+
+    T.test('X-d105-industry-layout', 'A presentation step’s industry still sets what the ratings chart shows', function (a) {
+      TAP.store.set({ industry: 'ind1' });
+      var p = TAP.panel.create(T.dom.mount(), 'ind-ratings', { local: true, initial: { type: 'grid', industryId: 'ind3' } });
+      try { a.match(p.el.querySelector('.tap-panel__title').textContent, /Retail/, 'the step’s industry, not the view’s'); } finally { p.destroy(); }
     });
   });
 })(window.TAP);

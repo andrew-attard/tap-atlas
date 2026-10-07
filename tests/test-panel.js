@@ -306,7 +306,10 @@
     }));
 
     T.test('X-panel-industry', 'The industry picker lists rated industries and asks for the selection by event', scene(function (a, s) {
-      var p = s.panel('ind-ratings', { industryId: 'ind3' }), seen = [];
+      // The ratings chart lost its own picker to the view's One industry part (D105); the option stays for any report
+      s.report(Object.assign({}, TAP.reports.get('ind-ratings'), { id: 'x-ratings-picker',
+        options: Object.assign({}, TAP.reports.get('ind-ratings').options, { industryPicker: true }) }));
+      var p = s.panel('x-ratings-picker', { industryId: 'ind3' }), seen = [];
       var sel = qs('select[data-control="industry"]', p.el);
       a.ok(sel, 'picker shown');
       a.deepEqual(qsa('option', sel).map(function (o) { return o.value; }), ['ind1', 'ind2', 'ind3', 'ind4'], 'rated only');
