@@ -25,6 +25,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
   'use strict';
 
   var TIERS = ['ind-tiers'], QUAD = ['ind-quad', 'ind-tiers'], GRID = ['ind-tiers', 'ind-quad'];
+  var RATED = ['ind-ratings'];   // D102: the rules built from the ratings also show on the ratings chart
   function rule(o) { R.rules.push(Object.assign({ enabled: true, compare: false, templates: {}, fallback: 'details' }, o)); }
 
   /* ---------- priorities (US-1.7.4) ---------- */
@@ -50,7 +51,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     templates: { abilityOne: '{industry} is a group priority, but {region} rates its ability to win there as low.',
       attractiveness: '{industry} is a group priority, but {n} regions see it as less attractive.',
       attractivenessOne: '{industry} is a group priority, but {region} sees it as less attractive.' },
-    attach: GRID, highlight: 'industryRow' });
+    attach: GRID.concat(RATED), highlight: 'industryRow' });
 
   /* ---------- judgement (US-1.7.5) ---------- */
   rule({ id: 'strongRating', family: 'judgement',
@@ -59,13 +60,13 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     scoring: 'Strength: grows with the number of ratings at 3. Money: none, as nothing is in the system yet.',
     template: '{region} rates its {ratings} in {industry} as strong, with no current ARR or pipeline there. Worth discussing what the rating draws on.',
     templates: { little: '{region} rates its {ratings} in {industry} as strong, with little current ARR or pipeline there ({arr} and {pipeline}). Worth discussing what the rating draws on.' },
-    attach: QUAD, highlight: 'points' });
+    attach: QUAD.concat(RATED), highlight: 'points' });
   rule({ id: 'weakRating', family: 'judgement',
     description: 'References, expertise or product fit rated 1 (the unfavourable end) where the industry holds the region’s largest current ARR or pipeline figure.',
     reads: ['marketCoverage.expertise', 'marketCoverage.currentArr'], params: { rank: 1 },
     scoring: 'Strength: grows with the number of ratings at 1. Money: the figure involved.',
     template: '{region} rates its {ratings} in {industry} at 1 of 3, yet {industry} holds {rank} {what} ({amount}). Worth discussing what sits behind the rating.',
-    attach: QUAD, highlight: 'points' });
+    attach: QUAD.concat(RATED), highlight: 'points' });
   rule({ id: 'tierVsPipeline', family: 'judgement',
     description: 'A Tier 3 industry holding at least 15% of the region’s pipeline (every industry row counted).',
     reads: ['marketCoverage.tier', 'marketCoverage.pipelineTotal'], params: { share: 0.15 },
@@ -145,7 +146,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     reads: ['marketCoverage.growthPotential', 'marketCoverage.references'], params: { minRegions: 3 },
     scoring: 'Strength: the share of regions involved, against twice the threshold share. Money: its current ARR in those regions.',
     template: '{n} regions see {industry} as attractive but rate their ability to win as low.',
-    attach: ['ind-quad'], highlight: 'quadrant' });
+    attach: ['ind-quad'].concat(RATED), highlight: 'quadrant' });
   rule({ id: 'notYetList', family: 'capability',
     description: 'Each region’s own list of industries in the attractive, not-yet-able-to-win quadrant.',
     reads: ['marketCoverage.growthPotential', 'marketCoverage.references'], params: { minIndustries: 1 },
