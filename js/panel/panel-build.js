@@ -2,7 +2,7 @@
  * File: js/panel/panel-build.js
  * Purpose: What a report panel draws: validates the report at the panel's drill level, works out its comparison,
  *          industry, chart types and highlight, and runs the builder. Every problem stays inside the panel.
- * Provides: TAP.panelBuild (build, builderOf, industryOf, titleOf, cmpOf, highlightOf, ownMeasure, tabled)
+ * Provides: TAP.panelBuild (build, builderOf, industryOf, oneIndustry, titleOf, cmpOf, highlightOf, ownMeasure, tabled)
  * Depends on: js/engine/registry.js, scope.js, js/core/data.js, content.js, js/panel/panel-menus.js,
  *             js/panel/panel-drill.js, js/theme.js (all at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (p.id, p.opts, p.st, p.drill, p.size)
@@ -13,10 +13,15 @@
 
   function builderOf(def) { return TAP.builders.get(def.builder || (def.shape === 'xyz' ? 'xy' : def.shape)); }
 
+  // Whether a report shows one industry at a time (the ratings).
+  function oneIndustry(def) {
+    var o = (def && def.options) || {};
+    return !!def && (!!o.industryPicker || def.dimension === 'rating' || String(def.title || '').indexOf('{industry}') >= 0);
+  }
+
   // The industry a one-industry report shows: the view's choice, else the one selected, else the first rated.
   function industryOf(p, def, s) {
-    var o = (def && def.options) || {};
-    if (!def || (!o.industryPicker && def.dimension !== 'rating' && String(def.title || '').indexOf('{industry}') < 0)) return null;
+    if (!oneIndustry(def)) return null;
     var rated = TAP.data.industries({ rated: true }), id = p.opts.industryId || s.industry;
     var ok = rated.some(function (d) { return d.id === id; });
     return ok ? id : (rated[0] ? rated[0].id : null);
@@ -66,6 +71,6 @@
   // The table view, unless the report is a list: a list is its own table (US-2.7.2).
   function tabled(p, b) { return !!(p.st.table && b.res && b.res.table && b.ctx.type !== 'list'); }
 
-  TAP.panelBuild = { build: build, builderOf: builderOf, industryOf: industryOf, titleOf: titleOf, cmpOf: cmpOf,
+  TAP.panelBuild = { build: build, builderOf: builderOf, industryOf: industryOf, oneIndustry: oneIndustry, titleOf: titleOf, cmpOf: cmpOf,
     highlightOf: highlightOf, ownMeasure: ownMeasure, tabled: tabled };
 })(window.TAP);

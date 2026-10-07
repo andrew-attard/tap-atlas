@@ -26,14 +26,16 @@
   }
 
   // The insights for one chart in a comparison: {top, list (at most 3), count}. Nothing while insights is a stub.
-  function get(cmp, reportId) {
+  // industryId: a chart that shows one industry (the ratings) lists only the insights about it, so its count, list and
+  // takeaway never borrow another industry's insight (D102).
+  function get(cmp, reportId, industryId) {
     var I = TAP.insights, none = { top: null, list: [], count: 0 };
     if (!I || I.__stub) return none;
     var hidden = TAP.store.get().hiddenInsights || [];
-    var shown = function (x) { return x && hidden.indexOf(x.id) < 0; };
+    var shown = function (x) { return x && hidden.indexOf(x.id) < 0 && (!industryId || (x.industryIds || []).indexOf(industryId) >= 0); };
     try {
       var all = (I.ranked(cmp, { reportId: reportId }) || []).filter(shown);
-      var list = (I.top(cmp, reportId, MAX) || []).filter(shown);
+      var list = industryId ? all.slice(0, MAX) : (I.top(cmp, reportId, MAX) || []).filter(shown);
       var lead = list.filter(function (x) { return fits(x, cmp); })[0] || null;
       return { top: lead, list: list, count: Math.max(all.length, list.length) };
     } catch (e) {
@@ -68,9 +70,8 @@
         var deep = !!(p.drill && p.drill.depth()), off = p.st.selected === ins.id, tg = target(ins, deep ? p.drill.current() : p.id);
         var sm = TAP.showme, ids = ins.regionIds;
         if (!off && TAP.panelBuild.ownMeasure(tg.reportId, tg.measureId)) p.st.measureId = tg.measureId;   // D79
-        // A one-industry chart (the ratings) shows the insight's industry first, as its own picker would (D102)
-        var o = (TAP.reports.get(tg.reportId) || {}).options || {};
-        if (!off && o.industryPicker && tg.industryIds.length === 1) {
+        // A one-industry chart (the ratings) shows the insight's industry first, as a picker would (D102)
+        if (!off && TAP.panelBuild.oneIndustry(TAP.reports.get(tg.reportId)) && tg.industryIds.length === 1) {
           p.opts.industryId = tg.industryIds[0];
           TAP.bus.emit('industry:select', { industryId: tg.industryIds[0] });
         }
