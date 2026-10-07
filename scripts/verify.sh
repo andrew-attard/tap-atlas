@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # File: scripts/verify.sh
 # Purpose: Runs every local check in order (lint, denylist, ignored files, docs paths, browser tests) before a pull request.
-# Provides: CLI `scripts/verify.sh [--release] [--browser chrome|edge|both]`; exit 1 if any step fails
+# Provides: CLI `scripts/verify.sh [--release] [--browser chrome|edge|both|none]`; exit 1 if any step fails
+#           (none: every check but the browser tests, which CI runs on each pull request; D103)
 # Depends on: tools/lint.js, tools/build-pages.js, tools/check-docs.js, tools/check-docs3.js, scripts/check-text.sh, scripts/test-headless.sh, git, Node
 # Used by: developers and agents before opening a pull request (see CONTRIBUTING.md)
 
@@ -14,11 +15,11 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --release) release=1 ;;
     --browser) browser="${2:-}"; shift ;;
-    *) echo "Usage: $0 [--release] [--browser chrome|edge|both]"; exit 2 ;;
+    *) echo "Usage: $0 [--release] [--browser chrome|edge|both|none]"; exit 2 ;;
   esac
   shift
 done
-case "$browser" in chrome|edge|both) ;; *) echo "Unknown browser: $browser"; exit 2 ;; esac
+case "$browser" in chrome|edge|both|none) ;; *) echo "Unknown browser: $browser"; exit 2 ;; esac
 
 node_bin="$(command -v node || echo "$HOME/.local/bin/node")"
 lint_flag=()
@@ -90,7 +91,9 @@ fi
 
 one="$browser"
 [ "$one" = "both" ] && one=chrome
-if [ -f tests.html ]; then
+if [ "$browser" = "none" ]; then
+  echo "SKIP  browser tests (--browser none): CI runs tests.html in Chrome on the pull request"
+elif [ -f tests.html ]; then
   step "tests.html$query ($browser)" scripts/test-headless.sh "tests.html$query" "$browser"
   step "harness self-test ($one)" scripts/test-headless.sh "tests/selftest.html$query" "$one"
 else
