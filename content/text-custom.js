@@ -10,8 +10,10 @@ window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   custom: {
-    // The Build a chart section of the Guide (js/ui/custom-builder.js)
+    // The Build a chart view (js/views/build.js, D96): the header's kicker and title; the lead line follows them
     heading: 'Build a chart',
+    viewTitle: 'Which figure would you like to compare?',
+    // The builder (js/ui/custom-builder.js)
     lead: 'Pick a measure, what to show it by and a chart type. Only combinations that make sense are offered: rates and ratings are never added up. The chart follows the comparison like any other.',
     measure: 'Measure',
     byPicker: 'By',

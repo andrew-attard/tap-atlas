@@ -29,7 +29,7 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Insights | `config/insight-rules.js` (rules, thresholds, wording), `config/comment-themes.js` (recurring theme keywords), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
 | Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/ui/view-head.js` (the newer views' header and tips), `js/views/*.js` (the views, including `js/views/other.js` for extra sections), `js/panel/*.js` (the report panel, drill-down, expanded charts) |
 | Presenting | `config/running-order.js` (the presentation file), `js/ui/present*.js` (presentation mode) |
-| Custom charts | `js/engine/custom.js` (which measures and dimensions can be combined), `js/ui/custom-builder.js` ("Build a chart" on the Guide) |
+| Custom charts | `js/engine/custom.js` (which measures and dimensions can be combined), `js/ui/custom-builder.js` and `js/views/build.js` ("Build a chart" in the menu) |
 | Extra sections | `js/core/extra.js` (reading and checking them), `js/views/other.js` (the Other sections view), `docs/EXTENDING-TEMPLATE.md` (how to add one) |
 | Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages, present, custom, extra) |
 | Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, internal copy only, never committed) |
@@ -251,7 +251,7 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 ## Presenting and building charts in the meeting
 
-Phase 3 added presentation mode, which plays a meeting's presentation full screen, one step at a time, and "Build a chart" on the Guide, which makes a chart from any measure that allows it. Prompts 14 and 15 help with both.
+Phase 3 added presentation mode, which plays a meeting's presentation full screen, one step at a time, and "Build a chart" in the menu, which makes a chart from any measure that allows it. Prompts 14 and 15 help with both.
 
 ## 14. Set the presentation for a meeting
 
@@ -288,7 +288,7 @@ Do only the task I name: <A | B>.
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** for A, one definition and a one-line change to `config/views.js`; for B, an explanation and a one-line change to the measure's `dims`, or a reason to leave it. Check: open `tests.html` (all pass), then the view, or the Guide's "Build a chart": the measure appears with the new choice, and a chart built from it shows the "Custom chart" badge and the same figures as its table.
+**Expect:** for A, one definition and a one-line change to `config/views.js`; for B, an explanation and a one-line change to the measure's `dims`, or a reason to leave it. Check: open `tests.html` (all pass), then the view, or "Build a chart" in the menu: the measure appears with the new choice, and a chart built from it shows the "Custom chart" badge and the same figures as its table.
 
 ## The full template
 

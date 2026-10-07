@@ -9,7 +9,7 @@
  * section 17; a view still being built may list reports that don't exist yet.
  */
 window.TAP_VIEWS = {
-  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other', 'regions', 'insights', 'guide'],
+  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other', 'regions', 'insights', 'build', 'guide'],
   overview: { title: 'Overview', reports: ['ov-ambition'] },
   industry: { title: 'Market coverage', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
   newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
@@ -22,5 +22,7 @@ window.TAP_VIEWS = {
   other: { title: 'Other sections', reports: [] },
   regions: { title: 'Regions', reports: [] },
   insights: { title: 'Insights', reports: [] },
+  // Build a chart (US-3.5.1) has its own menu item beside the Guide (D96); its charts are built at run time
+  build: { title: 'Build a chart', reports: [] },
   guide: { title: 'Guide', reports: [] }
 };

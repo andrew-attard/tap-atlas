@@ -450,7 +450,7 @@ js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-
 js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
 js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights.js
 js/ui/custom-builder.js
-js/views/guide.js
+js/views/build.js  guide.js
 js/ui/app.js
 ```
 <!-- script-order:end -->
@@ -633,10 +633,10 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 
 ### 18.1 Views
 
-- Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`.
+- Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`. As built today (`config/views.js`): `overview`, `industry`, `newBusiness`, `customers`, `partners`, `outlook`, `other`, `regions`, `insights`, `build`, `guide`; number keys 1 to 9, then 0 for the tenth item (D90), none for an eleventh.
 - `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
-- "Build a chart" (US-3.5.1) is a section of the Guide, not a view.
-- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3; Build a chart, US-3.5.1). `js/views/guide.js` draws them before the glossary and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
+- "Build a chart" (US-3.5.1) is its own view, `build` (`js/views/build.js`, address `#build`), just before the Guide. The two sit together at the right end of the top bar, apart from the plan views (D94, D96). It was a Guide section until D96.
+- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3). `js/views/guide.js` draws them before the glossary and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
 
 ### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)
 

@@ -44,6 +44,7 @@ Object.assign(window.TAP_CONTENT.text, {
     outlook: 'Start with each plan against its strategic plan, then the base year.',
     regions: 'Pick a region to see its whole plan on one page.',
     insights: 'Filter by region or family, then use "Show me" to see the figures.',
+    build: 'Pick a measure and what to show it by; keep a chart to reopen it later.',
     guide: 'Use the contents to jump to a section; the glossary defines every term.'
   },
 

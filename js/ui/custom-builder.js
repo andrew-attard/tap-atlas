@@ -1,12 +1,12 @@
 /*
  * File: js/ui/custom-builder.js
- * Purpose: The "Build a chart" section of the Guide: pickers for measure, dimension and chart type, the custom chart panel and the session list (US-3.5.1, US-3.5.3).
+ * Purpose: The builder of the Build a chart view: pickers for measure, dimension and chart type, the custom chart panel and the session list (US-3.5.1, US-3.5.3).
  *          Every choice comes from TAP.custom (measure metadata, D68); the chart is an ordinary panel drawn from
  *          the custom definition, so comparison, sources and "not provided" work as on the prepared reports.
- * Provides: a Guide extra (TAP.guideExtras), TAP.customBuilder (render)
+ * Provides: TAP.customBuilder (render)
  * Depends on: js/engine/custom.js, js/panel/panel.js, panel-menus.js (seg), panel-chart.js (error), js/core/dom.js,
  *             content.js, format.js, storage.js, js/engine/shapes.js (label, kit.lower) (all at call time)
- * Used by: js/views/guide.js
+ * Used by: js/views/build.js (its own menu item since D96; it was a Guide section)
  * Owner: CUSTOM stream (#80)
  */
 (function (TAP) {
@@ -117,8 +117,9 @@
   }
 
   /*
-   * Draws the section into host. opts.spec starts from a given choice ({measure, by, type}); without it the
-   * session's last choice, or the story's example. Returns {el, spec(), destroy()}; the Guide calls destroy on unmount.
+   * Draws the builder into host. opts.spec starts from a given choice ({measure, by, type}); without it the
+   * session's last choice, or the story's example. opts.lead false leaves out the lead line (the view's header has it).
+   * Returns {el, spec(), destroy()}; the view calls destroy on unmount.
    */
   function render(host, opts) {
     var list = choices();
@@ -129,7 +130,8 @@
     var status = el('p', { class: 'tap-custom__status', role: 'status' }), listBox = el('div', { class: 'tap-custom__kept' });
     var actions = el('div', { class: 'tap-custom__actions' }, [
       el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-custom__keep', 'data-action': 'custom-keep', onclick: keep }, t('list.keep')), status]);
-    var root = el('div', { class: 'tap-custom' }, [el('p', { class: 'tap-custom__lead' }, t('lead')), pickers, actions, slot, listBox]);
+    var lead = opts && opts.lead === false ? null : el('p', { class: 'tap-custom__lead' }, t('lead'));
+    var root = el('div', { class: 'tap-custom' }, [lead, pickers, actions, slot, listBox]);
     host.appendChild(root);
     if (!cur) { TAP.dom.text(pickers, t('none')); return { el: root, spec: function () { return null; }, destroy: function () {} }; }
 
@@ -189,8 +191,8 @@
 
     drawPickers();
     drawList();
-    // The Guide draws its sections before they are on the page. The panel waits until the section is, so a Guide
-    // drawn and dropped without ever being shown leaves no panel listening to the store behind it.
+    // A host not yet on the page gets its panel once it is, so a builder drawn and dropped without ever being shown
+    // leaves no panel listening to the store behind it.
     if (slot.isConnected) drawPanel();
     else if (window.requestAnimationFrame) window.requestAnimationFrame(function () { if (!gone && slot.isConnected && !panel) drawPanel(); });
     return {
@@ -206,8 +208,4 @@
   }
 
   TAP.customBuilder = { render: render };
-
-  // A section of the Guide, not a view, so the menu and its number keys don't change (D70)
-  TAP.guideExtras = TAP.guideExtras || [];
-  TAP.guideExtras.push({ id: 'buildChart', title: TAP.content.text('custom.heading'), render: function (body) { return render(body); } });
 })(window.TAP);
