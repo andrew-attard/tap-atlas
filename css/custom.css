@@ -1,6 +1,6 @@
 /*
  * File: css/custom.css
- * Purpose: Styles for the Build a chart section.
+ * Purpose: Styles for the Build a chart view's builder.
  * Provides: styles for this area only
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
@@ -19,7 +19,7 @@
 .tap-custom__label { font-size: var(--tap-fs-body); font-weight: 600; }
 .tap-custom .tap-custom__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); max-width: 100%; min-width: 22em; }
 
-/* The panel sits in the Guide's column, about as wide as one of two panels side by side on a view */
+/* The panel takes the view's width, as a single panel does on the other views */
 .tap-custom__panel { min-width: 0; }
 .tap-custom__failed { padding: var(--tap-sp-4) var(--tap-sp-6); }
 

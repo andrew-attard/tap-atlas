@@ -36,7 +36,7 @@ window.TAP_CONTENT.guide = {
     intro: 'This app puts every region’s territory account plan side by side. It reads the finished workbooks and never changes them.',
     sections: [
       { id: 'menu', title: 'The menu', paragraphs: [
-        'The menu at the top lists the views: Overview, Market coverage, New business, Customer growth, Partners, Outlook, Other sections (when the plans hold extra template sections), Regions, Insights and this Guide. The view you are on is highlighted.',
+        'The menu at the top lists the views: Overview, Market coverage, New business, Customer growth, Partners, Outlook, Other sections (when the plans hold extra template sections), Regions and Insights. Build a chart and this Guide sit at the right end. The view you are on is highlighted.',
         'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.',
         'A one-line tip under each view’s title says where to start. "Hide tips" hides the tips until the page is reloaded.'
       ] },

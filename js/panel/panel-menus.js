@@ -204,7 +204,7 @@
   // b: the panel's build ({def, types, ...}); info: its insights ({list, count}).
   function tools(p, b, info) {
     var box = el('div', { class: 'tap-panel__tools', role: 'toolbar', 'aria-label': t('tools') }), open = p.st.pop;
-    // A chart built on the Guide says so, so it isn't taken for a prepared report (US-3.5.1, CUSTOM)
+    // A chart made in Build a chart says so, so it isn't taken for a prepared report (US-3.5.1, CUSTOM)
     if (b.def && b.def.custom) box.appendChild(el('span', { class: 'tap-badge tap-badge--accent tap-custom__badge', 'data-custom-chart': '' }, TAP.content.text('custom.badge')));
     box.appendChild(button('insights', 'insight', t('insights'), { count: info.count, expanded: open === 'ins',
       aria: t('insightsCount', { n: info.count }), disabled: !info.count, onclick: function () { p.toggle('ins'); } }));

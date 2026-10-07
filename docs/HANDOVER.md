@@ -8,11 +8,11 @@ Generic on purpose: this copy names no organization, region, file or person. Any
 
 TAP Atlas shows every region's territory account plan side by side. Each regional leader fills in the same planning workbook; an import turns the workbooks into one data file; the app reads that file and shows the plans together, so leadership can play each plan back, compare regions and see what is worth discussing.
 
-- **Views:** Overview, Market coverage, New business, Customer growth, Partners, Outlook (the plans against the strategic plan and the year before the plan, and the revenue outlook), Other sections (only when the data has extra sections), Regions (one region's profile against the rest), Insights and Guide.
+- **Views:** Overview, Market coverage, New business, Customer growth, Partners, Outlook (the plans against the strategic plan and the year before the plan, and the revenue outlook), Other sections (only when the data has extra sections), Regions (one region's profile against the rest), Insights, Build a chart and Guide.
 - **One comparison for every chart:** all regions, selected regions (one region or more), one against the rest, or all regions combined into one figure. The sentence under the bar says what is shown.
 - **Every figure traces to its source:** file › sheet › cell, through the details panel and the data sources panel. Every chart has a table view.
 - **Insights:** rules in configuration flag observations worth discussing, worded neutrally and ranked.
-- **For presenting:** large type, no hover-only details, no animation, presentation mode, which plays a set list of charts full screen, one step at a time, from the presentation file (`config/running-order.js`), and "Build a chart" on the Guide for charts made in the meeting.
+- **For presenting:** large type, no hover-only details, no animation, presentation mode, which plays a set list of charts full screen, one step at a time, from the presentation file (`config/running-order.js`), and "Build a chart" in the menu, beside the Guide, for charts made in the meeting.
 - **No server:** plain HTML, CSS and JavaScript opened from the folder by double-click, in Chrome or Edge. Nothing loads from the web.
 
 ## The two editions

@@ -36,7 +36,7 @@
 
 /* Menu: one line at 1280 px (D72). The current view is bold with an ink bar; red is kept for actions and highlights */
 .tap-menu { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 var(--tap-sp-1); flex: 1; min-width: 0; }
-/* Ten views fit one line at 1280 px at body size, the D24 floor (D90); narrower (125% and 150% zoom) the menu wraps,
+/* Eleven items fit one line at 1280 px at body size, the D24 floor (D90, D96); narrower (125% and 150% zoom) the menu wraps,
    so every view stays reachable */
 .tap-menu__item {
   display: flex; align-items: center; min-height: 40px; padding: 0 var(--tap-sp-2);
@@ -45,8 +45,8 @@
   cursor: pointer;
 }
 .tap-menu__item:hover { background: var(--tap-surface); }
-/* D94: the Guide is help, not a view of the plans, so it sits at the right end of the bar */
-.tap-menu__item[data-view="guide"] { margin-left: auto; }
+/* D94, D96: Build a chart and the Guide are not views of the plans, so they sit together at the right end of the bar */
+.tap-menu__item[data-view="build"] { margin-left: auto; }
 .tap-menu__item[aria-current="page"] { font-weight: 800; border-bottom-color: var(--tap-ink); }
 
 /* Comparison bar, two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
