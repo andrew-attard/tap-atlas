@@ -53,18 +53,19 @@ window.TAP_REPORTS['ind-quad'] = {
   options: {}
 };
 
-// US-1.5.6: the six ratings for one industry, by region.
+// US-1.5.6: the six ratings for one industry, by region. D101: a grid by default, the ratings grouped under the two
+// scores they make up, each group closing with its average (the score the attractiveness chart plots).
 window.TAP_REPORTS['ind-ratings'] = {
   id: 'ind-ratings',
   view: 'industry',
   title: 'How do regions rate {industry}?',
   explain: {
-    shows: 'The six ratings each leader gave the chosen industry. The first three make up attractiveness, the last three ability to win.',
-    read: 'Each dot is one region, or a combined figure in dark grey. Further right is a more favourable rating, from 1 to 3.',
-    lookFor: 'Ratings where regions are far apart, and where one region sits apart from the rest.'
+    shows: 'The six ratings each leader gave the chosen industry: the three behind attractiveness, then the three behind ability to win. Each group ends with its average, which is the region’s place on the attractiveness chart.',
+    read: 'One row per region, or per combined figure. Every rating runs from 1 (low) to 3 (high), and higher is always more favourable; darker cells are higher ratings, and the number is always shown. The averages show one decimal. An outlined cell means the leader left the rating blank, and then that average is not provided, as on the attractiveness chart.',
+    lookFor: 'Ratings where regions are far apart, and the ratings behind an average that sits apart from the rest.'
   },
   shape: 'compare',
-  builder: null,
+  builder: 'ratingsGrid',
   dimension: 'rating',
   measures: [
     { id: 'ind.growthPotential', label: 'Growth potential' },
@@ -74,9 +75,9 @@ window.TAP_REPORTS['ind-ratings'] = {
     { id: 'ind.expertise', label: 'Expertise' },
     { id: 'ind.productFit', label: 'Product fit' }
   ],
-  defaultType: 'dot',
-  types: ['dot', 'bar', 'radar', 'table'],
+  defaultType: 'grid',
+  types: ['grid', 'bar', 'table'],
   breakdowns: [],
-  sources: ['IN'],
+  sources: ['IN', 'APP'],
   options: { industryPicker: true, measuresAs: 'categories' }
 };

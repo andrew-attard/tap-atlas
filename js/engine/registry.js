@@ -14,11 +14,11 @@
   var BREAKDOWNS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk', 'solution', 'category', 'route', 'maturity', 'partnerType'];
   var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread', 'list'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',
-    'heatmap', 'bubbleGrid', 'line', 'table', 'list'];
+    'heatmap', 'bubbleGrid', 'line', 'table', 'list', 'grid'];
 
   // The chart types each data shape allows (D18). 'groupedBar' appears once a breakdown is chosen.
   var SHAPE_TYPES = {
-    compare: ['bar', 'groupedBar', 'dot', 'radar', 'bubble', 'table'],   // bubble: needs x, y and size (nb-levers, US-2.1.4)
+    compare: ['bar', 'groupedBar', 'dot', 'radar', 'bubble', 'grid', 'table'],   // bubble: needs x, y and size (nb-levers, US-2.1.4); grid: the ratings (D101)
     parts: ['stackedBar', 'stacked100', 'groupedBar', 'treemap', 'bubble', 'table'],
     xy: ['scatter', 'table'],
     xyz: ['bubble', 'scatter', 'table'],
