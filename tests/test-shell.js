@@ -892,25 +892,6 @@
       });
     });
 
-    T.test('X-layers-glossary', 'The glossary panel is drawn by TAP.glossary.render on the page, opening on the term', function (a) {
-      run(function () {
-        startApp();
-        var seen = null;
-        swap('glossary', { render: function (el, opts) {
-          seen = { connected: el.isConnected, opts: opts };
-          el.appendChild(TAP.dom.el('p', { class: 'tap-gloss' }, 'Glossary list'));
-          return { el: el, filter: function () {} };
-        } }, function () {
-          TAP.layers.open('glossary', { termId: 'arr' });
-          a.equal(TAP.layers.top(), 'glossary');
-          a.deepEqual(seen.opts, { termId: 'arr' }, 'opens on the term');
-          a.ok(seen.connected, 'the body is on the page when drawn, so the entry can scroll into view');
-          a.equal(txt(qs('.tap-layer__title', layer())), TAP.content.text('layers.glossary'), 'the frame has a title');
-          a.ok(qs('.tap-gloss', layer()), 'the list is inside the panel');
-        });
-      });
-    });
-
     /* ---------- review chore #374 (SV-6): TAP.app.stop() drops every listener of the running app ---------- */
 
     T.test('X-review-SV-6', 'After TAP.app.stop() the old frame and comparison bar no longer react', function (a) {

@@ -238,22 +238,21 @@
 
     /* ---------- US-1.6.1: the Guide page (#37) ---------- */
 
-    T.test('TPV-TC-172', 'The Guide has three sections with a contents list at the top that jumps to each', function (a) {
+    T.test('TPV-TC-172', 'The Guide has its sections with a contents list at the top that jumps to each', function (a) {
       withGuide(function (root) {
         var g = TAP.content.guide();
         var links = qsa('.tap-guide__toc button', root);
-        // Sections added through TAP.guideExtras join the contents list before the glossary (ARCHITECTURE 18.1)
+        // Sections added through TAP.guideExtras join the contents list after the Guide's own (ARCHITECTURE 18.1);
+        // there is no glossary section (D98)
         var own = g.contents.map(function (c) { return c.title; }), added = (TAP.guideExtras || []).map(function (x) { return x.title; });
-        a.deepEqual(links.map(txt), own.slice(0, -1).concat(added, own.slice(-1)), 'contents list titles, in order');
+        a.deepEqual(links.map(txt), own.concat(added), 'contents list titles, in order');
         var secs = qsa('.tap-guide__sec', root).map(function (n) { return n.getAttribute('data-guide'); });
-        // Sections other streams add (TAP.guideExtras, ARCHITECTURE 18.1) sit after planning and before the glossary
         var extra = (TAP.guideExtras || []).map(function (x) { return x.id; });
-        a.deepEqual(secs.filter(function (id) { return extra.indexOf(id) < 0; }), ['howTo', 'planning', 'glossary'], 'three sections, in order');
-        a.deepEqual(secs.slice(2, secs.length - 1), extra, 'the added sections come after planning and before the glossary');
+        a.deepEqual(secs, ['howTo', 'planning'].concat(extra), 'how to use, planning explained, then the added sections');
         var toc = root.querySelector('.tap-guide__toc');
         a.ok(toc.compareDocumentPosition(root.querySelector('.tap-guide__sec')) & Node.DOCUMENT_POSITION_FOLLOWING, 'contents come first');
-        links[links.length - 1].click();
-        a.equal(document.activeElement, root.querySelector('[data-guide="glossary"] h2'), 'the glossary link moves to the glossary heading');
+        links[1].click();
+        a.equal(document.activeElement, root.querySelector('[data-guide="planning"] h2'), 'the second link moves to planning explained');
         links[0].click();
         a.equal(document.activeElement, root.querySelector('[data-guide="howTo"] h2'), 'the first link moves to How to use this app');
       });
@@ -312,10 +311,8 @@
       })([TAP.content.guide(), window.TAP_CONTENT.text]);
       var all = pool.join('\n');
       withGuide(function (root) {
-        var gloss = root.querySelector('[data-guide="glossary"] .tap-gloss');
         var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, stray = [];
         while ((n = walker.nextNode())) {
-          if (gloss && gloss.contains(n)) continue;   // the glossary list is CONTENT's, checked in its own tests
           var ext = n.parentNode && n.parentNode.closest ? n.parentNode.closest('.tap-guide__extra') : null;
           if (ext) continue;   // an added section's words (some from the data) are checked by the stream that adds it
           var s = n.nodeValue.replace(/\s+/g, ' ').trim();
@@ -323,7 +320,6 @@
           if (s && all.indexOf(s) < 0 && !isViewLink(s) && !/^\d$/.test(s)) stray.push(s);
         }
         a.deepEqual(stray, [], 'no text written into the page code');
-        a.ok(gloss, 'the glossary list is drawn by TAP.glossary.render');
       });
     });
 
@@ -756,7 +752,7 @@
       });
     });
 
-    T.test('X-pages-tour-priority', 'The glossary step spotlights a marked term on the view before the Guide menu item', function (a) {
+    T.test('X-pages-tour-priority', 'The glossary step spotlights a marked term on the view, never the Guide menu item (D98)', function (a) {
       withTour(function () {
         withApp(function () {
           var term = TAP.dom.el('button', { type: 'button', class: 'tap-term', 'data-term': 'arr' }, 'ARR');
@@ -766,6 +762,27 @@
           a.equal(stepNo(), STEPS.indexOf('glossary') + 1, 'on the glossary step');
           var hole = document.querySelector('.tap-tour__hole').getBoundingClientRect(), r = term.getBoundingClientRect();
           a.ok(Math.abs(hole.left - (r.left - 6)) < 2 && Math.abs(hole.width - (r.width + 12)) < 2, 'the spotlight is round the term');
+        });
+      });
+    });
+
+    // D98: the step points at a marked term only, and is left out when none is on screen
+    T.test('X-d98-tour-glossary', 'The glossary step names no glossary list and is skipped when no marked term is on screen', function (a) {
+      var step = TAP.tour.steps().filter(function (s) { return s.id === 'glossary'; })[0];
+      a.ok(step.sel.indexOf('data-view="guide"') < 0, 'no Guide fallback: ' + step.sel);
+      a.ok(!/glossary|Guide lists/i.test(step.text), 'the words mention no glossary list: ' + step.text);
+      withTour(function () {
+        withApp(function () {
+          var terms = TAP.dom.qsa('.tap-view .tap-term');
+          terms.forEach(function (n) { n.style.display = 'none'; });
+          try {
+            TAP.tour.start();
+            var titles = [], total = TAP.tour.steps().length;
+            a.ok(txt(callout().querySelector('.tap-tour__kicker')).indexOf(String(total - 1)) >= 0, 'one step fewer: ' + txt(callout().querySelector('.tap-tour__kicker')));
+            for (var i = 0; i < total - 1 && callout(); i++) { titles.push(txt(callout().querySelector('.tap-tour__title'))); press('ArrowRight'); }
+            a.equal(titles.indexOf(TAP.content.text('tourUi.titles.glossary')), -1, 'the glossary step is not shown');
+            a.equal(titles[titles.length - 1], TAP.content.text('tourUi.titles.guide'), 'the tour still ends on the Guide step');
+          } finally { terms.forEach(function (n) { n.style.display = ''; }); }
         });
       });
     });

@@ -38,7 +38,7 @@
     layers: ['open', 'close', 'openDetails', 'top'],
     sourcesPanel: ['render'],
     screens: ['show'],
-    glossary: ['popover', 'render'],
+    glossary: ['popover', 'close'],
     explain: ['open', 'sections'],
     tour: ['offer', 'start', 'stop', 'steps'],
     overviewCards: ['render'],
