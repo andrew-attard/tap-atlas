@@ -52,16 +52,21 @@
     ]);
   }
 
+  // Not views of the plans: they sit together at the right end of the bar and wrap as one group (D94, D96, D104)
+  var TOOLS = ['build', 'guide'];
+
   // One button per view. Clicking sets state.view; app.js keeps the address bar in step for the back button.
   function menu() {
     var nav = el('nav', { class: 'tap-menu', 'aria-label': TAP.content.text('menu.label'), 'data-tour': 'menu' });
+    var tools = el('div', { class: 'tap-menu__tools' });
     TAP.views.order().forEach(function (id) {
-      nav.appendChild(el('button', {
+      (TOOLS.indexOf(id) >= 0 ? tools : nav).appendChild(el('button', {
         type: 'button', class: 'tap-menu__item', 'data-view': id,
         // The Regions entry opens the region picker, not the last profile shown (US-2.4.1)
         onclick: function () { TAP.store.set(id === 'regions' ? { view: id, region: null } : { view: id }); }
       }, TAP.views.title(id)));
     });
+    if (tools.children.length) nav.appendChild(tools);
     return nav;
   }
 
