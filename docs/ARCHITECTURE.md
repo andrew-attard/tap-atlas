@@ -635,9 +635,11 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 - Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`.
 - `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
 - "Build a chart" (US-3.5.1) is a section of the Guide, not a view.
-- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, US-3.1.3; Build a chart, US-3.5.1). `js/views/guide.js` draws them before the glossary and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
+- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3; Build a chart, US-3.5.1). `js/views/guide.js` draws them before the glossary and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
 
 ### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)
+
+On screen the running order is called a presentation, and `config/running-order.js` the presentation file (D97); the code keeps the technical name.
 
 **`config/running-order.js`** sets `window.TAP_RUNNING_ORDER = { steps: [...] }`. A step:
 
@@ -657,7 +659,7 @@ A step may also set `industry: '<industry id>'` (one-industry reports such as th
 - A step shows its report in a full-screen presentation layer of its own (`TAP.panel.create` in that layer, with `opts.cmp` and `opts.initial`), not in the view's panels.
 - A step's comparison and highlight go to the step's own panel only: the comparison as `opts.cmp`, the highlight through the panel handle's `highlight(target)`. Presentation never writes `cmp` or `highlight` to `TAP.store`, so `scopeEpoch` doesn't move and the charts behind the layer keep their drill level, own comparison and choices (D74). Only `expanded` is set, to the step's report.
 - Progress row: "Step n of m" and the step title, at least 16 px.
-- **Recording (US-3.1.3):** `TAP.present.record(step)`, `recorded()`, `move(i, d)`, `remove(i)`, `clearRecorded()`, `asFileText()`; kept through `TAP.storage` key `runningOrder.recorded`. The panel menu's "Add to running order" calls `record` with the panel's current state.
+- **Recording (US-3.1.3):** `TAP.present.record(step)`, `recorded()`, `move(i, d)`, `remove(i)`, `clearRecorded()`, `asFileText()`; kept through `TAP.storage` key `runningOrder.recorded`. The panel menu's "Add to presentation" calls `record` with the panel's current state.
 
 ### 18.3 Custom charts (Epic 3.5, CUSTOM)
 
@@ -680,7 +682,7 @@ A step may also set `industry: '<industry id>'` (one-industry reports such as th
 
 | Stream | Owns |
 |---|---|
-| PRESENT | `config/running-order.js`, `js/ui/present*.js`, `css/present.css`, `content/text-present.js`, `tests/test-present.js`; small additions to `js/ui/keys.js` (P), `js/ui/shell.js` (Present button in the actions slot), `js/ui/sources-panel.js` (the `presentation` notes) and the panel menu ("Add to running order") under "Files outside ownership" |
+| PRESENT | `config/running-order.js`, `js/ui/present*.js`, `css/present.css`, `content/text-present.js`, `tests/test-present.js`; small additions to `js/ui/keys.js` (P), `js/ui/shell.js` (Present button in the actions slot), `js/ui/sources-panel.js` (the `presentation` notes) and the panel menu ("Add to presentation") under "Files outside ownership" |
 | CUSTOM | `js/engine/custom.js`, `js/ui/custom-builder.js`, `css/custom.css`, `content/text-custom.js`, `tests/test-custom.js`; the "Custom chart" badge in the panel under "Files outside ownership" |
 | EXTRA | `js/core/extra.js`, `js/views/other.js`, `content/text-extra.js`, the extra-section parts of `js/core/check.js`, `js/core/sources.js` and `js/engine/rows.js`, `docs/DATA-CONTRACT.md`, a new docs file EXTENDING-TEMPLATE.md, the sample generator (`tools/sample-*.js`, `tools/generate-sample-data.js`, `data/sample-plan-data.js`, `tests/fixtures/sample-expected.js`), `tests/test-extra.js` |
 | DOCS3 | new in the docs folder: HANDOVER.md, CASE-STUDY.md, PUBLISHING.md, index.html and a screenshots folder; new scripts package.sh and portfolio-shots.sh; `README.md`, `docs/COPILOT-PROMPTS.md`, `tests/test-docs3.js` |

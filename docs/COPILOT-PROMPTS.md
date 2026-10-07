@@ -28,7 +28,7 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Charts and lists | `js/engine/build-compare.js`, `js/engine/build-parts.js`, `js/engine/build-xy.js`, `js/engine/build-list.js` (lists), `js/reports/*.js` (the dedicated charts) |
 | Insights | `config/insight-rules.js` (rules, thresholds, wording), `config/comment-themes.js` (recurring theme keywords), `js/insights/engine.js`, `js/insights/rules-*.js` (one file per family) |
 | Screens | `js/ui/shell.js`, `js/ui/compare-bar.js`, `js/ui/layers.js`, `js/ui/showme.js` ("Show me"), `js/ui/keys.js` (shortcuts), `js/ui/view-head.js` (the newer views' header and tips), `js/views/*.js` (the views, including `js/views/other.js` for extra sections), `js/panel/*.js` (the report panel, drill-down, expanded charts) |
-| Presenting | `config/running-order.js` (the running order), `js/ui/present*.js` (presentation mode) |
+| Presenting | `config/running-order.js` (the presentation file), `js/ui/present*.js` (presentation mode) |
 | Custom charts | `js/engine/custom.js` (which measures and dimensions can be combined), `js/ui/custom-builder.js` ("Build a chart" on the Guide) |
 | Extra sections | `js/core/extra.js` (reading and checking them), `js/views/other.js` (the Other sections view), `docs/EXTENDING-TEMPLATE.md` (how to add one) |
 | Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages, present, custom, extra) |
@@ -251,13 +251,13 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 ## Presenting and building charts in the meeting
 
-Phase 3 added presentation mode, which steps through a meeting's running order full screen, and "Build a chart" on the Guide, which makes a chart from any measure that allows it. Prompts 14 and 15 help with both.
+Phase 3 added presentation mode, which plays a meeting's presentation full screen, one step at a time, and "Build a chart" on the Guide, which makes a chart from any measure that allows it. Prompts 14 and 15 help with both.
 
-## 14. Set the running order for a meeting
+## 14. Set the presentation for a meeting
 
 Use before a meeting, to fix the steps "Present" plays: which report, measure, chart type, comparison and highlight each step shows, in order.
 
-**Attach:** `config/running-order.js` (the current order), `docs/ARCHITECTURE.md` (section 18.2 explains every field of a step), `config/views.js` and the definitions files of the reports you want (for example `config/reports-newbusiness.js`). If you recorded steps from the screen with "Add to running order", paste the file text the Guide gives you into the chat.
+**Attach:** `config/running-order.js` (the current presentation), `docs/ARCHITECTURE.md` (section 18.2 explains every field of a step), `config/views.js` and the definitions files of the reports you want (for example `config/reports-newbusiness.js`). If you made a presentation from the screen with "Add to presentation", paste the text that "Copy as file text" in the Guide gives you into the chat.
 
 ```
 Write config/running-order.js for this app's presentation mode. Keep its header comment and set window.TAP_RUNNING_ORDER = { steps: [...] }, with each step in the shape described in section 18.2 of the attached ARCHITECTURE.md.
