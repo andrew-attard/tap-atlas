@@ -1,8 +1,10 @@
 /*
  * File: js/views/industry.js
- * Purpose: The Market coverage view: the tier grid at full width, then attractiveness vs ability and the
- *          ratings side by side, then the leaders' commentary for the selected industry (US-1.5.7). Selecting an
- *          industry anywhere on the view (grid row, quadrant point, ratings picker, details) updates the rest.
+ * Purpose: The Market coverage view in two parts (D105). All industries: the tier grid, then attractiveness vs
+ *          ability, both at full width. One industry: the view's only industry picker and a line saying why that
+ *          industry is shown, then its ratings beside the leaders' commentary (US-1.5.7). The industry in focus is
+ *          the one picked (picker, grid row, bubble, details), else the one the regions shown disagree on most; the
+ *          charts above mark it.
  * Provides: view 'industry' (registered with TAP.views), TAP.industryView (current)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/store.js, js/core/content.js, js/core/format.js,
  *             js/core/sources.js, js/core/data.js, js/theme.js, js/engine/scope.js, js/engine/measures.js,
@@ -81,13 +83,33 @@
     ]);
   }
 
+  /* ---------- the One industry header (D105) ---------- */
+
+  // The only industry picker on the view, A to Z (the grid's default order puts group priorities first, which is no
+  // help when looking a name up), and one line saying why that industry is shown.
+  function drawPicker(sel, why) {
+    var s = TAP.store.get(), id = current(s.cmp), ind = id ? TAP.data.industry(id) : null;
+    var inds = TAP.data.industries({ rated: true }).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    TAP.dom.clear(sel);
+    inds.forEach(function (d) { sel.appendChild(el('option', { value: d.id }, d.name)); });
+    sel.value = id || '';
+    TAP.dom.text(why, ind ? t(s.industry ? 'industryView.whyPicked' : 'industryView.whyDefault', { industry: ind.name }) : '');
+  }
+
   /* ---------- the view ---------- */
+
+  function part(name, children) {
+    return el('section', { class: 'tap-ind__part tap-ind__part--' + name, 'data-part': name, 'aria-labelledby': 'tap-ind-part-' + name },
+      children);
+  }
 
   function mount(root) {
     TAP.dom.clear(root);
-    var tiers = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' }), quad = el('div', { class: 'tap-ind__slot' });
+    var tiers = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' }), quad = el('div', { class: 'tap-ind__slot tap-ind__slot--wide' });
     var ratings = el('div', { class: 'tap-ind__slot' });
     var notes = el('section', { class: 'tap-ind-comments', 'aria-label': t('commentary.label') });
+    var sel = el('select', { class: 'tap-field tap-ind__select', id: 'tap-ind-picker' }), why = el('p', { class: 'tap-ind__why', role: 'status' });
+    sel.addEventListener('change', function () { TAP.bus.emit('industry:select', { industryId: sel.value }); });
     root.appendChild(el('div', { class: 'tap-ind' }, [
       el('header', { class: 'tap-ind__head' }, [
         el('span', { class: 'tap-ind__kicker' }, t('industryView.kicker')),
@@ -95,17 +117,20 @@
         el('p', { class: 'tap-ind__lead' }, t('industryView.lead')),
         TAP.viewHead.tip('industry')
       ]),
-      tiers, el('div', { class: 'tap-ind__pair' }, [quad, ratings]), notes
+      part('all', [el('h2', { class: 'tap-ind__part-title', id: 'tap-ind-part-all' }, t('industryView.partAll')), tiers, quad]),
+      part('one', [
+        el('header', { class: 'tap-ind__part-head' }, [
+          el('h2', { class: 'tap-ind__part-title', id: 'tap-ind-part-one' }, t('industryView.partOne')),
+          el('div', { class: 'tap-ind__picker' }, [el('label', { for: 'tap-ind-picker' }, t('industryView.pickLabel')), sel]),
+          why
+        ]),
+        el('div', { class: 'tap-ind__pair' }, [ratings, notes])
+      ])
     ]));
-    var shown = current(), panels = [mountPanel(tiers, 'ind-tiers'), mountPanel(quad, 'ind-quad'), mountPanel(ratings, 'ind-ratings', { industryId: shown })];
-    // While nothing is selected, the ratings follow the most split industry for the scope (US-1.5.6)
-    function followDefault() {
-      var next = current();
-      if (TAP.store.get().industry || next === shown) return;
-      shown = next;
-      if (panels[2] && panels[2].destroy) panels[2].destroy();
-      panels[2] = mountPanel(ratings, 'ind-ratings', { industryId: shown });
-    }
+    // Every chart on the view marks or shows the industry in focus, and follows it as it changes (D105)
+    var focus = { industryOf: function (cmp) { return current(cmp); } };
+    var panels = [mountPanel(tiers, 'ind-tiers', focus), mountPanel(quad, 'ind-quad', focus), mountPanel(ratings, 'ind-ratings', focus)];
+    drawPicker(sel, why);
     drawComments(notes);
     var handle;
     var dead = false;
@@ -119,9 +144,7 @@
         // Details that name one industry select it too, so the commentary follows any click (ARCHITECTURE s10)
         var tg = changed.indexOf('layer') >= 0 && s.layer && s.layer.name === 'details' && s.layer.payload && s.layer.payload.target;
         if (tg && (tg.industryIds || []).length === 1 && tg.industryIds[0] !== s.industry) { TAP.store.set({ industry: tg.industryIds[0] }); return; }
-        if (changed.indexOf('industry') >= 0) shown = s.industry || shown;
-        if (changed.indexOf('cmp') >= 0) followDefault();
-        if (['industry', 'cmp', 'scopeEpoch'].some(function (k) { return changed.indexOf(k) >= 0; })) drawComments(notes);
+        if (['industry', 'cmp', 'scopeEpoch'].some(function (k) { return changed.indexOf(k) >= 0; })) { drawPicker(sel, why); drawComments(notes); }
       })
     ];
     handle = { destroy: function () {

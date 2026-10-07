@@ -79,5 +79,6 @@ window.TAP_REPORTS['ind-ratings'] = {
   types: ['grid', 'bar', 'table'],
   breakdowns: [],
   sources: ['IN', 'APP'],
-  options: { industryPicker: true, measuresAs: 'categories' }
+  // No picker of its own: it shows the industry in focus, picked in the view's One industry part (D105)
+  options: { measuresAs: 'categories' }
 };
