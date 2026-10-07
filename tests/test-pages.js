@@ -102,10 +102,17 @@
   function callout() { return document.querySelector('.tap-tour__card'); }
   function welcome() { return document.querySelector('.tap-tour-welcome'); }
   function stepNo() { var c = callout(); return c ? Number(c.getAttribute('data-step')) : null; }
+  // A marked term on a view, at the end of the page, so the glossary step is shown and the tour has all its steps
+  // (D98: the step is left out when no term is on screen)
   function withTour(fn) {
     TAP.storage.remove('tour:done');
     var oldFs = TAP.tour.fullscreen;
-    try { return fn(); } finally { TAP.tour.stop(); TAP.tour.fullscreen = oldFs; TAP.storage.remove('tour:done'); TAP.layers.close(); }
+    var term = TAP.dom.el('div', { class: 'tap-view', 'data-test': 'tour-term' },
+      TAP.dom.el('button', { type: 'button', class: 'tap-term', 'data-term': 'arr' }, 'ARR'));
+    document.body.appendChild(term);
+    try { return fn(); } finally {
+      TAP.tour.stop(); TAP.tour.fullscreen = oldFs; TAP.storage.remove('tour:done'); TAP.layers.close(); term.remove();
+    }
   }
   // Starts the app in the sandbox (as the shell tests do) and always stops it again.
   function withApp(fn) {
