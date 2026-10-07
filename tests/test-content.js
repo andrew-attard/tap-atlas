@@ -1,8 +1,8 @@
 /*
  * File: tests/test-content.js
  * Purpose: Tests for the glossary, term marking, guide text and organization layer.
- * Provides: test cases for CONTENT stories (#38, #39, #40, #42, #60): TPV-TC-178 to 184, 188 to 190, 192, 215,
- *           X-content-*
+ * Provides: test cases for CONTENT stories (#38, #39, #40, #42, #60): TPV-TC-178, 179, 181 to 184, 188 to 190, 192, 215,
+ *           X-content-*, X-d98-no-glossary-list (TPV-TC-180, the list search, was retired by D98)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -206,7 +206,7 @@
   });
 
   T.suite('term popover', function () {
-    T.test('TPV-TC-182', 'Clicking a marked term shows its definition and a link to the glossary; Esc closes it', function (a) {
+    T.test('TPV-TC-182', 'Clicking a marked term shows its definition and why it matters; Esc closes it', function (a) {
       var box = T.dom.mount();
       TAP.dom.html(box, TAP.content.mark('Hit rate', {}));
       var btn = box.querySelector('.tap-term');
@@ -214,7 +214,7 @@
       var pop = document.querySelector('.tap-popover');
       a.ok(pop, 'popover open');
       a.ok(pop.textContent.indexOf(TAP.content.term('hitRate').short) >= 0, 'shows the definition');
-      a.ok(pop.querySelector('[data-glossary-link]'), 'links to the full entry');
+      a.ok(pop.textContent.indexOf(TAP.content.term('hitRate').why) >= 0, 'shows why it matters');
       a.equal(btn.getAttribute('aria-expanded'), 'true');
       closePopover();
       a.equal(document.querySelector('.tap-popover'), null, 'Esc closes it');
@@ -270,40 +270,33 @@
     });
   });
 
-  T.suite('glossary list', function () {
-    T.test('X-content-glossary-az', 'The glossary list is sorted A to Z and shows every term', function (a) {
+  // D98: no A to Z glossary list; definitions stay where the terms appear (amends US-1.6.3 and US-1.6.4)
+  T.suite('no glossary list', function () {
+    T.test('X-d98-no-glossary-list', 'The Guide has no glossary section, there is no glossary side panel, and the popover has no link', function (a) {
+      var root = T.dom.mount(), h = TAP.views.get('guide').mount(root);
+      try {
+        a.equal(root.querySelector('[data-guide="glossary"]'), null, 'no glossary section on the Guide');
+        a.equal(root.querySelector('.tap-gloss'), null, 'no glossary list on the Guide');
+        a.deepEqual((TAP.content.guide().contents || []).map(function (c) { return c.id; }).filter(function (id) { return id === 'glossary'; }), [],
+          'no glossary entry in the contents');
+      } finally { h.destroy(); }
+      a.equal(typeof TAP.glossary.render, 'undefined', 'TAP.glossary has no list to draw');
+      TAP.layers.open('glossary', { termId: 'arr' });
+      try {
+        var layer = document.querySelector('.tap-layer[data-layer="glossary"]');
+        a.equal(layer && layer.querySelector('.tap-gloss'), null, 'no glossary list in a side panel');
+        a.equal(layer ? layer.querySelector('.tap-layer__body').textContent.trim() : '', '', 'TAP.layers has no glossary panel to draw');
+      } finally { TAP.layers.close(); }
       var box = T.dom.mount();
-      TAP.glossary.render(box);
-      var names = Array.prototype.map.call(box.querySelectorAll('.tap-gloss__term'), function (n) { return n.textContent; });
-      a.equal(names.length, Object.keys(TAP.content.terms()).length, 'every term listed');
-      var sorted = names.slice().sort(function (x, y) { return x.toLowerCase().localeCompare(y.toLowerCase()); });
-      a.deepEqual(names, sorted, 'A to Z');
-    });
-
-    T.test('TPV-TC-180', 'Typing in the search box filters the list as you type', function (a) {
-      var box = T.dom.mount();
-      TAP.glossary.render(box);
-      var input = box.querySelector('input[type="search"]');
-      input.value = 'hit';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      var shown = box.querySelectorAll('.tap-gloss__entry:not([hidden]) .tap-gloss__term');
-      a.deepEqual(Array.prototype.map.call(shown, function (n) { return n.textContent; }), ['Hit rate']);
-      input.value = 'recurring revenue';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      a.equal(box.querySelectorAll('.tap-gloss__entry:not([hidden])').length, 1, 'aliases are searched');
-      input.value = 'zzzz';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      a.ok(box.querySelector('.tap-gloss__none:not([hidden])'), 'a message when nothing matches');
-    });
-
-    T.test('X-content-glossary-target', 'The list can open on one entry, and organization terms are labelled', function (a) {
-      withOrg({ glossary: { orgLine: { term: 'Widget Suite', aliases: [], short: 'An invented product line.', why: 'Example.', related: ['arr'] } } }, function () {
-        var box = T.dom.mount();
-        TAP.glossary.render(box, { termId: 'orgLine' });
-        var entry = box.querySelector('[data-entry="orgLine"]');
-        a.ok(entry && entry.classList.contains('is-target'), 'target entry picked out');
-        a.ok(entry.textContent.indexOf(TAP.content.text('glossary.orgBadge')) >= 0, 'organization badge');
-      });
+      TAP.dom.html(box, TAP.content.mark('Pipeline', {}));
+      box.querySelector('.tap-term').click();
+      var pop = document.querySelector('.tap-popover'), e = TAP.content.term('pipeline');
+      try {
+        a.ok(pop, 'the popover still opens');
+        a.ok(pop.textContent.indexOf(e.short) >= 0, 'with the short definition');
+        a.ok(pop.textContent.indexOf(e.why) >= 0, 'and why it matters');
+        a.equal(pop.querySelector('[data-glossary-link], .tap-popover__link'), null, 'and no link to a full entry');
+      } finally { closePopover(); }
     });
   });
   var HOW_TO = ['menu', 'compare', 'panels', 'chartTypes', 'table', 'sources', 'insights'];
@@ -315,9 +308,9 @@
   function sentences(p) { return p.split(/[.!?]+(?=\s|$)/).filter(function (x) { return x.trim(); }).length; }
 
   T.suite('guide', function () {
-    T.test('X-content-guide-contents', 'The Guide has a contents list of its three sections', function (a) {
+    T.test('X-content-guide-contents', 'The Guide has a contents list of its two sections', function (a) {
       var g = TAP.content.guide();
-      a.deepEqual(ids(g.contents), ['howTo', 'planning', 'glossary']);
+      a.deepEqual(ids(g.contents), ['howTo', 'planning'], 'no glossary section (D98)');
       (g.contents || []).forEach(function (c) { a.ok(c.title && c.title.length > 3, c.id + ' has a title'); });
     });
 
