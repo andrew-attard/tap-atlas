@@ -370,7 +370,7 @@
       a.ok(TAP.views.order().indexOf('buildChart') < 0, 'the number keys do not shift');
     });
 
-    (recordReady ? T.test : T.skip)('TPV-TC-559', 'Add to running order records the custom chart, and the step passes the check',
+    (recordReady ? T.test : T.skip)('TPV-TC-559', 'Add to presentation records the custom chart, and the step passes the check',
       recordReady ? scene(function (a, s) {
         TAP.present.clearRecorded();
         try {

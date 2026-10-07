@@ -102,7 +102,7 @@
         var body = T.dom.mount();
         TAP.sourcesPanel.render(body);
         var sec = body.querySelector('.tap-src__present');
-        a.ok(sec, 'the data sources panel has a running order section');
+        a.ok(sec, 'the data sources panel has a section for presentation steps left out');
         a.ok(text(sec).indexOf(TAP.content.text('present.sourcesTitle')) >= 0, 'with its heading');
         a.equal(sec ? sec.querySelectorAll('li').length : 0, 4, 'listing the four skipped steps');
         var others = body.querySelector('.tap-src__notes:not(.tap-src__present)');
@@ -535,14 +535,14 @@
       return click(p.el.querySelector('[data-action="record"]'));
     }
 
-    T.test('TPV-TC-539', 'Add to running order records the report, measure, chart type, breakdown and comparison on screen', function (a) {
+    T.test('TPV-TC-539', 'Add to presentation records the report, measure, chart type, breakdown and comparison on screen', function (a) {
       withPanel('nb-levers', function (p) {
         TAP.store.set({ cmp: { mode: 'pair', focus: 'na', second: 'seu' } });
         click(p.el.querySelector('[data-control="measure"] [data-value="nb.hitRate"]'));
         click(p.el.querySelector('[data-action="type"]'));
         click(p.el.querySelector('[data-type="dot"]'));
         click(p.el.querySelector('[data-control="breakdown"] [data-value="industry"]'));
-        a.ok(recordFrom(p), 'the More menu has "Add to running order"');
+        a.ok(recordFrom(p), 'the More menu has "Add to presentation"');
         var steps = TAP.present.recorded(), s0 = steps[0] || {};
         a.equal(steps.length, 1, 'one step recorded');
         a.deepEqual([s0.report, s0.measure, s0.type, s0.breakdown], ['nb-levers', 'nb.hitRate', 'dot', 'industry'], 'report, measure, type and breakdown');
@@ -706,17 +706,17 @@
           THREE.forEach(function (s) { TAP.present.record(s); });
           TAP.store.set({ view: 'guide' });
           var sec = document.querySelector('.tap-view [data-guide="runningOrder"]');
-          a.ok(sec, 'the Guide has a running order section');
+          a.ok(sec, 'the Guide has a "Your presentation" section');
           var items = sec ? sec.querySelectorAll('.tap-ro__step') : [];
           a.equal(items.length, 3, 'three steps listed');
           a.ok(items[0] && items[0].textContent.indexOf('First') >= 0 && items[2].textContent.indexOf('Third') >= 0, 'in order');
           ['up', 'down', 'remove'].forEach(function (k) { a.equal(sec.querySelectorAll('[data-ro="' + k + '"]').length, 3, k + ' on each step'); });
-          a.ok(sec.querySelector('[data-ro="copy"]'), 'Copy running order');
+          a.ok(sec.querySelector('[data-ro="copy"]'), 'Copy as file text');
           click(sec.querySelectorAll('[data-ro="up"]')[1]);
           sec = document.querySelector('.tap-view [data-guide="runningOrder"]');
           a.ok(sec.querySelectorAll('.tap-ro__step')[0].textContent.indexOf('Second') >= 0, 'moving up redraws the list');
           click(sec.querySelector('[data-ro="try"]'));
-          a.ok(TAP.present.active(), 'Try this order starts presentation mode');
+          a.ok(TAP.present.active(), 'Try this presentation starts presentation mode');
           a.equal(TAP.present.current().title, 'Second', 'with the recorded steps, in their order');
           TAP.present.stop();
         } finally { TAP.present.clearRecorded(); }
@@ -732,6 +732,92 @@
         a.ok(sec && !sec.querySelector('[data-ro="try"]'), 'no Try button');
         a.ok(sec && sec.querySelector('[data-ro="present"]'), 'the file order can still be presented from here');
       });
+    });
+
+    /* ---------- D97: on screen the running order is called a presentation (#492) ---------- */
+
+    // What a person can read on screen: innerText, leaving out text boxes and code that show the file's text.
+    function seen(node) {
+      if (!node) return '';
+      var hid = TAP.dom.qsa('textarea, code', node).map(function (x) { var d = x.style.display; x.style.display = 'none'; return [x, d]; });
+      try { return node.innerText || ''; } finally { hid.forEach(function (h) { h[0].style.display = h[1]; }); }
+    }
+    function says(s, words) { return String(s).toLowerCase().indexOf(words.toLowerCase()) >= 0; }
+
+    T.test('X-d97-presentation-words', 'A chart’s More menu offers "Add to presentation", and the panel says the step joined your presentation', function (a) {
+      withPanel('ov-ambition', function (p) {
+        click(p.el.querySelector('[data-action="more"]'));
+        var item = p.el.querySelector('[data-action="record"]');
+        a.equal(item && item.textContent.trim(), 'Add to presentation', 'the More menu item');
+        click(item);
+        var status = p.el.querySelector('.tap-panel__status');
+        a.match(status ? status.textContent : '', /^Added as step 1 of your presentation\. The Guide lists it\.$/, 'the confirmation');
+      });
+    });
+
+    T.test('X-d97-presentation-words', 'With a recorded step, the Guide shows "Your presentation", what it is, how to play it and how to make one', function (a) {
+      withApp(function () {
+        TAP.present.clearRecorded();
+        try {
+          TAP.present.record({ report: 'ov-ambition', title: 'The size of every plan' });
+          TAP.store.set({ view: 'guide' });
+          var sec = document.querySelector('.tap-view [data-guide="runningOrder"]'), s = seen(sec);
+          a.ok(sec, 'the section is there');
+          a.equal(sec && sec.querySelector('h2, h3').textContent.trim(), 'Your presentation', 'its heading');
+          ['full screen, one step at a time', 'shares the screen', '"Present"', 'config/running-order.js', 'Space or Right',
+            'Esc', '"Add to presentation"', 'kept in this browser only', '"Try this presentation"', '"Copy as file text"']
+            .forEach(function (w) { a.ok(says(s, w), 'the explanation says ' + w); });
+          a.ok(says(s, 'The size of every plan'), 'and lists the recorded step');
+          a.equal(sec && sec.querySelector('[data-ro="try"]').textContent.trim(), 'Try this presentation', 'Try button');
+          a.equal(sec && sec.querySelector('[data-ro="copy"]').textContent.trim(), 'Copy as file text', 'Copy button');
+          a.equal(sec && sec.querySelector('[data-ro="present"]').textContent.trim(), 'Present the saved presentation', 'Present button');
+        } finally { TAP.present.clearRecorded(); }
+      });
+    });
+
+    T.test('X-d97-presentation-words', 'With a step left out, the data sources panel speaks of the presentation', function (a) {
+      onSample(function () {
+        TAP.present.check([{ report: 'ov-ambition' }, { report: 'no-such-report' }]);
+        var body = T.dom.mount();
+        TAP.sourcesPanel.render(body);
+        var sec = body.querySelector('.tap-src__present');
+        a.equal(sec && sec.querySelector('h3').textContent.trim(), 'Presentation steps left out', 'the heading');
+        a.ok(says(seen(sec), 'Step 2 of the presentation is left out'), 'the note names the step of the presentation');
+      });
+    });
+
+    T.test('X-d97-presentation-words', 'With an empty presentation file, the Present button says so in the new words', function (a) {
+      withApp(function (root) {
+        window.TAP_RUNNING_ORDER.steps = [];
+        click(root.querySelector('.tap-present__button'));
+        var msg = root.querySelector('.tap-present__msg');
+        a.match(msg ? msg.textContent : '', /the presentation file config\/running-order\.js has no steps yet/, 'the message');
+      });
+    });
+
+    T.test('X-d97-presentation-words', 'No visible text on any view, the Guide with a step, a More menu or the sources panel says "running order"', function (a) {
+      withApp(function (root) {
+        TAP.present.clearRecorded();
+        try {
+          TAP.present.record({ report: 'ov-ambition' });
+          var views = TAP.views.order();
+          a.ok(views.indexOf('guide') >= 0 && views.length >= 9, 'every view in the menu (' + views.length + ')');
+          views.forEach(function (v) {
+            TAP.store.set({ view: v });
+            a.ok(!says(seen(root), 'running order'), v + ': not on screen');
+          });
+          TAP.store.set({ view: 'overview' });
+          var more = root.querySelector('.tap-view [data-action="more"]');
+          click(more);
+          a.ok(root.querySelector('.tap-view [data-action="record"]'), 'a More menu is open');
+          a.ok(!says(seen(root), 'running order'), 'not in the More menu');
+          TAP.present.check([{ report: 'no-such-report' }, { report: 'ov-ambition', measure: 'nope' }]);
+          var body = T.dom.mount();
+          TAP.sourcesPanel.render(body);
+          a.ok(body.querySelector('.tap-src__present') && !says(seen(body), 'running order'), 'not in the data sources panel');
+          a.ok(!says(TAP.present.start([]).message || '', 'running order'), 'not in the nothing-to-present message');
+        } finally { TAP.present.clearRecorded(); }
+      }, window.T_WITH_EXTRA());   // with an extra section, so its view is in the menu too
     });
   });
 })(window.TAP);
