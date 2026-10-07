@@ -62,19 +62,28 @@
         a.deepEqual(ids, TAP.views.order(), 'menu order is TAP.views.order()');
         a.deepEqual(menuItems(root).map(txt), TAP.views.order().map(TAP.views.title), 'titles from TAP.views.title');
         a.deepEqual(menuItems(root).map(txt), ['Overview', 'Market coverage', 'New business', 'Customer growth', 'Partners', 'Outlook', 'Regions',
-          'Insights', 'Guide'], 'Phase 1, Phase 2 and Phase 4 views');
+          'Insights', 'Build a chart', 'Guide'], 'Phase 1, Phase 2 and Phase 4 views, then Build a chart and the Guide (D96)');
       });
     });
 
-    // D94: the Guide sits at the right end of the menu, apart from the views; D95: Market coverage is second
-    T.test('X-d94-guide-right', 'The Guide is the last menu item, pushed to the right end of the bar', function (a) {
+    // D96: Build a chart and the Guide sit together at the right end of the menu, apart from the plan views (D94);
+    // D95: Market coverage is second
+    T.test('X-d96-build-guide-right', 'On the sample at 1280 px: ten items on one line, Build a chart and the Guide at the right end', function (a) {
       withApp(function () {
-        var root = startApp(), items = menuItems(root), guide = items[items.length - 1], before = items[items.length - 2];
-        a.equal(guide.getAttribute('data-view'), 'guide', 'the Guide is last');
+        var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        root.style.width = '1280px';
+        ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
+        var items = menuItems(root), n = items.length;
+        a.equal(n, 10, 'ten items on the sample');
+        a.deepEqual(items.slice(-2).map(txt), ['Build a chart', 'Guide'], 'ending Build a chart, Guide');
         a.equal(txt(items[1]), 'Market coverage', 'the second view is Market coverage (D95)');
-        var nav = root.querySelector('.tap-menu'), g = guide.getBoundingClientRect(), b = before.getBoundingClientRect(), n = nav.getBoundingClientRect();
-        if (g.top === b.top) a.ok(g.left - b.right > 24, 'a clear gap before the Guide (' + Math.round(g.left - b.right) + ' px)');
-        a.ok(Math.abs(n.right - g.right) < 2, 'the Guide ends at the right edge of the menu');
+        var ins = qs('.tap-menu__item[data-view="insights"]', root).getBoundingClientRect();
+        var b = items[n - 2].getBoundingClientRect(), g = items[n - 1].getBoundingClientRect(), nav = qs('.tap-menu', root).getBoundingClientRect();
+        var tops = items.map(function (x) { return Math.round(x.getBoundingClientRect().top); });
+        a.equal(tops.filter(function (t) { return t !== tops[0]; }).length, 0, 'all on one line');
+        a.ok(b.left - ins.right > 24, 'Build a chart starts right of Insights with a clear gap (' + Math.round(b.left - ins.right) + ' px)');
+        a.ok(g.left >= b.right && g.left - b.right <= 24, 'the Guide follows Build a chart with a normal menu gap (' + Math.round(g.left - b.right) + ' px)');
+        a.ok(Math.abs(nav.right - g.right) < 2, 'the Guide ends at the right edge of the menu');
       });
     });
 
@@ -181,20 +190,15 @@
       });
     });
 
-    // Ten views in the menu, as with extra sections (Other sections, US-3.2.2), for the checks below.
-    function withNine(fn) {
-      var other = TAP.views.get('other'), was = other && other.available;
-      try {
-        if (other) other.available = function () { return true; };
-        return withApp(fn);
-      } finally { if (other) other.available = was; }
-    }
+    // Eleven items in the menu: the sample with the test extra section, so Other sections shows (US-3.2.2), plus
+    // Build a chart (D96), for the checks below.
+    function withEleven(fn) { return withApp(function () { return fn(startApp(window.T_WITH_EXTRA())); }); }
 
-    T.test('X-shell-menu-nine', 'Ten views at 1280, 1024 (125%) and 853 px (150%): every menu item fully visible, no sideways scroll (D72)', function (a) {
-      withNine(function () {
-        var root = startApp();
+    T.test('X-shell-menu-nine', 'Eleven items at 1280, 1024 (125%) and 853 px (150%): every menu item fully visible, no sideways scroll (D72, D96)', function (a) {
+      withEleven(function (root) {
         ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
-        a.equal(menuItems(root).length, 10, 'ten views in the menu');
+        a.equal(menuItems(root).length, 11, 'eleven items in the menu');
+        a.ok(!!qs('.tap-menu__item[data-view="other"]', root), 'Other sections among them');
         [1280, 1024, 853].forEach(function (w) {
           root.style.width = w + 'px';
           window.dispatchEvent(new Event('resize'));   // charts follow the window's size, as on a real zoom change
@@ -208,6 +212,8 @@
           if (w === 1280) {
             var top0 = Math.round(items[0].getBoundingClientRect().top);
             a.equal(items.filter(function (b) { return Math.round(b.getBoundingClientRect().top) !== top0; }).length, 0, '1280 px: one line');
+            var ins = qs('.tap-menu__item[data-view="insights"]', root).getBoundingClientRect(), build = qs('.tap-menu__item[data-view="build"]', root).getBoundingClientRect();
+            a.ok(build.left - ins.right > 24, '1280 px: Build a chart stands apart, right of Insights (' + Math.round(build.left - ins.right) + ' px)');
           }
         });
         a.ok(parseFloat(getComputedStyle(menuItems(root)[0]).fontSize) >= 16, 'menu text at least 16 px');
@@ -215,8 +221,7 @@
     });
 
     T.test('X-shell-menu-wraps', 'At 853 px the menu wraps onto more lines and the current item stays marked', function (a) {
-      withNine(function () {
-        var root = startApp();
+      withEleven(function (root) {
         root.style.width = '853px';
         var items = menuItems(root), tops = items.map(function (b) { return Math.round(b.getBoundingClientRect().top); });
         a.ok(tops.some(function (t) { return t !== tops[0]; }), 'more than one line');

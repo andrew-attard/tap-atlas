@@ -288,14 +288,16 @@
       // The keys only set the store: no app runs here, so the address bar is left alone. Chrome stops following the
       // address after about 200 changes in ten seconds, and later routing tests would see the old address.
       var keep = TAP.store.get().view;
-      // Ten with an extra section: it adds Other sections (Phase 3, US-3.2.2) and Phase 4 adds Outlook. The sample
-      // itself has no extra section (D93), so the test section is added. Keys 1 to 9 open the first nine views
-      // and 0 the tenth (D90).
+      // Eleven with an extra section: it adds Other sections (Phase 3, US-3.2.2), Phase 4 adds Outlook and D96 Build
+      // a chart. The sample itself has no extra section (D93), so the test section is added. Keys 1 to 9 open the
+      // first nine items and 0 the tenth (D90); the eleventh, the Guide, has no key.
       TAP.data.load(window.T_WITH_EXTRA(sample()));
       TAP.keys.bind();
       try {
         var order = TAP.views.order();
-        a.equal(order.length, 10, 'ten views');
+        a.equal(order.length, 11, 'eleven items');
+        a.equal(TAP.keys.viewFor('0'), order[9], 'key 0 is the tenth item, ' + order[9]);
+        a.ok('0123456789'.split('').every(function (k) { return TAP.keys.viewFor(k) !== order[10]; }), 'no key opens the eleventh, ' + order[10]);
         order.slice(0, 9).reverse().forEach(function (id, i) {
           press(String(9 - i));
           a.equal(TAP.store.get().view, id, String(9 - i) + ' opens ' + id);
