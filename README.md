@@ -159,7 +159,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/custom-builder.js` | The builder of the Build a chart view: pickers for measure, dimension and chart type, the custom chart and the session list |
 | `js/views/overview.js` | The Overview: headline, region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards |
-| `js/views/industry.js` | Market coverage: tier grid, quadrant, ratings, commentary |
+| `js/views/industry.js` | Market coverage in two parts: all industries (tier grid, quadrant), then one industry under the view's one picker (ratings beside the commentary) |
 | `js/views/new-business.js` | New business: industries, channels, levers, the sub-industry list, success factors, themes |
 | `js/views/customers.js` | Customer growth: segments, growth, exposure, the account bubble and list; also the layout Partners uses |
 | `js/views/partners.js` | Partners: reliance on partners and alliances, partner capacity, the partner list |
