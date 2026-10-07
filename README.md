@@ -144,7 +144,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 |---|---|
 | `js/ui/app.js` | Starts the app: checks the data, draws the frame, swaps views |
 | `js/ui/shell.js` | The page frame: banner, top bar and menu, view area |
-| `js/ui/compare-bar.js` | The comparison bar: five modes, the plain sentence, the data date |
+| `js/ui/compare-bar.js` | The comparison bar: four modes (all regions, selected regions, one vs the rest, all regions combined), the plain sentence, the data date |
 | `js/ui/layers.js` | Side panels (details, data sources, glossary, explanations), one at a time |
 | `js/ui/sources-panel.js` | The data sources panel: files, dates, import notes, skipped rules |
 | `js/ui/system-screens.js` | Full-page messages when the app can't start, with a copyable problem list |
