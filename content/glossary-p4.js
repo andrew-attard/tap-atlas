@@ -5,7 +5,7 @@
  *          market, partner types and the partner maturity levels.
  * Provides: adds to window.TAP_CONTENT.glossary
  * Depends on: content/glossary.js (the entry format and the rules for aliases are described there)
- * Used by: js/core/content.js, js/ui/glossary.js, js/views/guide.js
+ * Used by: js/core/content.js, js/ui/glossary.js (the term popover)
  *
  * The maturity levels are everyday words (enable, skill), so their terms carry the word "level" and no alias
  * is the bare word: that would mark every use of it on screen.

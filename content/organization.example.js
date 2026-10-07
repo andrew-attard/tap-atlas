@@ -43,7 +43,7 @@ window.TAP_ORG = {
   /* GLOSSARY: the organization's own terms, acronyms, product lines, channel names and programmes.
      Same format as content/glossary.js: id: { term, aliases, short, why, related }.
      - term and short are required; aliases, why and related are optional but recommended.
-     - Organization terms are marked on screen and in the glossary list just like general ones.
+     - Organization terms are marked on screen just like general ones; selecting one shows its definition.
      - Using an id from content/glossary.js replaces that general entry (the second example). */
   glossary: {
     // qbr: {

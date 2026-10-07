@@ -18,7 +18,8 @@
   // Step ids (the wording keys) and the part of the screen each one spotlights, in the order of the stories.
   // US-2.6.3 adds one step for the Phase 2 views and one for the region profile, US-4.6.1 one for the Outlook view;
   // keep the tour to 10 steps or fewer. A step may point only at parts every view has (the menu), since the tour
-  // runs on whatever view is open; a menu item that is not shown falls back to the menu.
+  // runs on whatever view is open; a menu item that is not shown falls back to the menu. An optional step is left out
+  // when its part is not on screen as the tour starts: the glossary step needs a marked term on the view (D98).
   var STEPS = [
     { id: 'purpose', sel: '[data-tour="brand"]' },
     { id: 'menu', sel: '[data-tour="menu"]' },
@@ -28,19 +29,19 @@
     { id: 'compare', sel: '[data-tour="compare"]' },
     { id: 'panel', sel: '[data-tour="panel"] .tap-panel__head, [data-tour="panel"]' },
     { id: 'freshness', sel: '[data-tour="datadate"]' },
-    { id: 'glossary', sel: '.tap-view .tap-term, .tap-menu__item[data-view="guide"]' },
+    { id: 'glossary', sel: '.tap-view .tap-term', optional: true },
     { id: 'guide', sel: '.tap-menu__item[data-view="guide"]' }
   ];
   var GAP = 16, PAD = 6;
 
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var t = function (key, vars) { return TAP.content.text('tourUi.' + key, vars); };
-  var cur = null;        // {node, card, hole, n, back} while a card or step is on screen
+  var cur = null;        // {node, card, hole, n, back, list (the steps shown)} while a card or step is on screen
 
   function steps() {
     var app = TAP.content.text('app.name');
     return STEPS.map(function (s) {
-      return { id: s.id, sel: s.sel, title: t('titles.' + s.id), text: TAP.content.text('tour.' + s.id, { app: app }) };
+      return { id: s.id, sel: s.sel, optional: !!s.optional, title: t('titles.' + s.id), text: TAP.content.text('tour.' + s.id, { app: app }) };
     });
   }
 
@@ -150,7 +151,7 @@
 
   // Puts the spotlight round the part and the card below it, or above it when there is no room below.
   function place(n) {
-    var node = target(steps()[n]), vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    var node = target(cur.list[n]), vw = document.documentElement.clientWidth, vh = window.innerHeight;
     var w = Math.min(460, vw - 2 * GAP), c = cur.card, hole = cur.hole;
     c.style.width = w + 'px';
     cur.shade.hidden = !!node;   // without a part to spotlight, the whole page is shaded instead
@@ -175,7 +176,7 @@
   }
 
   function go(n) {
-    var all = steps();
+    var all = cur.list;
     if (n >= all.length) { stop(); return; }
     var s = all[n], last = n === all.length - 1;
     cur.n = n;
@@ -219,6 +220,7 @@
     cur.card = c;
     cur.hole = hole;
     cur.shade = shade;
+    cur.list = steps().filter(function (s) { return !s.optional || target(s); });
     go(0);
   }
 

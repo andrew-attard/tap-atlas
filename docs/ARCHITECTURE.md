@@ -347,7 +347,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 - `TAP.panel.create(el, reportId, opts)` returns `{id, el, refresh(), highlight(target), expand(on), destroy()}`. The panel owns the title, takeaway, chart or table, legend, source line and controls (US-1.2.2). It re-renders on store changes. With `opts.local: true` (presentation steps) the panel never takes `state.highlight`, and "Highlight on chart" from its own insight list stays inside the panel. A target from a panel's own insight list carries the finding's `measureId`, as a store target does (D79).
 - `TAP.views.register(id, { title, mount(el) })`. `mount` returns `{destroy()}`. `TAP.views.get(id)` and `TAP.views.order()` read `TAP_VIEWS` (`js/engine/registry.js`).
 - `TAP.layers.open(name, payload)`, `close()` and `openDetails(target)` handle the side panels, one at a time. They don't block the page.
-  - Built-in names: `'sources'`, `'details'` and `'glossary'` (`payload.termId`, drawn with `TAP.glossary.render`).
+  - Built-in names: `'sources'` and `'details'`. There is no glossary panel: a term's definition shows in its popover where the term appears (D98).
   - Any other name shows `payload.title` and calls `payload.render(bodyEl)`, so for example PAGES opens the explanation panel without touching layers.
 - **Esc order:** popovers handle Esc first and stop it (`preventDefault()`). Side panels listen on `window` and ignore an Esc that was already handled. Then an expanded panel closes.
 - `TAP.details.build(target)` returns `{title, groups: [{title, rows: [{label, cell}]}]}` (owned by INDUSTRY; the shell draws it).
@@ -369,7 +369,7 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 | `TAP.compareBar.mount(el)` | The comparison bar; reads and writes `state.cmp` |
 | `TAP.layers.top()` | The open side panel's name, or null |
 | `TAP.sourcesPanel.render(el)` | The data sources panel body: imports, `TAP.notes`, insight `failures()` |
-| `TAP.glossary.popover(termId, anchorEl)` / `render(el)` | Term popover / the searchable glossary list (CONTENT) |
+| `TAP.glossary.popover(termId, anchorEl)` / `close()` | Term popover: the term, its short definition and why it matters (CONTENT). No A to Z list (D98) |
 | `TAP.explain.open(reportId, {cmp})` / `sections(reportId, cmp)` | The explanation side panel; `cmp` is a panel's own comparison when it has one. `sections` returns the content as data (PAGES) |
 | `TAP.tour.offer()` / `start()` / `stop()` | The welcome card (offered by `app.start` on the real page only) / the tour itself / remove both. Also `steps()` and `fullscreen()` (PAGES) |
 | `TAP.overviewCards.render(el)` | The region cards for the current scope (OVERVIEW) |
@@ -420,7 +420,7 @@ Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'tex
 
 - `TAP_CONTENT.glossary[id] = {term, aliases: [], short, why, related: [ids]}`. `TAP.content.terms()` adds `id` and `layer` (`'general'` or `'organization'`).
 - `TAP_CONTENT.guide` holds the Guide page sections.
-- `TAP_CONTENT.text` holds every on-screen phrase, split by owner: `content/ui-text.js` (CONTENT: app, tour, guide and glossary screens) and one `content/text-<area>.js` per stream (`shell`, `engine`, `data`, `panel`, `overview`, `industry`, `pages`), each adding its own top-level keys. It covers: tour steps, headline templates, family lines, combined-figure explanations, system messages, banners, empty and missing states.
+- `TAP_CONTENT.text` holds every on-screen phrase, split by owner: `content/ui-text.js` (CONTENT: app, the term popover, organization file problems) and one `content/text-<area>.js` per stream (`shell`, `engine`, `data`, `panel`, `overview`, `industry`, `pages`), each adding its own top-level keys. It covers: tour steps, headline templates, family lines, combined-figure explanations, system messages, banners, empty and missing states.
 - `TAP_ORG` uses the same shape and overrides or adds keys. It also carries `settings` such as `internalLabel {show, text}`.
 - `TAP.content.text(key, vars)` fills `{name}` placeholders. A missing key returns the key in brackets, so gaps are visible in testing.
 - `TAP.content.term(idOrWord)` returns the merged glossary entry.
@@ -636,7 +636,7 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 - Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`. As built today (`config/views.js`): `overview`, `industry`, `newBusiness`, `customers`, `partners`, `outlook`, `other`, `regions`, `insights`, `build`, `guide`; number keys 1 to 9, then 0 for the tenth item (D90), none for an eleventh.
 - `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
 - "Build a chart" (US-3.5.1) is its own view, `build` (`js/views/build.js`, address `#build`), just before the Guide. The two sit together at the right end of the top bar, apart from the plan views (D94, D96), in one group (`.tap-menu__tools`) that wraps as a whole when the menu needs a second line (D104). It was a Guide section until D96.
-- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3). `js/views/guide.js` draws them before the glossary and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
+- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3). `js/views/guide.js` draws them after its own sections and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
 
 ### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)
 

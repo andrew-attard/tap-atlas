@@ -145,10 +145,10 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/app.js` | Starts the app: checks the data, draws the frame, swaps views |
 | `js/ui/shell.js` | The page frame: banner, top bar and menu, view area |
 | `js/ui/compare-bar.js` | The comparison bar: four modes (all regions, selected regions, one vs the rest, all regions combined), the plain sentence, the data date |
-| `js/ui/layers.js` | Side panels (details, data sources, glossary, explanations), one at a time |
+| `js/ui/layers.js` | Side panels (details, data sources, explanations), one at a time |
 | `js/ui/sources-panel.js` | The data sources panel: files, dates, import notes, skipped rules |
 | `js/ui/system-screens.js` | Full-page messages when the app can't start, with a copyable problem list |
-| `js/ui/glossary.js` | Term popovers and the searchable glossary list |
+| `js/ui/glossary.js` | Term popovers: a marked term's definition and why it matters, where the term appears |
 | `js/ui/explain.js` | The plain-English explanation of a report |
 | `js/ui/view-head.js` | The header the newer views share: question, lead line, tip line with "Hide tips", headline insight |
 | `js/ui/tour.js` | The optional welcome tour |
@@ -168,7 +168,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/build.js` | The Build a chart view, beside the Guide in the menu: the view header and the builder |
 | `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
 | `js/views/outlook.js` | Outlook: the plans against the strategic plan and the base year, pipeline coverage, revenue and product categories |
-| `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (Your presentation), glossary |
+| `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (Your presentation) |
 
 ### `config/`
 
@@ -193,9 +193,9 @@ vendor/           ECharts, the Archivo fonts and their licences
 
 | File | What it does |
 |---|---|
-| `content/ui-text.js` | General wording: app name, tour, Guide and glossary screens |
+| `content/ui-text.js` | General wording: app name, the term popover, organization file problems |
 | `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections), outlook (the Outlook view) |
-| `content/glossary.js` | The general glossary: every term in plain English |
+| `content/glossary.js` | The general glossary: every term in plain English, shown in a popover when the term is selected |
 | `content/glossary-p4.js` | The glossary terms for the full template's parts: strategic plan, base year, revenue outlook, books value, solutions, partner maturity |
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |

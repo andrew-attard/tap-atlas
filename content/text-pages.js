@@ -45,7 +45,7 @@ Object.assign(window.TAP_CONTENT.text, {
     regions: 'Pick a region to see its whole plan on one page.',
     insights: 'Filter by region or family, then use "Show me" to see the figures.',
     build: 'Pick a measure and what to show it by; keep a chart to reopen it later.',
-    guide: 'Use the contents to jump to a section; the glossary defines every term.'
+    guide: 'Use the contents to jump to a section; select a dotted term for its definition.'
   },
 
   // The Guide page (US-1.6.1). Its sections and paragraphs come from content/guide.js.
@@ -72,7 +72,7 @@ Object.assign(window.TAP_CONTENT.text, {
     compare: 'This bar sets what every chart compares: all regions, selected regions (one or more), one against the rest, or all regions combined into one figure. The sentence below it always says what is on screen.',
     panel: 'Every chart sits in a panel like this. Switch the chart type or show a table of exact figures, use the explanation icon to learn how to read it, and check the source line for where the figures come from.',
     freshness: 'This is the date of the data. Select it to see each region’s workbook and any notes from the import.',
-    glossary: 'Terms with a dotted underline open a short definition when you select them. The Guide lists every term in its glossary.',
+    glossary: 'Terms with a dotted underline open a short definition, and why it matters, when you select them.',
     guide: 'To learn what territory account planning is and how to read a plan, open the Guide. You can replay this tour from there or from the top bar.'
   },
   tourUi: {

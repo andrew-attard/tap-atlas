@@ -85,7 +85,7 @@ Create content/organization.js for this app from the attached starter file, cont
 - short display names for each region, keyed by the region ids in our data file: <id: short name, ...>;
 - the internal confidentiality label: <wording>, shown on every screen;
 - any tour or planning-explainer wording to replace: <optional>.
-Where a term already exists in glossary.js, write the organization version so it replaces the general one. Return the whole file.
+Where a term already exists in glossary.js, write the organization version so it replaces the general one. Each term's definition shows when someone clicks the term on screen. Return the whole file.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
