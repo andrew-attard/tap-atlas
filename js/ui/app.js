@@ -21,6 +21,7 @@
 
   // Opening state for screenshots only (?screenshot=1&view=industry&mode=one&focus=north). Ignored otherwise.
   // Unknown values are left out; unknown region ids in the comparison are repaired by the comparison bar.
+  // An old mode=pair opens as a selection of its two regions (D99).
   function screenshotState() {
     var q = new URLSearchParams(window.location.search);
     if (q.get('screenshot') !== '1') return null;
@@ -30,7 +31,7 @@
     if (q.get('second')) cmp.second = q.get('second');
     if (q.get('set')) cmp.set = q.get('set').split(',');
     if (['average', 'total'].indexOf(q.get('rest')) >= 0) cmp.restAgg = q.get('rest');
-    var patch = { cmp: cmp };
+    var patch = { cmp: TAP.scope.upgrade(cmp) };
     if (known(q.get('view'))) patch.view = q.get('view');
     if (knownRegion(q.get('region'))) patch.region = q.get('region');
     return patch;

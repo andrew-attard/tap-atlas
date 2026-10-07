@@ -14,7 +14,7 @@ QA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$QA_DIR/../lib-browser.sh"
 
 # Comparison modes as labels; qa_mode_query turns each into the screenshot query.
-QA_MODES="${QA_MODES:-all one-average one-total pair set org}"
+QA_MODES="${QA_MODES:-all one-average one-total set-one set org}"
 QA_DATA="${QA_DATA:-data/sample-plan-data.js}"
 QA_NODE="$(command -v node || echo "$HOME/.local/bin/node")"
 
@@ -56,7 +56,7 @@ qa_regions() {
 
 # qa_mode_query <label>: the screenshot query values for a mode label.
 # Picks regions by position, never by name: the focus is the 5th region (often the
-# one with gaps in sample data), the pair is first and last, the set is three spread out.
+# one with gaps in sample data), set-one is the first region alone (D99), the set is three spread out.
 qa_mode_query() {
   local r n focus first last mid
   mapfile -t r < <(qa_regions)
@@ -68,7 +68,7 @@ qa_mode_query() {
     all) echo "mode=all" ;;
     one-average) echo "mode=one&focus=$focus&rest=average" ;;
     one-total) echo "mode=one&focus=$first&rest=total" ;;
-    pair) echo "mode=pair&focus=$first&second=$last" ;;
+    set-one) echo "mode=set&set=$first" ;;
     set) echo "mode=set&set=$first,$mid,$last" ;;
     org) echo "mode=org" ;;
     *) echo "mode=$1" ;;

@@ -91,7 +91,7 @@
         '" data-tap-opt="theme" data-tap-value="' + esc(pickValue(x.id, hl)) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
         '<span class="tap-themes__label">' + esc(x.label) + '</span>' +
         '<span class="tap-themes__track"><span class="tap-themes__fill" style="width:' + (total ? Math.round(100 * n / total) : 0) + '%"></span></span>' +
-        '<span class="tap-themes__n">' + esc(t('regions', { n: n, total: total })) + '</span></button></li>';
+        '<span class="tap-themes__n">' + esc(total === 1 ? t(n ? 'regionsOneYes' : 'regionsOneNo') : t('regions', { n: n, total: total })) + '</span></button></li>';
     }).join('') + '</ol>';
   }
 

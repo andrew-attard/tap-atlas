@@ -13,6 +13,9 @@ Object.assign(window.TAP_CONTENT.text, {
   themes: {
     barsLabel: 'Themes by the number of regions whose leaders mention them. Choose a theme to read its quotes.',
     regions: '{n} of {total} regions',
+    // With one region in the comparison (a selection of one, D99): never "1 of 1 regions"
+    regionsOneYes: 'Mentioned',
+    regionsOneNo: 'Not mentioned',
     pick: 'Theme',
     quotesTitle: '{theme}: what leaders wrote',
     keywords: 'Counted when a success factor or comment holds one of these words: {list}.',

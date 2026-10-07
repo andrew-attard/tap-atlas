@@ -23,11 +23,15 @@ Object.assign(window.TAP_CONTENT.text, {
     oneIndividualOne: 'Showing {focus} against the other region',
     oneAverageOne: 'Showing {focus} against the average of the other region',
     oneTotalOne: 'Showing {focus} against the total of the other region',
-    orgOne: 'Showing the organization total of its one region',
+    orgOne: 'The one region in the data, as one combined figure',
     focusOnly: 'Showing {focus} only',
+    // Read from old settings only: one vs one is no longer offered on screen (D99)
     pair: 'Showing {focus} against {second}',
-    set: 'Showing {n} chosen {regions}: {names}',
-    org: 'Showing the organization total across all {n} {regions}',
+    // Selected regions (D99): one region or more
+    set: 'Showing {n} selected {regions}: {names}',
+    setOne: 'Showing {name} only',
+    // All regions combined (D99)
+    org: 'All {n} {regions} combined into one figure, as if they were one region',
     // Data sources panel only (US-1.1.6)
     coloursRepeat: 'The data has {n} regions but there are {k} distinct region colours, so colours repeat after the {k}th region. Labels and legends still name every region.'
   },
@@ -40,7 +44,9 @@ Object.assign(window.TAP_CONTENT.text, {
     restTotal: 'Total of the other {n} {regions}',
     restAverageOne: 'Average of the other region',
     restTotalOne: 'Total of the other region',
-    org: 'Organization total ({n} {regions})',
+    // All regions combined (D99), on the bar or row that stands for every region added together
+    org: 'All {n} {regions} combined',
+    orgOne: 'The one region, combined',
     explainAverage: 'Each region counts equally. For rates such as hit rate, larger regions count more, in proportion to their size.',
     explainTotal: 'The regions’ figures added together. Rates such as hit rate are averaged, with larger regions counting more.',
     how: {

@@ -2,7 +2,7 @@
  * File: js/engine/scope.js
  * Purpose: Turns the comparison setting into the regions and combined figures a chart should draw, with the
  *          colour each one takes by its role (US-1.1.6) and the plain sentence describing it (US-1.1.3).
- * Provides: TAP.scope (entities, sentence, regionIds, colorOf)
+ * Provides: TAP.scope (entities, sentence, regionIds, colorOf, upgrade)
  * Depends on: js/core/data.js, js/theme.js, js/core/content.js, js/core/format.js, js/core/store.js, config/settings.js
  * Used by: prepare, the tier grid and quadrant, cards, the comparison bar, panels, details, explanations, the data
  *          sources panel, insights and every view
@@ -76,7 +76,7 @@
       if (chosen.length) return { mode: 'set', list: chosen.map(function (id) { return regionEntity(id, 'region'); }) };
     }
     if (cmp.mode === 'org' && all.length) {
-      return { mode: 'org', list: [combinedEntity('org', all, 'total', TAP.content.text('combined.org', counted(all.length)))] };
+      return { mode: 'org', list: [combinedEntity('org', all, 'total', TAP.content.text(one('combined.org', all.length), counted(all.length)))] };
     }
     return { mode: 'all', list: all.map(function (id) { return regionEntity(id, 'region'); }) };
   }
@@ -95,6 +95,7 @@
       case 'pair': return t('scope.pair', { focus: focus.label, second: es[1].label });
       case 'focusOnly': return t('scope.focusOnly', { focus: focus.label });
       case 'set':
+        if (es.length === 1) return t('scope.setOne', { name: es[0].label });
         return t('scope.set', Object.assign({ names: TAP.format.list(es.map(function (e) { return e.label; })) }, counted(es.length)));
       default: return t(one('scope.all', es.length), counted(es.length));
     }
@@ -107,5 +108,15 @@
     return ids().filter(function (id) { return inScope[id]; });
   }
 
-  TAP.scope = { entities: entities, sentence: sentence, regionIds: regionIds, colorOf: colorOf };
+  // "One vs one" ('pair') left the screen (D99). An old setting that names it (an address, a presentation step, a
+  // recorded step) is read as a selection of its regions, in file order; without a valid second region, the focus
+  // alone. Any other comparison is returned as it is.
+  function upgrade(cmp) {
+    if (!cmp || cmp.mode !== 'pair') return cmp;
+    var named = [cmp.focus].concat(cmp.second !== cmp.focus ? [cmp.second] : []);
+    var set = ids().filter(function (id) { return named.indexOf(id) >= 0; });
+    return Object.assign({}, cmp, { mode: 'set', set: set, second: null });
+  }
+
+  TAP.scope = { entities: entities, sentence: sentence, regionIds: regionIds, colorOf: colorOf, upgrade: upgrade };
 })(window.TAP);

@@ -12,6 +12,7 @@
 (function (TAP) {
   'use strict';
 
+  // 'pair' (one vs one) is still read, as a selection of its regions (D99)
   var MODES = ['all', 'one', 'pair', 'set', 'org'];
   var REST_AS = ['combined', 'individual'];
   var REST_AGG = ['average', 'total'];
@@ -32,6 +33,7 @@
 
   // The step's comparison over the defaults. Every region it names must be in the data; what a mode needs and the
   // step leaves out comes from the regions in file order, as the comparison bar does. `rest` may stand for restAgg.
+  // An old 'pair' becomes a selection of its two regions, or of the focus alone without a second (D99).
   function cmpOf(c) {
     if (c != null && !isObj(c)) throw new Skip('setting', 'cmp');
     c = Object.assign({}, c || {});
@@ -46,9 +48,8 @@
       if (id != null && ids.indexOf(id) < 0) throw new Skip('region', id);
     });
     if ((out.mode === 'one' || out.mode === 'pair') && out.focus == null) out.focus = ids[0] || null;
-    if (out.mode === 'pair' && out.second == null) out.second = ids.filter(function (id) { return id !== out.focus; })[0] || null;
-    if (out.mode === 'pair' && out.second === out.focus) throw new Skip('setting', 'second');
-    if (out.mode === 'set' && out.set.length < 2) throw new Skip('setting', 'set');
+    out = TAP.scope.upgrade(out);
+    if (out.mode === 'set' && !out.set.length) throw new Skip('setting', 'set');
     return out;
   }
 

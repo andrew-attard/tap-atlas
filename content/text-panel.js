@@ -71,7 +71,6 @@ Object.assign(window.TAP_CONTENT.text, {
     compareTitle: 'Compare this chart differently',
     compareMode: 'Comparison mode for this chart',
     compareFocus: 'Focus region for this chart',
-    compareSecond: 'Second region for this chart',
     done: 'Done',
     custom: 'Custom comparison',
     customReset: 'Reset to page comparison',

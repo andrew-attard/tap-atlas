@@ -25,11 +25,11 @@
  *              or 'none' for no breakdown on a chart that starts with one
  *   industry   the industry id a one-industry chart shows (the ratings, for example)
  *   cmp        what to compare, as in the comparison bar:
- *                mode     'all' (all regions), 'one' (one against the rest), 'pair' (one against one),
- *                         'set' (a chosen set) or 'org' (the organization total)
- *                focus    the region id the comparison is about ('one' and 'pair')
- *                second   the other region id ('pair')
- *                set      a list of at least two region ids ('set')
+ *                mode     'all' (all regions), 'set' (selected regions), 'one' (one against the rest)
+ *                         or 'org' (all regions combined). An older 'pair' (one against one, with focus
+ *                         and second) is still read, as a selection of its two regions
+ *                focus    the region id the comparison is about ('one')
+ *                set      a list of one region id or more ('set')
  *                restAgg  the rest as an 'average' or a 'total' ('one'); rest is accepted as a shorter name
  *                restAs   the rest 'combined' into one figure or shown 'individual'ly ('one')
  *              The comparison applies to that step only. Leaving presentation mode restores the screen as it was.
@@ -50,7 +50,7 @@ window.TAP_RUNNING_ORDER = {
     { title: 'Customer growth year by year', report: 'cg-growth', breakdown: 'year' },
     { title: 'How concentrated customer growth is', report: 'cg-exposure', measure: 'cg.top3Share' },
     { title: 'Which channels carry each plan', report: 'pt-reliance', type: 'stacked100' },
-    { title: 'Partner capacity in two regions', report: 'pt-capacity', cmp: { mode: 'pair', focus: 'seu', second: 'mea' } },
+    { title: 'Partner capacity in two regions', report: 'pt-capacity', cmp: { mode: 'set', set: ['seu', 'mea'] } },
     { title: 'Each plan against its strategic plan', report: 'ol-strategic' },
     { title: 'The revenue each plan brings in, year by year', report: 'ol-revenue' },
     { title: 'The accounts behind one region’s growth', report: 'cg-accounts', cmp: { mode: 'one', focus: 'apac' } }
