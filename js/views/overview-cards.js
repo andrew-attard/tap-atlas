@@ -42,13 +42,15 @@
   function fmt(cell, unit, exact) { return TAP.format.cell(cell, { unit: unit, exact: exact }); }
   function kindText(cell) { return cell && cell.kind ? TAP.format.kind(cell.kind).text : ''; }
 
-  // One line of the source panel: label, exact value, kind and file › sheet › cell; for a combined figure,
-  // how it was combined and which regions it covers.
+  // One line of the source panel: label, exact value and the data icon with its kind and file › sheet › cell (D100);
+  // for a combined figure, which has no file, how it was combined and which regions it covers.
   function sourceRow(r) {
-    var c = r.cell || {}, a = address(c), src = [kindText(c), a && a.text].filter(Boolean).join(' · ');
+    var c = r.cell || {}, a = address(c), tip = TAP.sourceTip.icon(c.src, c.kind, { label: r.label });
+    var src = a && a.combined ? [kindText(c), a.text].filter(Boolean).join(' · ') : '';
     var out = [
       el('span', { class: 'tap-details__label' }, r.label),
       el('span', { class: 'tap-details__value' }, r.text != null && !r.cell ? r.text : fmt(c, r.unit, true)),
+      tip,
       src ? el('span', { class: 'tap-details__src' }, src) : null
     ];
     if (a && a.combined) {
@@ -56,7 +58,7 @@
       if (a.regions.length) out.push(el('span', { class: 'tap-details__src' }, t('source.regions') + ': ' + TAP.format.list(a.regions)));
     }
     if (c.partial && c.note) out.push(el('span', { class: 'tap-details__src' }, t('source.note') + ': ' + c.note));
-    return el('div', { class: 'tap-details__row' }, out);
+    return el('div', { class: 'tap-details__row' + (tip ? ' tap-details__row--tip' : '') }, out);
   }
 
   function openSource(title, rows) {
@@ -66,12 +68,11 @@
     });
   }
 
-  // A figure: a button showing the value, naming its source in the title and opening the source panel.
-  // spec: {measure, cell, unit, label, text?, rows?}; rows are the lines the panel lists (default: this figure).
+  // A figure: a button showing the value, its kind in the title, opening the source panel (the address is behind
+  // the panel's data icon, D100). spec: {measure, cell, unit, label, text?, rows?}; rows are the lines the panel lists.
   function figure(spec, cls) {
-    var c = spec.cell || {}, a = address(c);
-    var title = t('cards.figureTitle', { label: spec.label, value: fmt(c, spec.unit, true), kind: kindText(c),
-      where: a ? a.text : '' });
+    var c = spec.cell || {};
+    var title = t('cards.figureTitle', { label: spec.label, value: fmt(c, spec.unit, true), kind: kindText(c) });
     return el('button', {
       type: 'button', class: 'tap-ov-fig' + (c.state === 'notProvided' ? ' is-np' : '') + (cls ? ' ' + cls : ''),
       'data-measure': spec.measure || null, 'data-state': c.state || null, 'data-v': c.state === 'value' ? String(c.v) : '',

@@ -32,7 +32,7 @@ Object.assign(window.TAP_CONTENT.text, {
       kickerCombined: '◇ Calculated by this app',
       openDetails: '{name}: open details',
       openSources: '{name}: where each figure comes from',
-      figureTitle: '{label}: {value}. {kind}. Source: {where}'
+      figureTitle: '{label}: {value}. {kind}. Select to see where it comes from'
     },
     // Headline (US-1.5.3). {amb}, {nbShare}, {cgShare}, {rest} and {n} in the Tier 2 sentences are figures, shown in
     // bold and listed with their sources behind the Sources button.

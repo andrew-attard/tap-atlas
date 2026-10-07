@@ -4,7 +4,7 @@
  *          One is open at a time; opening another replaces it. Esc closes it, after any nearer popover.
  * Provides: TAP.layers (open, close, openDetails, top)
  * Depends on: js/core/store.js (state.layer), js/core/dom.js, js/core/icons.js, js/core/content.js,
- *             js/core/format.js, js/core/sources.js (addresses), js/reports/details.js (TAP.details.build),
+ *             js/core/format.js, js/core/sources.js, js/ui/source-tip.js (D100), js/reports/details.js (TAP.details.build),
  *             js/ui/sources-panel.js
  * Used by: panels, cards, the comparison bar, the explanation panel
  *
@@ -41,17 +41,19 @@
     return built.title;
   }
 
-  // Label and value, then the kind of value and where it came from (file › sheet › cell).
+  // One line per figure: label, value, and the data icon that shows its kind and file › sheet › cell (D100).
+  // A figure this app combined has no file, so how it was combined stays as a line under it.
   function detailRow(r) {
     var c = r.cell || {};
     var value = r.text != null ? r.text : TAP.format.cell(c, { unit: r.unit, field: r.field, exact: true });
-    var where = '';
-    try { where = c.src ? TAP.sources.address(c.src).text : ''; } catch (e) { where = ''; }
-    var kind = c.kind ? TAP.format.kind(c.kind).text : '';
-    return el('div', { class: 'tap-details__row' }, [
+    var tip = TAP.sourceTip.icon(c.src, c.kind, { where: r.where, label: r.label });
+    var how = '';
+    try { how = c.src && c.src.combined ? TAP.sources.address(c.src).text : ''; } catch (e) { how = ''; }
+    return el('div', { class: 'tap-details__row' + (tip ? ' tap-details__row--tip' : '') }, [
       el('span', { class: 'tap-details__label' }, r.label),
       el('span', { class: 'tap-details__value' }, value),
-      kind || where ? el('span', { class: 'tap-details__src' }, [kind, kind && where ? ' · ' : '', where]) : null
+      tip,
+      how ? el('span', { class: 'tap-details__src' }, [c.kind ? TAP.format.kind(c.kind).text + ' · ' : '', how]) : null
     ]);
   }
 

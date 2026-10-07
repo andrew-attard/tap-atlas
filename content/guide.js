@@ -83,7 +83,7 @@ window.TAP_CONTENT.guide = {
         'Some panels are lists, one row per line of a workbook, such as every account or partner. Select a heading to sort, use the filter above the list to narrow it, and select a row to see everything about it.'
       ] },
       { id: 'sources', title: 'Where figures come from', paragraphs: [
-        'Every figure can be traced to its workbook, sheet and cell. Tooltips and table rows show the address, and say what kind of data it is.',
+        'Every figure can be traced to its workbook, sheet and cell. Select the data icon beside a figure, in a details panel, a list, a table or a leader’s comment, to see the file, sheet and cells it was read from, and whether it is a leader’s input, a system figure or calculated in the workbook.',
         'The data date in the comparison bar opens the data sources panel. It lists each region’s file, when it was saved and imported, and any notes from the import.',
         'A blank in a workbook shows as "not provided", never as zero. Charts list the regions that had no data.'
       ] },

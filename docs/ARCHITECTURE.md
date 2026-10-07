@@ -453,7 +453,7 @@ config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness
 js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  ratings-grid.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js  stack-draw.js  dim-stack.js  pt-books.js  outlook-side.js  outlook-side-draw.js  outlook-coverage.js
 js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
-js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
+js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  source-tip.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
 js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights.js
 js/ui/custom-builder.js
 js/views/build.js  guide.js

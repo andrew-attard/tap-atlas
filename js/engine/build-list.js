@@ -3,7 +3,7 @@
  * Purpose: The list builder: one row per item with sortable columns, one filter and the comparison scope applied to rows (US-2.7.2).
  * Provides: builder 'list'
  * Depends on: js/engine/rows.js, js/engine/shapes.js, js/engine/scope.js, js/core/format.js, js/core/dom.js,
- *             js/core/content.js, js/core/store.js (at call time)
+ *             js/core/content.js, js/core/store.js, js/ui/source-tip.js (the source column's data icon) (at call time)
  * Used by: js/panel/panel.js (through TAP.builders)
  * Owner: ENGINE2 stream (#194)
  */
@@ -137,7 +137,8 @@
         (hl ? ' class="is-highlight is-hl"' : '') + '>' + cols.map(function (c) {
           return '<td data-tap-col="' + esc(c.key) + '"' + (c.align === 'right' ? ' class="tap-list__num"' : '') + '>' +
             esc(TAP.format.cell(r.cells[c.key], { unit: c.unit, decimals: c.decimals, exact: true })) + '</td>';
-        }).join('') + '<td data-tap-col="source" class="tap-list__src">' + esc(sourceText(e)) + '</td></tr>';
+        }).join('') + '<td data-tap-col="source" class="tap-list__src">' +   // the file and row behind the data icon (D100)
+        TAP.sourceTip.html(null, null, { where: sourceText(e), label: cols[0] ? TAP.format.cell(r.cells[cols[0].key], { unit: cols[0].unit }) : '' }) + '</td></tr>';
     }).join('');
     return '<table class="tap-list"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
   }

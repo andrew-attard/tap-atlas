@@ -5,7 +5,7 @@
  *          and everything its leader wrote (US-2.4.4).
  * Provides: TAP.profileParts (glance, compare, drawGlance, insights, drawInsights, words, drawWords)
  * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js, js/engine/measures.js,
- *             js/engine/scope.js, js/ui/layers.js, js/views/overview-cards.js (openSource), js/views/regions.js
+ *             js/engine/scope.js, js/ui/layers.js, js/ui/source-tip.js, js/views/overview-cards.js (openSource), js/views/regions.js
  *             (TAP.profile.cmp), js/insights/engine.js, js/core/data.js, js/core/store.js (all at call time)
  * Used by: js/views/regions.js
  * Owner: PROFILE stream (#215, #217); the full template's lines PAGES4 (#459)
@@ -81,7 +81,7 @@
   function figure(f, which, open) {
     var c = f[which];
     return el('button', { type: 'button', class: 'tap-ov-fig tap-pf-glance__fig' + (isValue(c) ? '' : ' is-np'), 'data-part': which,
-      title: t('glance.figureTitle', { label: f.label, where: where(c) }), onclick: open },
+      title: t('glance.figureTitle', { label: f.label }), onclick: open },
     TAP.format.cell(c, { unit: f.unit }));
   }
 
@@ -206,9 +206,9 @@
         .concat(g.entries.map(function (e) {
           var label = e.kind === 'commentary' ? t('words.commentary') : [t('words.successFactors'), e.subVertical, e.market].filter(Boolean).join(' · ');
           return el('div', { class: 'tap-pf-word', 'data-word': e.kind }, [
-            el('span', { class: 'tap-pf-word__kind' }, label),
-            el('p', { class: 'tap-pf-word__text' }, e.text),
-            el('span', { class: 'tap-pf-word__src' }, TAP.format.kind('IN').text + (e.where ? ' · ' + e.where : ''))
+            el('div', { class: 'tap-pf-word__head' }, [el('span', { class: 'tap-pf-word__kind' }, label),
+              TAP.sourceTip.icon(e.src, 'IN', { where: e.where, label: label })]),
+            el('p', { class: 'tap-pf-word__text' }, e.text)
           ]);
         }))));
     });

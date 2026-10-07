@@ -1,0 +1,50 @@
+/*
+ * File: css/source-tip.css
+ * Purpose: The data icon beside a figure and the popover that says where the figure comes from (D100).
+ * Provides: styles for .tap-srctip, .tap-srcpop and the rows that hold the icon
+ * Depends on: css/base.css and the CSS variables written by js/theme.js
+ * Used by: index.html, index-sample.html, tests.html
+ * Colours and font sizes come from theme variables only. No animation (D24).
+ */
+
+/* The icon: small and quiet, with a hit area of at least 24 px and the shared focus ring */
+.tap-srctip {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  min-width: 28px; min-height: 28px; padding: 0; margin: 0;
+  color: var(--tap-muted); background: transparent; vertical-align: middle;
+  border: var(--tap-rule-w) solid transparent; border-radius: var(--tap-radius); cursor: pointer;
+}
+.tap-srctip:hover, .tap-srctip[aria-expanded="true"] { color: var(--tap-ink); background: var(--tap-surface); border-color: var(--tap-rule); }
+
+/* The popover: over side panels, never blocking the page; closes with Esc, its close button or a click elsewhere */
+.tap-srcpop {
+  position: fixed; z-index: 80; width: min(420px, calc(100vw - 2 * var(--tap-sp-3)));
+  padding: var(--tap-sp-3) var(--tap-sp-4);
+  background: var(--tap-paper); color: var(--tap-ink);
+  border: var(--tap-control-w) solid var(--tap-ink); border-radius: var(--tap-radius); box-shadow: var(--tap-shadow-md);
+  font-size: var(--tap-fs-body); line-height: 1.45;
+}
+.tap-srcpop__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--tap-sp-2); margin-bottom: var(--tap-sp-1); }
+.tap-srcpop__kind { padding-top: var(--tap-sp-1); font-weight: 800; }
+.tap-srcpop__close { flex: none; min-width: 32px; height: 32px; margin: calc(-1 * var(--tap-sp-1)) calc(-1 * var(--tap-sp-2)) 0 0; }
+.tap-srcpop__where { margin: 0; overflow-wrap: anywhere; }
+
+/* Details rows: label, value and icon on one line */
+.tap-details__row--tip { grid-template-columns: minmax(0, 1fr) auto 28px; align-items: center; }
+.tap-details__row--tip .tap-details__src { grid-column: 1 / -1; }
+
+/* Text written by leaders: the icon sits on the entry's head line */
+.tap-ind-comment__head .tap-srctip, .tap-nbf__head .tap-srctip, .tap-pf-word .tap-srctip { margin-left: auto; align-self: center; }
+.tap-pf-word__head { display: flex; align-items: center; gap: var(--tap-sp-2); }
+
+/* Lists, tables and insight figures: the icon in place of the address */
+.tap-list__src .tap-srctip, .tap-panel__src .tap-srctip { margin: -4px 0; }
+.tap-ins__fig { display: inline-flex; align-items: center; gap: var(--tap-sp-1); }
+.tap-themes__quote .tap-srctip { margin-left: var(--tap-sp-1); }
+
+/* The data sources panel's explanation, with the icon drawn before the sentence */
+.tap-src__how { display: flex; align-items: flex-start; gap: var(--tap-sp-2); margin: 0 0 var(--tap-sp-3); font-size: var(--tap-fs-body); }
+.tap-src__how .tap-icon { flex: none; padding-top: 2px; color: var(--tap-muted); }
+
+/* Printed pages carry no buttons */
+@media print { .tap-srctip, .tap-srcpop { display: none !important; } }

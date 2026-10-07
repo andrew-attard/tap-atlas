@@ -70,9 +70,11 @@
     return out;
   }
 
+  // The row number on screen; file › sheet › row behind the data icon (where, D100).
   function sourceRow(r, section) {
     var where = TAP.sources.address({ regionId: r.regionId, section: section, field: null, row: r.sourceRow, kind: null });
-    return { label: t('sourceRow'), text: t('rowText', { where: where ? where.text : rname(r.regionId), row: r.sourceRow }), cell: {} };
+    return { label: t('sourceRow'), text: t('rowOnly', { row: r.sourceRow }),
+      where: t('rowText', { where: where ? where.text : rname(r.regionId), row: r.sourceRow }), cell: {} };
   }
 
   function rowGroups(item, many) {
