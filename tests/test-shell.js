@@ -378,8 +378,8 @@
       run(function () {
         var root = startApp();
         var labels = qsa('.tap-cmp__mode', root).map(txt);
-        a.deepEqual(labels, ['All regions', 'One vs the rest', 'One vs one', 'Chosen set', 'Organization total'], 'five modes');
-        var expect = { all: [], one: ['focus', 'rest'], pair: ['focus', 'second'], set: ['set'], org: [] };
+        a.deepEqual(labels, ['All regions', 'Selected regions', 'One vs the rest', 'All regions combined'], 'four modes (D99)');
+        var expect = { all: [], set: ['set'], one: ['focus', 'rest'], org: [] };
         Object.keys(expect).forEach(function (mode) {
           clickMode(root, mode);
           a.equal(TAP.store.get().cmp.mode, mode, 'mode written: ' + mode);
@@ -392,23 +392,15 @@
       });
     });
 
-    T.test('TPV-TC-012', 'Pickers write the focus, second region and set to state.cmp', function (a) {
+    T.test('TPV-TC-012', 'Pickers write the focus and the selected regions to state.cmp', function (a) {
       run(function () {
         var root = startApp();
         clickMode(root, 'one');
         a.equal(TAP.store.get().cmp.focus, TAP.data.regions()[0].id, 'a focus region is chosen for you');
         choose(qs('[data-picker="focus"] select', root), 'charlie');
         a.equal(TAP.store.get().cmp.focus, 'charlie');
-        clickMode(root, 'pair');
-        var second = qs('[data-picker="second"] select', root);
-        a.ok(second.value && second.value !== 'charlie', 'second differs from the focus');
-        a.ok(qs('option[value="charlie"]', second).disabled, 'the focus region cannot be the second');
-        choose(second, 'delta');
-        a.deepEqual([TAP.store.get().cmp.focus, TAP.store.get().cmp.second], ['charlie', 'delta']);
-        choose(qs('[data-picker="focus"] select', root), 'delta');
-        a.ok(TAP.store.get().cmp.second !== 'delta', 'choosing the second as focus moves the second');
         clickMode(root, 'set');
-        a.ok(TAP.store.get().cmp.set.length >= 2, 'a set starts with at least two regions');
+        a.deepEqual(TAP.store.get().cmp.set, ['charlie'], 'a selection starts with the focus region alone (D99)');
         var chips = qsa('[data-picker="set"] .tap-cmp__chip', root);
         a.equal(chips.length, TAP.data.regions().length, 'one chip per region');
         var off = chips.filter(function (b) { return b.getAttribute('aria-pressed') !== 'true'; })[0];
@@ -423,23 +415,27 @@
     T.test('X-compare-repair', 'A comparison naming regions not in the data is repaired from the data', function (a) {
       run(function () {
         var root = startApp();
-        TAP.store.set({ cmp: { mode: 'pair', focus: 'nowhere', second: 'elsewhere' } });
+        TAP.store.set({ cmp: { mode: 'one', focus: 'nowhere' } });
         TAP.compareBar.mount(qs('.tap-cmp', root));
         var c = TAP.store.get().cmp, ids = TAP.data.regions().map(function (r) { return r.id; });
-        a.ok(ids.indexOf(c.focus) >= 0 && ids.indexOf(c.second) >= 0 && c.focus !== c.second, 'two real regions');
+        a.ok(ids.indexOf(c.focus) >= 0, 'a real focus region');
         a.equal(qs('[data-picker="focus"] select', root).value, c.focus, 'the picker shows the region in use');
         TAP.store.set({ cmp: { mode: 'set', set: ['nowhere', ids[1]] } });
         TAP.compareBar.mount(qs('.tap-cmp', root));
-        a.ok(TAP.store.get().cmp.set.length >= 2 && TAP.store.get().cmp.set.indexOf('nowhere') < 0, 'a set of real regions');
+        a.deepEqual(TAP.store.get().cmp.set, [ids[1]], 'a selection of the real region only');
+        TAP.store.set({ cmp: { mode: 'pair', focus: 'nowhere', second: 'elsewhere' } });
+        TAP.compareBar.mount(qs('.tap-cmp', root));
+        c = TAP.store.get().cmp;
+        a.ok(c.mode === 'set' && c.set.length === 1 && ids.indexOf(c.set[0]) >= 0, 'an old pair of unknown regions: a selection of one real region (D99)');
       });
     });
 
-    T.test('X-compare-set-min', 'A set keeps at least two regions and says why', function (a) {
+    T.test('X-compare-set-min', 'A selection keeps at least one region and says why (D99)', function (a) {
       run(function () {
         var root = startApp();
-        TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo'] } });
+        TAP.store.set({ cmp: { mode: 'set', set: ['alpha'] } });
         qs('[data-picker="set"] [data-region="alpha"]', root).click();
-        a.deepEqual(TAP.store.get().cmp.set, ['alpha', 'bravo'], 'not removed');
+        a.deepEqual(TAP.store.get().cmp.set, ['alpha'], 'not removed');
         a.equal(txt(qs('.tap-cmp__status', root)), TAP.content.text('compare.setMin'), 'the reason is shown');
       });
     });
@@ -487,7 +483,7 @@
       });
     });
 
-    T.test('X-compare-set-button', 'D50: a chosen set is one button with the count; it opens the regions by click and closes with Esc', function (a) {
+    T.test('X-compare-set-button', 'D50: Selected regions is one button with the count; it opens the regions by click and closes with Esc', function (a) {
       run(function () {
         var root = startApp();
         TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo'] } });
@@ -517,7 +513,7 @@
     });
 
     // Review fix #378 (SV-13): the regions of a chosen set open inside the bar at 1280, 1024 (125%) and 853 px (150%)
-    T.test('X-review-SV-13', 'The "Chosen set" popover stays inside the comparison bar at every width', function (a) {
+    T.test('X-review-SV-13', 'The "Selected regions" popover stays inside the comparison bar at every width', function (a) {
       run(function () {
         var root = startApp(), bar = qs('.tap-cmp', root), out = [];
         clickMode(root, 'set');
@@ -537,7 +533,7 @@
       run(function () {
         var root = startApp();
         var btn = function () { return qs('.tap-cmp__explain', root); };
-        ['all', 'pair', 'set'].forEach(function (m) { clickMode(root, m); a.ok(!shown(root, '.tap-cmp__explain'), 'no icon for ' + m); });
+        ['all', 'set'].forEach(function (m) { clickMode(root, m); a.ok(!shown(root, '.tap-cmp__explain'), 'no icon for ' + m); });
         TAP.store.set({ cmp: { mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'average' } });
         a.ok(shown(root, '.tap-cmp__explain'), 'icon for the average of the rest');
         btn().click();
@@ -551,7 +547,7 @@
         esc();
         a.ok(!shown(root, '.tap-cmp__pop'), 'Esc closes it');
         clickMode(root, 'org');
-        a.ok(shown(root, '.tap-cmp__explain'), 'icon for the organization total');
+        a.ok(shown(root, '.tap-cmp__explain'), 'icon for all regions combined');
         TAP.store.set({ cmp: { mode: 'one', restAs: 'individual' } });
         a.ok(!shown(root, '.tap-cmp__explain'), 'no icon when the others are shown individually');
       });
@@ -560,11 +556,11 @@
     T.test('TPV-TC-016', 'The comparison stays when the view changes', function (a) {
       run(function () {
         var root = startApp();
-        clickMode(root, 'pair');
+        clickMode(root, 'set');
         var before = JSON.stringify(TAP.store.get().cmp);
         qs('.tap-menu__item[data-view="industry"]', root).click();
         a.equal(JSON.stringify(TAP.store.get().cmp), before, 'state.cmp unchanged');
-        a.equal(qs('.tap-cmp__mode[aria-pressed="true"]', root).getAttribute('data-mode'), 'pair', 'bar still shows it');
+        a.equal(qs('.tap-cmp__mode[aria-pressed="true"]', root).getAttribute('data-mode'), 'set', 'bar still shows it');
       });
     });
 
@@ -604,7 +600,7 @@
     });
 
     // Review fix #372 (SV-9): with one region there is nothing to combine and no second region to pick.
-    T.test('X-review-SV-1', 'With one region, the bar offers no rest or second picker and no combined-figure explanation', function (a) {
+    T.test('X-review-SV-1', 'With one region, the bar offers no rest picker and no combined-figure explanation', function (a) {
       run(function () {
         var p = T_FIXTURE('mini');
         p.regions = p.regions.slice(0, 1);
@@ -612,13 +608,13 @@
         clickMode(root, 'one');
         a.deepEqual(pickers(root), ['focus'], 'One vs the rest: the focus picker only');
         a.ok(!shown(root, '.tap-cmp__explain'), 'no explanation of a combined figure');
-        clickMode(root, 'pair');
-        a.deepEqual(pickers(root), ['focus'], 'One vs one: no second region to pick');
+        clickMode(root, 'set');
+        a.deepEqual(TAP.store.get().cmp.set, ['alpha'], 'Selected regions: the one region');
         a.equal(sentence(root), TAP.scope.sentence(TAP.store.get().cmp), 'the sentence follows the scope');
       });
     });
 
-    T.test('X-review-SV-1', 'With two regions, the rest and second pickers and the explanation still show', function (a) {
+    T.test('X-review-SV-1', 'With two regions, the rest picker and the explanation still show', function (a) {
       run(function () {
         var p = T_FIXTURE('mini');
         p.regions = p.regions.slice(0, 2);
@@ -626,8 +622,8 @@
         clickMode(root, 'one');
         a.deepEqual(pickers(root), ['focus', 'rest'], 'One vs the rest');
         a.ok(shown(root, '.tap-cmp__explain'), 'the explanation of the combined figure');
-        clickMode(root, 'pair');
-        a.deepEqual(pickers(root), ['focus', 'second'], 'One vs one');
+        clickMode(root, 'set');
+        a.deepEqual(pickers(root), ['set'], 'Selected regions');
       });
     });
   });

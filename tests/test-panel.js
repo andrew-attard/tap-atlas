@@ -605,13 +605,13 @@
   }
 
   T.suite('panel-compare', function () {
-    T.test('TPV-TC-228', '"Compare differently" offers the same five modes as the comparison bar', scene(function (a, s) {
+    T.test('TPV-TC-228', '"Compare differently" offers the same four modes as the comparison bar (D99)', scene(function (a, s) {
       s.report(fakeDef());
       var ed = openCompare(s.panel('x-fake'));
       a.ok(ed, 'editor opens');
       var opts = qsa('select[data-control="cmp-mode"] option', ed);
-      a.deepEqual(opts.map(function (o) { return o.value; }), ['all', 'one', 'pair', 'set', 'org']);
-      a.deepEqual(opts.map(function (o) { return txt(o); }), ['all', 'one', 'pair', 'set', 'org'].map(function (m) {
+      a.deepEqual(opts.map(function (o) { return o.value; }), ['all', 'set', 'one', 'org']);
+      a.deepEqual(opts.map(function (o) { return txt(o); }), ['all', 'set', 'one', 'org'].map(function (m) {
         return TAP.content.text('compare.modes.' + m);
       }), 'same words');
     }));
@@ -630,10 +630,8 @@
       var badge = qs('.tap-panel__custom', p.el);
       a.match(txt(badge), /Custom comparison/);
       a.ok(txt(badge).indexOf(TAP.scope.sentence(c)) >= 0, 'its own sentence');
-      choose(p, 'cmp-mode', 'pair');
-      a.equal(last().cmp.second !== last().cmp.focus && !!last().cmp.second, true, 'one vs one gets a second region');
       choose(p, 'cmp-mode', 'set');
-      a.ok(last().cmp.set.length >= 2, 'a set starts with two regions');
+      a.deepEqual(last().cmp.set, ['bravo'], 'a selection starts with the focus region alone (D99)');
       click(qs('[data-control="cmp-set"] [data-value="delta"]', p.el));
       a.ok(last().cmp.set.indexOf('delta') >= 0, 'region added to the set');
       click(qs('[data-action="custom-done"]', p.el));

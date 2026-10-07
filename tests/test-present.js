@@ -68,8 +68,8 @@
         a.equal(ok[1].initial.type, 'dot', 'chart type');
         a.equal(ok[2].initial.breakdown, 'year', 'breakdown');
         a.deepEqual([ok[3].cmp.mode, ok[3].cmp.focus, ok[3].cmp.restAs, ok[3].cmp.restAgg], ['one', 'seu', 'combined', 'total'], 'one vs the rest, as a total');
-        a.deepEqual([ok[4].cmp.mode, ok[4].cmp.focus, ok[4].cmp.second], ['pair', 'na', 'apac'], 'one vs one');
-        a.deepEqual([ok[5].cmp.mode, ok[5].cmp.set], ['set', ['na', 'neu', 'seu']], 'chosen set');
+        a.deepEqual([ok[4].cmp.mode, ok[4].cmp.set], ['set', ['na', 'apac']], 'an old one vs one: a selection of the two (D99)');
+        a.deepEqual([ok[5].cmp.mode, ok[5].cmp.set], ['set', ['na', 'neu', 'seu']], 'selected regions');
         a.deepEqual([ok[6].highlight.reportId, ok[6].highlight.regionIds, ok[6].highlight.mark], ['nb-levers', ['na'], 'bar'], 'highlight, for the step report');
         a.equal(ok[7].reportId, 'nb-levers', 'insight step: the insight report');
         a.equal(ok[8].title, 'Where the regions agree', 'title');
@@ -220,7 +220,7 @@
 
     T.test('TPV-TC-525', 'A step with measure, chart type, breakdown and comparison shows exactly those settings', function (a) {
       withApp(function () {
-        var cmp = { mode: 'pair', focus: 'na', second: 'seu' };
+        var cmp = { mode: 'set', set: ['na', 'seu'] };
         TAP.present.start([{ report: 'nb-levers', measure: 'nb.avgDealSize', type: 'dot', breakdown: 'industry', cmp: cmp }]);
         var p = shown();
         a.equal(p && p.getAttribute('data-report'), 'nb-levers', 'the step report');
@@ -537,7 +537,7 @@
 
     T.test('TPV-TC-539', 'Add to presentation records the report, measure, chart type, breakdown and comparison on screen', function (a) {
       withPanel('nb-levers', function (p) {
-        TAP.store.set({ cmp: { mode: 'pair', focus: 'na', second: 'seu' } });
+        TAP.store.set({ cmp: { mode: 'set', set: ['na', 'seu'] } });
         click(p.el.querySelector('[data-control="measure"] [data-value="nb.hitRate"]'));
         click(p.el.querySelector('[data-action="type"]'));
         click(p.el.querySelector('[data-type="dot"]'));
@@ -546,7 +546,7 @@
         var steps = TAP.present.recorded(), s0 = steps[0] || {};
         a.equal(steps.length, 1, 'one step recorded');
         a.deepEqual([s0.report, s0.measure, s0.type, s0.breakdown], ['nb-levers', 'nb.hitRate', 'dot', 'industry'], 'report, measure, type and breakdown');
-        a.deepEqual(s0.cmp, { mode: 'pair', focus: 'na', second: 'seu' }, 'the comparison on screen');
+        a.deepEqual(s0.cmp, { mode: 'set', set: ['na', 'seu'] }, 'the comparison on screen');
         a.ok(p.el.querySelector('.tap-panel__status').textContent.length > 0, 'the panel says it was added');
       });
     });
