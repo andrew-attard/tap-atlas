@@ -260,11 +260,10 @@
 
     /* ---------- US-2.6.3: tour and shortcuts cover the new views (#226) ---------- */
 
-    T.test('TPV-TC-503', 'Number keys 1 to 9 open the views in menu order, one key per view', function (a) {
+    T.test('TPV-TC-503', 'Number keys 1 to 9, then 0, open the menu items in order, one key per item', function (a) {
       var order = TAP.views.order();
-      a.equal(order.length, 9, 'nine views in the menu');
-      order.forEach(function (id, i) { a.equal(TAP.keys.viewFor(String(i + 1)), id, 'key ' + (i + 1) + ' opens ' + id); });
-      a.equal(TAP.keys.viewFor('0'), null, 'key 0 opens nothing');
+      a.equal(order.length, 10, 'ten items in the menu, Build a chart among them (D96)');
+      order.forEach(function (id, i) { a.equal(TAP.keys.viewFor(String((i + 1) % 10)), id, 'key ' + ((i + 1) % 10) + ' opens ' + id); });
     });
 
     T.test('TPV-TC-503', 'Pressing a number key switches the view', function (a) {
@@ -282,16 +281,19 @@
         var items = qsa('[data-guide="howTo"] .tap-guide__key', root), order = TAP.views.order();
         a.equal(items.length, order.length, 'one line per view');
         items.forEach(function (li, i) {
-          a.equal(txt(li.querySelector('kbd')), String(i + 1), 'key ' + (i + 1));
+          var key = String((i + 1) % 10);
+          a.equal(txt(li.querySelector('kbd')), key, 'key ' + key);
           a.equal(txt(li.querySelector('span')), TAP.views.title(order[i]), 'names ' + order[i]);
-          a.equal(li.getAttribute('data-view'), TAP.keys.viewFor(String(i + 1)), 'the same view the key opens');
+          a.equal(li.getAttribute('data-view'), TAP.keys.viewFor(key), 'the same view the key opens');
         });
       });
     });
 
     T.test('TPV-TC-504', 'A view added to the menu is listed without a content change', function (a) {
       var order = window.TAP_VIEWS.order, saved = order.slice();
-      order.splice(order.indexOf('outlook'), 1);   // one view fewer, then a stand-in entry added; both undone below
+      // Two items fewer, then a stand-in entry added; all undone below
+      order.splice(order.indexOf('outlook'), 1);
+      if (order.indexOf('build') >= 0) order.splice(order.indexOf('build'), 1);
       try {
         withGuide(function (root) { a.equal(qsa('.tap-guide__key', root).length, 8, 'eight keys for eight views'); });
         order.splice(5, 0, 'insights');

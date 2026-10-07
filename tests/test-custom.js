@@ -1,8 +1,8 @@
 /*
  * File: tests/test-custom.js
  * Purpose: Tests for custom charts: the combinations each measure allows, the definitions built from them
- *          (US-3.5.2), the Build a chart section (US-3.5.1) and the session list (US-3.5.3).
- * Provides: test cases TPV-TC-552 to 556, 558, 559, 561 to 565, 567, 568, 570, 572, X-custom-*
+ *          (US-3.5.2), the Build a chart view (US-3.5.1, D96) and the session list (US-3.5.3).
+ * Provides: test cases TPV-TC-552 to 556, 558, 559, 561 to 565, 567, 568, 570, 572, X-custom-*, X-d96-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini-data, mini-expected)
  * Used by: tests.html
  * Owner: CUSTOM stream
@@ -33,7 +33,7 @@
   }
 
   var builders = [];   // every section drawn by a test, destroyed by scene() whatever happens
-  // The Build a chart section, drawn into the sandbox from a known choice.
+  // The builder of the Build a chart view, drawn into the sandbox from a known choice.
   function builder(spec) {
     var host = T.dom.mount(), h = TAP.customBuilder.render(host, { spec: spec || null });
     builders.push(h);
@@ -353,21 +353,51 @@
       opts.forEach(function (x) { a.ok(!/\(by \)/.test(x), 'no empty "by": ' + x); });
     }));
 
-    T.test('X-custom-guide-destroy', 'The Guide section returns a handle whose destroy removes its panel', function (a) {
-      var x = TAP.guideExtras.filter(function (g) { return g.id === 'buildChart'; })[0], host = T.dom.mount();
-      var h = x.render(host);
-      a.ok(h && typeof h.destroy === 'function', 'a handle with destroy');
-      a.ok(!!qs('.tap-panel', host), 'drawn');
-      h.destroy();
+    // D96: Build a chart is its own view, #build, beside the Guide (it was a Guide section, US-3.5.1)
+    T.test('X-custom-view-destroy', 'The Build a chart view draws the builder and its panel; destroy removes them', function (a) {
+      var host = T.dom.mount(), h = TAP.views.get('build').mount(host);
+      try {
+        a.ok(h && typeof h.destroy === 'function', 'a handle with destroy');
+        a.ok(!!qs('.tap-custom', host), 'the builder is drawn');
+        a.ok(!!qs('.tap-panel', host), 'with its panel');
+      } finally { h.destroy(); }
       a.ok(!qs('.tap-panel', host), 'gone after destroy');
       Object.keys(window.TAP_REPORTS).forEach(function (id) { if (/^custom:/.test(id)) delete window.TAP_REPORTS[id]; });
     });
 
-    T.test('X-custom-guide', 'Build a chart is a Guide section, not a menu entry', function (a) {
-      var x = (TAP.guideExtras || []).filter(function (g) { return g.id === 'buildChart'; })[0];
-      a.ok(!!x, 'registered as a Guide extra');
-      a.equal(x.title, TAP.content.text('custom.heading'));
-      a.ok(TAP.views.order().indexOf('buildChart') < 0, 'the number keys do not shift');
+    T.test('X-d96-build-view', '#build shows the view header, then the pickers, the custom chart panel and the session list', function (a) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
+      try {
+        TAP.store.set({ view: 'build' });
+        var view = TAP.shell.viewEl(), head = qs('.tap-vh', view), title = head && qs('h1, h2', head);
+        a.equal(TAP.app.current(), 'build', 'the view on screen is build');
+        a.equal(TAP.views.title('build'), 'Build a chart', 'menu title');
+        a.ok(!!head, 'the standard view header');
+        a.ok(title && /\S/.test(title.textContent), 'with a title');
+        a.ok(!!qs('select[data-custom="measure"]', view) && !!qs('[data-control="custom-by"]', view) && !!qs('[data-control="custom-type"]', view),
+          'the Measure, By and Chart type pickers');
+        a.ok(!!qs('.tap-custom__panel .tap-panel', view), 'the custom chart panel');
+        a.ok(!!qs('.tap-custom__kept .tap-custom__h3', view), 'the session list');
+        a.ok(head.compareDocumentPosition(qs('.tap-custom', view)) & Node.DOCUMENT_POSITION_FOLLOWING, 'the header comes first');
+        a.ok(/^#\/?build$/.test(window.location.hash), 'the address is #build: ' + window.location.hash);
+      } finally {
+        TAP.app.start({ root: T.dom.mount(), plan: null });
+        TAP.data.load(T_FIXTURE('mini'));
+        Object.keys(window.TAP_REPORTS).forEach(function (id) { if (/^custom:/.test(id)) delete window.TAP_REPORTS[id]; });
+      }
+    });
+
+    T.test('X-d96-guide-no-build', 'The Guide has no Build a chart section or contents entry; the menu has Build a chart just before the Guide', function (a) {
+      a.equal((TAP.guideExtras || []).filter(function (g) { return g.id === 'buildChart'; }).length, 0, 'not a Guide extra');
+      var root = T.dom.mount(), h = TAP.views.get('guide').mount(root), heading = TAP.content.text('custom.heading');
+      try {
+        a.equal(root.querySelector('[data-guide="buildChart"], [data-extra="buildChart"], .tap-custom'), null, 'no Build a chart section');
+        a.deepEqual(qsa('.tap-guide__tocitem', root).filter(function (b) { return b.textContent.trim() === heading; }), [], 'no contents entry');
+      } finally { h.destroy(); }
+      var order = TAP.views.order();
+      a.equal(order.indexOf('build'), order.indexOf('guide') - 1, 'Build a chart comes just before the Guide');
+      a.equal(order[order.length - 1], 'guide', 'the Guide is last');
     });
 
     (recordReady ? T.test : T.skip)('TPV-TC-559', 'Add to presentation records the custom chart, and the step passes the check',
