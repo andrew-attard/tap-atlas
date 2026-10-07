@@ -21,8 +21,15 @@
       entities: TAP.scope.entities(k), year: null, industryId: null, highlight: null, expanded: false, theme: TH }, extra || {});
   }
   function builderFor(def) { return TAP.builders.get(def.builder || (def.shape === 'xyz' ? 'xy' : def.shape)); }
+  // The ratings report drew dots and a radar through the generic compare builder until D101 made it a grid. The generic
+  // builder still draws them for any definition that asks, so these checks keep running on that definition (RD).
+  var RD = 'x-ratings-dots';
+  function defOf(id) {
+    if (id !== RD) return TAP.reports.get(id);
+    return Object.assign({}, TAP.reports.get('ind-ratings'), { id: RD, builder: null, defaultType: 'dot', types: ['dot', 'bar', 'radar', 'table'] });
+  }
   function build(id, type, c, extra) {
-    var def = TAP.reports.get(id);
+    var def = defOf(id);
     return builderFor(def)(ctxFor(def, type, c, extra));
   }
   function seriesOf(res) {
@@ -80,8 +87,9 @@
         });
       });
       a.deepEqual(TAP.shapes.types(TAP.reports.get('ov-ambition'), 7), ['stackedBar', 'stacked100', 'treemap', 'bubble', 'table']);
-      a.deepEqual(TAP.shapes.types(TAP.reports.get('ind-ratings'), 3), ['dot', 'bar', 'radar', 'table']);
-      a.deepEqual(TAP.shapes.types(TAP.reports.get('ind-ratings'), 4), ['dot', 'bar', 'table']);
+      a.deepEqual(TAP.shapes.types(defOf(RD), 3), ['dot', 'bar', 'radar', 'table']);
+      a.deepEqual(TAP.shapes.types(defOf(RD), 4), ['dot', 'bar', 'table']);
+      a.deepEqual(TAP.shapes.types(TAP.reports.get('ind-ratings'), 3), ['grid', 'bar', 'table'], 'the ratings report itself (D101)');
     });
 
     T.test('TPV-TC-056', 'Bubble needs a size measure; grouped bars appear once a breakdown is chosen', function (a) {
@@ -160,10 +168,26 @@
     T.test('TPV-TC-062', 'Ratings report: every table value equals the chart value, in every type and mode', function (a) {
       MODES.forEach(function (c) {
         ['dot', 'bar', 'radar'].forEach(function (type) {
-          var res = build('ind-ratings', type, c, { industryId: 'ind1' });
+          var res = build(type === 'bar' ? 'ind-ratings' : RD, type, c, { industryId: 'ind1' });
           sameAsTable(a, res, c.mode + ' ' + type);
           if (type === 'dot') items(res).forEach(function (it) { a.equal(it.d.value[0], it.d.raw, 'nudging never moves the value'); });
         });
+      });
+    });
+
+    T.test('TPV-TC-062', 'Ratings grid (D101): every table value is the value in its grid cell, in every mode', function (a) {
+      MODES.forEach(function (c) {
+        var res = build('ind-ratings', 'grid', c, { industryId: 'ind1' }), box = document.createElement('div'), n = 0;
+        TAP.dom.html(box, res.html);
+        res.table.rows.forEach(function (row) {
+          Object.keys(row.cells).filter(function (k) { return k !== 'entity'; }).forEach(function (k) {
+            var cellEl = box.querySelector('[data-entity="' + row.entityId + '"] [data-key="' + k + '"]'), v = row.cells[k];
+            var want = v.state !== 'value' ? 'not provided' : v.v % 1 === 0 && k !== 'ind.attractiveness' && k !== 'ind.ability' ? String(v.v) : v.v.toFixed(1);
+            a.ok(cellEl && cellEl.textContent.indexOf(want) >= 0, c.mode + ' ' + row.entityId + ' ' + k + ': ' + want);
+            n++;
+          });
+        });
+        a.ok(n > 0, c.mode + ': compared ' + n + ' cells');
       });
     });
 
@@ -174,7 +198,7 @@
       [{ mode: 'all' }, { mode: 'one', focus: R[2] }, { mode: 'one', focus: R[0], restAs: 'individual' }, { mode: 'org' },
         { mode: 'pair', focus: R[1], second: R[3] }].forEach(function (c) {
         [['ov-ambition', 'stackedBar'], ['ov-ambition', 'stacked100'], ['ov-ambition', 'treemap'], ['ov-ambition', 'bubble'],
-          ['ind-ratings', 'dot'], ['ind-ratings', 'bar'], ['ind-ratings', 'radar']].forEach(function (p) {
+          [RD, 'dot'], ['ind-ratings', 'bar'], [RD, 'radar'], ['ind-ratings', 'grid']].forEach(function (p) {
           var res = build(p[0], p[1], c, { industryId: ind });
           a.equal(res.error, null, c.mode + ' ' + p.join(' ') + ' draws');
           if (!res.empty && items(res).length) sameAsTable(a, res, 'sample ' + c.mode + ' ' + p.join(' '));
@@ -215,7 +239,7 @@
     });
 
     T.test('X-builders-result', 'Builders return the full result shape, and clicks map to details targets', function (a) {
-      [['ov-ambition', 'stackedBar'], ['ov-ambition', 'bubble'], ['ind-ratings', 'dot']].forEach(function (p) {
+      [['ov-ambition', 'stackedBar'], ['ov-ambition', 'bubble'], [RD, 'dot']].forEach(function (p) {
         var res = build(p[0], p[1], { mode: 'all' }, { industryId: 'ind1' });
         ['option', 'table', 'legend', 'notes', 'missing'].forEach(function (k) { a.ok(res[k] !== undefined, p.join(' ') + ' ' + k); });
         a.equal(res.error, null);
@@ -227,12 +251,12 @@
         a.deepEqual(t.regionIds, [first.entityId]);
         a.equal(res.legend.length >= 1, true);
       });
-      a.deepEqual(build('ind-ratings', 'dot', { mode: 'all' }, { industryId: 'ind1' }).target({ data: null }), null);
+      a.deepEqual(build(RD, 'dot', { mode: 'all' }, { industryId: 'ind1' }).target({ data: null }), null);
     });
 
     T.test('X-builders-highlight', 'A highlight is drawn for every matching region, not only the first', function (a) {
       var hl = { reportId: 'ind-ratings', regionIds: ['alpha', 'delta'], mark: 'points' };
-      var res = build('ind-ratings', 'dot', { mode: 'all' }, { industryId: 'ind1', highlight: hl });
+      var res = build(RD, 'dot', { mode: 'all' }, { industryId: 'ind1', highlight: hl });
       var ring = seriesOf(res).filter(function (s) { return s.tapRole === 'highlight'; })[0];
       a.ok(ring, 'highlight series');
       var who = {};
@@ -249,7 +273,7 @@
       var saved = window.TAP_ORG;
       window.TAP_ORG = { regions: { alpha: '<img src=x onerror=alert(1)>' } };
       try {
-        [['ov-ambition', 'stackedBar'], ['ov-ambition', 'bubble'], ['ind-ratings', 'dot'], ['ind-ratings', 'bar']].forEach(function (p) {
+        [['ov-ambition', 'stackedBar'], ['ov-ambition', 'bubble'], [RD, 'dot'], ['ind-ratings', 'bar']].forEach(function (p) {
           var res = build(p[0], p[1], { mode: 'all' }, { industryId: 'ind1' });
           var it = items(res).filter(function (x) { return x.d.entityId === 'alpha'; })[0];
           var f = it.s.tooltip.formatter;
@@ -359,7 +383,7 @@
         plan.regions.push(extra);
       }
       TAP.data.load(plan);
-      [['ov-ambition', 'stackedBar'], ['ov-ambition', 'bubble'], ['ind-ratings', 'dot']].forEach(function (p) {
+      [['ov-ambition', 'stackedBar'], ['ov-ambition', 'bubble'], [RD, 'dot']].forEach(function (p) {
         var res = build(p[0], p[1], { mode: 'all' }, { industryId: 'ind1' });
         a.equal(JSON.stringify(res.option).indexOf('undefined'), -1, p.join(' ') + ': nothing undefined');
         items(res).forEach(function (it) {
@@ -376,7 +400,7 @@
   T.suite('colours', function () {
     var ALL = ['alpha', 'bravo', 'charlie', 'delta'];
     var CHARTS = [['ov-ambition', 'stackedBar'], ['ov-ambition', 'stacked100'], ['ov-ambition', 'treemap'], ['ov-ambition', 'bubble'],
-      ['ind-ratings', 'dot'], ['ind-ratings', 'bar'], ['ind-ratings', 'radar']];
+      [RD, 'dot'], ['ind-ratings', 'bar'], [RD, 'radar']];
 
     // The colour each mark of an entity is drawn in, from the first part (the unshaded one).
     function drawn(res) {
@@ -419,7 +443,7 @@
 
     T.test('X-colours-on-top', 'The focus region is drawn above the grey regions where marks overlap', function (a) {
       var c = { mode: 'one', focus: 'charlie', restAs: 'individual' };
-      [['ind-ratings', 'dot'], ['ov-ambition', 'bubble']].forEach(function (p) {
+      [[RD, 'dot'], ['ov-ambition', 'bubble']].forEach(function (p) {
         var vals = seriesOf(build(p[0], p[1], c, { industryId: 'ind1' })).filter(function (s) { return s.tapRole === 'value'; });
         var focus = vals.filter(function (s) { return s.data.some(function (d) { return d.entityId === 'charlie'; }); });
         var grey = vals.filter(function (s) { return s.data.every(function (d) { return d.entityId !== 'charlie'; }); });
@@ -430,7 +454,7 @@
       });
       // A radar draws its groups in data order, so the focus comes last and sits on top
       [{ mode: 'one', focus: 'alpha' }, { mode: 'pair', focus: 'delta', second: 'bravo' }].forEach(function (c2) {
-        var data = seriesOf(build('ind-ratings', 'radar', c2, { industryId: 'ind1' }))[0].data;
+        var data = seriesOf(build(RD, 'radar', c2, { industryId: 'ind1' }))[0].data;
         a.equal(data[data.length - 1].entityId, c2.focus, c2.mode + ': focus drawn last');
         a.equal(data.length, 2, c2.mode + ': both groups drawn');
       });

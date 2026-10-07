@@ -367,8 +367,14 @@
   function pickType(p, type) { openTypes(p); click(qs('[data-type="' + type + '"]', p.el)); }
 
   T.suite('panel-types', function () {
+    // Dots and a radar of the six ratings, as the generic compare builder draws them (the ratings report itself is a grid, D101)
+    function ratingDots(s) {
+      return s.report(Object.assign({}, TAP.reports.get('ind-ratings'), { id: 'x-ratings-dots', builder: null, defaultType: 'dot',
+        types: ['dot', 'bar', 'radar', 'table'] }));
+    }
+
     T.test('X-panel-types', 'The chart-type menu offers only the types allowed for the shape and comparison', scene(function (a, s) {
-      var p = s.panel('ind-ratings'), def = TAP.reports.get('ind-ratings');
+      var def = ratingDots(s), p = s.panel(def.id);
       var want = TAP.shapes.types(def, TAP.scope.entities().length, {}).filter(function (x) { return x !== 'table'; });
       a.deepEqual(openTypes(p).map(function (b) { return b.getAttribute('data-type'); }), want, 'all regions: no radar');
       a.ok(want.indexOf('radar') < 0, 'radar left out with 4 regions');
@@ -443,8 +449,9 @@
     }));
 
     T.test('X-panel-stale-type', 'A stored type the comparison can\'t use falls back to the default, and comes back when it can', scene(function (a, s) {
-      TAP.storage.set('chart:ind-ratings', 'radar');
-      var p = s.panel('ind-ratings');
+      var def = ratingDots(s);
+      TAP.storage.set('chart:' + def.id, 'radar');
+      var p = s.panel(def.id);
       a.match(txt(qs('[data-action="type"]', p.el)), /Dot plot/, 'four regions: dot plot');
       TAP.store.set({ cmp: { mode: 'pair', focus: 'alpha', second: 'bravo' } });
       a.match(txt(qs('[data-action="type"]', p.el)), /Radar/, 'two regions: radar again');
@@ -1051,12 +1058,12 @@
       a.ok(qs('.tap-panel__key--num', items[2]), 'drawn as a numbered disc');
       a.ok(qs('.tap-panel__key--light', items[3]), 'dark number on a light grey key');
     }));
-    T.test('X-panel-ratings-height', 'QA-4b: the ratings dot plot in All regions keeps the normal chart height', scene(function (a, s) {
+    T.test('X-panel-ratings-height', 'QA-4b: the ratings chart in All regions takes only the height its rows need', scene(function (a, s) {
       TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
       try {
-        var p = s.panel('ind-ratings', { industryId: TAP.data.industries({ rated: true })[0].id }), chart = qs('.tap-panel__chart', p.el);
-        a.equal(chart.style.minHeight, '', 'no minimum height from the builder');
-        a.ok(chart.clientHeight <= TH.chartHeight.tall, 'at most the tall chart height (' + chart.clientHeight + ' px)');
+        var p = s.panel('ind-ratings', { industryId: TAP.data.industries({ rated: true })[0].id }), box = qs('.tap-panel__html', p.el);
+        a.ok(box, 'the grid is drawn as HTML (D101)');
+        a.ok(box.clientHeight <= TH.chartHeight.tall, 'at most the tall chart height (' + box.clientHeight + ' px)');
       } finally { TAP.data.load(T_FIXTURE('mini')); }
     }));
   });
