@@ -14,14 +14,20 @@ Object.assign(window.TAP_CONTENT.text, {
   industryView: {
     kicker: 'Market coverage',
     title: 'Where do regions agree and differ on which industries matter, and why?',
-    lead: 'Select an industry in the grid, the chart or the ratings: the ratings and the leaders’ comments below follow it.'
+    lead: 'All industries first: the tiers each region chose, then attractiveness against ability to win. Then one industry in detail: its ratings and what the leaders wrote.',
+    // D105: the two parts, the view's one industry picker and the line saying why that industry is shown
+    partAll: 'All industries',
+    partOne: 'One industry',
+    pickLabel: 'Industry',
+    whyDefault: 'The regions shown disagree most on {industry}. Pick another here, or select a row in the grid or a bubble above.',
+    whyPicked: 'Showing {industry}. Pick another here, or select a row in the grid or a bubble above.'
   },
 
   // US-1.5.7: leaders' commentary. Only comments that exist are listed; blanks are never called out.
   commentary: {
     label: 'Leaders’ commentary',
     title: 'What leaders say about {industry}',
-    intro: 'Each region’s tier and comment for the selected industry, focus region first. A region appears where its leader wrote a comment.',
+    intro: 'Each region’s tier and comment for the industry picked above, focus region first. A region appears where its leader wrote a comment.',
     listLabel: 'Comments, one per region',
     focus: 'Focus region',
     foot: '(tier and comment)',
@@ -57,7 +63,8 @@ Object.assign(window.TAP_CONTENT.text, {
     takeawaySplit: '{same} of {total} industries get the same tier from every region shown. {industry} is the most split: {counts}.',
     takeawayFocus: '{region} places {n} of {total} industries in a different tier from most other regions, for example {industry}.',
     takeawaySame: 'Every region shown gives each industry the same tier.',
-    countPart: 'Tier {tier}: {n}'
+    countPart: 'Tier {tier}: {n}',
+    selected: 'Selected'
   },
 
   // US-1.5.5: attractiveness vs ability to win. Area labels stay neutral (D20).
@@ -72,6 +79,7 @@ Object.assign(window.TAP_CONTENT.text, {
     average: 'Average of {n} {regions}',
     averageStatement: 'Each bubble averages the scores of the regions shown',
     everyStatement: 'Each point is one region’s view of one industry',
+    everyFocusStatement: 'Each point is one region’s view of {industry}, the industry picked below',
     focusStatement: '{focus}’s scores beside the average of the other regions',
     joinNote: 'A thin line joins each industry’s two bubbles, which carry the same number from the key; where there is room, the industry is named beside {first}’s bubble.',
     numberColumn: 'No.',
@@ -80,8 +88,6 @@ Object.assign(window.TAP_CONTENT.text, {
     show: 'Show',
     showAverage: 'Average per industry',
     showEvery: 'Every region',
-    filter: 'Industry',
-    allIndustries: 'All industries',
     takeaway: '{who}: {n} of {total} industries sit in “{area}”.',
     takeawayEvery: '{n} of {total} points (one per region and industry) sit in “{area}”.'
   },

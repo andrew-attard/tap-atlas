@@ -1,8 +1,9 @@
 /*
  * File: js/reports/quadrant-labels.js
- * Purpose: Places the quadrant chart's names and numbers so nothing overlaps, biggest bubbles first, in the pixels the
- *          chart is drawn in. Every bubble ends up named or numbered (QA-3). Display only: values never move.
- * Provides: TAP.quadrantLabels (place, at, numbers)
+ * Purpose: Places the quadrant chart's names and numbers so nothing overlaps, biggest bubbles first (the industry in
+ *          focus before them), in the pixels the chart is drawn in. Every bubble ends up named or numbered (QA-3).
+ *          Display only: values never move. Also draws the lines joining paired bubbles and the selection ring.
+ * Provides: TAP.quadrantLabels (place, at, numbers, links, selection)
  * Depends on: js/theme.js (TAP_THEME, read at call time)
  * Used by: js/reports/quadrant.js
  *
@@ -10,7 +11,8 @@
  * ({side, dy, gap}, or null when the name has no clean spot), and p.at, where its number sits ({ox, oy, inside}).
  * It returns the plot frame {f, fs, lh, m, x0, y0, w, h}. Points carry x, y (cells), dx, dy (display nudge),
  * d (bubble size), named, text, num and ind. at(p, d) gives the name's position inside the symbol's box for ECharts;
- * numbers(pts) gives the series that draws the numbers over the bubbles.
+ * numbers(pts) gives the series that draws the numbers over the bubbles; links(pts) the lines joining an industry's two
+ * bubbles; selection(list) the ink ring round the industry in focus (D105), list items {value, entityId, industryId, size}.
  */
 (function (TAP) {
   'use strict';
@@ -159,7 +161,7 @@
   }
   function place(pts, ctx, opts) {
     var F = frame(ctx || {}, (opts && opts.scale) || { min: 1, max: 3 }), B = board(pts, F);
-    var order = pts.slice().sort(biggestFirst);
+    var order = pts.slice().sort(function (a, b) { return (b.sel ? 1 : 0) - (a.sel ? 1 : 0) || biggestFirst(a, b); });   // the industry in focus is named first
     pts.forEach(function (p) { p.at = null; p.lab = null; p.label = null; });
     numbersInside(order, F, B);
     names(order, F, B, !!(opts && opts.near));
@@ -185,5 +187,19 @@
       }) };
   }
 
-  TAP.quadrantLabels = { place: place, at: labelAt, numbers: numbers };
+  // With two groups (one against the rest, or a pair), a thin line joins each industry's two bubbles.
+  function links(pts) {
+    var th = window.TAP_THEME, first = {}, out = [], at = function (p) { return { coord: [p.x.v + p.dx, p.y.v + p.dy] }; };
+    pts.forEach(function (p) { if (first[p.ind.id]) out.push([at(first[p.ind.id]), at(p)]); else first[p.ind.id] = p; });
+    return { type: 'scatter', tapRole: 'link', silent: true, data: [], z: 1,
+      markLine: { silent: true, symbol: 'none', z: 1, label: { show: false }, lineStyle: { color: th.grid, width: th.border.control, type: 'solid' }, data: out } };
+  }
+  // The industry in focus (D105): an ink ring outside where a "Show me" ring sits, so both can show at once.
+  function selection(list) {
+    var th = window.TAP_THEME, h = th.echarts.tap.highlight;
+    return { type: 'scatter', tapRole: 'selection', silent: true, z: 9, tooltip: { show: false }, clip: false, data: list,
+      symbolSize: function (v, p) { return p.data.size + (h.ringGap + h.width) * 2 + th.border.highlight * 2; },
+      itemStyle: { color: 'transparent', borderColor: th.ink, borderWidth: th.border.highlight } };
+  }
+  TAP.quadrantLabels = { place: place, at: labelAt, numbers: numbers, links: links, selection: selection };
 })(window.TAP);

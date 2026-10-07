@@ -1539,13 +1539,13 @@
 
     T.test('X-d105-industry-layout', 'The attractiveness chart has no industry filter; "Every region" draws one point per region for the industry in focus', function (a) {
       withView(function (root) {
-        TAP.store.set({ industry: 'ind1' });
+        TAP.store.set({ industry: 'ind4' });   // every mini region gives Utilities both scores
         var quadEl = root.querySelector('.tap-panel[data-report="ind-quad"]');
         a.equal(quadEl.querySelector('[data-control="industryFilter"]'), null, 'no industry filter');
         quadEl.querySelector('[data-control="everyRegion"] [data-value="true"]').click();
         var pts = [];
         quadChart(root).getOption().series.filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) { pts = pts.concat(s.data); });
-        a.deepEqual(pts.map(function (d) { return d.industryId; }), ['ind1', 'ind1', 'ind1', 'ind1'], 'Healthcare only');
+        a.deepEqual(pts.map(function (d) { return d.industryId; }), ['ind4', 'ind4', 'ind4', 'ind4'], 'Utilities only');
         a.deepEqual(pts.map(function (d) { return d.entityId; }).sort(), ['alpha', 'bravo', 'charlie', 'delta'], 'one point per region');
       });
     });

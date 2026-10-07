@@ -19,12 +19,15 @@
     return !!def && (!!o.industryPicker || def.dimension === 'rating' || String(def.title || '').indexOf('{industry}') >= 0);
   }
 
-  // The industry a one-industry report shows: the view's choice, else the one selected, else the first rated.
+  // The industry a panel shows or marks: its own (a step's, opts.industryId), else the one its page has in focus
+  // (opts.industryOf(cmp), D105), else for a one-industry report the one selected, else the first rated.
   function industryOf(p, def, s) {
-    if (!oneIndustry(def)) return null;
-    var rated = TAP.data.industries({ rated: true }), id = p.opts.industryId || s.industry;
-    var ok = rated.some(function (d) { return d.id === id; });
-    return ok ? id : (rated[0] ? rated[0].id : null);
+    if (!def) return null;
+    var one = oneIndustry(def), rated = TAP.data.industries({ rated: true });
+    var ok = function (id) { return !!id && rated.some(function (d) { return d.id === id; }); };
+    var id = p.opts.industryId || (p.opts.industryOf ? p.opts.industryOf(cmpOf(p, s)) : null) || (one ? s.industry : null);
+    if (ok(id)) return id;
+    return one && rated[0] ? rated[0].id : null;
   }
 
   function titleOf(def, industryId) {

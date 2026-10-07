@@ -113,8 +113,10 @@
     var sel = r.industryId === m.selected;
     var name = '<button type="button" role="rowheader" class="tap-tg__name" data-tap-industry="' + esc(r.industryId) + '" aria-pressed="' + sel + '">' +
       '<span class="tap-tg__pick" aria-hidden="true">' + (sel ? '▸' : '') + '</span><span class="tap-tg__label">' + esc(r.ind.name) + '</span>' +
-      (r.ind.groupPriority ? '<span class="tap-tg__star">' + esc(t('tierGrid.star') + ' ' + t('tierGrid.central')) + '</span>' : '') + '</button>';
-    return '<div class="tap-tg__row' + (sel ? ' is-selected' : '') + (m.hl.row(r.industryId) ? ' is-hl' : '') + '" role="row">' + name +
+      (r.ind.groupPriority ? '<span class="tap-tg__star">' + esc(t('tierGrid.star') + ' ' + t('tierGrid.central')) + '</span>' : '') +
+      (sel ? '<span class="tap-tg__selword">' + esc(t('tierGrid.selected')) + '</span>' : '') + '</button>';
+    // The industry in focus (D105): a bar, the marker and a word, apart from the "Show me" outline (is-hl)
+    return '<div class="tap-tg__row' + (sel ? ' is-selected' : '') + (m.hl.row(r.industryId) ? ' is-hl' : '') + '" role="row" aria-selected="' + sel + '">' + name +
       m.cols.map(function (c, i) { return cellHtml(m, r, c, i); }).join('') + agreeHtml(r) + '</div>';
   }
 
