@@ -1,14 +1,14 @@
 /*
  * File: js/ui/present-record.js
- * Purpose: Records a running order from the screen (US-3.1.3, D65): "Add to running order" in a panel's More menu
+ * Purpose: Records a running order from the screen (US-3.1.3, D65): "Add to presentation" in a panel's More menu
  *          keeps the chart as it is on screen; the Guide lists the recorded steps to move, remove, try or copy as
  *          the text of config/running-order.js. Kept in this browser only, through TAP.storage; never writes a file.
  * Provides: TAP.presentRecord (record, recorded, move, remove, clearRecorded, asFileText, fromPanel), and the
- *           "Running order" Guide section (TAP.guideExtras)
+ *           "Your presentation" Guide section (TAP.guideExtras). On screen the running order is a presentation (D97).
  * Depends on: js/core/storage.js, js/core/dom.js, js/core/content.js, js/engine/registry.js, js/engine/prepare.js,
  *             js/engine/shapes.js, js/engine/scope.js, js/core/store.js, js/panel/panel-table.js (clipboard),
  *             js/ui/present.js (start) (all at call time)
- * Used by: js/ui/present.js (TAP.present delegates to it), js/panel/panel-menus.js (Add to running order),
+ * Used by: js/ui/present.js (TAP.present delegates to it), js/panel/panel-menus.js (Add to presentation),
  *          js/views/guide.js (Guide extras)
  * Owner: PRESENT stream (#234)
  */
@@ -98,16 +98,18 @@
   // Records the panel and returns the line the panel shows.
   function fromPanel(p, b) { return t('added', { n: record(stepOf(p, b)) }); }
 
-  /* ---------- the file text (Copy running order) ---------- */
+  /* ---------- the file text (Copy as file text) ---------- */
 
   // The header of config/running-order.js, so the pasted file explains every field just as the original does.
   var HEAD = [
     '/*',
     ' * File: config/running-order.js',
-    ' * Purpose: The running order for presentation mode: the steps of the meeting, in order (US-3.1.1). "Present"',
-    ' *          (beside the data date) or the P key shows them one at a time, full screen. Steps can also be recorded',
-    ' *          from the screen ("Add to running order" in a chart\'s More menu) and copied from the Guide as the text',
-    ' *          of this file.',
+    ' * Purpose: The presentation file: the set list of charts that presentation mode shows full screen, one step at',
+    ' *          a time, each with its own comparison and highlight (US-3.1.1, D97). "Present" (beside the data date) or',
+    ' *          the P key plays it; Space or Right goes on, Left goes back, Esc leaves. To make your own, choose "Add to',
+    ' *          presentation" in a chart\'s More menu for each chart, in order, then "Copy as file text" in the Guide',
+    ' *          ("Your presentation") and paste it over this file, so "Present" plays it for everyone. In the code it',
+    ' *          is called the running order.',
     ' * Provides: window.TAP_RUNNING_ORDER',
     ' * Depends on: nothing',
     ' * Used by: js/ui/present.js, js/ui/present-steps.js',
@@ -217,11 +219,21 @@
     if (!res.started) say(host, res.message);
   }
 
+  // What presentation mode is, who it is for, how to play it and how to make your own (D97), in short lines.
+  function explain() {
+    return el('div', { class: 'tap-ro__explain' }, ['what', 'who', 'play', 'make'].map(function (k) {
+      return el('p', { class: 'tap-ro__line', 'data-explain': k }, [
+        el('strong', { class: 'tap-ro__label' }, t('guide.' + k + 'Label')), ' ', t('guide.' + k)
+      ]);
+    }));
+  }
+
   function draw(host) {
     var steps = recorded(), n = steps.length;
     TAP.dom.clear(host);
     TAP.dom.append(host, [
-      el('p', { class: 'tap-ro__intro' }, t('guide.intro')),
+      explain(),
+      el('h3', { class: 'tap-ro__h3' }, t('guide.stepsLabel')),
       n ? el('ol', { class: 'tap-ro__list' }, steps.map(function (s, i) {
         return el('li', { class: 'tap-ro__step' }, [
           el('div', { class: 'tap-ro__what' }, [

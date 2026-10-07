@@ -8,7 +8,7 @@
  * Depends on: config/running-order.js, js/ui/present-steps.js, js/ui/present-record.js, js/panel/panel.js, js/panel/panel-drill.js (keys),
  *             js/core/store.js, js/core/dom.js, js/core/icons.js, js/core/content.js, js/ui/shell.js, js/ui/layers.js
  *             (all at call time)
- * Used by: js/ui/shell.js (Present button), js/ui/keys.js (P), js/panel/panel-menus.js (Add to running order),
+ * Used by: js/ui/shell.js (Present button), js/ui/keys.js (P), js/panel/panel-menus.js (Add to presentation),
  *          js/ui/present-record.js (the Guide's Try this order)
  * Owner: PRESENT stream (#233)
  *
