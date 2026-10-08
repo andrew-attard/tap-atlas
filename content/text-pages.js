@@ -69,14 +69,16 @@ Object.assign(window.TAP_CONTENT.text, {
     views: 'New business, Customer growth and Partners each look at one part of the plan in more detail. Their lists show every row the leaders filled in.',
     outlook: 'Outlook sets each plan against the strategic plan and the year before the plan, with pipeline coverage and the revenue the plan brings in. When the plans hold none of these parts, it says so in one line.',
     profile: 'Regions shows one region’s whole plan on a single page. Pick a region there, or select "Open profile" on a region card.',
-    compare: 'This bar sets what every chart compares: all regions, selected regions (one or more), or one against the rest. The sentence below it always says what is on screen.',
+    compare: 'This bar sets what every chart compares: all regions, selected regions (one or more), or one against the rest. The Overview always shows every region, so there the bar holds only its buttons.',
     panel: 'Every chart sits in a panel like this. Switch the chart type or show a table of exact figures, use the explanation icon to learn how to read it, and check the source line for where the figures come from.',
-    freshness: 'This is the date of the data. Select it to see each region’s workbook and any notes from the import.',
+    freshness: 'The Data button shows the date of the data. Select it to see each region’s workbook and any notes from the import.',
     glossary: 'Terms with a dotted underline open a short definition, and why it matters, when you select them.',
-    guide: 'To learn what territory account planning is and how to read a plan, open the Guide. You can replay this tour from there or from the top bar.'
+    guide: 'To learn what territory account planning is and how to read a plan, open the Guide. You can replay this tour from there or with the Tour button.'
   },
   tourUi: {
+    // The Tour button (D116): the short word shows, the full name is its label
     button: 'Take the tour',
+    buttonShort: 'Tour',
     label: 'Tour',
     welcome: 'Welcome',
     welcomeText: 'This app plays back each region’s territory account plan, side by side. It reads the planning workbooks and changes nothing in them.',

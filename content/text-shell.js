@@ -13,7 +13,7 @@ Object.assign(window.TAP_CONTENT.text, {
   // The menu's three groups (D115), named for screen readers: start points, the plan's data views, tools
   menu: { label: 'Views', groups: { start: 'Start', data: 'Plan data', tools: 'Tools' } },
 
-  // The comparison bar (US-1.1.3). The sentence itself comes from scope.* in content/text-engine.js.
+  // The comparison bar (US-1.1.3, D116). The sentence screen readers hear comes from scope.* in content/text-engine.js.
   compare: {
     label: 'Compare',
     modesLabel: 'Comparison mode',
@@ -31,7 +31,11 @@ Object.assign(window.TAP_CONTENT.text, {
     setDone: 'Done',
     setMin: 'At least one region stays selected, so the charts have something to show. Select another region first.',
     explain: 'What the combined figure means',
-    dataDate: 'Data: {date}'
+    // The data date in words, for printed pages
+    dataDate: 'Data: {date}',
+    // The compact Data button (D116): the short date shows; the full date and what it opens are in its label
+    dataButton: 'Data · {date}',
+    dataLabel: 'Data: {date}. Where the data comes from'
   },
 
   banner: {

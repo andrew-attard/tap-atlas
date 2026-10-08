@@ -192,8 +192,9 @@
     return node;
   }
 
-  function render(host) {
-    var ents = TAP.scope.entities(TAP.store.get().cmp);
+  // cmp: the comparison to draw (the Overview passes all regions, D118); the shared one when left out.
+  function render(host, cmp) {
+    var ents = TAP.scope.entities(cmp || TAP.store.get().cmp);
     var withKicker = ents.some(function (e) { return e.role !== 'region'; });
     TAP.dom.clear(host);
     host.appendChild(el('div', { class: 'tap-ov-cards__grid' }, ents.map(function (e) { return buildCard(e, withKicker); })));

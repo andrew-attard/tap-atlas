@@ -2,8 +2,8 @@
  * File: js/ui/shell.js
  * Purpose: Draws the page frame: data status banner, top bar with the menu (in three groups, D115), comparison bar
  *          area and the view area.
- *          Page-wide actions (Take the tour, Present) sit at the right end of the comparison bar's sentence row,
- *          beside the data date, so the menu keeps one line at 1280 px (D72).
+ *          Page-wide actions (Present, Tour) sit at the end of the comparison bar's row, after the Data button, so
+ *          the menu keeps one line at 1280 px (D72, D116).
  * Provides: TAP.shell (mount, unmount, viewEl, actionsEl, label)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
  *             js/engine/registry.js (TAP.views), config/views.js (groups), js/ui/compare-bar.js, js/ui/layers.js, js/ui/present.js (button), js/theme.js (logo)
@@ -108,7 +108,7 @@
     root.classList.add('tap-app');
 
     var nav = menu();
-    // Filled by other streams (the tour button, Present). The comparison bar places it beside the data date (D72);
+    // Filled by other streams (Present, Tour). The comparison bar places it after the Data button (D72, D116);
     // the class keeps its first name, which other code and tests select by.
     var actions = el('div', { class: 'tap-topbar__actions' });
     var slot = el('div', { class: 'tap-banner-slot' });
@@ -150,8 +150,8 @@
     return frame.view;
   }
 
-  // The slot for page-wide actions, beside the data date (empty until another stream adds to it). The Regions view
-  // hides the comparison bar, and these actions with it; P and the Guide still reach presentation mode there.
+  // The slot for page-wide actions, after the Data button. The Regions view hides the comparison bar, and these
+  // actions with it; the region profile draws the same buttons itself (TAP.compareBar.pageButtons).
   function actionsEl() {
     if (!frame) throw new Error('The shell is not drawn yet: call TAP.shell.mount first.');
     return frame.actions;

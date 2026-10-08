@@ -1,8 +1,9 @@
 /*
  * File: js/views/overview.js
  * Purpose: The Overview view: the headline sentence and the top insights for the organization as a whole (US-1.5.3,
- *          D119), the region cards (US-1.5.1) and the ambition chart (US-1.5.2), redrawn as soon as the comparison
- *          changes. Nothing about one or two regions shows here: the block and the chart's list are broad only.
+ *          D119), the region cards (US-1.5.1) and the ambition chart (US-1.5.2), always for every region: the
+ *          comparison the other views use is left as it is and ignored here (D118). Nothing about one or two regions
+ *          shows here: the block and the chart's list are broad only.
  * Provides: view 'overview' (registered with TAP.views)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/data.js,
  *             js/core/format.js, js/engine/measures.js, js/engine/scope.js, js/ui/layers.js,
@@ -206,11 +207,14 @@
 
   /* ---------- the view ---------- */
 
-  // The ambition panel, listing broad insights only (D119). A panel that isn't built yet shows its own message, so
-  // the rest of the view still works.
+  // Every region, whatever state.cmp holds (D118)
+  function everyRegion() { return TAP.store.defaults().cmp; }
+
+  // The ambition panel, listing broad insights only (D119), with no comparison menu (D118). A panel that isn't built
+  // yet shows its own message, so the rest of the view still works.
   function mountPanel(host) {
     try {
-      return TAP.panel.create(host, 'ov-ambition', { broadOnly: true });
+      return TAP.panel.create(host, 'ov-ambition', { cmp: everyRegion(), noCompare: true, broadOnly: true });
     } catch (e) {
       if (!/Not built yet/.test(e.message)) throw e;
       TAP.dom.clear(host);
@@ -238,13 +242,12 @@
     // Headline and insights share one set of marked terms, so a term is marked once at the top of the page.
     function drawText() {
       var seen = {};
-      drawHeadline(headline, TAP.store.get().cmp, seen);
+      drawHeadline(headline, everyRegion(), seen);
       drawInsights(insights, seen);
     }
     function drawCards() {
-      TAP.overviewCards.render(cardsHost);
-      var combinedOnly = TAP.scope.entities(TAP.store.get().cmp).every(function (e) { return e.kind === 'combined'; });
-      TAP.dom.text(hint, t(combinedOnly ? 'cards.hintCombined' : 'cards.hint'));
+      TAP.overviewCards.render(cardsHost, everyRegion());
+      TAP.dom.text(hint, t('cards.hint'));
     }
     drawText();
     var tip = TAP.viewHead.tip('overview');   // after the headline, which drawText keeps in place
@@ -256,8 +259,7 @@
     var off = TAP.store.on(function (state, changed) {
       if (dead) return;
       if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
-      if (changed.indexOf('cmp') >= 0) { drawText(); drawCards(); }
-      else if (changed.indexOf('hiddenInsights') >= 0) { drawText(); drawCards(); }   // the block and the cards' markers (D117)
+      if (changed.indexOf('hiddenInsights') >= 0) { drawText(); drawCards(); }   // the block and the cards' markers (D117)
     });
     // Keeps the card rows even when the window or zoom changes.
     var ro = window.ResizeObserver ? new window.ResizeObserver(function () { TAP.overviewCards.layout(cardsHost); }) : null;

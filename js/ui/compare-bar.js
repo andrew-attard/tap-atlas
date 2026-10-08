@@ -1,15 +1,17 @@
 /*
  * File: js/ui/compare-bar.js
- * Purpose: The comparison bar: three modes (D99, D114), only the pickers a mode needs, the plain sentence, an
- *          explanation of combined figures and the data date (which opens the data sources panel). It writes only
- *          state.cmp.
- *          Two rows (D50): the mode and its pickers on one line, then the sentence, the data date and the page-wide
- *          actions the shell hands over (opts.actions: Take the tour, Present; D72).
- * Provides: TAP.compareBar (mount: returns a function that removes the bar's listeners)
+ * Purpose: The comparison bar: three modes (D99, D114), only the pickers a mode needs and an explanation of combined
+ *          figures. It writes only state.cmp.
+ *          One row (D116): "Compare", the modes and pickers on the left; the page buttons (Data with the data date,
+ *          Present, Tour) at the end. The plain sentence is for screen readers only, in a visually hidden live region.
+ *          Where nothing follows the comparison (the Guide) or the view shows every region (the Overview, D118), the
+ *          row holds only the buttons.
+ * Provides: TAP.compareBar (mount: returns a function that removes the bar's listeners; pageButtons: the compact
+ *           Data, Present and Tour buttons, shared with the region profile)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js,
  *             js/core/format.js, js/core/sources.js (dataDate), js/engine/scope.js (sentence, colorOf),
- *             js/ui/layers.js (opens the data sources panel)
- * Used by: js/ui/shell.js
+ *             js/ui/layers.js (opens the data sources panel), js/ui/present.js and js/ui/tour.js (their buttons)
+ * Used by: js/ui/shell.js, js/views/regions.js (pageButtons)
  */
 (function (TAP) {
   'use strict';
@@ -21,8 +23,8 @@
   var t = function (key, vars) { return TAP.content.text(key, vars); };
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var active = null;   // cleanup for the bar on screen
-  // Views where nothing follows the comparison: the bar shrinks to its sentence line there (QA-13)
-  var QUIET = ['guide'];
+  // Views with no comparison: the bar holds only its buttons there (QA-13; the Overview shows every region, D118)
+  var QUIET = ['guide', 'overview'];
 
   function cmp() { return TAP.store.get().cmp; }
   function write(patch) { TAP.store.set({ cmp: patch }); }
@@ -114,58 +116,67 @@
     function showSet(on, refocus) {
       ui.setPop.hidden = !on;
       ui.setBtn.setAttribute('aria-expanded', String(!!on));
-      if (on) placeSet();
+      if (on) fit(ui.setPop);
       if (!on) say();
       if (refocus) ui.setBtn.focus();
     }
     ui.showSet = showSet;
-    // The popover opens under its button; where that would run past the bar's right edge (1024 px at 125%), it moves left.
-    function placeSet() {
-      ui.setPop.style.left = '';
-      var r = ui.setPop.getBoundingClientRect(), box = root.getBoundingClientRect(), pad = parseFloat(getComputedStyle(root).paddingRight) || 0;
+    // A popover opens under its button; where that would run past the bar's right edge (1024 px at 125%), it moves left.
+    function fit(pop) {
+      pop.style.left = '';
+      var r = pop.getBoundingClientRect(), box = root.getBoundingClientRect(), pad = parseFloat(getComputedStyle(root).paddingRight) || 0;
       var over = r.right - (box.right - pad);
-      if (over > 0) ui.setPop.style.left = -Math.min(over, r.left - box.left) + 'px';
+      if (over > 0) pop.style.left = -Math.min(over, r.left - box.left) + 'px';
     }
-    ui.placeSet = placeSet;
+    ui.fit = fit;
 
-    ui.pickers = {
-      focus: field('focus', ui.focusLabel, ui.focus),
-      rest: field('rest', el('span', { class: 'tap-cmp__label' }, t('compare.rest')), ui.rest),
-      set: field('set', null, [ui.setBtn, ui.setPop])
-    };
-
-    ui.sentence = el('span', { class: 'tap-cmp__sentence', 'aria-live': 'polite' });
+    // The sentence is heard, not shown (D116): the bar and the charts already say what is compared
+    ui.sentence = el('span', { class: 'tap-cmp__sentence tap-sr', 'aria-live': 'polite' });
     ui.pop = el('div', { class: 'tap-cmp__pop', role: 'note', hidden: true });
     ui.explain = el('button', { type: 'button', class: 'tap-iconbtn tap-cmp__explain', 'aria-expanded': 'false',
       'aria-label': t('compare.explain'), onclick: function () { showPop(ui.pop.hidden); } }, TAP.icons.svg('info'));
-    ui.date = el('button', { type: 'button', class: 'tap-btn tap-cmp__date', 'data-tour': 'datadate',
-      onclick: openSources }, [TAP.icons.svg('data'), el('span', null, dataDate())]);
 
     function showPop(on) {
       ui.pop.hidden = !on;
       ui.explain.setAttribute('aria-expanded', String(!!on));
+      if (on) fit(ui.pop);
     }
     ui.showPop = showPop;
 
-    TAP.dom.append(root, [
-      el('div', { class: 'tap-cmp__row tap-cmp__row--controls' }, [
+    ui.pickers = {
+      focus: field('focus', ui.focusLabel, ui.focus),
+      // The explanation of a combined figure sits beside the control that makes one, and opens under it
+      rest: field('rest', el('span', { class: 'tap-cmp__label' }, t('compare.rest')), [ui.rest, ui.explain, ui.pop]),
+      set: field('set', null, [ui.setBtn, ui.setPop])
+    };
+
+    TAP.dom.append(root, el('div', { class: 'tap-cmp__row' }, [
+      el('div', { class: 'tap-cmp__controls' }, [
         el('span', { class: 'tap-cmp__title' }, t('compare.label')), ui.modes,
         ui.pickers.focus, ui.pickers.rest, ui.pickers.set
       ]),
-      el('div', { class: 'tap-cmp__row tap-cmp__row--sentence' }, [
-        el('p', { class: 'tap-cmp__say' }, [ui.sentence, ui.explain]), ui.date, actions || null, ui.pop
-      ])
-    ]);
+      pageButtons(actions), ui.sentence
+    ]));
     return ui;
+  }
+
+  // The page-wide buttons, compact (D116): Data with the short data date, Present and Tour, each an icon and a short
+  // word at the height of the mode buttons. One builder for the bar and the region profile. actions: the shell's
+  // slot (TAP.shell.actionsEl) the other streams fill; without one, a slot of its own.
+  function pageButtons(actions) {
+    var slot = actions || el('div', { class: 'tap-topbar__actions' });
+    try { if (!TAP.present.__stub) TAP.present.button(slot); } catch (e) { /* presentation mode is optional */ }
+    if (TAP.tour && TAP.tour.button) TAP.tour.button(slot);
+    var iso = TAP.sources.dataDate(), label = t('compare.dataLabel', { date: TAP.format.date(iso) });
+    var data = el('button', { type: 'button', class: 'tap-btn tap-cmp__date', 'data-tour': 'datadate', 'data-action': 'sources',
+      'aria-label': label, title: label, onclick: openSources },
+      [TAP.icons.svg('data', { size: 18 }), el('span', null, t('compare.dataButton', { date: TAP.format.date(iso, { short: true }) }))]);
+    return el('div', { class: 'tap-pagebtns' }, [data, slot]);
   }
 
   // The side panels may not be built yet (#6); a click must never end in a console error.
   function openSources() {
     if (!TAP.layers.__stub) TAP.layers.open('sources');
-  }
-
-  function dataDate() {
-    return t('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) });
   }
 
   // What a combined figure on screen means, in plain words, or null when none is shown (with one region, the
@@ -220,7 +231,7 @@
     if (Object.keys(fix).length) write(fix);
   }
 
-  // opts.actions: the shell's page-wide actions slot, placed after the data date.
+  // opts.actions: the shell's page-wide actions slot, placed after the Data button.
   function mount(root, opts) {
     if (active) active();
     TAP.dom.clear(root);
@@ -246,7 +257,7 @@
       if (!ui.pop.hidden && !ui.pop.contains(e.target) && !ui.explain.contains(e.target)) ui.showPop(false);
       if (!ui.setPop.hidden && !ui.pickers.set.contains(e.target)) ui.showSet(false);
     }
-    function onResize() { if (!ui.setPop.hidden) ui.placeSet(); }
+    function onResize() { [ui.setPop, ui.pop].forEach(function (p) { if (!p.hidden) ui.fit(p); }); }
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
     window.addEventListener('resize', onResize);
@@ -261,5 +272,5 @@
     return stop;
   }
 
-  TAP.compareBar = { mount: mount };
+  TAP.compareBar = { mount: mount, pageButtons: pageButtons };
 })(window.TAP);

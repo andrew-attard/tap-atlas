@@ -5,9 +5,10 @@
  *          It builds the report for the current comparison and redraws on store changes. It keeps the chart
  *          type and measure for the session (the type is also remembered in the browser), and a few choices
  *          (builder options, the selected insight) only until the shared comparison changes. List reports and
- *          builder option clicks: ARCHITECTURE 17.4. A page may fix a panel's comparison with opts.cmp (#216);
- *          opts.local keeps a panel apart from the shared highlight (presentation steps, D74); opts.broadOnly lists
- *          only insights for the organization as a whole (the Overview, D119).
+ *          builder option clicks: ARCHITECTURE 17.4. A page may fix a panel's comparison with opts.cmp (#216) and
+ *          take its comparison menu away with opts.noCompare (D118); opts.local keeps a panel apart from the shared
+ *          highlight (presentation steps, D74); opts.broadOnly lists only insights for the organization as a whole
+ *          (the Overview, D119).
  * Provides: TAP.panel (create)
  * Depends on: js/panel/panel-build.js, panel-expand.js, js/panel/panel-*.js, js/engine/registry.js, scope.js, js/core/store.js, storage.js, content.js, format.js,
  *             sources.js, dom.js, icons.js, data.js, js/ui/layers.js, shell.js (label), js/theme.js (all at call time)
