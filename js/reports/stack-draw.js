@@ -19,8 +19,8 @@
  *   numbered         true: segments and key carry each part's number, so many parts are told apart without colour
  *   highlight        a Target; by: the dimension the parts are values of
  *   right, tip       optional: room right of the bars (px) for long closing texts; tip(row, part) gives more tooltip lines
- *   paints           optional: [{bg, fg}] per part when the parts are channels (TAP.shapes.kit.channelPaints, D124): the
- *                    parts take the channel colours, the key names the channels, tooltips name the channel first
+ *   paints           optional: [{bg, fg}] per part when the parts take a palette (TAP.shapes.kit.partPaints, D124): the
+ *                    parts take the palette colours, the key names the parts, tooltips name the part first
  */
 (function (TAP) {
   'use strict';

@@ -159,7 +159,9 @@
   function focusKey(root) {
     var a = document.activeElement;
     if (!a || !root.contains(a)) return null;
-    var k = ['data-action', 'data-control', 'data-value', 'data-type', 'data-sort'].filter(function (n) { return a.hasAttribute(n); })
+    // In a dropdown (D134) data-key names the very option, All or Clear
+    var k = ['data-action', 'data-control', 'data-value', 'data-type', 'data-sort'].concat(a.closest('.tap-ms') ? ['data-key'] : [])
+      .filter(function (n) { return a.hasAttribute(n); })
       .map(function (n) { return '[' + n + '="' + CSS.escape(a.getAttribute(n)) + '"]'; }).join('');   // values come from the data
     // A builder option (a list's sort heading): the same option and column, whatever direction it now offers
     var v = a.getAttribute('data-tap-value') || '', cut = v.lastIndexOf(':');

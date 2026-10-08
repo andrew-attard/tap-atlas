@@ -3,11 +3,12 @@
  * Purpose: A bubble chart with one bubble per row (account or partner) in its region's colour, the largest labelled
  *          (US-2.2.4, US-2.3.3). The definition's x, y and size name TAP.rows column keys; options.label is 'all'
  *          (names where they fit, up to TAP_SETTINGS.rowBubble.labelMax more numbered in the key, a note for the rest)
- *          or 'top' (the largest by options.labelBy, up to labelMax).
+ *          or 'top' (the largest by options.labelBy, up to labelMax). D133: options.topPerRegion draws only each region's
+ *          largest rows by y when several regions show; options.oneRegionColors 'risk' colours one region's rows by risk.
  * Provides: builder 'rowBubble'; TAP.bubbleLabels (MARGIN, frame, range, place, labelOf: the name placement, also
  *           used by the levers bubble in js/reports/nb-levers.js)
  * Depends on: js/engine/rows.js, js/engine/shapes.js (drawing kit), js/engine/scope.js, js/core/data.js,
- *             js/core/content.js, js/core/format.js, config/settings.js (all at call time)
+ *             js/core/content.js, js/core/format.js, config/settings.js, js/theme.js (risk colours) (all at call time)
  * Used by: js/panel/panel.js (through TAP.builders), config/reports-customers.js (cg-bubble), config/reports-partners.js (pt-capacity)
  * Owner: CGP stream (#206)
  */
@@ -60,12 +61,47 @@
     if (!p.num) return { show: false };
     var fits = p.d >= th.type.chartMin * 1.4 && !p.noSize;
     return { show: true, position: fits ? 'inside' : 'right', distance: 2, fontSize: th.type.chartMin, fontWeight: 700,
-      color: !fits || e.role === 'muted' ? th.ink : th.onColour, formatter: function () { return String(p.num); } };
+      color: !fits || e.role === 'muted' ? th.ink : p.paint ? p.paint.fg : th.onColour, formatter: function () { return String(p.num); } };
   }
-  // A bubble whose size is not provided is drawn as an empty outline, as not-provided marks are elsewhere.
+  // A bubble whose size is not provided is drawn as an empty outline, as not-provided marks are elsewhere. A bubble in
+  // a risk colour (p.paint) gets a grey outline, so the pale "not flagged" stays visible on the page.
   function styleOf(p, e, th) {
     if (p.noSize) return { color: th.echarts.backgroundColor, borderColor: th.notProvided.border, borderWidth: th.border.rule, opacity: 1 };
-    return { color: e.color, opacity: e.role === 'muted' ? 0.85 : 0.8, borderColor: th.ground, borderWidth: th.border.control };
+    return { color: p.paint ? p.paint.bg : e.color, opacity: e.role === 'muted' ? 0.85 : 0.8, borderColor: p.paint ? th.rule : th.ground,
+      borderWidth: th.border.control };
+  }
+
+  /* ---------- D133: the top rows of each region with several regions, every row by risk level with one ---------- */
+
+  // With several regions, each drawn group's options.topPerRegion rows with the largest y value: a region, or the
+  // combined rest in One vs the rest. Returns the rows kept, in their order, and the line saying so (null when none
+  // was left out). all: every row in scope, as the list report shows them.
+  function topOnly(pts, opts, entities, source, regions) {
+    var n = opts.topPerRegion, groups = [], kept = [];
+    if (!n || regions.length < 2) return { pts: pts, note: null };
+    pts.forEach(function (p) { if (groups.indexOf(p.e) < 0) groups.push(p.e); });
+    groups.forEach(function (e) {
+      kept = kept.concat(pts.filter(function (p) { return p.e === e; }).sort(function (a, b) { return b.y.v - a.y.v; }).slice(0, n));
+    });
+    if (kept.length === pts.length) return { pts: pts, note: null };
+    var focus = entities.filter(function (e) { return e.role === 'focus'; })[0], rest = entities.some(function (e) { return e.kind === 'combined'; });
+    return { pts: pts.filter(function (p) { return kept.indexOf(p) >= 0; }),
+      note: TAP.content.text('rowBubble.' + (rest && focus ? 'topCombined.' : 'top.') + source, { n: n, all: TAP.rows.list(source, regions).length, focus: focus && focus.label }) };
+  }
+
+  // With one region, each row in its risk level's colour (options.oneRegionColors 'risk', the D131 palette). Returns the
+  // legend of the levels present, high first, or null.
+  var LEVELS = ['high', 'medium', 'low', 'none'];
+  function riskPaint(pts, opts, regions) {
+    var pal = window.TAP_THEME.risk, seen = {};
+    if (opts.oneRegionColors !== 'risk' || regions.length !== 1 || !pal) return null;
+    pts.forEach(function (p) {
+      var l = (p.row.item || {}).riskLevel;
+      p.level = LEVELS.indexOf(l) >= 0 ? l : 'none';
+      p.paint = pal[p.level];
+      seen[p.level] = true;
+    });
+    return LEVELS.filter(function (l) { return seen[l]; }).map(function (l) { return { label: TAP.content.text('rowBubble.risk.' + l), color: pal[l].bg, role: 'risk' }; });
   }
 
   function isMarked(hl, p, section) {
@@ -128,10 +164,14 @@
           notes.push(TAP.content.text('rowBubble.left', { name: label, region: rname(r), measure: k.lower(lost.label) }));
           return;
         }
-        if (s && s.state === 'value' && s.v > max) max = s.v;
         pts.push({ row: row, regionId: r, x: x, y: y, s: s, name: name, label: label, e: entityOf(entities, r) });
       });
     });
+    var top = topOnly(pts, opts, entities, source, regions);
+    pts = top.pts;
+    if (top.note) notes.unshift(top.note);   // the first line under the chart
+    var riskKey = riskPaint(pts, opts, regions);
+    pts.forEach(function (p) { if (p.s && p.s.state === 'value' && p.s.v > max) max = p.s.v; });
 
     // Which bubbles carry a name, largest by labelBy (default the y value) first: every one ('all'), or up to the limit in
     // settings ('top'). The same limit caps the numbers, so the key stays short on a shared screen.
@@ -169,7 +209,8 @@
         tooltip: { formatter: function (q) {
           var p = pts.filter(function (x) { return x.row.id === q.data.rowId; })[0];
           return k.tip(p.label + ' · ' + rname(p.regionId), [[cx.label, k.exact(p.x, cx)], [cy.label, k.exact(p.y, cy)],
-            cs ? [cs.label, k.exact(p.s, cs)] : null, [TAP.content.text('rowBubble.sourceRow'), String(p.row.sourceRow)]]);
+            cs ? [cs.label, k.exact(p.s, cs)] : null, p.paint ? [colOf(source, 'riskLevel').label, TAP.content.text('rowBubble.risk.' + p.level)] : null,
+            [TAP.content.text('rowBubble.sourceRow'), String(p.row.sourceRow)]]);
         } } };
     });
     if (ring.length) series.push(k.ringSeries(ring));
@@ -186,10 +227,10 @@
     }) };
 
     var res = k.result(def, null, { table: table, notes: notes, missing: missing, empty: !pts.length,
-      // A numbered key in the bubble's own colour, so its number reads as it does on the chart
-      legend: groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; }).concat(named.filter(function (p) { return p.num; })
-        .map(function (p) { return { label: TAP.content.text('rowBubble.key', { name: p.label, region: rname(p.regionId) }), color: p.noSize ? null : p.e.color,
-          mark: p.num, role: p.e.role === 'muted' ? 'muted' : 'key' }; })),
+      // A numbered key in the bubble's own colour, so its number reads as it does on the chart (dark on a pale colour)
+      legend: (riskKey || groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; })).concat(named.filter(function (p) { return p.num; })
+        .map(function (p) { return { label: TAP.content.text('rowBubble.key', { name: p.label, region: rname(p.regionId) }), color: p.noSize ? null : p.paint ? p.paint.bg : p.e.color,
+          mark: p.num, role: p.e.role === 'muted' || (p.paint && p.paint.fg !== th.onColour) ? 'muted' : 'key' }; })),
       sizeLegend: cs && max > 0 ? k.sizeLegend(max, cs) : null });
     res.target = function (params) {
       var d = params && params.data;

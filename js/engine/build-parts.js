@@ -1,8 +1,8 @@
 /*
  * File: js/engine/build-parts.js
  * Purpose: Generic chart builder for parts of a whole (stacked bars, 100% stacked bars, grouped bars, treemap),
- *          with one stack per region and value when broken down (US-2.7.5), parts that are channels in the channel colours
- *          with an Amount / Share of total switch (D124),
+ *          with one stack per region and value when broken down (US-2.7.5), parts that are channels or segments in their
+ *          palette colours (D124, D131) with an Amount / Share of total switch (D124),
  *          and the parts bubble view, drawn from the definition's x, y and size.
  * Provides: chart builder 'parts' (registered with TAP.builders)
  * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit), js/engine/aggregate.js
@@ -26,10 +26,10 @@
     var bd = byYear ? [] : ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === ctx.breakdown; });
     // The table shows the selected measure per value, so every heading is unique; the chart reads the parts too
     var bdTable = bd.filter(function (c) { return c.measureId === m; });
-    // D124: parts that are channels take the channel colours (not with the year breakdown, whose parts are years)
-    var paints = byYear ? null : k.channelPaints(def, parts);
+    // D124, D131: parts that are channels or segments take their palette (not by year, whose parts are years)
+    var paints = byYear ? null : k.partPaints(def, parts);
     var res = k.result(def, ds, { table: k.table(ds, keys.concat(bdTable.map(function (c) { return c.key; })), rows),
-      legend: paints ? k.channelLegend(parts.map(function (p) { return partName(k, ds, p); }), paints) : legend(k, ds, parts, rows),
+      legend: paints ? k.channelLegend(parts.map(function (p) { return partName(k, ds, p); }), paints, def.options.partColors) : legend(k, ds, parts, rows),
       notes: k.notes({ rows: rows, columns: ds.columns }, [m]).concat(short(k, ds, m, parts, rows)), controls: k.shareSwitch(def, type) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;

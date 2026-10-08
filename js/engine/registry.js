@@ -15,8 +15,9 @@
   var BREAKDOWNS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk', 'solution', 'category', 'route', 'maturity', 'partnerType'];
   // What each dimension needs (D125): oneRegion marks one with more than six categories in the sample (industry, 20;
   // solution, six plus "not named"), whose bars are unreadable for several regions at once. The panel offers it only
-  // while one region is compared. Dimensions not listed need nothing.
-  var BREAKDOWN_META = { industry: { oneRegion: true }, solution: { oneRegion: true } };
+  // while one region is compared. Dimensions not listed need nothing. Risk has only three levels, but on the segments
+  // chart it multiplies the four segments, so it is flagged too (D132).
+  var BREAKDOWN_META = { industry: { oneRegion: true }, solution: { oneRegion: true }, risk: { oneRegion: true } };
   function oneRegion(dim) { return !!(BREAKDOWN_META[dim] && BREAKDOWN_META[dim].oneRegion); }
   var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread', 'list'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',

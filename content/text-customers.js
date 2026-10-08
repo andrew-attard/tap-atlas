@@ -61,7 +61,17 @@ Object.assign(window.TAP_CONTENT.text, {
     othersOne: { accounts: 'The other region, account by account', partners: 'The other region, partner by partner' },
     noSize: '{name} ({region}) is drawn as an empty outline: no {measure} given.',
     unnamed: { accounts: '{n} more accounts are too close together to name on the chart; the table lists every one.',
-      partners: '{n} more partners are too close together to name on the chart; the table lists every one.' }
+      partners: '{n} more partners are too close together to name on the chart; the table lists every one.' },
+    // D133: the line under the chart when only each region's top accounts are drawn, and the risk levels of one region
+    top: { accounts: 'Showing each region’s {n} accounts with the most planned growth; the list below has all {all}.' },
+    topCombined: { accounts: 'Showing the {n} accounts with the most planned growth for {focus} and for the other regions together; the list below has all {all}.' },
+    risk: { high: 'High risk', medium: 'Medium risk', low: 'Low risk', none: 'No risk flag' }
+  },
+
+  // D131: a segment's tooltip once broken down by risk, the segment named first
+  cgSegments: {
+    riskTip: '{segment} · {risk} · {region}: {value}, {share}',
+    riskTipNoShare: '{segment} · {risk} · {region}: {value}'
   },
 
   // US-2.7.2 details for row targets (an account, a partner, a new business row), and US-2.2.2 segment thresholds

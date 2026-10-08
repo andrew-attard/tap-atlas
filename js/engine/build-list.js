@@ -1,6 +1,7 @@
 /*
  * File: js/engine/build-list.js
- * Purpose: The list builder: one row per item with sortable columns, one filter and the comparison scope applied to rows (US-2.7.2).
+ * Purpose: The list builder: one row per item with sortable columns, filters (a select, or a dropdown with counts, D134)
+ *          and the comparison scope applied to rows (US-2.7.2).
  * Provides: builder 'list'
  * Depends on: js/engine/rows.js, js/engine/shapes.js, js/engine/scope.js, js/core/format.js, js/core/dom.js,
  *             js/core/content.js, js/core/store.js, js/ui/source-tip.js (the source column's data icon) (at call time)
@@ -75,11 +76,22 @@
     // Each row's cell for a key, worked out once ("also" columns scan every region)
     function cellOf(r, key) { return r.memo[key] || (r.memo[key] = TAP.rows.cell(source, key, r.entry)); }
 
+    // A row passes a filter when its value is the one picked, or one of those ticked in a dropdown (D134); 'all' or
+    // nothing ticked passes every row
+    function passes(r, c) {
+      var want = c.value === 'all' ? [] : [].concat(c.value);
+      if (!want.length) return true;
+      var x = cellOf(r, c.field);
+      return x.state === 'value' && want.indexOf(String(x.v)) >= 0;
+    }
     var controls = (def.filter || []).map(function (f) { return filterControl(source, f, rows, opts, cols, cellOf); });
-    controls.forEach(function (c) {
-      if (c.value === 'all') return;
-      rows = rows.filter(function (r) { var x = cellOf(r, c.field); return x.state === 'value' && String(x.v) === c.value; });
+    // A dropdown counts, for each option, the rows it would list within the other filters
+    controls.forEach(function (c, i) {
+      if (c.kind !== 'multi') return;
+      var others = rows.filter(function (r) { return controls.every(function (o, j) { return j === i || passes(r, o); }); });
+      c.options.forEach(function (o) { o.count = others.filter(function (r) { return passes(r, { field: c.field, value: [o.value] }); }).length; });
     });
+    rows = rows.filter(function (r) { return controls.every(function (c) { return passes(r, c); }); });
 
     var sorts = sortsOf(def, opts), focus = cmp.mode === 'one' || cmp.mode === 'pair' ? cmp.focus : null;
     rows = rows.map(function (r, i) { return { r: r, i: i }; }).sort(function (x, y) {
@@ -106,7 +118,8 @@
     return res;
   }
 
-  // One select per filter, "All" first, then the values found in scope, in alphabetical order.
+  // One select per filter, "All" first, then the values found in scope, in alphabetical order. With f.multi, a dropdown
+  // of checkboxes instead (kind 'multi', TAP.multiSelect, D134): its value is the values ticked, none meaning all.
   function filterControl(source, f, rows, opts, cols, cellOf) {
     var unit = (TAP.rows.columns(source).filter(function (c) { return c.key === f.key; })[0] || {}).unit, seen = {};
     rows.forEach(function (r) {
@@ -115,10 +128,13 @@
     });
     var options = Object.keys(seen).map(function (v) { return { value: v, label: seen[v] }; })
       .sort(function (a, b) { return a.label.localeCompare(b.label); });
-    var want = opts['filter:' + f.key], ok = options.some(function (o) { return o.value === want; });
+    var want = opts['filter:' + f.key], has = function (v) { return options.some(function (o) { return o.value === v; }); };
     var col = cols.filter(function (c) { return c.key === f.key; })[0];
-    return { key: 'filter:' + f.key, field: f.key, label: f.label || (col ? col.label : t('rows.' + source + '.' + f.key)), kind: 'select',
-      value: ok ? want : 'all', options: [{ value: 'all', label: t('rows.all') }].concat(options) };
+    var out = { key: 'filter:' + f.key, field: f.key, label: f.label || (col ? col.label : t('rows.' + source + '.' + f.key)), kind: 'select',
+      value: has(want) ? want : 'all', options: [{ value: 'all', label: t('rows.all') }].concat(options) };
+    // A single value kept from before the dropdown still counts as ticked
+    if (f.multi) Object.assign(out, { kind: 'multi', value: [].concat(want == null ? [] : want).filter(has), options: options });
+    return out;
   }
 
   // The table: a sort button per heading carrying the direction the next click gives, one row per item.

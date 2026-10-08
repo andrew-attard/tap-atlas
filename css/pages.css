@@ -104,6 +104,9 @@
 .tap-ms__opt:hover { background: var(--tap-surface); }
 .tap-ms__opt input { width: 18px; height: 18px; margin: 0; flex: none; accent-color: var(--tap-ink); }
 .tap-ms__sw { flex: none; outline: 1px solid currentColor; }
+/* A plain count after an option, as a list report's dropdown filters show it (D134) */
+.tap-ms__cnt { margin-left: auto; padding-left: var(--tap-sp-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tap-panel__control .tap-ms__panel { width: 320px; }
 .tap-ins__summary {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-6);
   padding-bottom: var(--tap-sp-3); border-bottom: var(--tap-rule-w) solid var(--tap-ink);

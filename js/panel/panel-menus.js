@@ -8,7 +8,7 @@
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
  *             js/engine/shapes.js, js/engine/scope.js, js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js,
  *             js/ui/explain.js, js/panel/panel-insights.js, panel-build.js (held, D125), js/ui/present.js (Add to presentation)
- *             (all read at call time)
+ *             js/ui/multi-select.js (a list's dropdown filters, D134) (all read at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (state p.st; p.set, p.toggle, p.setType)
  */
 (function (TAP) {
@@ -275,7 +275,7 @@
       own: own,
       builder: (b.res && b.res.controls) || [],
       // 'type' is the Amount / Share of total switch (D124): it picks the chart type, as the type menu does
-      onBuilder: function (key, v) { if (key === 'type') { p.setType(v); return; } p.st.opts[key] = v; p.render(); }
+      onBuilder: function (key, v) { if (key === 'type') { p.setType(v); return; } p.st.opts[key] = v; p.render(); }, id: p.id, redraw: p.render
     };
   }
 
@@ -288,7 +288,10 @@
         function (k, v) { sp.industry.onPick(v); }));
     }
     (sp.own || []).forEach(function (c) { items.push(control(c, c.onPick)); });
-    (sp.builder || []).forEach(function (c) { items.push(control(c, sp.onBuilder)); });
+    (sp.builder || []).forEach(function (c) {   // a dropdown (kind 'multi', D134) names itself on its button: no label beside it
+      items.push(c.kind !== 'multi' ? control(c, sp.onBuilder) : el('div', { class: 'tap-panel__control', 'data-control': c.key },
+        TAP.multiSelect.field(sp.id + '-' + c.key, c, function (v) { sp.onBuilder(c.key, v); }, sp.redraw)));
+    });
     return items.length ? el('div', { class: 'tap-panel__controls' }, items) : null;
   }
 
