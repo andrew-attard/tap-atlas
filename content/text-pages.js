@@ -45,7 +45,7 @@ Object.assign(window.TAP_CONTENT.text, {
     regions: 'Pick a region to see its whole plan on one page.',
     insights: 'Filter by region or family, then use "Show me" to see the figures.',
     build: 'Pick a measure and what to show it by; keep a chart to reopen it later.',
-    guide: 'Search or use the contents to go to a section; select a dotted term for its definition.'
+    guide: 'Search or use the contents to find a section; select a dotted term to define it.'
   },
 
   // The Guide page (US-1.6.1, D139). Its sections and paragraphs come from content/guide.js.
