@@ -61,27 +61,29 @@
         var ids = menuItems(root).map(function (b) { return b.getAttribute('data-view'); });
         a.deepEqual(ids, TAP.views.order(), 'menu order is TAP.views.order()');
         a.deepEqual(menuItems(root).map(txt), TAP.views.order().map(TAP.views.title), 'titles from TAP.views.title');
-        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Market coverage', 'New business', 'Customer growth', 'Partners', 'Outlook', 'Regions',
-          'Insights', 'Build a chart', 'Guide'], 'Phase 1, Phase 2 and Phase 4 views, then Build a chart and the Guide (D96)');
+        // D115: start points, the plan's data views, then the tools
+        a.deepEqual(menuItems(root).map(txt), ['Overview', 'Regions', 'Market coverage', 'New business', 'Customer growth', 'Partners', 'Outlook',
+          'Insights', 'Build a chart', 'Guide'], 'Overview and Regions, the plan views, then Insights, Build a chart and the Guide (D96, D115)');
       });
     });
 
     // D96: Build a chart and the Guide sit together at the right end of the menu, apart from the plan views (D94);
-    // D95: Market coverage is second
-    T.test('X-d96-build-guide-right', 'On the sample at 1280 px: ten items on one line, Build a chart and the Guide at the right end', function (a) {
+    // D115 puts Insights with them. D95: Market coverage is the first plan view
+    T.test('X-d96-build-guide-right', 'On the sample at 1280 px: ten items on one line, Insights, Build a chart and the Guide at the right end', function (a) {
       withApp(function () {
         var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
         root.style.width = '1280px';
         ['Take the tour', 'Present'].forEach(function (w) { TAP.shell.actionsEl().appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, w)); });
         var items = menuItems(root), n = items.length;
         a.equal(n, 10, 'ten items on the sample');
-        a.deepEqual(items.slice(-2).map(txt), ['Build a chart', 'Guide'], 'ending Build a chart, Guide');
-        a.equal(txt(items[1]), 'Market coverage', 'the second view is Market coverage (D95)');
-        var ins = qs('.tap-menu__item[data-view="insights"]', root).getBoundingClientRect();
+        a.deepEqual(items.slice(-3).map(txt), ['Insights', 'Build a chart', 'Guide'], 'ending Insights, Build a chart, Guide');
+        a.equal(txt(qs('[data-group="data"] .tap-menu__item', root)), 'Market coverage', 'the first plan view is Market coverage (D95)');
+        var out = qs('.tap-menu__item[data-view="outlook"]', root).getBoundingClientRect(), ins = items[n - 3].getBoundingClientRect();
         var b = items[n - 2].getBoundingClientRect(), g = items[n - 1].getBoundingClientRect(), nav = qs('.tap-menu', root).getBoundingClientRect();
         var tops = items.map(function (x) { return Math.round(x.getBoundingClientRect().top); });
         a.equal(tops.filter(function (t) { return t !== tops[0]; }).length, 0, 'all on one line');
-        a.ok(b.left - ins.right > 24, 'Build a chart starts right of Insights with a clear gap (' + Math.round(b.left - ins.right) + ' px)');
+        a.ok(ins.left - out.right > 24, 'Insights starts right of Outlook with a clear gap (' + Math.round(ins.left - out.right) + ' px)');
+        a.ok(b.left >= ins.right && b.left - ins.right <= 24, 'Build a chart follows Insights with a normal menu gap (' + Math.round(b.left - ins.right) + ' px)');
         a.ok(g.left >= b.right && g.left - b.right <= 24, 'the Guide follows Build a chart with a normal menu gap (' + Math.round(g.left - b.right) + ' px)');
         a.ok(Math.abs(nav.right - g.right) < 2, 'the Guide ends at the right edge of the menu');
       });
@@ -195,10 +197,12 @@
     function withEleven(fn) { return withApp(function () { return fn(startApp(window.T_WITH_EXTRA())); }); }
 
     // D104: ten items (the sample, and the full template, D93) keep one line at 1280 px. With an extra section the
-    // eleventh, Other sections, makes the menu wrap: Build a chart and the Guide go to the second line together,
-    // right-aligned, never the Guide alone. Narrower (125% and 150% zoom) every item stays visible.
-    T.test('X-shell-menu-nine', 'Ten items on one line at 1280 px; eleven wrap with Build a chart and the Guide together on the second line (D96, D104)', function (a) {
-      function tools(root) { return ['build', 'guide'].map(function (id) { return qs('.tap-menu__item[data-view="' + id + '"]', root).getBoundingClientRect(); }); }
+    // eleventh, Other sections, makes the menu wrap. The tools wrap together, never the Guide alone (D104); with the
+    // three groups (D115) the start points and tools keep the first line and the plan views take the second, together.
+    // Narrower (125% and 150% zoom) every item stays visible.
+    T.test('X-shell-menu-nine', 'Ten items on one line at 1280 px; eleven wrap with the plan views together on the second line and the tools together (D96, D104, D115)', function (a) {
+      var TOOLS = ['insights', 'build', 'guide'];
+      function tools(root) { return TOOLS.map(function (id) { return qs('.tap-menu__item[data-view="' + id + '"]', root).getBoundingClientRect(); }); }
       function top(r) { return Math.round(r.top); }
       withApp(function () {
         var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
@@ -215,20 +219,22 @@
           root.style.width = w + 'px';
           window.dispatchEvent(new Event('resize'));   // charts follow the window's size, as on a real zoom change
           var items = menuItems(root), nav = qs('.tap-menu', root), box = nav.getBoundingClientRect();
+          var bar = qs('.tap-topbar', root).getBoundingClientRect();
           var hidden = items.filter(function (b) {
             var r = b.getBoundingClientRect();
-            return !(r.width > 0 && r.left >= box.left - 1 && r.right <= box.right + 1);
+            return !(r.width > 0 && r.left >= bar.left - 1 && r.right <= bar.right + 1);
           }).map(function (b) { return b.textContent; });
           a.deepEqual(hidden, [], w + ' px: every item fully visible');
           a.ok(nav.scrollWidth <= nav.clientWidth + 1 && root.scrollWidth <= root.clientWidth + 1, w + ' px: no horizontal scroll');
-          var t = tools(root), plan = items.filter(function (b) { return ['build', 'guide'].indexOf(b.getAttribute('data-view')) < 0; });
-          a.equal(top(t[0]), top(t[1]), w + ' px: Build a chart and the Guide on the same line');
-          a.ok(t[1].left >= t[0].right && t[1].left - t[0].right <= 24, w + ' px: the Guide straight after Build a chart');
-          a.ok(Math.abs(box.right - t[1].right) < 2, w + ' px: the two right-aligned');
+          var t = tools(root), plan = qsa('[data-group="data"] .tap-menu__item', root);
+          a.equal(top(t[0]), top(t[2]), w + ' px: Insights, Build a chart and the Guide on the same line');
+          a.ok(t[2].left >= t[1].right && t[2].left - t[1].right <= 24, w + ' px: the Guide straight after Build a chart');
+          a.ok(Math.abs(box.right - t[2].right) < 2, w + ' px: the tools right-aligned');
           if (w === 1280) {
-            var top0 = top(items[0].getBoundingClientRect());
-            a.equal(plan.filter(function (b) { return top(b.getBoundingClientRect()) !== top0; }).length, 0, '1280 px: every plan view on the first line');
-            a.ok(top(t[0]) > top0, '1280 px: the two on the second line');
+            var top0 = top(items[0].getBoundingClientRect()), topP = top(plan[0].getBoundingClientRect());
+            a.equal(plan.filter(function (b) { return top(b.getBoundingClientRect()) !== topP; }).length, 0, '1280 px: every plan view on one line');
+            a.equal(top(t[0]), top0, '1280 px: the tools on the first line, with Overview');
+            a.ok(topP > top0, '1280 px: the plan views on the second line');
           }
         });
         a.ok(parseFloat(getComputedStyle(menuItems(root)[0]).fontSize) >= 16, 'menu text at least 16 px');
@@ -243,6 +249,130 @@
         var cur = qs('.tap-menu__item[aria-current="page"]', root), cs = cur && getComputedStyle(cur);
         a.ok(cs && cs.borderBottomStyle === 'solid' && parseFloat(cs.borderBottomWidth) > 0 && parseFloat(cs.fontWeight) >= 800, 'the current view is still marked');
       });
+    });
+
+    /* ---------- D115: the menu in three groups, start points, the plan's data views and tools ---------- */
+
+    var GROUPS = { start: ['overview', 'regions'], data: ['industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other'],
+      tools: ['insights', 'build', 'guide'] };
+    function groupIds(root) { return qsa('.tap-menu__group', root).map(function (g) { return g.getAttribute('data-group'); }); }
+    function viewsIn(root, g) { return qsa('[data-group="' + g + '"] .tap-menu__item', root).map(function (b) { return b.getAttribute('data-view'); }); }
+    function box(els) {
+      var rs = els.map(function (e) { return e.getBoundingClientRect(); });
+      return { left: Math.min.apply(null, rs.map(function (r) { return r.left; })), right: Math.max.apply(null, rs.map(function (r) { return r.right; })),
+        top: Math.min.apply(null, rs.map(function (r) { return r.top; })) };
+    }
+    function groupBox(root, g) { return box(qsa('[data-group="' + g + '"] .tap-menu__item', root)); }
+    function at(root, w) { root.style.width = w + 'px'; window.dispatchEvent(new Event('resize')); }
+
+    T.test('X-d115-menu-groups', 'Three groups in order, left to right, each a named list with its views in order', function (a) {
+      withApp(function () {
+        var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA))), nav = qs('[data-tour="menu"]', root);
+        a.deepEqual(groupIds(root), ['start', 'data', 'tools'], 'start points, the data views, then the tools');
+        a.deepEqual(viewsIn(root, 'start'), ['overview', 'regions'], 'left: Overview, Regions');
+        a.deepEqual(viewsIn(root, 'data'), ['industry', 'newBusiness', 'customers', 'partners', 'outlook'], 'centre: the five plan views of the sample');
+        a.deepEqual(viewsIn(root, 'tools'), ['insights', 'build', 'guide'], 'right: Insights, Build a chart, Guide');
+        qsa('.tap-menu__group', root).forEach(function (g) {
+          var id = g.getAttribute('data-group'), label = TAP.content.text('menu.groups.' + id);
+          a.equal(g.tagName, 'UL', id + ': a list');
+          a.ok(label && label.indexOf('[') !== 0, id + ': its name comes from the content file (' + label + ')');
+          a.equal(g.getAttribute('aria-label'), label, id + ': named for screen readers');
+          a.equal(qsa(':scope > li > .tap-menu__item', g).length, g.children.length, id + ': one item per list entry');
+        });
+        a.ok(qs('.tap-menu__tools', root) === qs('[data-group="tools"]', root), 'the tools group keeps its D104 class');
+        a.ok(nav && nav.tagName === 'NAV' && nav.getBoundingClientRect().width > 0, 'the tour\'s menu step still finds the menu, on screen');
+        a.equal(qsa('.tap-menu__group', nav).length, 3, 'with the three groups in it');
+        a.ok(qs('.tap-topbar__brand', root).getBoundingClientRect().right <= groupBox(root, 'start').left, 'the TAP Atlas name stays left of the menu');
+      });
+    });
+
+    T.test('X-d115-menu-groups', 'Every view is in exactly one group, and the menu order is the groups in turn', function (a) {
+      var cfg = window.TAP_VIEWS, all = [].concat.apply([], Object.keys(cfg.groups).map(function (g) { return cfg.groups[g]; }));
+      a.deepEqual(Object.keys(cfg.groups), ['start', 'data', 'tools'], 'three groups, in screen order');
+      a.deepEqual(cfg.groups, GROUPS, 'the views of each group (D115)');
+      var views = Object.keys(cfg).filter(function (k) { return k !== 'order' && k !== 'groups'; });
+      TAP.views.list().forEach(function (id) { if (views.indexOf(id) < 0) views.push(id); });
+      views.forEach(function (id) {
+        a.equal(all.filter(function (x) { return x === id; }).length, 1, id + ' is in exactly one group');
+      });
+      a.deepEqual(all.filter(function (id) { return views.indexOf(id) < 0; }), [], 'no group names a view that does not exist');
+      a.deepEqual(cfg.order, all, 'the menu order is the groups one after the other');
+    });
+
+    T.test('X-d115-menu-groups', 'Other sections lands in the centre group when the data has it, and is absent otherwise', function (a) {
+      withEleven(function (root) {
+        a.deepEqual(viewsIn(root, 'data'), GROUPS.data, 'with an extra section: last in the centre group, after Outlook');
+        a.deepEqual(viewsIn(root, 'start').concat(viewsIn(root, 'tools')).indexOf('other'), -1, 'in no other group');
+      });
+      [['the sample', window.PLAN_DATA], ['the mini fixture', T_FIXTURE('mini')]].forEach(function (c) {
+        withApp(function () {
+          var root = startApp(JSON.parse(JSON.stringify(c[1])));
+          a.equal(qs('.tap-menu__item[data-view="other"]', root), null, c[0] + ': no Other sections');
+          a.deepEqual(groupIds(root), ['start', 'data', 'tools'], c[0] + ': still three groups');
+        });
+      });
+    });
+
+    T.test('X-d115-menu-groups', 'Tab order follows the screen: left, centre, right', function (a) {
+      withApp(function () {
+        var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        at(root, 1280);
+        var buttons = qsa('.tap-topbar button, .tap-topbar a[href], .tap-topbar [tabindex]', root);
+        a.deepEqual(buttons.map(function (b) { return b.getAttribute('data-view'); }), GROUPS.start.concat(GROUPS.data.slice(0, 5), GROUPS.tools),
+          'the focus order is the page order: start points, plan views, tools');
+        a.deepEqual(buttons.filter(function (b) { return Number(b.getAttribute('tabindex')) > 0; }), [], 'no tabindex reorders it');
+        var lefts = buttons.map(function (b) { return Math.round(b.getBoundingClientRect().left); });
+        a.ok(lefts.every(function (x, i) { return !i || x > lefts[i - 1]; }), 'and runs left to right on the one line at 1280 px');
+        a.deepEqual(TAP.views.order(), buttons.map(function (b) { return b.getAttribute('data-view'); }), 'the number keys follow the same order');
+      });
+    });
+
+    // The centre group's midpoint sits on the bar's midpoint when there is room for it there; otherwise it sits as
+    // close as the side groups allow. Both are checked at 1920 px, where it fits.
+    function centred(a, root, w) {
+      var bar = qs('.tap-topbar', root).getBoundingClientRect(), mid = (bar.left + bar.right) / 2;
+      var s = groupBox(root, 'start'), d = groupBox(root, 'data'), t = groupBox(root, 'tools'), half = (d.right - d.left) / 2;
+      var gap = parseFloat(getComputedStyle(qs('.tap-menu', root)).columnGap) || 0;
+      var fits = mid - half - s.right >= gap - 1 && t.left - (mid + half) >= gap - 1;
+      a.equal(Math.round(s.top), Math.round(d.top), w + ' px: start points and plan views on one row');
+      a.equal(Math.round(d.top), Math.round(t.top), w + ' px: plan views and tools on one row');
+      if (fits) a.ok(Math.abs((d.left + d.right) / 2 - mid) <= 3, w + ' px: the centre group is centred on the bar (' + Math.round((d.left + d.right) / 2 - mid) + ' px off)');
+      else a.ok(d.left - s.right <= gap + 3 || t.left - d.right <= gap + 3, w + ' px: no room to centre it, so it sits against a side group');
+      return fits;
+    }
+
+    T.test('X-d115-menu-groups', 'At 1280 x 800 the three groups share one row, the centre group centred on the bar if it fits; at 1920 it does', function (a) {
+      withApp(function () {
+        var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        at(root, 1280);
+        centred(a, root, 1280);
+        at(root, 1920);
+        a.ok(centred(a, root, 1920), '1920 px: there is room to centre it');
+      });
+    });
+
+    T.test('X-d115-menu-groups', 'At 853 px nothing overflows the bar: start points and tools share the first line, the plan views a centred line below', function (a) {
+      function check(root, what) {
+        at(root, 853);
+        var bar = qs('.tap-topbar', root), r = bar.getBoundingClientRect(), mid = (r.left + r.right) / 2;
+        var cut = menuItems(root).filter(function (b) {
+          var x = b.getBoundingClientRect();
+          return !(x.width > 0 && x.left >= r.left - 1 && x.right <= r.right + 1 && b.scrollWidth <= b.clientWidth + 1);
+        }).map(txt);
+        a.deepEqual(cut, [], what + ': every label whole and inside the bar');
+        a.ok(bar.scrollWidth <= bar.clientWidth + 1 && root.scrollWidth <= root.clientWidth + 1, what + ': no horizontal scroll');
+        var s = groupBox(root, 'start'), d = groupBox(root, 'data'), t = groupBox(root, 'tools');
+        a.equal(Math.round(s.top), Math.round(t.top), what + ': start points and tools on the first line');
+        a.ok(d.top > s.top, what + ': the plan views below them');
+        var first = qsa('[data-group="data"] .tap-menu__item', root).filter(function (b) { return Math.round(b.getBoundingClientRect().top) === Math.round(d.top); });
+        var line = box(first);
+        a.ok(Math.abs((line.left + line.right) / 2 - mid) <= 3, what + ': the plan views centred on the bar');
+        a.ok(parseFloat(getComputedStyle(menuItems(root)[0]).fontSize) >= 16, what + ': menu text at least 16 px (D24)');
+        var cur = qs('.tap-menu__item[aria-current="page"]', root), cs = getComputedStyle(cur);
+        a.ok(cs.borderBottomStyle === 'solid' && parseFloat(cs.fontWeight) >= 800, what + ': the current view is still marked');
+      }
+      withApp(function () { check(startApp(JSON.parse(JSON.stringify(window.PLAN_DATA))), 'the sample'); });
+      withEleven(function (root) { check(root, 'with Other sections'); });
     });
 
     T.test('X-shell-actions-narrow', 'The sentence shares its row with the data date and the actions: one action at 853 px, two at 1024 px', function (a) {

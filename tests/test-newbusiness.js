@@ -74,7 +74,8 @@
     T.test('TPV-TC-317', 'New business comes straight after Market coverage, titled with its question', function (a) {
       var order = window.TAP_VIEWS.order;
       a.equal(order.indexOf(VIEW), order.indexOf('industry') + 1, 'menu order');
-      a.deepEqual(TAP.views.order().slice(0, 3), ['overview', 'industry', VIEW], 'registered and shown in the menu');
+      // D115: Overview and Regions come first, then the plan views
+      a.deepEqual(TAP.views.order().slice(0, 4), ['overview', 'regions', 'industry', VIEW], 'registered and shown in the menu');
       a.equal(TAP.views.title(VIEW), 'New business', 'menu title');
       withView(function (root) {
         a.equal(root.querySelector('h1').textContent, 'Where will new business come from?', 'the question is the title');
