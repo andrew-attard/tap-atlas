@@ -1,10 +1,12 @@
 /*
  * File: js/insights/rules-plan.js
  * Purpose: Channel reliance (US-2.5.2) and plan make-up (US-2.5.5) insight rules: a region whose channel mix, or whose
- *          split between new business and existing customers, sits far from the other regions'.
- * Provides: insight rules for the 'plan' family (via TAP.insights.defineRule): channelReliance, planMakeup
+ *          split between new business and existing customers, sits far from the other regions'; and services growth
+ *          beyond what partners deliver (D112).
+ * Provides: insight rules for the 'plan' family (via TAP.insights.defineRule): channelReliance, planMakeup,
+ *           servicesDelivery
  * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/measures-p2.js (rc.share.*,
- *             rc.all.oi.*, amb.nbShare), js/core/data.js (the channel list)
+ *             rc.all.oi.*, rc.all.services, amb.nbShare), js/core/data.js (the channel list, partners' servicesFromPartners)
  * Used by: js/insights/engine.js
  *
  * "Elsewhere" is the other regions' combined figure, their summed parts over their summed totals, as the charts'
@@ -71,6 +73,35 @@
         figures: figures(u, x, r, ids.length - 1).concat([u.fig('nb.arr', u.name(r), u.m('nb.arr', r)),
           u.fig('cg.arr', u.name(r), u.m('cg.arr', r))]),
         strength: u.clamp(Math.abs(x.gap) / (2 * p.gap)), money: u.moneyShare(u.value(amb) || 0, 'arr') };
+    }).filter(Boolean);
+  });
+
+  // The services a region's partners deliver themselves in plan year 3 (servicesFromPartners, Phase 4), summed over the
+  // partners that give it; null when none does, so a region without the figures gives no finding.
+  function delivered(r) {
+    var k = TAP.measures.kit, given = ((TAP.data.region(r) || {}).partners || []).filter(function (x) {
+      return Array.isArray(x.servicesFromPartners) && k.isNum(x.servicesFromPartners[2]);
+    });
+    if (!given.length) return null;
+    var v = given.reduce(function (t, x) { return t + x.servicesFromPartners[2]; }, 0);
+    return k.cell(v, 'DER', k.src(r, 'partners', 'servicesFromPartners', given.map(function (x) { return x.sourceRow; }), 3, 'DER'));
+  }
+
+  // Services order intake (the recap, both motions) growing strongly from year 1 to year 3, while partners deliver
+  // little of year 3: the rest falls to the region's own consultants, whom the template does not count (D112, D113).
+  TAP.insights.defineRule('servicesDelivery', function (ctx) {
+    var u = ctx.util, p = ctx.params;
+    return u.regions().map(function (r) {
+      var y1 = u.m('rc.all.services', r, { year: 1 }), y3 = u.m('rc.all.services', r, { year: 3 }), d = delivered(r);
+      if (!d || !(u.value(y1) > 0) || !(u.value(y3) > 0)) return null;
+      var growth = y3.v / y1.v - 1, share = d.v / y3.v;
+      if (growth < p.growth - SLACK || share >= p.partnerShare - SLACK) return null;
+      return { key: r, regionIds: [r], measureId: 'rc.all.services',
+        vars: { region: u.name(r), y1: u.money(y1.v), y3: u.money(y3.v), growth: u.pct(growth), delivered: u.money(d.v), share: u.pct(share) },
+        figures: [u.fig('rc.all.services', u.name(r) + ', ' + u.phrase('year1'), y1), u.fig('rc.all.services', u.name(r) + ', ' + u.phrase('cover.year3'), y3),
+          u.figure(u.phrase('cover.delivered', { where: u.name(r) }), d, 'money')],
+        strength: 0.5 * u.shareStrength(growth, p.growth) + 0.5 * u.clamp(1 - share / p.partnerShare),
+        money: u.moneyShare(y3.v - d.v, 'arr') };
     }).filter(Boolean);
   });
 })(window.TAP);

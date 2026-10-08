@@ -1,10 +1,11 @@
 /*
  * File: js/insights/rules-judgement.js
  * Purpose: Insight rules where leader ratings and system figures tell different stories (US-1.7.5): a strong
- *          rating with nothing in the system, a weak rating where the region holds a lot, and tiers that differ
- *          from where the pipeline is. The sentences end in a question, never a verdict.
+ *          rating with nothing in the system, a weak rating where the region holds a lot, and a Tier 3 industry
+ *          holding much of the pipeline. The sentences end in a question, never a verdict.
  * Provides: insight rules for the 'judgement' family (via TAP.insights.defineRule): strongRating, weakRating,
- *           tierVsPipeline, priorityNoPipeline
+ *           tierVsPipeline (a Tier 1 or 2 industry with no pipeline is industryCover's, in
+ *           rules-realism.js, D112)
  * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, the measure catalogue
  * Used by: js/insights/engine.js
  */
@@ -92,19 +93,6 @@
         figures: [u.fig('ind.tier', name, tier), u.fig('ind.pipeline', name, pipe),
           u.fig('base.pipeline', u.phrase('allIndustries'), all)],
         strength: u.shareStrength(share, min), money: u.moneyShare(pipe.v, 'pipeline') };
-    });
-  });
-
-  TAP.insights.defineRule('priorityNoPipeline', function (ctx) {
-    var u = ctx.util;
-    return each(u, function (r, id, cellOf) {
-      var tier = cellOf('ind.tier'), pipe = cellOf('ind.pipeline'), t = u.value(tier);
-      if ((t !== 1 && t !== 2) || !u.provided(pipe) || pipe.v !== 0) return null;
-      var name = u.industry(id), nb = cellOf('ind.nb.arr');
-      var figures = [u.fig('ind.tier', name, tier), u.fig('ind.pipeline', name, pipe)];
-      if (u.value(nb) > 0) figures.push(u.fig('ind.nb.arr', name, nb));
-      return { key: r + ':' + id, regionIds: [r], industryIds: [id], vars: { region: u.name(r), industry: name, tier: t },
-        figures: figures, strength: t === 1 ? 0.6 : 0.5, money: u.moneyShare(u.value(nb) || 0, 'arr') };
     });
   });
 })(window.TAP);

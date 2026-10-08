@@ -2,11 +2,13 @@
  * File: js/insights/rules-shared.js
  * Purpose: Shared targets (US-2.5.3): sub-industries and partners named by several regions, so references, assets or
  *          partners can be shared; and partner capacity (US-2.5.4): a partner planned to bring much more per person
- *          than the average across partners.
+ *          than the average across partners; and partner load (D112): a region whose partners carry much more order
+ *          intake per partner salesperson than the other regions'.
  * Provides: insight rules for the 'shared' family (via TAP.insights.defineRule): sharedSubIndustry, sharedPartner,
- *           partnerCapacity
+ *           partnerCapacity, partnerLoad
  * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, js/engine/rows.js (TAP.rows: rows, cells and
- *             matchKey, so names match as on the lists), js/engine/measures-p2.js (pt.oiPerFte)
+ *             matchKey, so names match as on the lists), js/engine/measures-p2.js (pt.oiPerFte, rc.all.oi.<channel>),
+ *             js/engine/measures-pt.js (pt.fteSales), js/core/data.js (the channel list)
  * Used by: js/insights/engine.js
  *
  * Each finding names the list rows it is about (items, 17.4), so "Show me" can point the list or the bubbles at them.
@@ -77,6 +79,34 @@
         figures: [u.figure(u.phrase('perPerson', { partner: name }), x.cell, 'money'),
           u.fig('pt.oiPerFte', u.phrase('allPartners'), avg), u.figure(u.phrase('partnerFte', { partner: name }), fte, 'count')],
         strength: u.ratioStrength(multiple, p.multiple), money: u.moneyShare(u.value(arr) || 0, 'arr') };
+    }).filter(Boolean);
+  });
+
+  // Year-1 order intake through every partner channel (all but direct, from the recap) per partner salesperson, against
+  // the other regions' summed order intake over their summed sales staff (D112). Every partner channel counts, since
+  // the partner sheet's staff serve all of them.
+  TAP.insights.defineRule('partnerLoad', function (ctx) {
+    var u = ctx.util, p = ctx.params;
+    var channels = ((TAP.data.lookups() || {}).channels || []).map(function (c) { return c.id; }).filter(function (c) { return c !== 'direct'; });
+    var load = {};
+    u.regions().forEach(function (r) {
+      var cells = channels.map(function (c) { return u.m('rc.all.oi.' + c, r, { year: 1 }); }), fte = u.m('pt.fteSales', r);
+      if (!cells.length || !cells.every(function (c) { return u.value(c) !== null; }) || !(u.value(fte) > 0)) return;
+      var oi = cells.reduce(function (t, c) { return t + c.v; }, 0);
+      if (oi > 0) load[r] = { cells: cells, fte: fte, oi: oi };
+    });
+    var ids = Object.keys(load);
+    return ids.map(function (r) {
+      var x = load[r], rest = ids.filter(function (o) { return o !== r; });
+      var avg = rest.reduce(function (t, o) { return t + load[o].oi; }, 0) / rest.reduce(function (t, o) { return t + load[o].fte.v; }, 0);
+      var mine = x.oi / x.fte.v, ratio = mine / avg;
+      if (!(avg > 0) || ratio < p.ratio - SLACK) return null;
+      var oiCell = { v: x.oi, state: 'value', kind: 'APP', src: x.cells[0].src };
+      return { key: r, regionIds: [r], provided: ids.length,
+        vars: { region: u.name(r), oi: u.money(x.oi), fte: u.num(x.fte.v, 0), perPerson: u.money(mine), ratio: u.ratio(ratio), avg: u.money(avg) },
+        figures: [u.figure(u.phrase('cover.partnerOi', { where: u.name(r) }), oiCell, 'money'), u.fig('pt.fteSales', u.name(r), x.fte)]
+          .concat(x.cells.map(function (c, i) { return u.fig('rc.all.oi.' + channels[i], u.name(r) + ', ' + u.phrase('year1'), c); })),
+        strength: u.ratioStrength(ratio, p.ratio), money: u.moneyShare(x.oi, 'arr') };
     }).filter(Boolean);
   });
 })(window.TAP);
