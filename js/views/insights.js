@@ -2,7 +2,8 @@
  * File: js/views/insights.js
  * Purpose: The Insights view: every insight in the comparison, ranked, grouped by family, filterable by region
  *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
- *          session" with an "N hidden · Show hidden" note (US-1.7.11).
+ *          session" with an "N hidden · Show hidden" note (US-1.7.11). Each shows its line on why it matters; context
+ *          insights (background facts) follow the ranked groups in one closed group (D111).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
  *             js/core/sources.js, js/ui/source-tip.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
@@ -52,9 +53,9 @@
     try { var a = TAP.sources.address(src); return a ? a.text : ''; } catch (e) { return ''; }
   }
 
-  // Plain text for an email or a slide: sentence, label, figures, rule and sources.
+  // Plain text for an email or a slide: sentence, why it matters, label, figures, rule and sources.
   function copyText(x) {
-    var lines = [x.sentence, '(' + (x.label || t('label')) + ')', ''];
+    var lines = [x.sentence].concat(x.why ? [x.why] : [], ['(' + (x.label || t('label')) + ')', '']);
     (x.figures || []).forEach(function (f) { lines.push(f.label + ': ' + figureValue(f)); });
     lines.push('', t('copyRule', { text: x.description || '' }), t('copySources'));
     (x.sources || []).forEach(function (s) { var a = addressOf(s); if (a) lines.push('  ' + a); });
@@ -83,7 +84,7 @@
   /* ---------- the page ---------- */
 
   function mount(root) {
-    var ui = { regions: [], families: [], open: {}, status: '', showHidden: false };
+    var ui = { regions: [], families: [], open: {}, status: '', showHidden: false, contextOpen: false };
     var page = el('div', { class: 'tap-ins' });
     TAP.dom.clear(root);
     root.appendChild(page);
@@ -91,9 +92,10 @@
     function cmp() { return TAP.store.get().cmp; }
     function hidden() { try { return TAP.insights.hidden() || []; } catch (e) { return []; } }
     // The ranked list without hidden insights; with "Show hidden" on, the hidden ones in scope follow, by significance.
+    // Context insights are in it too: the page lists them in their own group (D111).
     function visible() {
       var hid = hidden();
-      var list = TAP.insights.ranked(cmp(), {}).filter(function (x) { return !has(hid, x.id); });
+      var list = TAP.insights.ranked(cmp(), { context: true }).filter(function (x) { return !has(hid, x.id); });
       if (!ui.showHidden || !hid.length) return list;
       var scope = TAP.scope.regionIds(cmp());
       return list.concat(TAP.insights.all().filter(function (x) {
@@ -205,6 +207,7 @@
           hid ? el('span', { class: 'tap-badge tap-ins__hiddenbadge' }, t('hiddenBadge')) : null
         ]),
         TAP.dom.html(el('p', { class: 'tap-ins__sentence' }), TAP.content.mark(x.sentence, {})),
+        x.why ? el('p', { class: 'tap-ins__why' }, x.why) : null,
         el('div', { class: 'tap-ins__regions' }, regions),
         actions,
         open ? details(x) : null
@@ -217,6 +220,19 @@
           el('h2', { class: 'tap-ins__gname' }, t('families.' + f + '.name')),
           el('span', { class: 'tap-ins__gcount' }, list.length === 1 ? t('countOne') : t('count', { n: list.length })),
           el('p', { class: 'tap-ins__gline' }, t('families.' + f + '.line'))
+        ]),
+        el('div', { class: 'tap-ins__list' }, list.map(itemEl))
+      ]);
+    }
+
+    // Background facts that move no decision (D111): one group, closed until opened, kept open across redraws.
+    function contextGroup(list) {
+      return el('details', { class: 'tap-ins__context', 'data-part': 'context', open: ui.contextOpen,
+        ontoggle: function (e) { ui.contextOpen = e.target.open; } }, [
+        el('summary', { class: 'tap-ins__csum' }, [
+          el('span', { class: 'tap-ins__gname' }, t('context.name')),
+          el('span', { class: 'tap-ins__gcount' }, list.length === 1 ? t('countOne') : t('count', { n: list.length })),
+          el('span', { class: 'tap-ins__gline' }, t('context.line'))
         ]),
         el('div', { class: 'tap-ins__list' }, list.map(itemEl))
       ]);
@@ -246,9 +262,11 @@
       page.appendChild(filters(list, families));
       page.appendChild(summary(shown.length, list.length));
       families.forEach(function (f) {
-        var inF = shown.filter(function (x) { return x.family === f; });
+        var inF = shown.filter(function (x) { return x.family === f && !x.context; });
         if (inF.length) page.appendChild(group(f, inF));
       });
+      var ctx = shown.filter(function (x) { return x.context; });
+      if (ctx.length) page.appendChild(contextGroup(ctx));
       if (!shown.length) {
         page.appendChild(el('div', { class: 'tap-ins__none' }, [
           el('p', null, list.length ? t('none') : t('empty')),

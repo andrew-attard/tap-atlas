@@ -117,6 +117,15 @@
 .tap-ins__item.is-hidden .tap-ins__sentence { color: var(--tap-muted); }
 .tap-ins__hiddennote { font-weight: 600; }
 .tap-ins__sentence { margin: 0; font-size: var(--tap-fs-lead); line-height: 1.4; font-weight: 600; }
+/* Why it matters (D111): plain text under the sentence, muted but at body size */
+.tap-ins__why { margin: 0; max-width: 76ch; font-size: var(--tap-fs-body); line-height: 1.45; color: var(--tap-muted); }
+/* The context group (D111): background facts after the ranked groups, closed until opened */
+.tap-ins__context { padding-top: var(--tap-sp-4); border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-ins__csum { cursor: pointer; padding: var(--tap-sp-1) 0; }
+.tap-ins__csum .tap-ins__gname { font-weight: 800; }
+.tap-ins__csum .tap-ins__gcount { margin-left: var(--tap-sp-3); }
+.tap-ins__csum .tap-ins__gline { display: block; margin-top: var(--tap-sp-1); }
+.tap-ins__context[open] > .tap-ins__list { margin-top: var(--tap-sp-4); }
 .tap-ins__regions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-1) var(--tap-sp-4); }
 .tap-ins__region { display: inline-flex; align-items: center; gap: var(--tap-sp-2); font-weight: 600; }
 .tap-ins__actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }

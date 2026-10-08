@@ -166,7 +166,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/partners.js` | Partners: reliance on partners and alliances, partner capacity, the partner list |
 | `js/views/regions.js` | Regions: pick a region, then its profile with the main reports for that region against the rest |
 | `js/views/regions-parts.js` | The profile's lower parts: the plan at a glance, the region's insights and what its leader wrote |
-| `js/views/insights.js` | The Insights page: every insight, ranked and grouped |
+| `js/views/insights.js` | The Insights page: every insight, ranked and grouped, each with why it matters; background facts in a closed Context group |
 | `js/views/build.js` | The Build a chart view, beside the Guide in the menu: the view header and the builder |
 | `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
 | `js/views/outlook.js` | Outlook: the plans against the strategic plan and the base year, pipeline coverage, revenue and product categories |
@@ -188,7 +188,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/reports-outlook.js` | Report definitions for the Outlook view |
 | `config/profile.js` | The reports a region profile shows, in order |
 | `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
-| `config/insight-rules.js` | Every insight rule: thresholds, wording, on/off switch, where it attaches |
+| `config/insight-rules.js` | Every insight rule: thresholds, wording, why it matters (or context), on/off switch, where it attaches |
 | `config/running-order.js` | The presentation file: the set list of charts that **Present** plays, in order, each with its own comparison and highlight (D97) |
 
 ### `content/` and `css/`

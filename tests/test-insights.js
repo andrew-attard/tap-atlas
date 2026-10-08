@@ -282,7 +282,7 @@
         }
       });
       CONTEXT.forEach(function (id) { a.equal(cfg(id) && cfg(id).context, true, id + ' is context'); });
-      a.equal(cfg('spGap').why, 'The gap between a region\'s bottom-up plan and its strategic target is the first question in a planning review.',
+      a.equal(cfg('spGap').why, 'The gap between a region\u2019s bottom-up plan and its strategic target is the first question in a planning review.',
         'the owner’s wording, word for word');
     });
 
