@@ -10,8 +10,8 @@
  * Depends on: Node 18+ only; tools/sample-settings.js, sample-names.js, sample-random.js, sample-build.js,
  *             sample-derive.js, sample-plant.js and sample-planted.js (the planted cases), sample-expect.js,
  *             sample-expect-planted.js, sample-plant-p2.js, sample-planted-p2.js and sample-expect-p2.js (Phase 2),
- *             sample-extra.js (the test extra section, kept out of the sample), sample-p4.js, sample-planted-p4.js and sample-expect-p4.js (the full
- *             template, Phase 4), config/comment-themes.js (read as data)
+ *             sample-extra.js (the test extra section), sample-p4.js, sample-planted-p4.js and sample-expect-p4.js (Phase 4),
+ *             sample-*-d112.js (the D112 insight cases), config/comment-themes.js (read as data)
  * Used by: maintainers. The same settings always give byte-identical files (seeded random numbers).
  */
 'use strict';
@@ -29,6 +29,7 @@ const planted2 = require('./sample-expect-p2');
 const extra = require('./sample-extra');
 const p4 = require('./sample-p4');
 const planted4 = require('./sample-expect-p4');
+const planted112 = require('./sample-expect-d112');
 
 const ROOT = path.join(__dirname, '..');
 const DATA_FILE = 'data/sample-plan-data.js';
@@ -222,8 +223,14 @@ function main() {
   const bad4 = planted4.check(px4);
   if (bad4.length) throw new Error('Phase 4 planted cases that do not hold: ' + bad4.join('; ') + '. See docs/PLANTED-CASES.md.');
   Object.keys(px4).forEach(function (k) { x[k] = px4[k]; });
+  // The D112 insight cases S01 to S04
+  const px112 = planted112.build(made.plan);
+  const bad112 = planted112.check(px112);
+  if (bad112.length) throw new Error('D112 planted cases that do not hold: ' + bad112.join(', ') + '. See docs/PLANTED-CASES.md.');
+  Object.keys(px112).forEach(function (k) { x[k] = px112[k]; });
   const out = {};
-  out[DATA_FILE] = dataText(made.plan, expect.comment(x).concat(planted.comment(px), planted2.comment(px), planted4.comment(px4)));
+  out[DATA_FILE] = dataText(made.plan, expect.comment(x).concat(planted.comment(px), planted2.comment(px), planted4.comment(px4),
+    planted112.comment(px112)));
   out[EXPECT_FILE] = expectText(x);
   const check = process.argv.indexOf('--check') !== -1;
   let differ = 0;
