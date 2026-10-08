@@ -108,12 +108,12 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     templates: { none: '{region} plans {nb} of year-1 new business, with no pipeline created in the last 12 months.' },
     attach: ['ov-ambition'], highlight: 'bar', why: 'A year-1 goal far above recent pipeline creation depends on pipeline not yet built; worth asking how and by when.' });
   rule({ id: 'industryCover', family: 'realism',
-    description: 'A Tier 1 or 2 industry whose year-1 new business ARR goal (at least €25k) is above the industry’s whole pipeline, no pipeline at all included, or at least 5 times the pipeline created there in the last 12 months.',
+    description: 'A Tier 1 or 2 industry whose year-1 new business ARR goal (at least €25k) is above the industry’s whole pipeline, no pipeline at all included, or at least 5 times the pipeline created there in the last 12 months. One insight per region: with two or more such industries, it counts them and names the two with the largest goals.',
     reads: ['newBusiness.arrPotential', 'marketCoverage.pipelineTotal'], params: { minGoal: 25, ratio: 5, measure: 'ind.nb.arr' },
-    scoring: 'Strength: 1 with no pipeline; above the whole pipeline, from 0.6 rising to 1 at twice the pipeline; otherwise how far the ratio to the pipeline created in 12 months is past 1, against twice the threshold’s distance. Money: the year-1 goal.',
+    scoring: 'Strength: the strongest industry’s: 1 with no pipeline; above the whole pipeline, from 0.6 rising to 1 at twice the pipeline; otherwise how far the ratio to the pipeline created in 12 months is past 1, against twice the threshold’s distance. Money: the year-1 goals together.',
     template: '{region}’s year-1 goal in {industry} ({goal}) is {ratio} the pipeline it created there in the last 12 months ({pipeline}).',
-    templates: { none: '{region}’s year-1 goal in {industry} ({goal}) has no pipeline behind it yet.',
-      above: '{region}’s year-1 goal in {industry} ({goal}) is above its whole pipeline there ({pipeline}).' },
+    templates: { none: '{region}’s year-1 goal in {industry} ({goal}) has no pipeline behind it yet.', above: '{region}’s year-1 goal in {industry} ({goal}) is above its whole pipeline there ({pipeline}).',
+      many: '{region}’s year-1 goals in {n} priority industries are {ratio} or more the pipeline it created there in the last 12 months, led by {industries}.', manyAbove: '{region}’s year-1 goals in {n} priority industries run ahead of their pipeline ({k} above the whole pipeline there), led by {industries}.', manyNone: '{region}’s year-1 goals in {n} priority industries run ahead of their pipeline ({k} with no pipeline yet), led by {industries}.' },
     attach: ['ind-tiers', 'ind-quad', 'nb-industries'], highlight: 'cell', why: 'A year-1 industry goal well above its pipeline depends on deals not yet found; worth asking how that pipeline will be built.' });
   rule({ id: 'winsVsPeers', family: 'realism',
     description: 'Implied new customer wins (target accounts × hit rate) at least twice the simple average of the other regions.',
@@ -291,7 +291,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       bannedWhy: 'its line on why it matters used the word "{word}", which the wording guide avoids.',
       badFinding: 'one of its findings was incomplete (it needs a key, a list of regions and a list of figures).',
       noProvided: 'it compares regions but did not say how many provide the value.',
-      cover: { year3: 'year 3', delivered: 'Services partners deliver themselves, year 3, {where}', partnerOi: 'Year-1 order intake through partners and alliances, {where}', others: 'the other {n} regions together' },
+      cover: { named: '{industry} ({goal} against {pipeline})', namedNone: '{industry} ({goal} with no pipeline yet)', year3: 'year 3', delivered: 'Services partners deliver themselves, year 3, {where}', partnerOi: 'Year-1 order intake through partners and alliances, {where}', others: 'the other {n} regions together' },
       outlook: { below: 'below', above: 'above', together: 'the {n} regions with a strategic plan together', year1: 'Plan year 1 (books value), {where}', left: 'Order intake still to win, {where}',
         share: 'Share of new business order intake, {solution}, {where}' }
     }
