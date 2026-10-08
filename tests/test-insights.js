@@ -260,8 +260,12 @@
   T.suite('insight-why', function () {
     // The rules the owner's review found descriptive (D111): their insights are background, not on the charts
     var CONTEXT = ['consensus', 'split', 'strongRating', 'segmentMix', 'notYetList', 'sharedSubIndustry', 'sharedPartner', 'recurringTheme'];
-    // Every insight on the sample before D111, from the dump of every sample insight: the count must not change
-    var SAMPLE_ALL = 54;
+    // Every insight on the sample before D111, from the dump of every sample insight: the count must not change. D112
+    // (SAMPLE_EXPECT.s01 to s04) then adds one industryCover insight per region with a finding (D121), the priorityVsPlan
+    // findings, one each of servicesDelivery and partnerLoad and Manufacturing's consensus, and takes away its split and
+    // the three findings of the two retired rules
+    var S112 = window.SAMPLE_EXPECT, SAMPLE_ALL = 54 + S112.s01.fired.map(function (f) { return f.region; })
+      .filter(function (r, i, all) { return all.indexOf(r) === i; }).length + S112.s02.fired.length + 2 + 1 - 1 - 3;
     function cmpAll() { return Object.assign(TAP.store.defaults().cmp, { mode: 'all' }); }
     function txt(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
     function visible(n) {
