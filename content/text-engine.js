@@ -30,7 +30,7 @@ Object.assign(window.TAP_CONTENT.text, {
     // Selected regions (D99): one region or more
     set: 'Showing {n} selected {regions}: {names}',
     setOne: 'Showing {name} only',
-    // All regions combined (D99)
+    // All regions combined (D99): no longer on the comparison bar (D114); the engine keeps it for internal callers
     org: 'All {n} {regions} combined into one figure, as if they were one region',
     // Data sources panel only (US-1.1.6)
     coloursRepeat: 'The data has {n} regions but there are {k} distinct region colours, so colours repeat after the {k}th region. Labels and legends still name every region.'
@@ -44,7 +44,7 @@ Object.assign(window.TAP_CONTENT.text, {
     restTotal: 'Total of the other {n} {regions}',
     restAverageOne: 'Average of the other region',
     restTotalOne: 'Total of the other region',
-    // All regions combined (D99), on the bar or row that stands for every region added together
+    // All regions combined (D99), on the bar or row that stands for every region added together (internal since D114)
     org: 'All {n} {regions} combined',
     orgOne: 'The one region, combined',
     explainAverage: 'Each region counts equally. For rates such as hit rate, larger regions count more, in proportion to their size.',

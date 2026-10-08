@@ -79,7 +79,7 @@
   }); }
 
   function modeSteps(v) {
-    ['all', 'set', 'one', 'org'].forEach(function (m) {
+    ['all', 'set', 'one'].forEach(function (m) {
       step(v + ': mode ' + m, function () { click($('.tap-cmp__mode[data-mode="' + m + '"]')); });
       step(v + ': mode ' + m + ' applied', function () {
         expect(state().cmp.mode === m, 'state.cmp.mode is ' + state().cmp.mode);

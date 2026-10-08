@@ -305,7 +305,7 @@
     }
     function cmp(c) { return Object.assign(TAP.store.defaults().cmp, c); }
 
-    // D99: four modes on screen; the engine still resolves an old 'pair' (one vs one) for code that passes one in.
+    // D99, D114: three modes on screen; the engine still resolves an old 'pair' (one vs one) and 'org' for code that passes one in.
     T.test('TPV-TC-075', 'Each comparison mode gives exactly the expected regions and combined figures', function (a) {
       a.deepEqual(pick(TAP.scope.entities(cmp({ mode: 'all' }))), [region('alpha', 'region', 0, 'Region A'),
         region('bravo', 'region', 1, 'Region B'), region('charlie', 'region', 2, 'Region C'), region('delta', 'region', 3, 'Region D')], 'all');

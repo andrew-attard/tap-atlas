@@ -256,8 +256,8 @@
 
     T.test('X-overview-follows-cmp', 'Cards follow the comparison bar at once, and stop listening once the view is gone', function (a) {
       var m = mountView();
-      TAP.store.set({ cmp: { mode: 'org' } });
-      a.equal(qsa('.tap-ov-card', m.host).length, 1, 'organization total: one card');
+      TAP.store.set({ cmp: { mode: 'set', set: ['charlie'] } });
+      a.equal(qsa('.tap-ov-card', m.host).length, 1, 'one region selected: one card');
       TAP.store.set({ cmp: { mode: 'pair', focus: 'bravo', second: 'alpha' } });
       a.deepEqual(qsa('.tap-ov-card', m.host).map(function (n) { return n.getAttribute('data-entity'); }), ['bravo', 'alpha'], 'pair');
       m.handle.destroy();

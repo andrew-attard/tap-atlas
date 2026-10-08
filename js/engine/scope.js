@@ -108,10 +108,12 @@
     return ids().filter(function (id) { return inScope[id]; });
   }
 
-  // "One vs one" ('pair') left the screen (D99). An old setting that names it (an address, a presentation step, a
-  // recorded step) is read as a selection of its regions, in file order; without a valid second region, the focus
-  // alone. Any other comparison is returned as it is.
+  // "One vs one" ('pair') left the screen (D99), and "All regions combined" ('org') too (D114). An old setting that
+  // names one (an address, a presentation step, a recorded step) is read as a selection of its regions, in file order
+  // (the focus alone without a valid second region), or as all regions. Any other comparison is returned as it is.
+  // resolve() still draws 'org' for code that passes it in directly.
   function upgrade(cmp) {
+    if (cmp && cmp.mode === 'org') return Object.assign({}, cmp, { mode: 'all' });
     if (!cmp || cmp.mode !== 'pair') return cmp;
     var named = [cmp.focus].concat(cmp.second !== cmp.focus ? [cmp.second] : []);
     var set = ids().filter(function (id) { return named.indexOf(id) >= 0; });

@@ -304,7 +304,7 @@
       sel.value = 'pl1';
       sel.dispatchEvent(new Event('change', { bubbles: true }));
       a.deepEqual(last().opts, { sort: 'agreement', filter: 'pl1' }, 'both kept');
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
       a.deepEqual(last().opts, {}, 'reset when the comparison changes');
     }));
 
@@ -360,7 +360,7 @@
       p.destroy();
       a.equal(window.echarts.getInstanceByDom(el), undefined, 'chart disposed');
       var n = calls.length;
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
       a.equal(calls.length, n, 'no rebuild after destroy');
     }));
   });
@@ -661,8 +661,8 @@
       s.report(fakeDef());
       var p = s.panel('x-fake');
       openCompare(p);
-      choose(p, 'cmp-mode', 'org');
-      a.equal(last().cmp.mode, 'org');
+      choose(p, 'cmp-mode', 'one');
+      a.equal(last().cmp.mode, 'one');
       click(qs('[data-action="custom-reset"]', p.el));
       a.deepEqual(last().cmp, TAP.store.get().cmp, 'shared comparison');
       a.equal(qs('.tap-panel__custom', p.el), null, 'badge gone');
@@ -672,7 +672,7 @@
       s.report(fakeDef());
       var p = s.panel('x-fake');
       openCompare(p);
-      choose(p, 'cmp-mode', 'org');
+      choose(p, 'cmp-mode', 'set');
       TAP.store.set({ cmp: { mode: 'one', focus: 'charlie' } });
       a.equal(last().cmp.mode, 'one');
       a.equal(last().cmp.focus, 'charlie');
@@ -683,7 +683,7 @@
       s.report(fakeDef());
       var p = s.panel('x-fake');
       openCompare(p);
-      choose(p, 'cmp-mode', 'org');
+      choose(p, 'cmp-mode', 'one');
       TAP.store.set({ view: 'industry' });
       TAP.store.set({ view: 'overview' });
       a.equal(last().cmp.mode, 'all');
@@ -709,7 +709,7 @@
       s.report(fakeDef());
       s.panel('x-fake', { cmp: FIXED });
       var epoch = TAP.store.get().scopeEpoch;
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'set', set: ['alpha'] } });
       a.ok(TAP.store.get().scopeEpoch !== epoch, 'the scope epoch moved');
       a.equal(last().cmp.mode, 'one', 'kept after a comparison change');
       a.equal(last().cmp.focus, 'bravo');
@@ -723,8 +723,8 @@
       var p = s.panel('x-fake', { cmp: FIXED });
       openCompare(p);
       a.equal(qs('select[data-control="cmp-mode"]', p.el).value, 'one', 'editor starts from the fixed comparison');
-      choose(p, 'cmp-mode', 'org');
-      a.equal(last().cmp.mode, 'org', 'the override wins');
+      choose(p, 'cmp-mode', 'set');
+      a.equal(last().cmp.mode, 'set', 'the override wins');
       a.ok(qs('.tap-panel__custom', p.el), 'and shows its badge');
       click(qs('[data-action="custom-reset"]', p.el));
       a.equal(last().cmp.mode, 'one', 'reset returns to the fixed comparison');
@@ -1006,8 +1006,8 @@
         var p = s.panel('ov-ambition'), take = function () { return txt(qs('.tap-panel__titles', p.el)); };
         var sentence = all[0].sentence.slice(0, 30);
         a.equal(take().indexOf(sentence), -1, 'All regions: not under the question');
-        TAP.store.set({ cmp: { mode: 'org' } });
-        a.equal(take().indexOf(name), -1, 'organization total: not named');
+        TAP.store.set({ cmp: { mode: 'set', set: [other] } });
+        a.equal(take().indexOf(name), -1, 'another region selected alone: not named');
         TAP.store.set({ cmp: { mode: 'one', focus: other, restAs: 'combined' } });
         a.equal(take().indexOf(name), -1, 'one against the rest: not named');
         TAP.store.set({ cmp: { mode: 'one', focus: who } });
@@ -1177,7 +1177,7 @@
       try { p = s.panel('x-untitled'); } catch (e) { a.ok(false, 'creating the panel threw: ' + e.message); return; }
       a.ok(!!qs('.tap-panel__error', p.el), 'the panel shows the error');
       try {
-        TAP.store.set({ cmp: { mode: 'org' } });
+        TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
         TAP.store.set({ industry: 'ind1' });
         a.ok(true, 'store changes afterwards do not throw');
       } catch (e) { a.ok(false, 'a store change threw: ' + e.message); }
@@ -1192,7 +1192,7 @@
       try { s.panel('x-fake'); } catch (e) { threw = true; }
       a.ok(threw, 'the first drawing threw');
       var before = n;
-      try { TAP.store.set({ cmp: { mode: 'org' } }); } catch (e) { /* the store reports listener errors itself */ }
+      try { TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } }); } catch (e) { /* the store reports listener errors itself */ }
       finally { TAP.panelMenus.tools = saved; TAP.store.reset(); }
       a.equal(n - before, 0, 'no drawing after the store change');
     }));

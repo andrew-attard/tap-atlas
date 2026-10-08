@@ -16,8 +16,9 @@ Object.assign(window.TAP_CONTENT.text, {
   compare: {
     label: 'Compare',
     modesLabel: 'Comparison mode',
-    // Four modes, in the bar's order (D99). One vs one is no longer offered; old settings read it as a selection.
-    modes: { all: 'All regions', set: 'Selected regions', one: 'One vs the rest', org: 'All regions combined' },
+    // Three modes, in the bar's order (D99, D114). One vs one and All regions combined are no longer offered; old
+    // settings read them as a selection and as all regions.
+    modes: { all: 'All regions', set: 'Selected regions', one: 'One vs the rest' },
     focus: 'Focus region',
     // The others in one vs the rest, as one control: one by one, or combined as their average or total (D50)
     rest: 'The others',

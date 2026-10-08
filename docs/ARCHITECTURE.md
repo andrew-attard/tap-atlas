@@ -79,7 +79,7 @@ The three pages load the same app scripts in the same order (lint checks this). 
 ```js
 state = {
   view: 'overview',
-  cmp: { mode: 'all',            // 'all' | 'set' | 'one' | 'org' (D99); 'pair' is read for old files only
+  cmp: { mode: 'all',            // 'all' | 'set' | 'one' (D99, D114); 'pair' and 'org' are read for old files only
          focus: null,            // region id ('one')
          second: null,           // region id (old 'pair' only)
          set: [],                // region ids ('set'): one or more (D99)
@@ -212,12 +212,12 @@ A **multi-row source** (a sum over several rows of one region) has `row: null` a
 | `all` | every region, `role: 'region'`, own colour |
 | `one` | focus (`role: 'focus'`); then the rest, either individually (`role: 'muted'`, focus grey) or as one `rest` entity (`role: 'combined'`, dark grey, `how` from `restAgg`) |
 | `set` | Selected regions: one region or more, in file order, own colours (D99) |
-| `org` | All regions combined: one `org` entity over all regions, `how: 'total'`, labelled "All 7 regions combined" |
+| `org` | All regions combined: one `org` entity over all regions, `how: 'total'`, labelled "All 7 regions combined". Off the screen since D114: kept for code that passes it in directly (the row bubble chart, tests); old settings read it as `all` |
 | `pair` | read for old files only (D99): focus and second, both in their own colours. Nothing on screen offers it |
 
 - `sentence(cmp)` gives the plain sentence, from content templates, for example "Showing Region C against the average of the other 6 regions".
 - `regionIds(cmp)` gives every region in scope.
-- `upgrade(cmp)` reads an old one vs one (D99): a `pair` becomes `{mode: 'set', set: [focus, second]}` in file order, or the focus alone without a valid second; any other comparison comes back as it is. The address bar, presentation steps, recorded steps, the comparison bar and the panel's own comparison read a cmp through it.
+- `upgrade(cmp)` reads an old one vs one (D99): a `pair` becomes `{mode: 'set', set: [focus, second]}` in file order, or the focus alone without a valid second. An old all regions combined (D114): an `org` becomes `{mode: 'all'}`. Any other comparison comes back as it is. The address bar, presentation steps, recorded steps, the comparison bar and the panel's own comparison read a cmp through it.
 - `colorOf(regionId)` gives the region's fixed colour by file order. Past 8 regions the colours cycle and a warning goes to the data sources panel.
 - No default ever names a sample-specific region.
 - The ids `rest` and `org` belong to the combined entities, so the data check refuses them as region ids (#344).
@@ -665,7 +665,7 @@ On screen the running order is called a presentation, and `config/running-order.
   highlight: { regionIds: ['north'], mark: 'bar' } }          // optional Target
 ```
 
-A step's `cmp.mode` is `'all'`, `'set'` (one region or more), `'one'` or `'org'`; an old `'pair'` with `focus` and `second` is read as `'set'` with those two regions (D99), and recording never writes it. A step may also set `industry: '<industry id>'` (one-industry reports such as the ratings). `type: 'table'` shows the table view and `breakdown: 'none'` starts with no breakdown; recording writes all three when they apply. `opts.initial` accepts the same: `type: 'table'`, `breakdown: 'none'` and `industryId`.
+A step's `cmp.mode` is `'all'`, `'set'` (one region or more) or `'one'`; an old `'pair'` with `focus` and `second` is read as `'set'` with those two regions (D99), an old `'org'` as `'all'` (D114), and recording never writes either. A step may also set `industry: '<industry id>'` (one-industry reports such as the ratings). `type: 'table'` shows the table view and `breakdown: 'none'` starts with no breakdown; recording writes all three when they apply. `opts.initial` accepts the same: `type: 'table'`, `breakdown: 'none'` and `industryId`.
 
 - `TAP.present.check(steps)` returns `{ok: [...], skipped: [{index, reason}]}`; skipped steps go to `TAP.notes` with source `'presentation'` (a new notes source; the data sources panel lists it, PRESENT adds that).
 - `TAP.present.start(steps?)` saves `{view, expanded}` and the page scroll, then shows each step in the expanded panel. `next()`, `prev()`, `first()`, `stop()`, `current()`. `stop()` restores what was saved. `TAP.keys.unbind()` (and so `TAP.app.stop()`) ends a running presentation.

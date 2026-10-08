@@ -14,7 +14,7 @@ QA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$QA_DIR/../lib-browser.sh"
 
 # Comparison modes as labels; qa_mode_query turns each into the screenshot query.
-QA_MODES="${QA_MODES:-all one-average one-total set-one set org}"
+QA_MODES="${QA_MODES:-all one-average one-total set-one set}"
 QA_DATA="${QA_DATA:-data/sample-plan-data.js}"
 QA_NODE="$(command -v node || echo "$HOME/.local/bin/node")"
 
@@ -70,7 +70,6 @@ qa_mode_query() {
     one-total) echo "mode=one&focus=$first&rest=total" ;;
     set-one) echo "mode=set&set=$first" ;;
     set) echo "mode=set&set=$first,$mid,$last" ;;
-    org) echo "mode=org" ;;
     *) echo "mode=$1" ;;
   esac
 }

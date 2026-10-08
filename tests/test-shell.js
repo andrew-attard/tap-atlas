@@ -838,7 +838,7 @@
     T.test('X-layers-esc-order', 'Esc closes the comparison explanation first, then the side panel', function (a) {
       run(function () {
         var root = startApp();
-        TAP.store.set({ cmp: { mode: 'org' } });
+        TAP.store.set({ cmp: { mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'total' } });
         TAP.layers.open('sources');
         qs('.tap-cmp__explain', root).click();
         keyEsc();

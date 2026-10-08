@@ -25,9 +25,9 @@
  *              or 'none' for no breakdown on a chart that starts with one
  *   industry   the industry id a one-industry chart shows (the ratings, for example)
  *   cmp        what to compare, as in the comparison bar:
- *                mode     'all' (all regions), 'set' (selected regions), 'one' (one against the rest)
- *                         or 'org' (all regions combined). An older 'pair' (one against one, with focus
- *                         and second) is still read, as a selection of its two regions
+ *                mode     'all' (all regions), 'set' (selected regions) or 'one' (one against the rest).
+ *                         An older 'pair' (one against one, with focus and second) is still read, as a
+ *                         selection of its two regions, and an older 'org' as all regions
  *                focus    the region id the comparison is about ('one')
  *                set      a list of one region id or more ('set')
  *                restAgg  the rest as an 'average' or a 'total' ('one'); rest is accepted as a shorter name
