@@ -32,7 +32,7 @@ const APP = [
   'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js', 'js/engine/custom.js',
   'config/reports.js', 'config/reports-overview.js', 'config/reports-industry.js', 'config/reports-newbusiness.js',
   'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/reports-outlook.js', 'config/views.js', 'config/profile.js', 'config/running-order.js',
-  'config/comment-themes.js', 'config/insight-rules.js',
+  'config/comment-themes.js', 'config/insight-rules.js', 'config/insight-wording.js',
   'js/reports/tier-stats.js', 'js/reports/tier-grid.js', 'js/reports/quadrant-labels.js', 'js/reports/quadrant.js', 'js/reports/ratings-grid.js', 'js/reports/details.js',
   'js/reports/details-rows.js', 'js/reports/cg-builders.js', 'js/reports/nb-grid.js', 'js/reports/nb-levers.js', 'js/reports/row-bubble.js', 'js/reports/themes.js', 'js/reports/stack-draw.js', 'js/reports/dim-stack.js', 'js/reports/pt-books.js',
   'js/reports/outlook-side.js', 'js/reports/outlook-side-draw.js', 'js/reports/outlook-coverage.js',
