@@ -47,7 +47,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'Do the partners have the people behind their planned contribution?',
     explain: {
       shows: 'Every named partner: its sales and consultant staff (full-time equivalent) across, the ARR it is planned to bring over three years up, and its three-year services as the bubble size.',
-      read: 'Each bubble is one partner in its region’s colour, named beside it or numbered in the key. Partners with no staff figures can’t be placed and are named below the chart. Click a bubble for the partner’s details, including order intake per person, which this app calculates.',
+      read: 'With several regions, each region’s 5 partners with the most planned order intake (three-year ARR plus services), each in its region’s colour and named beside its bubble; the list below has every partner. With one region, every partner, coloured by its channel. Partners with no staff figures can’t be placed and are named below the chart. Click a bubble for the partner’s details, including order intake per person, which this app calculates.',
       lookFor: 'Partners high on the chart and far to the left: a large planned contribution from few people, worth discussing with the region.'
     },
     shape: 'xyz',
@@ -62,7 +62,9 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['bubble', 'table'],
     breakdowns: [],
     sources: ['IN', 'APP'],
-    options: { label: 'all' }
+    // D137: with several regions, each region's 5 partners with the largest ARR plus services, every name beside its
+    // bubble (no numbered key); with one region, every partner coloured by channel (the D124 palette)
+    options: { label: 'all', names: 'beside', topPerRegion: 5, topBy: ['arr3', 'services3'], oneRegionColors: 'channel' }
   };
 
   // US-4.5.1: order intake at customer value next to the value through the organization's books. The builder draws
@@ -75,7 +77,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How much of each plan runs through the organization’s own books?',
     explain: {
       shows: 'Each region’s order intake twice: at customer value, the price the customer pays, and at books value, the part that runs through the organization’s own books. Both are split by channel, with the difference in money and as a share of customer value.',
-      read: 'Two bars per region, customer value above books value, each channel in its own colour, named in the legend; split by product category, the categories are shades of the region’s colour. The two differ for three reasons. Resellers keep a margin, so less than the customer price reaches the books. Some services are delivered by partners, who invoice them. And the outsourcing % a region sets moves that share of its services from its own delivery to partners. The difference compares ARR and services, the two types both values hold: software perpetual and hardware appear in the books value only. Pick one plan year or the three years together, and switch the split to product category.',
+      read: 'Two bars per region, customer value above books value, each channel in its own colour, named in the legend; split by product category, each category has its own colour instead, the same in every bar. The two differ for three reasons. Resellers keep a margin, so less than the customer price reaches the books. Some services are delivered by partners, who invoice them. And the outsourcing % a region sets moves that share of its services from its own delivery to partners. The difference compares ARR and services, the two types both values hold: software perpetual and hardware appear in the books value only. Pick one plan year or the three years together, and switch the split to product category.',
       lookFor: 'Regions where a large share of customer value does not run through the books, the channels that difference comes from, and whether it changes from year to year.'
     },
     shape: 'parts',
@@ -86,7 +88,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stackedBar', 'table'],
     breakdowns: [],
     sources: ['DER', 'APP'],
-    options: { measuresAs: 'categories', partColors: 'channel' }   // channel colours when split by channel (D124)
+    options: { measuresAs: 'categories', partColors: 'channel' }   // the split in use picks its palette: channel (D124) or category (D135)
   };
 
   // US-4.5.2: order intake by route to market, from the recap. One part per route in the lookup's order; a route
@@ -97,7 +99,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'Which routes to market does each plan rely on?',
     explain: {
       shows: 'Each region’s order intake by route to market, from the recap: its own sales force, customer success, Alliance B as reseller, other resellers, system integrators and partner existing business.',
-      read: 'One bar per region, each as wide as 100%, so the mix can be compared whatever the size of the plan. Each route is a part of the bar, numbered as in the key. The stacked bar view shows the amounts in place of the shares, and the plan year breakdown gives a bar per year. A route with no figure in a region’s recap has no part and reads “not provided” in the table.',
+      read: 'One bar per region, each as wide as 100%, so the mix can be compared whatever the size of the plan. Each route is a part of the bar in its own colour, the same in every bar and named in the legend. Switch between Share of total and Amount above the chart; the plan year breakdown gives a bar per year. A route with no figure in a region’s recap has no part and reads “not provided” in the table.',
       lookFor: 'Plans that rely on resellers or system integrators much more than the others, and routes whose share changes from year to year.'
     },
     shape: 'parts',
@@ -108,7 +110,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stacked100', 'stackedBar', 'table'],
     breakdowns: ['year'],
     sources: ['DER', 'IN'],
-    options: { by: 'route' }
+    options: { by: 'route', partColors: 'route', amountShare: true }   // D135: route colours and the Amount / Share switch
   };
 
   // US-4.5.3: the partner base by maturity level, in the lookup's order (Recruit to Strategic), counted and as the
@@ -119,7 +121,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How established are the partners carrying each plan?',
     explain: {
       shows: 'Each region’s named partners by maturity level, from Recruit to Strategic as the template orders them: how many partners sit at each level, and the three-year order intake (ARR plus services) they are planned to bring. Partners with no level are counted under “Maturity not provided”.',
-      read: 'One bar per region, the levels as parts numbered as in the key, lowest level first. Switch between the number of partners and their planned order intake, and break down by partner type to see a bar per type. The 100% view compares the mix whatever the size of the partner base.',
+      read: 'One bar per region, the levels as parts in one colour from light to dark, Recruit lightest, named in the legend. Switch between the number of partners and their planned order intake, and between Amount and Share of total, which compares the mix whatever the size of the partner base. With one region, break down by partner type to see a bar per type.',
       lookFor: 'Plans whose order intake rests on partners still being recruited or onboarded, regions with no strategic partner, and partners named without a level or type.'
     },
     shape: 'parts',
@@ -130,7 +132,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stackedBar', 'stacked100', 'table'],
     breakdowns: ['partnerType'],
     sources: ['IN'],
-    options: { by: 'maturity' }
+    options: { by: 'maturity', partColors: 'maturity', amountShare: true }   // D135: the ordered maturity palette and the switch
   };
 
   // US-2.3.4: every named partner, as a sortable list.
@@ -153,7 +155,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
       { key: 'oiPerFte' }, { key: 'alsoNamed' }
     ],
     sort: { key: 'arr3', dir: 'desc' },
-    filter: [{ key: 'channel' }],
+    filter: [{ key: 'channel', label: 'Channels', multi: true }],   // D138: a dropdown with counts
     defaultType: 'list',
     types: ['list'],
     breakdowns: [],

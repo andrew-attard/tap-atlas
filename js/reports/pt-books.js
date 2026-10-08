@@ -153,8 +153,8 @@
     if ((ctx.type || def.defaultType) === 'table') return res;
     var d = { label: TAP.measures.meta(BK).short, unit: 'money', parts: mo.parts, rows: rowsOf(mo), entities: mo.entities, groups: [],
       numbered: false, highlight: ctx.highlight, right: th.space[12] * 5, tip: tipFn(mo),
-      // Split by channel, the parts take the channel colours (D124); by category they stay region shades
-      paints: kit.partPaints(def, mo.parts.map(function (p) { return p.value; })) };
+      // The split in use names its palette: channel colours (D124) or category colours (D135), the same in every bar
+      paints: kit.partPaints({ options: { partColors: mo.split } }, mo.parts.map(function (p) { return p.value; })), paintRole: mo.split };
     res.option = D.bars(d, 'stackedBar');
     res.legend = D.legend(d);
     if (d.rows.length > 8) res.height = th.space[12] * 2 + d.rows.length * th.space[8];
