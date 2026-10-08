@@ -100,10 +100,13 @@
       });
       a.equal(TAP.sources.address(build(def({ rows: 'newBusiness', columns: [{ key: 'market' }], filter: [], sort: null })).table.rows[2].src).text,
         'Region B plan.xlsx › 2. New Business › D20');
-      var tr = html(res).querySelector('tr[data-tap-row="accounts:alpha:13"]');
+      var box = T.dom.mount();
+      TAP.dom.html(box, res.html);
+      var tr = box.querySelector('tr[data-tap-row="accounts:alpha:13"]');
       a.ok(tr, 'the row carries data-tap-row');
       a.equal(tr.getAttribute('data-tap-region'), 'alpha');
-      a.match(tr.textContent, /Region A plan\.xlsx, row 13/, 'the row shows its source');
+      a.ok(tr.textContent.indexOf('plan.xlsx') < 0, 'no address as text (D100)');
+      a.match(window.T_TIP_TEXT(tr.querySelector('.tap-srctip')), /Region A plan\.xlsx, row 13/, 'the row’s data icon shows its source');
       a.deepEqual(res.target({ data: { regionId: 'alpha', row: 'accounts:alpha:13' } }),
         { reportId: 'x-list', regionIds: ['alpha'], industryIds: ['ind1'], accountIds: ['a4'], mark: 'row',
           items: [{ section: 'customerGrowth', regionId: 'alpha', row: 13 }] });
