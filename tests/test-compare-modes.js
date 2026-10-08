@@ -276,8 +276,11 @@
       try {
         var x = TAP.insights.all().filter(function (i) { return i.ruleId === 'spTotal'; });
         a.equal(x.length, 1, 'one finding');
-        a.equal(x[0] && x[0].sentence, 'Together, the three-year plans of the 6 regions with a strategic plan are 8% below their ' +
-          'strategic plans (€71.4M against €77.6M). Not included, with no strategic plan: Northern Europe.', 'as on the sample');
+        // The figures of PLANTED-CASES R03 (SAMPLE_EXPECT.r03): D112's S03 moved them from €71.4M against €77.6M (8%)
+        var R3 = window.SAMPLE_EXPECT.r03, F = TAP.format;
+        a.equal(x[0] && x[0].sentence, 'Together, the three-year plans of the 6 regions with a strategic plan are ' + F.pct(-R3.variancePct3) +
+          ' below their strategic plans (' + F.money(R3.plans3) + ' against ' + F.money(R3.strategicPlans3) + '). Not included, with no strategic plan: Northern Europe.', 'as on the sample');
+        a.equal(F.money(R3.plans3) + ' ' + F.money(R3.strategicPlans3) + ' ' + F.pct(-R3.variancePct3), '€73.1M €78.9M 7%', 'hand-checked: 73,053.1, 78,889, 7.4%');
       } finally { TAP.data.load(T_FIXTURE('mini')); }
     });
   });
