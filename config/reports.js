@@ -45,6 +45,8 @@
  *   defaultBreakdown  Optional. The breakdown the panel starts with, e.g. 'year'. Must be one of "breakdowns".
  *   rows, columns, sort, filter   For 'list' reports and row bubbles (docs/ARCHITECTURE.md 17.4 and 17.7).
  *   drill        Optional. { next: '<reportId>', label } opens that report a level down on click (17.6).
+ *                rootLabel: the chart's short name, the first step of the drill breadcrumb and the back button's
+ *                words one level down ("Industries by region"); the title when left out (D123).
  *   sources      Kinds of data named on the source line: 'IN' leader input, 'PRE' system figure,
  *                'DER' calculated in the workbook, 'APP' calculated by this app.
  *   options      Report-level settings. options.weights overrides the rate weights in config/settings.js for

@@ -136,7 +136,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/panel/panel-menus.js` | The panel's toolbar, menus and controls |
 | `js/panel/panel-export.js` | Saves or copies a chart as an image |
 | `js/panel/panel-insights.js` | The panel's short insight list, and the figures one line per region (also used by the Insights page) |
-| `js/panel/panel-drill.js` | Drill-down inside a panel: the levels, the trail of names, and going back up |
+| `js/panel/panel-drill.js` | Drill-down inside a panel: the levels, the trail of names, the band, level heading and back button while drilled, and going back up without moving the page (D123) |
 | `js/panel/panel-expand.js` | Expanded and full-screen charts: the slim strip, arrow-key stepping |
 
 ### `js/ui/` and `js/views/`

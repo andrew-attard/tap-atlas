@@ -603,9 +603,11 @@ All return cells as in section 9; ids other streams may rely on:
 
 ### 17.6 Drill-down (US-2.7.1, PANEL2)
 
-- A definition may carry `drill: { next: '<reportId>', label: '<level name>' }`. Clicking a mark whose target names at least one region opens `next` in the same panel, with `ctx.drill` set to that target. The child report may itself have `drill`.
-- The panel keeps the level stack and draws a breadcrumb of buttons in its header ("All regions › Healthcare › Hospitals"); Backspace or Alt + Left goes up one level while the panel has focus. A change of comparison or view returns to the top level.
-- Reports without `drill` keep the Phase 1 click (details). `TAP.panelDrill.create(panel)` returns `{push(target, def), up(), top(), path(), destroy()}`.
+- A definition may carry `drill: { next: '<reportId>', label: '<level name>', rootLabel: '<chart short name>' }`. Clicking a mark whose target names at least one region opens `next` in the same panel, with `ctx.drill` set to that target. The child report may itself have `drill`. `rootLabel` (optional, D123) is the chart's short name ("Industries by region"): the breadcrumb's first step and the back button's words one level down; the report's title when left out.
+- The panel keeps the level stack and draws a breadcrumb of buttons in its header ("Industries by region › Healthcare, North America"; the current step is marked `aria-current`); Backspace or Alt + Left goes up one level while the panel has focus. A change of comparison or view returns to the top level.
+- While drilled (D123) the panel also shows a band across the top of its header ("Drilled in: step 2 of 2"), a level heading under the question naming what was selected and what is shown ("North America · Healthcare: the 3 new business rows behind it", from the target's regions, industry, solution or builder label and, for a list, its row count), and a "← Back to <level above>" button first under the header. Wording: `panel.drill*` in `content/text-panel.js`.
+- A step keeps the panel's top where it was on screen (or just under the sticky bar if it was above it) and moves focus with `preventScroll` (D110): to the back button after a step down; after a step up to the element that was selected, else the panel title.
+- Reports without `drill` keep the Phase 1 click (details). `TAP.panelDrill.create(panel)` returns `{push(target, def, from), up(), top(), path(), back(), band(), heading(def, res), destroy()}`.
 
 ### 17.7 Phase 2 builders and rules
 

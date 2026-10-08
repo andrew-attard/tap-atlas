@@ -81,6 +81,15 @@ Object.assign(window.TAP_CONTENT.text, {
     drillHint: 'Select part of the chart to step down to {level}.',
     drillHintList: 'Select a row of the list to step down to {level}.',
     drillKeys: '(Backspace or Alt + ← goes back up)',
+    // While drilled (D123): the back button, the band in the header and the level heading under the title
+    drillBack: '← Back to {level}',
+    drillBand: 'Drilled in: step {n} of {total}',
+    drillWhat: '{regions} · {subject}',
+    drillRegions: '{n} regions',
+    drillRows: '{what}: the {n} {kind} rows behind it',
+    drillRow: '{what}: the 1 {kind} row behind it',
+    drillLevel: '{what}: the {level} behind it',
+    drillKinds: { newBusiness: 'new business', accounts: 'customer account', partners: 'partner' },
     drillUnknown: 'The next drill level "{id}" is not a report.',
     drillLoop: 'The drill levels lead back to "{id}".',
 

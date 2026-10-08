@@ -51,11 +51,17 @@
 
   // A click: a report with drill levels opens the next level for a target naming a region (17.6); otherwise a
   // list row opens its details only, and anything else follows the usual rule.
-  function go(p, b, target, row) {
-    if (b.def.drill && target && (p.drill.merge(target).regionIds || []).length && p.drill.push(target, b.def)) return;
+  // from: a selector for the element picked in builder HTML, so a step back up returns focus to it (D123).
+  function go(p, b, target, row, from) {
+    if (b.def.drill && target && (p.drill.merge(target).regionIds || []).length && p.drill.push(target, b.def, from)) return;
     if (row) { if (target) TAP.layers.openDetails(target); } else follow(target);
   }
-  function pick(p, b, d) { go(p, b, b.res.target ? b.res.target({ data: d }) : null, d.row); }
+  function pick(p, b, d) { go(p, b, b.res.target ? b.res.target({ data: d }) : null, d.row, picked(d)); }
+  function picked(d) {
+    return [['data-tap-region', d.regionId], ['data-tap-industry', d.industryId], ['data-tap-row', d.row]].map(function (x) {
+      return x[1] ? '[' + x[0] + '="' + CSS.escape(x[1]) + '"]' : ':not([' + x[0] + '])';
+    }).join('');
+  }
 
   // A [data-tap-opt] click in builder HTML (a list's sort headings, for example): a builder option, like its controls.
   function option(p) { return function (key, value) { p.st.opts[key] = value; render(p); }; }
@@ -113,20 +119,23 @@
     if (p.root.isConnected) p.wasConnected = true;
     TAP.dom.clear(p.root);
     p.root.setAttribute('aria-label', b.title);
-    p.root.className = 'tap-panel' + (big ? ' tap-panel--expanded' : '');
+    p.root.className = 'tap-panel' + (big ? ' tap-panel--expanded' : '') + (p.drill.depth() ? ' tap-panel--drilled' : '');
 
     var bodyBox = el('div', { class: 'tap-panel__body' });
     TAP.dom.append(p.root, [
       big ? X().strip(p, s) : null,
       el('header', { class: 'tap-panel__head' }, [
+        p.drill.band(),   // while drilled: the band, the level heading and then the back button (D123)
         el('div', { class: 'tap-panel__titles' }, [
           p.drill.crumbs(),
           el('h2', { class: 'tap-panel__title', tabindex: '-1', html: TAP.content.mark(b.title, p.seen) }),
+          p.drill.heading(b.def, b.res),
           b.errors.length || tabled(p, b) ? null : p.drill.hint(b.def),   // a table doesn't drill
           p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
         ]),
         TAP.panelMenus.tools(p, b, info)
       ]),
+      p.drill.back(),
       p.st.editing && b.types ? TAP.panelMenus.compareEditor(p) : null,
       b.def && !b.errors.length ? TAP.panelMenus.render(TAP.panelMenus.spec(p, b)) : null,
       ok ? I.strip(p, highlightOf(p, s)) : null,

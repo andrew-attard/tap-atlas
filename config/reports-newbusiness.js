@@ -30,7 +30,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     breakdowns: ['year'],
     sources: ['DER', 'IN'],
     // A cell opens that region's rows for the industry in the same panel (US-2.7.1); without drill-down, its details
-    drill: { next: 'nb-rows', label: 'Sub-industries and markets' },
+    drill: { next: 'nb-rows', label: 'Sub-industries and markets', rootLabel: 'Industries by region' },
     options: {}
   };
 
@@ -54,7 +54,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     breakdowns: ['year'],
     sources: ['DER', 'IN'],
     // A cell or a part opens that region's rows for the solution in the same panel (US-2.7.1)
-    drill: { next: 'nb-rows', label: 'Sub-industries and markets' },
+    drill: { next: 'nb-rows', label: 'Sub-industries and markets', rootLabel: 'Solutions by region' },
     options: { by: 'solution' }
   };
 
