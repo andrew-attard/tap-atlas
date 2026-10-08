@@ -286,13 +286,14 @@
       }
     });
 
-    T.test('X-builders-tooltip', 'Tooltips show the exact value, the region and the kind of value', function (a) {
+    T.test('X-builders-tooltip', 'Tooltips show the exact value and the region, not the kind of value (D109)', function (a) {
       var res = build('ov-ambition', 'stackedBar', { mode: 'all' });
       var it = items(res).filter(function (x) { return x.d.entityId === 'alpha' && x.d.key === 'nb.arr'; })[0];
       var html = it.s.tooltip.formatter({ data: it.d });
       a.ok(html.indexOf('Region A') >= 0, 'region');
       a.ok(html.indexOf('€2,255,000') >= 0, 'exact value');
-      a.ok(html.indexOf(TAP.format.kind('DER').label) >= 0, 'kind of value');
+      a.ok(html.indexOf(TAP.format.kind('DER').label) < 0, 'no kind of value: it sits behind the data icon (D109)');
+      a.ok(html.indexOf(TAP.content.text('chart.kind')) < 0, 'no "Kind of value" row');
     });
 
     T.test('X-builders-nudge', 'Two points on the same spot are nudged apart, but tooltips and tables keep the exact values', function (a) {
