@@ -293,7 +293,7 @@
       a.ok(html.indexOf('Region A') >= 0, 'region');
       a.ok(html.indexOf('€2,255,000') >= 0, 'exact value');
       a.ok(html.indexOf(TAP.format.kind('DER').label) < 0, 'no kind of value: it sits behind the data icon (D109)');
-      a.ok(html.indexOf(TAP.content.text('chart.kind')) < 0, 'no "Kind of value" row');
+      a.ok(html.indexOf('Kind of value') < 0, 'no "Kind of value" row');
     });
 
     T.test('X-builders-nudge', 'Two points on the same spot are nudged apart, but tooltips and tables keep the exact values', function (a) {

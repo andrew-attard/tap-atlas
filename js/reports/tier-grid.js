@@ -169,7 +169,7 @@
       var d = prm.data, p = rowsT.filter(function (x) { return x.entityId === d.entityId && x.industryId === d.industryId; })[0];
       var tier = p.tc.state === 'value' ? TAP.format.tier(p.tc.v) : t('states.notProvided');
       if (p.tc.state === 'value' && p.tc.v === 1 && p.r.ind.groupPriority) tier = t('tierGrid.cellCentral', { tier: tier });
-      return K.tip(p.r.ind.name + ' · ' + p.c.label, [[t('tierGrid.tierTip'), tier], [meta.label, K.exact(p.sc, scol)], [t('chart.kind'), TAP.format.kind(meta.kind).text]]);
+      return K.tip(p.r.ind.name + ' · ' + p.c.label, [[t('tierGrid.tierTip'), tier], [meta.label, K.exact(p.sc, scol)]]);
     }
     var np = K.npSeries(gaps.map(function (p) { return { value: p.at, entityId: p.entityId, industryId: p.industryId, text: '', title: p.r.ind.name + ' · ' + p.c.label, what: t('tierGrid.tierTip') }; }));
     np.label.show = false;

@@ -152,7 +152,6 @@ Object.assign(window.TAP_CONTENT.text, {
     entityColumn: 'Region',
     industryColumn: 'Industry',
     total: 'Total',
-    kind: 'Kind of value',
     how: 'Combined',
     partial: 'Partly provided',
     leftOut: 'Left out',
