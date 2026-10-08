@@ -468,6 +468,7 @@ The import itself also records anything worth checking as a note in `source.note
 2. **Year labels:** confirm the plan years and whether Year 1 is the first forecast year.
 3. **Partner maturity values:** settled in Phase 4. The full template gives five levels (Recruit, Onboard, Enable, Skill, Strategic), carried in `lookups.partnerMaturity`.
 4. **The rest of the template:** sections not covered above go in as [extra sections](#extra-sections) (US-3.2.1); a section that needs its own charts later gets fields of its own, added to this contract.
+5. **The region's own sales and consultant headcount (D113):** the template holds partner staff only, so the app cannot check sales capacity against the wins the plan needs, or delivery capacity against the services it sells. A candidate addition for the next planning cycle, not a change now.
 
 ## Changes
 

@@ -623,7 +623,11 @@ All return cells as in section 9; ids other streams may rely on:
 | `sharedSubIndustry` | shared | `rules-shared.js` | `nb-rows` |
 | `sharedPartner` | shared | `rules-shared.js` | `pt-list` |
 | `partnerCapacity` | shared | `rules-shared.js` | `pt-capacity` |
+| `partnerLoad` (D112) | shared | `rules-shared.js` | `pt-capacity`, `pt-reliance` |
+| `servicesDelivery` (D112, optional: reads the Phase 4 `servicesFromPartners`) | plan | `rules-plan.js` | `pt-reliance`, `pt-books` |
 | `recurringTheme` | themes | `rules-themes.js` | `nb-themes` |
+
+**D112 (v0.4.1)** also adds two rules to Phase 1 families: `industryCover` (realism, `rules-realism.js`; `ind-tiers`, `ind-quad`, `nb-industries`), a Tier 1 or 2 industry's year-1 goal against its whole pipeline and the pipeline created in 12 months, which replaces `noPipeline` and `priorityNoPipeline`; and `priorityVsPlan` (priorities, `rules-priorities.js`; `ind-tiers`, `nb-industries`), a priority holding a small share of its regions' new business plan, reading the `consensus` share. Each new rule carries a `why` line (D111).
 
 **Recurring themes:** `window.TAP_COMMENT_THEMES = {minRegions, themes: [{id, label, keywords: []}]}` (`config/comment-themes.js`). `TAP.themes.all()` returns `[{id, label, keywords, regions: [{regionId, quotes: [{text, src}]}]}]` ranked by number of regions; `match(text)` returns the theme ids a text mentions (whole words, any case).
 
