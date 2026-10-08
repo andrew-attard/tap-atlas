@@ -43,6 +43,10 @@ window.TAP_CONTENT.guide = {
       { id: 'viewOverview', title: 'The Overview', link: { view: 'overview' }, paragraphs: [
         'The Overview tells the organization’s story: a headline sentence, then the top insights, the three most significant findings that span at least three regions or the total of all regions, each with why it matters, "Show me" and "Hide for this session". Findings about one or two regions are on the other views, the region profiles and the Insights page. The region cards follow, each a snapshot of one region’s plan ending with the one finding about it most worth discussing, then the ambition chart.'
       ] },
+      { id: 'viewIndustry', title: 'The Market coverage view', link: { view: 'industry' }, paragraphs: [
+        'Market coverage has two parts. All industries shows the tier each region chose for every industry, then each industry placed by attractiveness against ability to win. One industry shows the six ratings behind those two scores for the industry picked, with what the leaders wrote about it.',
+        'Look for industries the regions disagree on, priorities with little pipeline behind them, and attractive markets the regions rate themselves low on. Pick an industry in the One industry part, or select a row or a bubble above.'
+      ] },
       { id: 'viewNewBusiness', title: 'The New business view', link: { view: 'newBusiness' }, paragraphs: [
         'New business shows where each region expects new customers to come from: the industries, solutions and channels its new business rests on, and the assumptions behind the number.',
         'Start with the industry grid and the solution chart, then compare levers such as target accounts and hit rate. The list below names every sub-industry and market each region targets, and which other regions target the same one.'
