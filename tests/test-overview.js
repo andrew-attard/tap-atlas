@@ -500,7 +500,11 @@
       a.ok(TAP.insights.all().some(function (x) { return x.ruleId === 'winsVsPeers' && x.regionIds[0] === 'na'; }), 'and a wins insight for North America');
       window.SAMPLE_EXPECT.regions.forEach(function (r) { noLandParts(a, card(el, r), r); });
       a.ok(txt(el).indexOf('Will it land?') < 0, 'no "Will it land?" heading');
-      a.ok(!/strategic plan/i.test(txt(el)), 'no strategic plan line');
+      // The strategic plan may come up only in a card's "To discuss" line (D130: Asia Pacific's leading insight is spGap)
+      window.SAMPLE_EXPECT.regions.forEach(function (r) {
+        var rest = Array.prototype.filter.call(card(el, r).children, function (n) { return n.getAttribute('data-part') !== 'discuss'; });
+        a.ok(!rest.some(function (n) { return /strategic plan/i.test(txt(n)); }), r + ': no strategic plan line');
+      });
       a.equal(qsa('.tap-ov-card__discuss', el).length, 0, 'no D117 discuss marker (D130’s line is .tap-ov-card__todiscuss)');
     });
 
