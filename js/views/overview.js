@@ -209,6 +209,7 @@
       if (dead) return;
       if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
       if (changed.indexOf('cmp') >= 0) { drawText(); drawCards(); }
+      else if (changed.indexOf('hiddenInsights') >= 0) drawCards();   // a card's "discuss" markers follow (D117)
     });
     // Keeps the card rows even when the window or zoom changes.
     var ro = window.ResizeObserver ? new window.ResizeObserver(function () { TAP.overviewCards.layout(cardsHost); }) : null;

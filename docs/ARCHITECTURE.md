@@ -379,7 +379,8 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 | `TAP.glossary.popover(termId, anchorEl)` / `close()` | Term popover: the term, its short definition and why it matters (CONTENT). No A to Z list (D98) |
 | `TAP.explain.open(reportId, {cmp})` / `sections(reportId, cmp)` | The explanation side panel; `cmp` is a panel's own comparison when it has one. `sections` returns the content as data (PAGES) |
 | `TAP.tour.offer()` / `start()` / `stop()` | The welcome card (offered by `app.start` on the real page only) / the tour itself / remove both. Also `steps()` and `fullscreen()` (PAGES) |
-| `TAP.overviewCards.render(el)` | The region cards for the current scope (OVERVIEW) |
+| `TAP.overviewCards.render(el)` | The region cards for the current scope: ambition against the strategic plan, the swatched split, and "Will it land?" (D117) (OVERVIEW) |
+| `TAP.overviewLand.strategic(cells, ent, spec)` / `checks(cells, ent, spec)` | The card's strategic plan line and its three checks, read from the same measures as the spGap, pipelineCover, winsVsPeers and concentration rules; "others" is the other regions in the file as the rules combine them; a "discuss" marker opens a matching insight's Show me (OVERVIEW) |
 | `TAP.sourceTip.icon(src, kind, {where, label})` / `html(...)` | The data icon beside a figure (D100, `js/ui/source-tip.js`): a button, or the same as HTML text for builders that return HTML; null or `''` when there is no file behind the figure (`src` null, or combined by this app). `kind` defaults to `src.kind`; `where` replaces the address text (a list row's "file, row 12"); `label` names the figure for screen readers. Hover shows a popover with `TAP.format.kind(kind).text` and `TAP.sources.address(src).text`; click, tap, Enter or Space keeps it open; Esc or its close button closes it, before any side panel. One popover at a time. Also `where(src, opts)`, `open(btn)`, `close()`, `current()` |
 
 **Formatting: `TAP.format`** (`js/core/format.js`). `money(v, {scale, currency})` (chart style, €1.2M; `v` is in thousands unless `scale` says otherwise), `moneyExact`, `pct(v, {exact})`, `num(v, {decimals})`, `rating(v, field)`, `tier(v)`, `cell(cell, {unit, exact, field})`, `kind(k)` (returns `{glyph, label, text}`), `date(iso, {time})`, `list(names)`. The theme's keys are documented in `js/theme.js` itself.
@@ -460,7 +461,7 @@ js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  ratings
 js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
 js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  source-tip.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
-js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights.js
+js/views/overview-cards.js  overview-land.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights.js
 js/ui/custom-builder.js
 js/views/build.js  guide.js
 js/ui/app.js

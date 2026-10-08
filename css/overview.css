@@ -7,16 +7,21 @@
  * Owner: OVERVIEW stream. Colours and font sizes come from theme variables only.
  */
 
-/* ---------- region cards (US-1.5.1) ---------- */
+/* ---------- region cards (US-1.5.1, D117) ---------- */
 
-/* Column count is set by js/views/overview-cards.js so rows stay even (7 cards: one row, or 4 + 3). */
+/* Column count is set by js/views/overview-cards.js so rows stay even (7 cards: one row, or 4 + 3).
+ * Each card spans nine rows of the grid and lays its parts on them (subgrid), so the cards in a row line up
+ * part by part: bar, name, ambition, split, "Will it land?", its three checks, Open profile. */
 .tap-ov-cards__grid { display: grid; gap: var(--tap-sp-2); align-items: stretch; }
 
 .tap-ov-card {
-  display: flex; flex-direction: column; gap: var(--tap-sp-2); min-width: 0; padding: 0 0 var(--tap-sp-3);
+  display: grid; grid-row: span 9; grid-template-rows: subgrid; row-gap: var(--tap-sp-2); align-content: start;
+  min-width: 0; padding: 0 0 var(--tap-sp-3);
   background: var(--tap-paper); color: var(--tap-ink); border: var(--tap-rule-w) solid var(--tap-ink);
   cursor: pointer; font-size: var(--tap-fs-label); line-height: 1.3;
 }
+.tap-ov-card > * { min-width: 0; margin-left: var(--tap-sp-2); margin-right: var(--tap-sp-2); }
+.tap-ov-card > .tap-ov-card__bar { margin: 0; }
 .tap-ov-card:hover { box-shadow: var(--tap-shadow-md); }
 .tap-ov-card.is-focus { border-width: var(--tap-highlight-w); }
 .tap-ov-card.is-combined { background: var(--tap-combined); border-color: var(--tap-combined); color: var(--tap-on-colour); }
@@ -24,8 +29,7 @@
 .tap-ov-card.is-focus .tap-ov-card__bar { height: var(--tap-sp-3); }
 .tap-ov-card.is-combined .tap-ov-card__bar { height: 0; }
 
-.tap-ov-card__head, .tap-ov-card__line { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--tap-sp-2); min-width: 0; }
-.tap-ov-card.is-combined .tap-ov-card__head { padding-top: var(--tap-sp-2); }
+.tap-ov-card__head, .tap-ov-card__line, .tap-ov-card__mix, .tap-ov-card__check { display: flex; flex-direction: column; gap: 2px; }
 .tap-ov-card__kicker { min-height: 1.3em; font-weight: 800; color: var(--tap-accent-deep); }
 .tap-ov-card.is-combined .tap-ov-card__kicker { color: var(--tap-on-colour); }
 .tap-ov-card__name {
@@ -34,23 +38,42 @@
 }
 .tap-ov-card__how { margin: 0; overflow-wrap: anywhere; font-size: var(--tap-fs-body); line-height: 1.35; }
 
-.tap-ov-card__line + .tap-ov-card__line { padding-top: var(--tap-sp-2); }
-.tap-ov-card__focus { border-top: 1px solid var(--tap-grid); margin: 0 var(--tap-sp-2); padding: var(--tap-sp-2) 0 0; }
-.tap-ov-card.is-combined .tap-ov-card__focus { border-top-color: var(--tap-rule); }
 .tap-ov-card__label { font-weight: 600; color: var(--tap-muted); }
 .tap-ov-card.is-combined .tap-ov-card__label,
-.tap-ov-card.is-combined .tap-ov-card__row--minor { color: var(--tap-on-colour); }
+.tap-ov-card.is-combined .tap-ov-card__row--minor,
+.tap-ov-card.is-combined .tap-ov-card__others { color: var(--tap-on-colour); }
 
 .tap-ov-card__partial { margin: 0; font-style: italic; font-size: var(--tap-fs-body); line-height: 1.35; }
-.tap-ov-card__split { display: flex; height: var(--tap-sp-2); margin: var(--tap-sp-1) 0 2px; border: 1px solid currentColor; }
+.tap-ov-card__sp { margin: 0; font-size: var(--tap-fs-body); }
+.tap-ov-card__split { display: flex; height: var(--tap-sp-2); margin: 0 0 2px; border: 1px solid currentColor; }
 .tap-ov-card__split > span { display: block; }
 
-.tap-ov-card__rows { display: flex; flex-direction: column; }
-.tap-ov-card__row { display: block; }
-.tap-ov-card__row .tap-ov-fig { text-align: left; }
+/* "■ New business €11.2M 65%": the name, then the value and share; they wrap under the name on a narrow card. */
+.tap-ov-card__row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 var(--tap-sp-1); }
+.tap-ov-card__partname { display: inline-flex; align-items: baseline; gap: var(--tap-sp-1); }
+.tap-ov-card__partvalue { white-space: nowrap; }
+.tap-ov-card__swatch {
+  display: inline-block; flex: none; width: 0.85em; height: 0.85em; border: 1px solid currentColor; align-self: center;
+}
+.tap-ov-card__share { font-weight: 600; font-variant-numeric: tabular-nums; }
 .tap-ov-card__row--minor { color: var(--tap-muted); }
-.tap-ov-card__chips { display: flex; flex-wrap: wrap; gap: 0 var(--tap-sp-3); }
-.tap-ov-card__chip { white-space: nowrap; }
+
+/* "Will it land?": a rule above it, then three checks: label, value (and marker), the other regions' figure. */
+.tap-ov-card__landtitle { margin-top: 0; margin-bottom: 0; padding-top: var(--tap-sp-2); border-top: 1px solid var(--tap-grid); font-weight: 800; }
+.tap-ov-card.is-combined .tap-ov-card__landtitle { border-top-color: var(--tap-rule); }
+.tap-ov-card__checkvalue { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--tap-sp-1) var(--tap-sp-2); }
+.tap-ov-card__others { color: var(--tap-muted); }
+.tap-ov-card__others .tap-ov-fig { font-weight: 600; }
+.tap-ov-card .tap-term { font-size: inherit; }
+.tap-ov-card.is-combined .tap-term { text-decoration-color: var(--tap-on-colour); }
+
+/* The marker: a glyph and the word, in a thin frame; never colour alone (D24), no verdict colour (D20). */
+.tap-ov-card__discuss {
+  display: inline-flex; align-items: center; gap: 2px; padding: 0 var(--tap-sp-1); border: 1px solid currentColor;
+  background: var(--tap-paper); color: var(--tap-accent-deep); font: inherit; font-size: var(--tap-fs-label); font-weight: 700;
+  line-height: 1.4; cursor: pointer;
+}
+.tap-ov-card__discuss:hover, .tap-ov-card__discuss:focus-visible { background: var(--tap-accent-tint); }
 
 /* A figure is a button: it opens its source. It looks like text with a dotted underline on hover. */
 .tap-ov-fig {
@@ -60,9 +83,10 @@
 }
 .tap-ov-fig:hover, .tap-ov-fig:focus-visible { text-decoration-color: currentColor; }
 .tap-ov-fig--big { font-size: var(--tap-fs-h2); line-height: 1.1; text-align: left; align-self: flex-start; }
+.tap-ov-fig--words { font-weight: 600; text-align: left; }
 .tap-ov-fig.is-np { font-size: var(--tap-fs-label); font-weight: 600; font-style: italic; }
 .tap-ov-card__row--minor .tap-ov-fig { font-size: var(--tap-fs-label); font-weight: 600; }
-.tap-ov-card__chip .tap-ov-fig { text-align: left; }
+.tap-ov-card__checkvalue .tap-ov-fig { text-align: left; }
 
 /* ---------- the view (US-1.5.2) ---------- */
 
