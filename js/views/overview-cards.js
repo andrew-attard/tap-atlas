@@ -4,11 +4,11 @@
  *          ambition, the split with a swatch and share per part (D117), Services, focus tiers, the new business pool
  *          and customers by segment; and the clickable figure that shows where a value comes from, shared with the
  *          headline.
- * Provides: TAP.overviewCards (render, layout, columns, figure, openSource, sourceRow)
+ * Provides: TAP.overviewCards (render, layout, columns, figure, popover, openSource, sourceRow)
  * Depends on: js/engine/measures.js, js/engine/scope.js, js/engine/aggregate.js (describe), js/core/dom.js,
- *             js/core/format.js, js/core/sources.js, js/ui/layers.js, js/core/store.js, js/theme.js,
+ *             js/core/format.js, js/core/sources.js, js/ui/layers.js, js/ui/source-tip.js (figure), js/core/store.js, js/theme.js,
  *             content/text-overview.js, js/views/regions.js (TAP.profile.link, at call time)
- * Used by: js/views/overview.js
+ * Used by: js/views/overview.js; js/views/regions-parts.js (popover, the profile's glance figures)
  */
 (function (TAP) {
   'use strict';
@@ -70,9 +70,27 @@
     });
   }
 
-  // A figure: a button showing the value, its kind in the title, opening the source panel (the address is behind
-  // the panel's data icon, D100). spec: {measure, cell, unit, label, text?, exact?, rows?}: text replaces the formatted
-  // value (exact is then the title's precise value); rows are the lines the panel lists.
+  // One figure in a small popover beside it (D129): its label, exact value, how it was combined, a partial note, and
+  // the data icon with the kind and file › sheet › cell. spec: {cell, unit, label, text?, exact?}.
+  function popover(anchor, spec) {
+    var c = spec.cell || {}, a = address(c), where = TAP.sourceTip.where(c.src), kind = kindText(c);
+    var line = function (cls, text) { return el('p', { class: 'tap-figpop__line' + (cls ? ' ' + cls : '') }, text); };
+    var body = [line('tap-figpop__value', spec.exact || (spec.text != null && !spec.cell ? spec.text : fmt(c, spec.unit, true)))];
+    if (a && a.combined) {
+      body.push(line(null, t('source.combinedHow') + ': ' + TAP.agg.describe(c)));
+      if (a.regions.length) body.push(line(null, t('source.regions') + ': ' + TAP.format.list(a.regions)));
+    }
+    if (c.partial && c.note) body.push(line(null, t('source.note') + ': ' + c.note));
+    if (kind || where) {
+      body.push(el('p', { class: 'tap-figpop__line tap-figpop__src' }, [TAP.icons.svg('data', { size: 18 }),
+        el('span', null, [kind, kind && where ? ' · ' : '', where].join(''))]));
+    }
+    return TAP.sourceTip.figure(anchor, spec.label, body);
+  }
+
+  // A figure: a button showing the value, its kind in the title. Selecting it opens a popover beside it (D129); a figure
+  // that stands for several (rows) lists them in the source panel. spec: {measure, cell, unit, label, text?, exact?,
+  // rows?}: text replaces the formatted value (exact is then the precise value); rows are the lines the panel lists.
   function figure(spec, cls) {
     var c = spec.cell || {};
     var title = t('cards.figureTitle', { label: spec.label, value: spec.exact || fmt(c, spec.unit, true), kind: kindText(c) });
@@ -80,7 +98,11 @@
       type: 'button', class: 'tap-ov-fig' + (c.state === 'notProvided' ? ' is-np' : '') + (cls ? ' ' + cls : ''),
       'data-measure': spec.measure || null, 'data-state': c.state || null, 'data-v': c.state === 'value' ? String(c.v) : '',
       title: title,
-      onclick: function (e) { e.stopPropagation(); openSource(spec.label, spec.rows || [spec]); }
+      onclick: function (e) {
+        e.stopPropagation();
+        if (spec.rows && spec.rows.length > 1) openSource(spec.label, spec.rows);
+        else popover(e.currentTarget, spec);
+      }
     }, spec.text != null ? spec.text : fmt(c, spec.unit));
   }
 
@@ -229,6 +251,6 @@
     return host;
   }
 
-  TAP.overviewCards = { render: render, layout: layout, columns: columns, figure: figure, openSource: openSource,
+  TAP.overviewCards = { render: render, layout: layout, columns: columns, figure: figure, popover: popover, openSource: openSource,
     sourceRow: sourceRow };
 })(window.TAP);

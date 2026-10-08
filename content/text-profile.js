@@ -27,16 +27,16 @@ Object.assign(window.TAP_CONTENT.text, {
     // US-2.4.2: the plan at a glance. Neutral words only (D20): a difference is never good or bad.
     glance: {
       title: 'The plan at a glance',
-      hint: 'Select a figure for its details, or an average for how it was worked out',
+      hint: 'Select a figure to see where it comes from, or an average for how it was worked out',
       // Data with one region: nothing to compare with
-      hintAlone: 'Select a figure for its details',
+      hintAlone: 'Select a figure to see where it comes from',
       alone: 'The data has no other region, so these figures are shown without a comparison.',
       total: 'Total',
       against: 'Compared with the rest',
       above: 'Above average',
       below: 'Below average',
       same: 'Same as average',
-      figureTitle: '{label}. Select to see more',
+      figureTitle: '{label}. Select to see where it comes from',
       // US-4.6.3: the full template's lines, shown when the plans hold a strategic plan or a revenue outlook
       p4: {
         strategicLine: 'Against the strategic plan, three years',

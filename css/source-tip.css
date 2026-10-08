@@ -29,6 +29,13 @@
 .tap-srcpop__close { flex: none; min-width: 32px; height: 32px; margin: calc(-1 * var(--tap-sp-1)) calc(-1 * var(--tap-sp-2)) 0 0; }
 .tap-srcpop__where { margin: 0; overflow-wrap: anywhere; }
 
+/* One figure's popover, beside it (D129): the label as its heading, the exact value, then how it was worked out */
+.tap-figpop { width: min(340px, calc(100vw - 2 * var(--tap-sp-3))); }
+.tap-figpop__line { margin: 0 0 var(--tap-sp-1); overflow-wrap: anywhere; }
+.tap-figpop__value { font-size: var(--tap-fs-body); font-weight: 800; font-variant-numeric: tabular-nums; }
+.tap-figpop__src { display: flex; align-items: flex-start; gap: var(--tap-sp-2); margin: var(--tap-sp-2) 0 0; color: var(--tap-muted); }
+.tap-figpop__src .tap-icon { flex: none; padding-top: 2px; }
+
 /* Details rows: label, value and icon on one line */
 .tap-details__row--tip { grid-template-columns: minmax(0, 1fr) auto 28px; align-items: center; }
 .tap-details__row--tip .tap-details__src { grid-column: 1 / -1; }
