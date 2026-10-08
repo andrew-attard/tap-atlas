@@ -295,7 +295,8 @@
     function withDims(fn) {
       return function (a, s) {
         var saved = TAP.prepare.breakdowns, asked = [];
-        // A stand-in for ENGINE2's TAP.prepare.breakdowns: cg.arr lists only year in its dims
+        // A stand-in for ENGINE2's TAP.prepare.breakdowns: cg.arr lists only year in its dims. The second dimension is
+        // channel, which any comparison may use (industry needs one region, D125)
         TAP.prepare.breakdowns = function (def, o) {
           asked.push(o.measureId);
           var m = o.measureId || def.measures[0].id;
@@ -306,19 +307,19 @@
     }
 
     T.test('TPV-TC-311', 'Break down by offers only what the selected measure lists, and follows a measure switch', scene(withDims(function (a, s, asked) {
-      s.report(cmpDef({ id: 'x-bd4', builder: 'x-fake-bd', breakdowns: ['year', 'industry'], defaultBreakdown: undefined,
+      s.report(cmpDef({ id: 'x-bd4', builder: 'x-fake-bd', breakdowns: ['year', 'channel'], defaultBreakdown: undefined,
         measures: [{ id: 'nb.arr', label: 'New' }, { id: 'cg.arr', label: 'Growth' }] }));
       var p = s.panel('x-bd4');
-      a.deepEqual(offered(p), ['none', 'year', 'industry'], 'the first measure lists both');
-      click(qs('[data-control="breakdown"] [data-value="industry"]', p.el));
-      a.equal(last().breakdown, 'industry');
+      a.deepEqual(offered(p), ['none', 'year', 'channel'], 'the first measure lists both');
+      click(qs('[data-control="breakdown"] [data-value="channel"]', p.el));
+      a.equal(last().breakdown, 'channel');
       click(qs('[data-control="measure"] [data-value="cg.arr"]', p.el));
       a.deepEqual(offered(p), ['none', 'year'], 'the second lists only year');
       a.equal(asked[asked.length - 1], 'cg.arr', 'asked for the selected measure');
       a.equal(pressed(p), 'none', 'a breakdown no longer offered is dropped');
       a.equal(last().breakdown, null, 'and the builder is not asked for it');
       click(qs('[data-control="measure"] [data-value="nb.arr"]', p.el));
-      a.deepEqual(offered(p), ['none', 'year', 'industry'], 'options follow the measure back');
+      a.deepEqual(offered(p), ['none', 'year', 'channel'], 'options follow the measure back');
       a.equal(pressed(p), 'none', 'the dropped breakdown does not come back by itself');
     })));
 

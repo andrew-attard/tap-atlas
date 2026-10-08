@@ -2,7 +2,7 @@
  * File: tests/test-panel.js
  * Purpose: Tests for the report panel and its controls.
  * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
- *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*
+ *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -1334,5 +1334,77 @@
       a.equal(qs('[data-control="measure"] [aria-pressed="true"]', p.el).getAttribute('data-value'), 'cg.arr', 'the switch shows it');
       a.equal(last().highlight && last().highlight.measureId, 'cg.arr', 'the target carries the measure');
     }));
+  });
+
+  /* ---------- D125: busy breakdowns need one region ---------- */
+
+  T.suite('panel-one-region', function () {
+    var ONE = 'One region only';
+    var DROPPED = 'Breakdown by industry needs one region; showing no breakdown.';
+
+    // nb-levers on the sample (seven regions, rows naming industries and solutions), the mini fixture back afterwards.
+    function onSample(fn) {
+      var inner = scene(fn);   // its panels are gone before the mini fixture comes back
+      return function (a) {
+        TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        try { return inner(a); } finally { TAP.data.load(T_FIXTURE('mini')); }
+      };
+    }
+    function opt(p, v) { return qs('[data-control="breakdown"] [data-value="' + v + '"]', p.el); }
+    function pressedBd(p) { var b = qs('[data-control="breakdown"] [aria-pressed="true"]', p.el); return b ? b.getAttribute('data-value') : null; }
+    function control(p) { var c = qs('[data-control="breakdown"]', p.el); return c ? c.parentNode : null; }
+    function noteLine(p) { return txt(qs('.tap-panel__bd-note', p.el)); }
+
+    T.test('X-d125-one-region-breakdowns', 'With all regions, industry and solution are disabled, with a visible note', onSample(function (a, s) {
+      var p = s.panel('nb-levers');
+      ['industry', 'solution'].forEach(function (v) {
+        var b = opt(p, v);
+        a.ok(b, v + ' stays visible');
+        a.equal(b && b.getAttribute('aria-disabled'), 'true', v + ' is disabled (aria-disabled)');
+        a.ok(b && !b.disabled, v + ' stays reachable by keyboard, so focus is never trapped or lost');
+        a.ok(b && /needs one region selected/.test(b.getAttribute('aria-label') || ''), v + ': the accessible name says why');
+      });
+      a.equal(opt(p, 'none').getAttribute('aria-disabled'), null, 'None is not disabled');
+      a.ok(txt(control(p)).indexOf(ONE) >= 0, 'the visible note "' + ONE + '" beside the control');
+      click(opt(p, 'industry'));
+      a.equal(pressedBd(p), 'none', 'a click on a disabled option changes nothing');
+    }));
+
+    T.test('X-d125-one-region-breakdowns', 'With one selected region, industry and solution are offered and draw', onSample(function (a, s) {
+      TAP.store.set({ cmp: { mode: 'set', set: ['na'] } });
+      var p = s.panel('nb-levers');
+      ['industry', 'solution'].forEach(function (v) { a.equal(opt(p, v).getAttribute('aria-disabled'), null, v + ' enabled'); });
+      a.ok(txt(control(p)).indexOf(ONE) < 0, 'no note');
+      click(opt(p, 'industry'));
+      a.equal(pressedBd(p), 'industry', 'broken down by industry');
+      var c = chartOf(p), series = c ? c.getOption().series : [];
+      a.ok(series.length > 0, 'the chart draws');
+      a.ok(!qs('.tap-panel__error', p.el), 'with no error');
+    }));
+
+    T.test('X-d125-one-region-breakdowns', 'Widening the comparison with industry on falls back to no breakdown, with one line', onSample(function (a, s) {
+      TAP.store.set({ cmp: { mode: 'set', set: ['na'] } });
+      var p = s.panel('nb-levers');
+      click(opt(p, 'industry'));
+      TAP.store.set({ cmp: { mode: 'set', set: ['na', 'seu'] } });
+      a.equal(pressedBd(p), 'none', 'back to no breakdown');
+      a.equal(noteLine(p), DROPPED, 'the one line under the controls');
+      click(qs('[data-control="measure"] [data-value="nb.wins"]', p.el));
+      a.equal(noteLine(p), '', 'cleared on the next change');
+    }));
+
+    T.test('X-d125-one-region-breakdowns', 'A year breakdown is unaffected by the comparison', scene(function (a, s) {
+      var p = s.panel('ov-ambition');
+      var y = qs('[data-control="breakdown"] [data-value="year"]', p.el);
+      a.ok(y, 'year is offered');
+      a.equal(y && y.getAttribute('aria-disabled'), null, 'not disabled with all regions');
+      click(y);
+      a.equal(qs('[data-control="breakdown"] [aria-pressed="true"]', p.el).getAttribute('data-value'), 'year', 'chosen');
+      a.ok(txt(p.el).indexOf(ONE) < 0, 'no one-region note');
+    }));
+
+    T.test('X-d125-one-region-breakdowns', 'Only industry and solution carry the one-region flag in the sample', function (a) {
+      a.deepEqual(TAP.reports.BREAKDOWNS.filter(TAP.reports.oneRegion), ['industry', 'solution']);
+    });
   });
 })(window.TAP);
