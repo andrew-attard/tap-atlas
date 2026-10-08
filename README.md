@@ -173,7 +173,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/build.js` | The Build a chart view, beside the Guide in the menu: the view header and the builder |
 | `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
 | `js/views/outlook.js` | Outlook: the plans against the strategic plan and the base year, pipeline coverage, revenue and product categories |
-| `js/views/guide.js` | The Guide page: how to use the app, planning explained, the sections other parts add (Your presentation) |
+| `js/views/guide.js` | The Guide page: a contents list with a search box beside the sections, shown as cards in two columns (D139); how to use the app, planning explained, the sections other parts add (Your presentation) |
+| `js/views/guide-cards.js` | The Guide's pieces: a section card with "Read more", the contents list, the search filter and the mark on the section in view |
 
 ### `config/`
 
@@ -207,7 +208,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |
-| `css/*.css` | One stylesheet per area: shell, layers, source-tip, panel, overview, industry, pages, glossary, newbusiness, customers, profile, themes, present, custom, outlook |
+| `css/*.css` | One stylesheet per area: shell, layers, source-tip, panel, overview, industry, pages, guide, glossary, newbusiness, customers, profile, themes, present, custom, outlook |
 | `css/view-head.css` | The shared header and two-panel layout of the newer views |
 
 ### `data/` and `docs/`

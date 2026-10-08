@@ -8,8 +8,8 @@
  * THE SHAPE (js/views/guide.js renders it; read it through TAP.content.guide(), which lays the organization
  * layer over it)
  *
- *   contents   The short contents list at the top: [{ id, title }]. The ids are the page's two sections:
- *              'howTo' and 'planning'. There is no glossary section: definitions show where terms appear (D98).
+ *   contents   The page's two parts: [{ id, title }], 'howTo' and 'planning'. Their titles head the contents list,
+ *              which links every section (D139). There is no glossary section: definitions show where terms appear (D98).
  *   howTo      { title, intro, sections: [{ id, title, paragraphs: ['...'], link: { view: 'newBusiness' } (optional),
  *              shortcuts: true (optional: the number keys are listed under it, built from the menu order) }] }
  *              "How to use this app", with one section per view that needs explaining (each linking to its view).
@@ -19,7 +19,8 @@
  *              "Territory account planning explained". link names the view that shows the section (a view id
  *              from config/views.js), or null when no single view does.
  *
- * Paragraphs are plain text, one to three short sentences each. Glossary terms in them are marked by
+ * Each section shows as a card with its first paragraph; "Read more" opens the rest (D139), so the first paragraph
+ * should stand on its own. Paragraphs are plain text, one to three short sentences each. Glossary terms in them are marked by
  * TAP.content.mark(). The organization layer can replace a section's paragraphs, add paragraphs or add sections
  * by id (see content/organization.example.js); sections it touched carry layer: 'organization'.
  */

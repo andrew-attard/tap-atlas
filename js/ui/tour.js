@@ -4,7 +4,7 @@
  *          at most ten short steps that spotlight each part of the screen in turn. A few lines of custom code, no library.
  * Provides: TAP.tour (offer, start, stop, steps, fullscreen, button)
  * Depends on: js/core/storage.js, js/core/content.js, js/core/dom.js, js/core/icons.js, js/core/store.js,
- *             js/ui/shell.js (actionsEl), js/ui/layers.js (close)
+ *             js/ui/shell.js (actionsEl), js/ui/layers.js (close), js/views/guide.js (open at a section)
  * Used by: js/ui/app.js (offer, after start-up), js/views/guide.js (start), js/ui/compare-bar.js (button)
  *
  * offer() adds the Tour button to the comparison bar and shows the welcome card unless the tour was taken or
@@ -66,6 +66,11 @@
     e.stopPropagation();
   }
   function onMove() { if (cur && cur.n != null) place(cur.n); }
+
+  // The last step is about the planning method, so "Open the Guide" lands on the card that explains it (D139)
+  function openGuide() {
+    if (TAP.guide && TAP.guide.open) TAP.guide.open('what'); else TAP.store.set({ view: 'guide' });
+  }
 
   function stop() {
     if (!cur) return;
@@ -192,7 +197,7 @@
       el('h2', { class: 'tap-tour__title', id: 'tap-tour-title' }, s.title),
       el('p', { class: 'tap-tour__text' }, s.text),
       last ? el('button', { type: 'button', class: 'tap-btn tap-tour__guide',
-        onclick: function () { stop(); TAP.store.set({ view: 'guide' }); } }, [t('openGuide'), TAP.icons.svg('arrow', { size: 18 })]) : null,
+        onclick: function () { stop(); openGuide(); } }, [t('openGuide'), TAP.icons.svg('arrow', { size: 18 })]) : null,
       el('div', { class: 'tap-tour__foot' }, [
         el('button', { type: 'button', class: 'tap-tour__skip', onclick: stop }, t('skipTour')),
         el('span', { class: 'tap-tour__keys' }, t('keys')),

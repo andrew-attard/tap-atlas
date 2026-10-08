@@ -202,7 +202,7 @@
           next.click();
         }
         a.ok(open, 'the last step has "Open the Guide"');
-        try { open.click(); } finally { TAP.tour.stop(); }
+        try { open.click(); } finally { TAP.tour.stop(); TAP.storage.remove('tour:done'); }
         a.equal(TAP.store.get().view, 'guide', 'the Guide opens');
         var c = card(root, 'what');
         a.ok(c && c.querySelector('.tap-guide__more').getAttribute('aria-expanded') === 'true', 'that card is open');

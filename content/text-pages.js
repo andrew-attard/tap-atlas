@@ -45,10 +45,10 @@ Object.assign(window.TAP_CONTENT.text, {
     regions: 'Pick a region to see its whole plan on one page.',
     insights: 'Filter by region or family, then use "Show me" to see the figures.',
     build: 'Pick a measure and what to show it by; keep a chart to reopen it later.',
-    guide: 'Use the contents to jump to a section; select a dotted term for its definition.'
+    guide: 'Search or use the contents to go to a section; select a dotted term for its definition.'
   },
 
-  // The Guide page (US-1.6.1). Its sections and paragraphs come from content/guide.js.
+  // The Guide page (US-1.6.1, D139). Its sections and paragraphs come from content/guide.js.
   guidePage: {
     kicker: 'Guide',
     heading: 'How to use this app, and how to read a territory account plan',
@@ -58,7 +58,13 @@ Object.assign(window.TAP_CONTENT.text, {
     resetDone: 'Every chart is back to its default type.',
     openView: 'Open {view}',
     keysLabel: 'Number keys and the views they open',
-    orgBadge: 'Organization wording'
+    orgBadge: 'Organization wording',
+    // D139: the contents list's search box and each card's "Read more"
+    search: 'Search the guide',
+    readMore: 'Read more',
+    showLess: 'Show less',
+    noMatch: 'No section mentions \'{words}\'.',
+    clear: 'Clear the search'
   },
 
   // The guided tour (US-1.1.11): one or two sentences per step, about using the screen, never the planning method.

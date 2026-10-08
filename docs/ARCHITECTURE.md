@@ -476,7 +476,7 @@ js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-
 js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  source-tip.js  explain.js  tour.js  showme.js  keys.js  view-head.js  multi-select.js  present-steps.js  present-record.js  present.js
 js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights-filters.js  insights.js
 js/ui/custom-measure-picker.js  custom-builder.js
-js/views/build.js  guide.js
+js/views/build.js  guide-cards.js  guide.js
 js/ui/app.js
 ```
 <!-- script-order:end -->
@@ -486,7 +486,7 @@ js/ui/app.js
 ## 15. CSS
 
 - `css/base.css` (lead): reset, typography and the Modernist base styles. It reads only the CSS variables that `js/theme.js` writes onto `:root` (`--tap-*`).
-- One stylesheet per stream: `css/shell.css` and `layers.css` (SHELL), `glossary.css` (CONTENT), `panel.css` (PANEL), `overview.css` (OVERVIEW), `industry.css` (INDUSTRY), `pages.css` (PAGES). `source-tip.css` styles the data icon and its popover (D100).
+- One stylesheet per stream: `css/shell.css` and `layers.css` (SHELL), `glossary.css` (CONTENT), `panel.css` (PANEL), `overview.css` (OVERVIEW), `industry.css` (INDUSTRY), `pages.css` and `guide.css` (PAGES; the Guide's own since D139). `source-tip.css` styles the data icon and its popover (D100).
 - No colour literals and no `px` font sizes outside `js/theme.js` and `css/base.css`.
 
 ## 16. Ownership
@@ -670,7 +670,8 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 - `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
 - "Build a chart" (US-3.5.1) is its own view, `build` (`js/views/build.js`, address `#build`), just before the Guide. The two sit together at the right end of the top bar, apart from the plan views (D94, D96), in one group (`.tap-menu__tools`) that wraps as a whole when the menu needs a second line (D104). It was a Guide section until D96.
 - The menu (`js/ui/shell.js`, D115) draws one list per group (`ul.tap-menu__group[data-group]`, named by `menu.groups.*` in `content/text-shell.js`) inside the one `nav[data-tour="menu"]`, with Insights joining the tools group. On one row the centre group is centred on the bar; the right group starts as wide as the brand (`--tap-menu-offset`, measured by the shell). On a narrow bar (container queries in `css/shell.css`) the start and tools groups share the first line and the plan views take the second.
-- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3). `js/views/guide.js` draws them after its own sections and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
+- **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3). `js/views/guide.js` draws each whole in its own card (`data-guide` is its id, across both columns) after the sections of "How to use this app", and lists it in the Guide's contents; one that throws shows its error in its own card. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
+- **The Guide's layout (D139):** a sticky contents list on the left ("Search the guide", then the two parts with a link per section; the section in view carries `aria-current`) and the sections as cards in two columns on the right (`js/views/guide-cards.js`), one column below about 1100 px wide or at 150% zoom. A card shows its first paragraph; "Read more" (`aria-expanded`) opens the rest in place. The search keeps the sections whose title or text holds every word. `TAP.guide.open(sectionId)` opens the Guide at a section, with its card open and focus on its heading; the address `#guide/<sectionId>` does the same (the app then shows `#guide`), and the tour's "Open the Guide" lands on the section about what territory account planning is. Printing gives one column with every card open.
 
 ### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)
 
