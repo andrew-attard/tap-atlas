@@ -2,7 +2,7 @@
  * File: tests/test-list.js
  * Purpose: Tests for list panels (US-2.7.2, panel part), value kinds on lists and tables (US-2.6.4) and drill-down
  *          (US-2.7.1). A small fake list builder stands in for the engine's, so the panel side is checked on its own.
- * Provides: test cases for the PANEL2 stream: TPV-TC-288, 290, 291, 292, X-list-*
+ * Provides: test cases for the PANEL2 stream: TPV-TC-288, 290, 291, 292, X-list-*, X-drill-*, X-d123-drill-back (D123)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: PANEL2 stream
@@ -507,7 +507,7 @@
   }
   // Three levels: region and industry, then sub-industry, then rows.
   function levels(s) {
-    s.report(drillDef('x-d1', { drill: { next: 'x-d2', label: 'Industry' } }));
+    s.report(drillDef('x-d1', { drill: { next: 'x-d2', label: 'Industry', rootLabel: 'Totals by region' } }));
     s.report(drillDef('x-d2', { drill: { next: 'x-d3', label: 'Sub-industry' } }));
     s.report(drillDef('x-d3'));
   }
@@ -518,7 +518,7 @@
     hit(p, { regionId: 'alpha', industryId: 'ind2', label: 'Hospitals' });
   }
   function crumbs(p) { return qsa('.tap-panel__crumbs .tap-panel__crumb', p.el).map(txt); }
-  function root() { return TAP.scope.sentence(TAP.store.get().cmp); }   // the top crumb says what is compared
+  function root() { return 'Totals by region'; }   // the top crumb is the chart's short name, drill.rootLabel (D123)
   function key(name, target, alt) {
     var e = new KeyboardEvent('keydown', { key: name, altKey: !!alt, bubbles: true, cancelable: true });
     (target || document.body).dispatchEvent(e);
@@ -704,18 +704,61 @@
       a.deepEqual(last().highlight.regionIds, ['alpha'], 'with the highlight');
     }));
 
-    T.test('X-drill-focus', 'After a keyboard step the focus is on the last breadcrumb button, or the title at the top', scene(function (a, s) {
+    // D123: a step up puts focus on the element that was selected, or the title when there is none (a chart mark)
+    T.test('X-drill-focus', 'After a keyboard step up the focus is on the selected element, else the title', scene(function (a, s) {
       levels(s);
       var p = s.panel('x-d1');
       down2(p);
       qs('[data-action="about"]', p.el).focus();
       key('Backspace', document.activeElement);
-      a.equal(document.activeElement, qs('.tap-panel__crumbs [data-drill-level="0"]', p.el), 'the last crumb button');
+      a.equal(last().def.id, 'x-d2', 'up one');
+      a.equal(document.activeElement, qs('.tap-panel__title', p.el), 'a chart mark is not an element: the title');
       key('ArrowLeft', document.activeElement, true);
       a.equal(last().def.id, 'x-d1');
       a.equal(document.activeElement, qs('.tap-panel__title', p.el), 'the title at the top level');
       a.equal(getComputedStyle(qs('.tap-panel__title', p.el)).outlineStyle, 'none', 'the title draws no ring');
       a.ok(document.activeElement !== p.el, 'never the whole panel, so no ring wraps it');
+    }));
+
+    // D123: on the sample, a drilled panel says where it is and how to get back, and the page does not jump.
+    // The row count is read from the sample file itself, not from the list the app draws.
+    T.test('X-d123-drill-back', 'A block on the industries chart: back button, level heading, the chart named first, a band, no jump', scene(function (a, s) {
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      var na = window.PLAN_DATA.regions.filter(function (r) { return r.id === 'na'; })[0];
+      var n = na.newBusiness.filter(function (r) { return r.industryId === 'healthcare'; }).length;
+      a.equal(n, 3, 'the sample has 3 North America healthcare rows');
+      T.dom.mount().style.height = '900px';   // room above the panel, so it can sit part way down the window
+      var p = s.panel('nb-industries');
+      T.dom.mount().style.height = '3000px';
+      window.scrollTo(0, 0);
+      window.scrollBy(0, p.el.getBoundingClientRect().top - 140);
+      var top0 = p.el.getBoundingClientRect().top;
+      a.ok(top0 > 100 && top0 < 200, 'the panel starts part way down the window (' + Math.round(top0) + ' px)');
+      a.equal(qs('.tap-panel__back', p.el), null, 'no back button at the top level');
+      click(qs('.tap-nbg__cell[data-tap-region="na"][data-tap-industry="healthcare"]', p.el));
+      var back = qs('.tap-panel__back', p.el);
+      a.ok(back && back.tagName === 'BUTTON' && back.classList.contains('tap-btn'), 'a real button in the app\'s button style');
+      a.equal(txt(back), '← Back to industries by region', 'names the level above');
+      a.equal(qs('.tap-panel__head', p.el).nextElementSibling, back.parentNode, 'first thing under the panel header');
+      a.ok(parseFloat(getComputedStyle(back).fontSize) >= 16, '16 px or more');
+      a.ok(back.getBoundingClientRect().height >= 44, 'at least 44 px tall');
+      a.equal(txt(qs('.tap-panel__level', p.el)), 'North America · Healthcare: the 3 new business rows behind it', 'the level heading');
+      a.equal(crumbs(p)[0], 'Industries by region', 'the breadcrumb starts with the chart\'s name');
+      a.ok(!/Showing/.test(txt(qs('.tap-panel__crumbs', p.el))), 'not the comparison sentence');
+      a.equal(txt(qs('.tap-panel__crumbs [aria-current]', p.el)), 'Healthcare, North America', 'the current step is marked');
+      var band = qs('.tap-panel__band', p.el);
+      a.ok(band && band.closest('.tap-panel__head'), 'a band in the panel header');
+      a.equal(txt(band), 'Drilled in: step 2 of 2', 'with words, not colour alone');
+      a.equal(document.activeElement, back, 'focus on the back button');
+      a.ok(Math.abs(p.el.getBoundingClientRect().top - top0) <= 3, 'the panel top stays put (' + Math.round(p.el.getBoundingClientRect().top - top0) + ' px)');
+      click(back);
+      a.ok(qs('.tap-nbg', p.el), 'back at the chart');
+      ['.tap-panel__back', '.tap-panel__band', '.tap-panel__level', '.tap-panel__crumbs'].forEach(function (sel) {
+        a.equal(qs(sel, p.el), null, sel + ' gone');
+      });
+      a.equal(document.activeElement, qs('.tap-nbg__cell[data-tap-region="na"][data-tap-industry="healthcare"]', p.el), 'focus on the block that was selected');
+      a.ok(Math.abs(p.el.getBoundingClientRect().top - top0) <= 3, 'and the top still stays put');
+      window.scrollTo(0, 0);
     }));
 
     T.test('X-drill-typing', 'Backspace and Alt + Left are left alone while typing, in a field or editable text', scene(function (a, s) {
