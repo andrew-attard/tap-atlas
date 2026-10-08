@@ -2,7 +2,8 @@
  * File: tests/test-profile.js
  * Purpose: Tests for the Regions view: the region picker and one region's profile against the average of the rest
  *          (Epic 2.4).
- * Provides: test cases TPV-TC-434 to TPV-TC-458 (automated ones), X-profile-* and X-d129-figure-popover (glance figures)
+ * Provides: test cases TPV-TC-434 to TPV-TC-458 (automated ones), X-profile-*, X-d129-figure-popover (glance figures)
+ *           and X-d128-profile-top (the profile's Top insights)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample)
  * Used by: tests.html
  * Owner: PROFILE stream
@@ -396,18 +397,22 @@
       a.deepEqual(got.map(function (x) { return x.id; }).sort(), want.map(function (x) { return x.id; }).sort(), 'every one of them, and no other');
       for (var i = 1; i < got.length; i++) a.ok(got[i - 1].significance >= got[i].significance, 'ranked by significance at ' + i);
       got.forEach(function (x) { a.ok(x.highlight && x.highlight.regionIds, x.id + ' has a Show me target'); });
+      // D128: the three that open the profile (Top insights) leave the list below; together the two show every one
+      var top = parts().top('na').map(function (x) { return x.id; }), rest = got.filter(function (x) { return top.indexOf(x.id) < 0; });
       var m = mountFor('na');
       try {
         var items = qsa('.tap-pf-insights [data-insight]', m.root);
-        a.equal(items.length, got.length, 'one entry per insight on screen');
-        a.equal(items[0] && items[0].getAttribute('data-insight'), got[0].id, 'the most significant first');
-        a.equal(qsa('.tap-pf-insights [data-insight] [data-action="showme"]', m.root).length, got.length, 'each with Show me');
+        a.equal(items.length, rest.length, 'one entry per insight on screen, the top three left out');
+        a.equal(items[0] && items[0].getAttribute('data-insight'), rest[0].id, 'the most significant of the rest first');
+        a.equal(qsa('.tap-pf-insights [data-insight] [data-action="showme"]', m.root).length, rest.length, 'each with Show me');
+        var shown = qsa('[data-part="top-insights"] [data-insight], .tap-pf-insights [data-insight]', m.root).map(function (n) { return n.getAttribute('data-insight'); }).sort();
+        a.deepEqual(shown, got.map(function (x) { return x.id; }).sort(), 'the Top insights and the list show every one, once');
       } finally { m.handle.destroy(); }
     });
 
     T.test('X-profile-showme', 'Show me on the profile hands the insight and its target to the Show me wiring', function (a) {
       sample();
-      var x = parts().insights('na')[0], seen = null, off = TAP.bus.on('showme', function (p) { seen = p; });
+      var x = parts().more('na')[0], seen = null, off = TAP.bus.on('showme', function (p) { seen = p; });
       var m = mountFor('na');
       try { qs('.tap-pf-insights [data-insight] [data-action="showme"]', m.root).click(); } finally { m.handle.destroy(); off(); }
       a.equal(seen && seen.insightId, x.id, 'the insight');
@@ -452,7 +457,82 @@
       TAP.insights.hide(first.id);
       a.ok(parts().insights('na').every(function (x) { return x.id !== first.id; }), 'gone from the list');
       var m = mountFor('na');
-      try { a.ok(!qs('.tap-pf-insights [data-insight="' + first.id + '"]', m.root), 'gone from the page'); } finally { m.handle.destroy(); }
+      try {
+        a.ok(!qs('[data-part="top-insights"] [data-insight="' + first.id + '"], .tap-pf-insights [data-insight="' + first.id + '"]', m.root),
+          'gone from the page, Top insights included');
+      } finally { m.handle.destroy(); }
+    });
+
+    /* ---------- D128 (#549): each region profile opens with its own Top insights ---------- */
+
+    // Read by hand from the sample's insight list (dump-insights.js): the insights naming North America that are not
+    // context and not broad, by significance: winsVsPeers (0.553), concentration (0.337), lowCoverage (0.169), then
+    // outlier on customer growth in year 2 (0.148). spTotal names it too, but is broad (D119), so it stays in the list.
+    var NA_TOP = ['winsVsPeers:na', 'concentration:na', 'lowCoverage:na'], NA_NEXT = 'outlier:cg.growthY2:na';
+    function topBlock(root) { return qs('[data-part="top-insights"]', root); }
+    function topIds(root) {
+      var b = topBlock(root);
+      return b ? qsa('[data-insight]', b).map(function (n) { return n.getAttribute('data-insight'); }) : [];
+    }
+    function byId(id) { return TAP.insights.all().filter(function (x) { return x.id === id; })[0]; }
+
+    T.test('X-d128-profile-top', 'North America’s profile opens with its top three insights, by significance, none broad or context', function (a) {
+      sample();
+      TAP.insights.unhide();
+      a.equal(typeof TAP.insights.forRegion, 'function', 'one selection, shared with the Overview card (D130)');
+      a.deepEqual(TAP.insights.forRegion('na').slice(0, 3).map(function (x) { return x.id; }), NA_TOP, 'the shared selection');
+      var m = mountFor('na');
+      try {
+        var b = topBlock(m.root);
+        a.ok(!!b, 'the block shows');
+        a.equal(txt(qs('h2', b)), 'Top insights for North America', 'its title');
+        a.deepEqual(topIds(m.root), NA_TOP, 'the three, in significance order');
+        NA_TOP.forEach(function (id, i) {
+          var x = byId(id), item = qs('[data-insight="' + id + '"]', b);
+          a.ok(x.regionIds.indexOf('na') >= 0 && !x.context && !TAP.insights.isBroad(x), id + ': names North America, not context, not broad');
+          if (i) a.ok(byId(NA_TOP[i - 1]).significance >= x.significance, id + ': in significance order');
+          a.equal(txt(qs('.tap-ov-insight__sentence', item)), x.sentence, id + ': its sentence');
+          a.equal(txt(qs('.tap-ov-insight__why', item)), x.why, id + ': its why line');
+          var words = qsa('button', item).map(txt);
+          a.ok(words.indexOf(TAP.content.text('overview.insights.showMe')) >= 0, id + ': Show me');
+          a.ok(words.indexOf(TAP.content.text('overview.insights.hide')) >= 0, id + ': Hide for this session');
+        });
+        var spTotal = TAP.insights.all().filter(function (x) { return x.ruleId === 'spTotal'; })[0];
+        a.ok(spTotal && spTotal.regionIds.indexOf('na') >= 0, 'spTotal names North America too');
+        a.ok(topIds(m.root).indexOf(spTotal.id) < 0, 'but, broad, it is not a top insight');
+        // Near the top: after the header, before the plan at a glance
+        var kids = Array.prototype.slice.call(qs('.tap-pf', m.root).children);
+        var at = kids.indexOf(b), head = kids.indexOf(qs('.tap-pf__head', m.root)), glance = kids.indexOf(qs('.tap-pf-glance', m.root));
+        a.ok(head < at && at < glance, 'after the header (' + head + '), before the glance (' + glance + '): ' + at);
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-d128-profile-top', 'The list below leaves the top three out and is titled "More insights"', function (a) {
+      sample();
+      TAP.insights.unhide();
+      var m = mountFor('na');
+      try {
+        var list = qs('.tap-pf-insights', m.root), ids = qsa('[data-insight]', list).map(function (n) { return n.getAttribute('data-insight'); });
+        a.equal(txt(qs('h2', list)), 'More insights for North America', 'its title');
+        NA_TOP.forEach(function (id) { a.ok(ids.indexOf(id) < 0, id + ' is not in the list'); });
+        a.equal(ids[0], NA_NEXT, 'the next one leads the list');
+        a.ok(ids.indexOf('spTotal:org') >= 0, 'the broad one stays in the list');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-d128-profile-top', 'Hiding one brings the next one up; with none left the block is left out', function (a) {
+      sample();
+      TAP.insights.unhide();
+      var m = mountFor('na');
+      try {
+        qs('[data-insight="winsVsPeers:na"] .tap-ov-insight__hide', topBlock(m.root)).click();
+        a.ok(TAP.insights.hidden().indexOf('winsVsPeers:na') >= 0, 'Hide goes through the engine');
+        a.deepEqual(topIds(m.root), NA_TOP.slice(1).concat([NA_NEXT]), 'the next one comes up');
+        a.ok(!qs('.tap-pf-insights [data-insight="' + NA_NEXT + '"]', m.root), 'and leaves the list');
+        TAP.insights.forRegion('na').forEach(function (x) { TAP.insights.hide(x.id); });
+        a.equal(topBlock(m.root), null, 'no block when none qualifies');
+        a.ok(txt(m.root).indexOf('Top insights for') < 0, 'no title, no empty-state text');
+      } finally { m.handle.destroy(); TAP.insights.unhide(); }
     });
 
     /* ---------- US-2.4.5: print the profile (#218) ---------- */
