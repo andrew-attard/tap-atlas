@@ -1,12 +1,13 @@
 /*
  * File: js/views/regions-parts.js
  * Purpose: The parts of a region profile besides its reports: the plan at a glance against the rest (the four card
- *          lines of US-1.5.1, US-2.4.2, and the strategic plan and revenue lines of US-4.6.3), the region's insights,
- *          and everything its leader wrote (US-2.4.4).
- * Provides: TAP.profileParts (glance, compare, drawGlance, insights, drawInsights, words, drawWords)
+ *          lines of US-1.5.1, US-2.4.2, and the strategic plan and revenue lines of US-4.6.3), the region's Top
+ *          insights (D128) and the rest of its insights, and everything its leader wrote (US-2.4.4).
+ * Provides: TAP.profileParts (glance, compare, drawGlance, insights, top, more, drawTop, drawInsights, words, drawWords)
  * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js, js/engine/measures.js,
  *             js/engine/scope.js, js/ui/source-tip.js, js/views/overview-cards.js (popover), js/views/regions.js
- *             (TAP.profile.cmp), js/insights/engine.js, js/core/data.js, js/core/store.js (all at call time)
+ *             (TAP.profile.cmp), js/views/overview.js (TAP.overviewInsights), js/insights/engine.js, js/core/data.js,
+ *             js/core/store.js (all at call time)
  * Used by: js/views/regions.js
  * Owner: PROFILE stream (#215, #217); the full template's lines PAGES4 (#459)
  */
@@ -140,11 +141,40 @@
     });
   }
 
+  /* ---------- the region's Top insights (D128) ---------- */
+
+  var TOP = 3;
+  // The three most significant insights about the region, as the Overview card's line reads them (D130).
+  function top(regionId) {
+    var I = TAP.insights;
+    return I && !I.__stub && I.forRegion ? I.forRegion(regionId).slice(0, TOP) : [];
+  }
+  // Every other insight naming the region, for the list beside the leader's words.
+  function more(regionId) {
+    var ids = top(regionId).map(function (x) { return x.id; });
+    return insights(regionId).filter(function (x) { return ids.indexOf(x.id) < 0; });
+  }
+
+  // The block in the Overview's style (D119), or null when no insight qualifies (no title, no empty text).
+  function drawTop(regionId) {
+    var list = top(regionId), name = TAP.content.regionName(TAP.data.region(regionId)), seen = {};
+    if (!list.length || !TAP.overviewInsights) return null;
+    return el('section', { class: 'tap-pf-top', 'data-part': 'top-insights', 'aria-label': t('top.title', { name: name }) }, [
+      el('div', { class: 'tap-ov__sechead' }, el('h2', null, t('top.title', { name: name }))),
+      el('p', { class: 'tap-ov__insights-intro' }, t('top.intro')),
+      el('div', { class: 'tap-ov-insights' }, list.map(function (x) { return TAP.overviewInsights.item(x, seen); }))
+    ]);
+  }
+
+  // The rest of the region's insights; with no Top insights block above, every one, under the list's own title.
   function drawInsights(host, regionId) {
-    var list = insights(regionId), name = TAP.content.regionName(TAP.data.region(regionId));
-    var box = el('section', { class: 'tap-pf-insights tap-pf-card', 'aria-label': t('insights.title', { name: name }) }, [
-      el('h2', { class: 'tap-pf-card__title' }, t('insights.title', { name: name })),
-      el('p', { class: 'tap-pf-card__intro' }, list.length ? t(list.length === 1 ? 'insights.introOne' : 'insights.intro', { n: list.length }) : t('insights.none', { name: name }))
+    var shown = top(regionId).length > 0, list = shown ? more(regionId) : insights(regionId);
+    var name = TAP.content.regionName(TAP.data.region(regionId)), title = t(shown ? 'insights.more' : 'insights.title', { name: name });
+    var intro = shown ? (list.length ? t(list.length === 1 ? 'insights.introMoreOne' : 'insights.introMore', { n: list.length }) : t('insights.noneMore', { name: name }))
+      : (list.length ? t(list.length === 1 ? 'insights.introOne' : 'insights.intro', { n: list.length }) : t('insights.none', { name: name }));
+    var box = el('section', { class: 'tap-pf-insights tap-pf-card', 'aria-label': title }, [
+      el('h2', { class: 'tap-pf-card__title' }, title),
+      el('p', { class: 'tap-pf-card__intro' }, intro)
     ]);
     var ol = el('ol', { class: 'tap-pf-card__list' });
     list.forEach(function (x) {
@@ -218,6 +248,6 @@
     return box;
   }
 
-  TAP.profileParts = { glance: glance, compare: compare, drawGlance: drawGlance, insights: insights, drawInsights: drawInsights,
-    words: words, drawWords: drawWords };
+  TAP.profileParts = { glance: glance, compare: compare, drawGlance: drawGlance, insights: insights, top: top, more: more,
+    drawTop: drawTop, drawInsights: drawInsights, words: words, drawWords: drawWords };
 })(window.TAP);

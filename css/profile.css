@@ -32,6 +32,9 @@
 .tap-pf__reports { display: flex; flex-direction: column; gap: var(--tap-sp-6); }
 .tap-pf__wide { min-width: 0; }
 
+/* ---------- the region's Top insights (D128): the Overview block's look (css/overview.css), under the header ---------- */
+.tap-pf-top { min-width: 0; }
+
 /* ---------- the plan at a glance (US-2.4.2): no colour for a difference, words only (D20) ---------- */
 .tap-pf-glance { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
 .tap-pf-glance__title { margin: 0; font-size: var(--tap-fs-h2); }
@@ -87,7 +90,7 @@
   .tap-pf-page { max-width: none; padding: 0; gap: var(--tap-sp-4); }
   .tap-pf-page .tap-vh-pair, .tap-pf-glance__grid { grid-template-columns: 1fr 1fr; }
   /* Each chart, list and glance line stays on one page where it fits */
-  .tap-pf-page .tap-panel, .tap-pf-glance__line, .tap-pf-insight, .tap-pf-words__group, .tap-pf__head { break-inside: avoid; }
+  .tap-pf-page .tap-panel, .tap-pf-glance__line, .tap-pf-insight, .tap-ov-insight, .tap-pf-words__group, .tap-pf__head { break-inside: avoid; }
   .tap-pf-glance__title, .tap-pf-card__title { break-after: avoid; }
   .tap-pf-card__list { max-height: none; overflow: visible; }
   .tap-pf-page canvas { max-width: 100% !important; height: auto !important; }

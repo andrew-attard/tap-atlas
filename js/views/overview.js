@@ -4,11 +4,12 @@
  *          D119), the region cards (US-1.5.1) and the ambition chart (US-1.5.2), always for every region: the
  *          comparison the other views use is left as it is and ignored here (D118). Nothing about one or two regions
  *          shows here: the block and the chart's list are broad only.
- * Provides: view 'overview' (registered with TAP.views)
+ * Provides: view 'overview' (registered with TAP.views), TAP.overviewInsights (item, showMe: one insight as the
+ *           block shows it, reused by the region profile's Top insights, D128, and the cards' line, D130)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/data.js,
  *             js/core/format.js, js/engine/measures.js, js/engine/scope.js, js/ui/layers.js,
  *             js/views/overview-cards.js, js/insights/engine.js, js/panel/panel.js, content/text-overview.js
- * Used by: js/ui/app.js, js/ui/shell.js (menu)
+ * Used by: js/ui/app.js, js/ui/shell.js (menu); js/views/regions-parts.js and overview-cards.js (TAP.overviewInsights)
  */
 (function (TAP) {
   'use strict';
@@ -243,5 +244,6 @@
     return handle;
   }
 
+  TAP.overviewInsights = { item: insightItem, showMe: showMe };
   TAP.views.register('overview', { title: 'Overview', mount: mount });
 })(window.TAP);

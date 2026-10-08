@@ -4,7 +4,7 @@
  *          ranks what they find, and keeps the session's hidden list (US-1.7.1, 1.7.2, 1.7.10, 1.7.11). Each insight
  *          carries its rule's line on why it matters, or is marked as context and left out of ranked lists (D111).
  *          opts.broadOnly keeps the insights that apply broadly, for the Overview (D119).
- * Provides: TAP.insights (defineRule, all, ranked, top, hide, unhide, hidden, failures, reset, significance, isBroad); the
+ * Provides: TAP.insights (defineRule, all, ranked, top, forRegion, hide, unhide, hidden, failures, reset, significance, isBroad); the
  *           helpers rule files get as ctx.util are in js/insights/util.js
  * Depends on: config/insight-rules.js, config/settings.js, js/core/store.js, js/core/data.js, js/core/content.js,
  *             js/core/format.js, js/engine/aggregate.js, scope.js, measures.js, scores.js, registry.js (at call time)
@@ -250,6 +250,15 @@
     return [0, 1, 2, 3].reduce(function (out, k) { return out.concat(list.filter(function (x) { return rank(x) === k; })); }, []);
   }
 
+  // The insights about one region (D128, D130): naming it, not broad (D119), not context and not hidden, most
+  // significant first. The profile's Top insights and the Overview card's "To discuss" line both read this list.
+  function forRegion(regionId) {
+    var off = hidden();
+    return state().list.filter(function (x) {
+      return !x.context && off.indexOf(x.id) < 0 && x.regionIds.indexOf(regionId) >= 0 && !isBroad(x);
+    });
+  }
+
   // opts: further ranked() options ({broadOnly}).
   function top(cmp, reportId, n, opts) {
     var max = n != null ? n : settings().panelMax || 3;
@@ -258,6 +267,6 @@
 
   function reset() { cache = null; }
 
-  TAP.insights = { defineRule: defineRule, all: all, ranked: ranked, top: top, hide: hide, unhide: unhide, hidden: hidden,
+  TAP.insights = { defineRule: defineRule, all: all, ranked: ranked, top: top, forRegion: forRegion, hide: hide, unhide: unhide, hidden: hidden,
     failures: failures, reset: reset, significance: significance, isBroad: isBroad };
 })(window.TAP);

@@ -167,7 +167,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/customers.js` | Customer growth: segments, growth, exposure, the account bubble and list; also the layout Partners uses |
 | `js/views/partners.js` | Partners: reliance on partners and alliances, partner capacity, the partner list |
 | `js/views/regions.js` | Regions: pick a region, then its profile with the main reports for that region against the rest |
-| `js/views/regions-parts.js` | The profile's lower parts: the plan at a glance, the region's insights and what its leader wrote |
+| `js/views/regions-parts.js` | The profile's parts besides its reports: Top insights for the region (D128), the plan at a glance, the rest of its insights and what its leader wrote |
 | `js/views/insights.js` | The Insights page: every insight, ranked and grouped, each with why it matters; background facts in a closed Context group |
 | `js/views/insights-filters.js` | The Insights page counts (insights apart from background facts) and its two filter dropdowns, Regions and Families (D126) |
 | `js/views/build.js` | The Build a chart view, beside the Guide in the menu: the view header and the builder |
