@@ -4,7 +4,8 @@
  *          organization as a whole (D119, superseding D92).
  *          TPV-TC-095 and 096 live with the engine tests (test-shapes.js, test-measures.js).
  * Provides: test cases for OVERVIEW stories (#29, #30, #31, #529, #546): TPV-TC-087, TPV-TC-099, X-overview-*, X-d119-*,
- *           X-d127-card-snapshot (the cards are a snapshot again), X-d117-cards-swatch (the split's swatches, kept)
+ *           X-d127-card-snapshot (the cards are a snapshot again), X-d117-cards-swatch (the split's swatches, kept),
+ *           X-d129-figure-popover, X-d130-card-insight (one insight to discuss on each region card)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample, insights)
  * Used by: tests.html
  */
@@ -477,10 +478,11 @@
     function snapCards(cmp) { sample(); TAP.store.reset(); TAP.insights.unhide(); return cards(cmp || { mode: 'all' }); }
     function line(c, part) { return qs('[data-part="' + part + '"]', c); }
 
+    // D130 adds one insight to discuss above Open profile (X-d130-card-insight)
     T.test('X-d127-card-snapshot', 'North America reads as a snapshot, in order: name, ambition, split, Services, Focus, pool, Customers, Open profile', function (a) {
       var el = snapCards(), na = card(el, 'na'), e = window.SAMPLE_EXPECT.totals.na;
       var order = Array.prototype.map.call(na.children, function (n) { return n.getAttribute('data-part'); });
-      a.deepEqual(order, ['bar', 'head', 'ambition', 'mix', 'focus', 'pool', 'customers', 'profile'], 'the parts, in order');
+      a.deepEqual(order, ['bar', 'head', 'ambition', 'mix', 'focus', 'pool', 'customers', 'discuss', 'profile'], 'the parts, in order');
       a.equal(txt(qs('.tap-ov-card__name', na)), 'North America', 'the region name');
       a.equal(txt(qs('.tap-ov-card__label', line(na, 'ambition'))), '3-year ambition (ARR)', 'the ambition label');
       a.equal(txt(qs('.tap-ov-fig--big', na)), TAP.format.money(e['amb.arr']), 'the ambition figure');
@@ -499,7 +501,7 @@
       window.SAMPLE_EXPECT.regions.forEach(function (r) { noLandParts(a, card(el, r), r); });
       a.ok(txt(el).indexOf('Will it land?') < 0, 'no "Will it land?" heading');
       a.ok(!/strategic plan/i.test(txt(el)), 'no strategic plan line');
-      a.ok(!/\bdiscuss\b/.test(txt(el)), 'no discuss marker');
+      a.equal(qsa('.tap-ov-card__discuss', el).length, 0, 'no D117 discuss marker (D130’s line is .tap-ov-card__todiscuss)');
     });
 
     T.test('X-d117-cards-swatch', 'The split keeps one swatched line per part, value and share adding to 100%; Services has no swatch', function (a) {
@@ -531,6 +533,108 @@
       a.ok(!!rest && rest.classList.contains('is-combined'), 'the rest is one combined card');
       a.equal(qsa('.tap-ov-card__part', rest).length, 2, 'two swatched lines');
       a.deepEqual(order(rest), order(card(el, 'na')), 'region and combined card line up part by part');
+    });
+  });
+
+  /* ---------- D130 (#550): each region card carries one insight to discuss ---------- */
+
+  T.suite('overview-card-insight', function () {
+    var ID = 'X-d130-card-insight';
+    function fresh() { sample(); TAP.store.reset(); TAP.insights.unhide(); return cards({ mode: 'all' }); }
+    function todo(c) { return qs('.tap-ov-card__todiscuss', c); }
+    function pop() { return document.querySelector('.tap-figpop'); }
+    function byId(id) { return TAP.insights.all().filter(function (x) { return x.id === id; })[0]; }
+    var banned = function () { return (window.TAP_RULES.wording || {}).banned || []; };
+
+    T.test(ID, 'North America’s card names the insight that leads its profile’s Top insights, in its short form', function (a) {
+      var el = fresh(), line = todo(card(el, 'na'));
+      a.ok(!!line, 'the line shows');
+      // The profile's first top insight, read from the page, not from the card's code
+      TAP.store.set({ view: 'regions', region: 'na' });
+      var host = T.dom.mount(), h = TAP.views.get('regions').mount(host), first;
+      try { first = qs('[data-part="top-insights"] [data-insight]', host).getAttribute('data-insight'); } finally { h.destroy(); TAP.store.reset(); }
+      a.equal(first, 'winsVsPeers:na', 'the profile leads with the wins insight (by hand, from the sample’s list)');
+      a.equal(line.getAttribute('data-discuss'), first, 'the card names the same insight');
+      // winsVsPeers on North America: 78 wins, three times the others' average of 26
+      a.equal(txt(line), 'To discuss: 78 new customers needed, 3× peers', 'its short form');
+      a.equal(line.tagName, 'BUTTON', 'a button');
+      var parts = Array.prototype.map.call(card(el, 'na').children, function (n) { return n.getAttribute('data-part'); });
+      a.equal(parts.indexOf('discuss'), parts.indexOf('profile') - 1, 'just above Open profile');
+    });
+
+    T.test(ID, 'Selecting the line opens the popover with the full sentence, the why line and Show me; no side panel', function (a) {
+      var el = fresh(), line = todo(card(el, 'na')), x = byId('winsVsPeers:na');
+      try {
+        spy(TAP.layers, 'openDetails', function (details) {
+          spy(TAP.layers, 'open', function (panels) {
+            line.click();
+            a.equal(details.length + panels.length, 0, 'neither the card’s details nor a side panel');
+          });
+        });
+        var p = pop();
+        a.ok(!!p, 'the popover opens');
+        a.ok(txt(p).indexOf(x.sentence) >= 0, 'the full sentence');
+        a.ok(txt(p).indexOf(x.why) >= 0, 'the why line');
+        var show = qs('.tap-figpop__show', p);
+        a.equal(txt(show), TAP.content.text('overview.insights.showMe'), 'a Show me button');
+        var got = [], off = TAP.bus.on('showme', function (e) { got.push(e); });
+        try { show.click(); } finally { if (typeof off === 'function') off(); }
+        a.equal(got.length && got[0].insightId, 'winsVsPeers:na', 'Show me sends the insight to its chart');
+        a.equal(pop(), null, 'and closes the popover');
+      } finally { TAP.sourceTip.close(); }
+    });
+
+    T.test(ID, 'Every rule that is not context has a short form without a banned word', function (a) {
+      var rules = window.TAP_RULES.rules.filter(function (r) { return !r.context; });
+      a.ok(rules.length >= 20, rules.length + ' rules');
+      rules.forEach(function (r) {
+        var forms = [r.short].concat(Object.keys(r.shorts || {}).map(function (k) { return r.shorts[k]; }));
+        a.ok(typeof r.short === 'string' && r.short.length > 0, r.id + ': a short form');
+        forms.forEach(function (f) {
+          a.ok(String(f).split(/\s+/).length <= 9, r.id + ': a few words: ' + f);
+          banned().forEach(function (w) { a.ok(!new RegExp('(^|[^A-Za-z])' + w + '([^A-Za-z]|$)', 'i').test(f), r.id + ': "' + f + '" avoids "' + w + '"'); });
+        });
+      });
+      // Every sample insight that is not context gets its short form filled, with no placeholder left
+      TAP.insights.all().filter(function (x) { return !x.context; }).forEach(function (x) {
+        a.ok(typeof x.short === 'string' && x.short.indexOf('{') < 0, x.id + ': ' + x.short);
+      });
+    });
+
+    T.test(ID, 'A rule with no short form reads "1 finding"; the popover still carries the sentence', function (a) {
+      var r = window.TAP_RULES.rules.filter(function (x) { return x.id === 'winsVsPeers'; })[0], saved = r.short;
+      delete r.short;
+      try {
+        TAP.insights.reset();
+        var el = fresh(), line = todo(card(el, 'na'));
+        a.equal(txt(line), 'To discuss: 1 finding', 'one finding');
+        line.click();
+        a.ok(txt(pop()).indexOf(byId('winsVsPeers:na').sentence) >= 0, 'the full sentence in the popover');
+      } finally { TAP.sourceTip.close(); r.short = saved; TAP.insights.reset(); }
+    });
+
+    T.test(ID, 'Hiding the insight brings the next; a region with none shows no line; combined cards show none', function (a) {
+      fresh();
+      try {
+        TAP.insights.hide('winsVsPeers:na');
+        a.equal(todo(card(cards({ mode: 'all' }), 'na')).getAttribute('data-discuss'), 'concentration:na', 'the next one');
+        TAP.insights.forRegion('na').forEach(function (x) { TAP.insights.hide(x.id); });
+        var el = cards({ mode: 'all' }), slot = qs('[data-part="discuss"]', card(el, 'na'));
+        a.equal(todo(card(el, 'na')), null, 'no line when none qualifies');
+        a.equal(txt(slot), '', 'an empty slot keeps the cards lined up');
+        var rest = card(cards({ mode: 'one', focus: 'latam', restAs: 'combined', restAgg: 'average' }), 'rest');
+        a.equal(todo(rest), null, 'a combined card has none');
+      } finally { TAP.insights.unhide(); TAP.store.reset(); }
+    });
+
+    T.test(ID, 'On the Overview, the cards’ lines are the one exception to broad only (D119): the block and panel stay broad', function (a) {
+      fresh();
+      var m = mountView();
+      try {
+        a.ok(qsa('.tap-ov-card__todiscuss', m.host).length >= 1, 'the cards carry region insights');
+        var block = qsa('[data-part="insights"] [data-insight]', m.host).map(function (n) { return byId(n.getAttribute('data-insight')); });
+        a.ok(block.length > 0 && block.every(function (x) { return TAP.insights.isBroad(x); }), 'the Top insights block stays broad');
+      } finally { m.handle.destroy(); }
     });
   });
 
