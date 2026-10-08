@@ -1,6 +1,6 @@
 /*
  * File: content/text-panel.js
- * Purpose: Wording for the report panel: controls, menus, table, export, takeaway and insight list.
+ * Purpose: Wording for the report panel: controls, menus, table, export and insight list.
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
  * Used by: js/panel/*.js
@@ -12,12 +12,13 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   panel: {
     tools: 'Chart tools',
-    takeaway: 'Main takeaway',
     close: 'Close',
     dataDate: 'Data: {date}',
 
     // Insights for one chart (US-1.2.2, US-1.7.11)
     insights: 'Insights',
+    // An insight's figures, one line per region, at most 5 (D121); also on the Insights page
+    figuresMore: 'and {n} more regions', figuresMoreOne: 'and 1 more region',
     insightsCount: '{n} insights for this chart',
     insightsTitle: 'Insights for this chart',
     showAll: 'Show all on the Insights page',

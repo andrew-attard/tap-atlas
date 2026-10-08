@@ -1,9 +1,11 @@
 /*
  * File: js/panel/panel-insights.js
- * Purpose: A panel's insights: the takeaway line (the top insight), the count, and the list of at most 3 with
- *          figures, rule, a highlight button and "Hide for this session" (US-1.2.2, US-1.7.11). The takeaway and
- *          each listed insight show their line on why it matters; context insights never reach a panel (D111).
- * Provides: TAP.panelInsights (get, fits, target, handlers, strip, takeaway, render)
+ * Purpose: A panel's insights: the count, and the list of at most 3 with figures, rule, a highlight button and
+ *          "Hide for this session" (US-1.7.11). Each listed insight shows its line on why it matters; context insights
+ *          never reach a panel (D111). No insight sits under the chart's question: they stay behind the Insights
+ *          button (D120).
+ * Provides: TAP.panelInsights (get, target, handlers, strip, render, figureLines and figureBlock: the figures one line
+ *           per region, shared with the Insights page, D121)
  * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/panel/panel-build.js, js/ui/showme.js, js/core/dom.js,
  *             js/core/icons.js, js/core/content.js, js/core/format.js, js/core/store.js
  * Used by: js/panel/panel.js, js/panel/panel-menus.js (the insights button)
@@ -15,30 +17,18 @@
   function t(key, vars) { return TAP.content.text('panel.' + key, vars); }
   var MAX = 3;
 
-  /*
-   * Whether an insight can be the takeaway for this comparison: every region it names is drawn on its own, or it
-   * includes the focus region. So a region inside "the rest" or the organization total never leads the chart.
-   */
-  function fits(x, cmp) {
-    var ents = TAP.scope.entities(cmp), own = ents.filter(function (e) { return e.kind === 'region'; }).map(function (e) { return e.regionIds[0]; });
-    var focus = ents.filter(function (e) { return e.role === 'focus'; }).map(function (e) { return e.regionIds[0]; });
-    var ids = x.regionIds || [];
-    return ids.every(function (r) { return own.indexOf(r) >= 0; }) || ids.some(function (r) { return focus.indexOf(r) >= 0; });
-  }
-
-  // The insights for one chart in a comparison: {top, list (at most 3), count}. Nothing while insights is a stub.
-  // industryId: a chart that shows one industry (the ratings) lists only the insights about it, so its count, list and
-  // takeaway never borrow another industry's insight (D102).
+  // The insights for one chart in a comparison: {list (at most 3), count}. Nothing while insights is a stub.
+  // industryId: a chart that shows one industry (the ratings) lists only the insights about it, so its count and list
+  // never borrow another industry's insight (D102).
   function get(cmp, reportId, industryId) {
-    var I = TAP.insights, none = { top: null, list: [], count: 0 };
+    var I = TAP.insights, none = { list: [], count: 0 };
     if (!I || I.__stub) return none;
     var hidden = TAP.store.get().hiddenInsights || [];
     var shown = function (x) { return x && hidden.indexOf(x.id) < 0 && (!industryId || (x.industryIds || []).indexOf(industryId) >= 0); };
     try {
       var all = (I.ranked(cmp, { reportId: reportId }) || []).filter(shown);
       var list = industryId ? all.slice(0, MAX) : (I.top(cmp, reportId, MAX) || []).filter(shown);
-      var lead = list.filter(function (x) { return fits(x, cmp); })[0] || null;
-      return { top: lead, list: list, count: Math.max(all.length, list.length) };
+      return { list: list, count: Math.max(all.length, list.length) };
     } catch (e) {
       if (!/Not built yet/.test(e.message)) throw e;
       return none;
@@ -62,7 +52,7 @@
     return tg;
   }
 
-  // What the takeaway and the list do, for panel p (see js/panel/panel.js).
+  // What the list does, for panel p (see js/panel/panel.js).
   function handlers(p) {
     return {
       selected: p.st.selected, seen: p.seen,
@@ -122,17 +112,6 @@
       onclick: function () { onHide(ins); } }, [TAP.icons.svg('hide', { size: 16 }), t('hide')]);
   }
 
-  // The takeaway line is always on the page; it stays empty, with no placeholder, when there is no insight.
-  function takeaway(node, ins, seen, onHide) {
-    TAP.dom.clear(node);
-    if (!ins) return node;
-    node.appendChild(el('span', { class: 'tap-panel__takeaway-text', html: TAP.content.mark(ins.sentence, seen) }));
-    node.appendChild(document.createTextNode(' '));
-    node.appendChild(hideButton(ins, onHide));
-    if (ins.why) node.appendChild(why(ins));
-    return node;
-  }
-
   /*
    * The list popover body. info: {list, count}. h: {selected, seen, onSelect(ins), onHide(ins), onShowAll(), onClose()}
    */
@@ -144,9 +123,9 @@
     ]));
     info.list.forEach(function (ins) {
       var on = h.selected === ins.id;
-      box.appendChild(el('div', { class: 'tap-panel__insight' + (on ? ' is-selected' : '') }, [
+      box.appendChild(el('div', { class: 'tap-panel__insight' + (on ? ' is-selected' : ''), 'data-insight': ins.id }, [
         el('p', { class: 'tap-panel__insight-text', html: TAP.content.mark(ins.sentence, h.seen) }),
-        ins.why ? why(ins, 'p') : null,
+        ins.why ? why(ins) : null,
         figures(ins.figures || []),
         ins.description ? el('p', { class: 'tap-panel__rule' }, t('rule', { text: ins.description })) : null,
         el('div', { class: 'tap-panel__insight-actions' }, [
@@ -162,14 +141,70 @@
   }
 
   // Why it matters (D111): one plain sentence under the insight, always shown (D24: nothing hover-only).
-  function why(ins, tag) { return el(tag || 'span', { class: 'tap-panel__why' }, ins.why); }
+  function why(ins) { return el('p', { class: 'tap-panel__why' }, ins.why); }
 
-  function figures(list) {
-    if (!list.length) return null;
-    return el('dl', { class: 'tap-panel__figures' }, list.map(function (f) {
-      return [el('dt', null, f.label), el('dd', null, TAP.format.cell(f.cell, { exact: true, unit: f.unit, field: f.field }))];
-    }).reduce(function (a, b) { return a.concat(b); }, []));
+  /*
+   * D121: an insight's figures, one line per region, when they name two regions or more: each region's figures for the
+   * insight's first two measures, at most 5 regions, then how many more. Figures for no single region (the others'
+   * average) follow as rows. Null when the figures name one region or none: one row per figure, as before.
+   * Returns {lines: [{regionId, name, parts: [{label, figure}]}], more, rest}. "Show me" still uses every figure.
+   */
+  var LINE_REGIONS = 5, LINE_MEASURES = 2;
+  function figureLines(list) {
+    var order = [], by = {}, rest = [], keys = [];
+    (list || []).forEach(function (f) {
+      var src = (f.cell && f.cell.src) || {}, r = src.combined ? null : src.regionId;
+      if (!r) { rest.push(f); return; }
+      if (!by[r]) { by[r] = []; order.push(r); }
+      by[r].push(f);
+    });
+    if (order.length < 2) return null;
+    var lines = order.map(function (r) {
+      var name = TAP.content.regionName(TAP.data.region(r));
+      var parts = by[r].map(function (f) {
+        var label = shortLabel(f.label, name);
+        return { key: f.measureId || f.unit + '|' + label, label: label, figure: f };
+      });
+      parts.forEach(function (p) { if (keys.indexOf(p.key) < 0) keys.push(p.key); });
+      return { regionId: r, name: name, parts: parts };
+    });
+    var use = keys.slice(0, LINE_MEASURES);
+    lines.forEach(function (ln) { ln.parts = ln.parts.filter(function (p) { return use.indexOf(p.key) >= 0; }); });
+    return { lines: lines.slice(0, LINE_REGIONS), more: Math.max(0, lines.length - LINE_REGIONS), rest: rest };
+  }
+  // "Attractiveness, North America" reads "attractiveness" on North America's line; a label naming the region
+  // elsewhere ("What North America wrote") gives way to the value alone.
+  function shortLabel(label, name) {
+    var s = String(label || ''), tail = ', ' + name;
+    if (s.slice(-tail.length) === tail) s = s.slice(0, -tail.length);
+    else if (s.indexOf(name) >= 0) return '';
+    return /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+  }
+  // The lines as elements of class cls, each value drawn by val(figure), leftover figures by rows(list); null when
+  // the figures name one region or none (the caller draws its rows).
+  function figureBlock(list, cls, val, rows) {
+    var g = figureLines(list);
+    if (!g) return null;
+    return g.lines.map(function (ln) {
+      var bits = [el('strong', null, ln.name + ':'), ' '];
+      ln.parts.forEach(function (p, i) { bits.push((i ? ', ' : '') + (p.label ? p.label + ' ' : ''), val(p.figure)); });
+      return el('p', { class: cls, 'data-part': 'figline' }, bits);
+    }).concat([g.more ? el('p', { class: cls, 'data-part': 'figmore' }, t(g.more === 1 ? 'figuresMoreOne' : 'figuresMore', { n: g.more })) : null,
+      g.rest.length ? rows(g.rest) : null]);
   }
 
-  TAP.panelInsights = { get: get, fits: fits, target: target, handlers: handlers, strip: strip, takeaway: takeaway, render: render };
+  function value(f) { return TAP.format.cell(f.cell, { exact: true, unit: f.unit, field: f.field }); }
+  function rows(list) {
+    return el('dl', { class: 'tap-panel__figures' }, list.map(function (f) {
+      return [el('dt', null, f.label), el('dd', null, value(f))];
+    }).reduce(function (a, b) { return a.concat(b); }, []));
+  }
+  function figures(list) {
+    if (!list.length) return null;
+    var lines = figureBlock(list, 'tap-panel__figline', value, rows);
+    return lines ? el('div', { class: 'tap-panel__figures tap-panel__figures--lines' }, lines) : rows(list);
+  }
+
+  TAP.panelInsights = { get: get, target: target, handlers: handlers, strip: strip, render: render, figureLines: figureLines,
+    figureBlock: figureBlock };
 })(window.TAP);

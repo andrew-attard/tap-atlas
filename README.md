@@ -129,13 +129,13 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/insights/util.js` | The helpers every rule gets as `ctx.util`: names, catalogue figures, the other regions' combined figure, phrases, strength and money at stake |
 | `js/insights/rules-outlook.js` | Insight rules on the Phase 4 figures: strategic plan gap, year 1 jump, pipeline coverage, books value gap, solution reliance |
 | `js/insights/rules-*.js` | One file per rule family: priorities, judgement, assumptions, realism, exposure, capability, plan (channel reliance, plan make-up), shared (shared targets, partner capacity), themes (recurring themes) |
-| `js/panel/panel.js` | The report panel: title, takeaway, chart or table, legend, source line, controls |
+| `js/panel/panel.js` | The report panel: title, chart or table, legend, source line, controls |
 | `js/panel/panel-build.js` | What a panel draws: checks the report and runs its builder |
 | `js/panel/panel-chart.js` | Draws the chart, legend and notes inside a panel |
 | `js/panel/panel-table.js` | The table view, sortable, with a source column (the data icon on screen, the address when copied), copyable into Excel |
 | `js/panel/panel-menus.js` | The panel's toolbar, menus and controls |
 | `js/panel/panel-export.js` | Saves or copies a chart as an image |
-| `js/panel/panel-insights.js` | The takeaway line and the panel's short insight list |
+| `js/panel/panel-insights.js` | The panel's short insight list, and the figures one line per region (also used by the Insights page) |
 | `js/panel/panel-drill.js` | Drill-down inside a panel: the levels, the trail of names, and going back up |
 | `js/panel/panel-expand.js` | Expanded and full-screen charts: the slim strip, arrow-key stepping |
 

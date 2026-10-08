@@ -67,7 +67,7 @@ window.TAP_CONTENT.guide = {
         'A single chart can also compare differently for a side question. It shows a "Custom comparison" badge, and goes back to the shared setting when the bar changes.'
       ] },
       { id: 'panels', title: 'Report panels', paragraphs: [
-        'Every chart sits in a panel that works the same way. The title is the question the chart answers, and the line below it gives the main takeaway.',
+        'Every chart sits in a panel that works the same way. The title is the question the chart answers. The chart\u2019s insights sit behind its Insights button, each with its figures one line per region.',
         'The explanation icon says what the chart shows, how to read it and what to look for. Clicking a bar, point or cell opens a side panel with everything known about that item.',
         'A panel can be expanded to fill the screen for discussion, and saved or copied as an image for slides. Esc returns to the view.',
         'Some charts open one level down when you select a bar, for example from a region to its industries. The trail of names above the chart goes back up.'
