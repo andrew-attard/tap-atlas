@@ -130,6 +130,16 @@
       } finally { TAP.data.load(T_FIXTURE('mini')); }
     });
 
+    T.test(ID, 'Selected regions with one region: every insight in the lists names that region, as with a focus (D107)', function (a) {
+      run(function () {
+        TAP.data.load(sample());
+        var id = TAP.scope.regionIds(cmp({ mode: 'all' }))[0];
+        var list = TAP.insights.ranked(cmp({ mode: 'set', set: [id] }), {});
+        a.ok(list.length > 0, 'the sample has insights for ' + id + ' (' + list.length + ')');
+        a.equal(list.filter(function (x) { return x.regionIds.indexOf(id) < 0; }).length, 0, 'none leaves the selected region out');
+      });
+    });
+
     T.test(ID, 'All regions combined: the sentence and the bar label say "combined"', function (a) {
       run(function () {
         var root = startApp();
