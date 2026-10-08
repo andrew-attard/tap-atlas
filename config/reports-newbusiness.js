@@ -67,7 +67,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'Which channels carry each region’s new business?',
     explain: {
       shows: 'Each region’s new business order intake by channel (direct, partner and the two alliances), as the template’s recap adds it up. Customer growth is left out.',
-      read: 'One bar per region, its channels as shades of the region’s colour and named in the legend. The 100% view compares the mix. Services by channel can differ slightly from services potential elsewhere: the recap moves part of direct services to partners, by the template’s outsourcing percentage.',
+      read: 'One bar per region, each channel in its own colour, the same in every bar and named in the legend. Switch between Amount and Share of total above the chart: the share compares the mix whatever the size of the plan. Leaders enter the channel split as percentages for each new business row, and the template’s recap adds the amounts up. Services by channel can differ slightly from services potential elsewhere: the recap moves part of direct services to partners, by the template’s outsourcing percentage.',
       lookFor: 'How much each plan relies on direct sales, partners and alliances, and regions whose mix sits apart from the others.'
     },
     shape: 'parts',
@@ -79,7 +79,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stackedBar', 'stacked100', 'table'],
     breakdowns: ['year'],
     sources: ['DER'],
-    options: {}
+    // D124: each channel in its own colour, and the Amount / Share of total switch above the chart
+    options: { partColors: 'channel', amountShare: true }
   };
 
   // US-2.1.5: every sub-industry and market each region is targeting, one row per new business row (17.4).

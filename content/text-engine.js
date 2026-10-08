@@ -166,6 +166,12 @@ Object.assign(window.TAP_CONTENT.text, {
     partsShort: '{label}, {measure}: the parts shown add up to {parts}, less than the total of {total}',
     sizeMissing: '{name} (size not provided)',
     sizeLegend: 'Bubble size: {measure}',
-    buildError: 'This report could not be drawn: {message}'
+    buildError: 'This report could not be drawn: {message}',
+    // D124: the Amount / Share of total switch and the tooltip title of a channel part
+    scale: 'Show',
+    scaleAmount: 'Amount',
+    scaleShare: 'Share of total',
+    channelTip: '{channel} · {row}: {value}, {share}',
+    channelTipNoShare: '{channel} · {row}: {value}'
   }
 });

@@ -21,7 +21,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How much does each plan rely on partners and alliances?',
     explain: {
       shows: 'Each region’s total order intake from the recap, new business and customer growth together, split by channel: direct, partner and the two alliances.',
-      read: 'One bar per region. The channels are shades of the region’s colour, darkest for direct, each named in the legend. Break down by motion to see new business and customer growth apart, or by year.',
+      read: 'One bar per region, each channel in its own colour, the same in every bar and named in the legend. Switch between Share of total and Amount above the chart. Break down by motion to see new business and customer growth apart, or by year.',
       lookFor: 'Plans that lean on partners or alliances much more or less than the others, and channels that grow from year to year.'
     },
     shape: 'parts',
@@ -37,7 +37,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stacked100', 'stackedBar', 'table'],
     breakdowns: ['motion', 'year'],
     sources: ['DER'],
-    options: {}
+    options: { partColors: 'channel', amountShare: true }   // D124: channel colours and the Amount / Share switch
   };
 
   // US-2.3.3: partner capacity against planned contribution, one bubble per partner.
@@ -75,7 +75,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How much of each plan runs through the organization’s own books?',
     explain: {
       shows: 'Each region’s order intake twice: at customer value, the price the customer pays, and at books value, the part that runs through the organization’s own books. Both are split by channel, with the difference in money and as a share of customer value.',
-      read: 'Two bars per region, customer value above books value, the channels as shades of the region’s colour. The two differ for three reasons. Resellers keep a margin, so less than the customer price reaches the books. Some services are delivered by partners, who invoice them. And the outsourcing % a region sets moves that share of its services from its own delivery to partners. The difference compares ARR and services, the two types both values hold: software perpetual and hardware appear in the books value only. Pick one plan year or the three years together, and switch the split to product category.',
+      read: 'Two bars per region, customer value above books value, each channel in its own colour, named in the legend; split by product category, the categories are shades of the region’s colour. The two differ for three reasons. Resellers keep a margin, so less than the customer price reaches the books. Some services are delivered by partners, who invoice them. And the outsourcing % a region sets moves that share of its services from its own delivery to partners. The difference compares ARR and services, the two types both values hold: software perpetual and hardware appear in the books value only. Pick one plan year or the three years together, and switch the split to product category.',
       lookFor: 'Regions where a large share of customer value does not run through the books, the channels that difference comes from, and whether it changes from year to year.'
     },
     shape: 'parts',
@@ -86,7 +86,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stackedBar', 'table'],
     breakdowns: [],
     sources: ['DER', 'APP'],
-    options: { measuresAs: 'categories' }
+    options: { measuresAs: 'categories', partColors: 'channel' }   // channel colours when split by channel (D124)
   };
 
   // US-4.5.2: order intake by route to market, from the recap. One part per route in the lookup's order; a route

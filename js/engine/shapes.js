@@ -2,7 +2,7 @@
  * File: js/engine/shapes.js
  * Purpose: Decides which chart types suit a report's data shape and the current comparison (D18), and holds the
  *          small drawing kit the generic builders share: escaped tooltips, the not-provided mark, highlight rings,
- *          axes, bubble sizes, tables, notes and the builder result.
+ *          axes, bubble sizes, tables, notes, the builder result, and parts coloured by channel with the Amount / Share switch (D124).
  * Provides: TAP.shapes (types, label, kit, including refLines)
  * Depends on: js/engine/registry.js, js/theme.js, js/core/dom.js, js/core/format.js, js/core/content.js,
  *             js/engine/aggregate.js (combined-figure labels)
@@ -168,6 +168,52 @@
     return out;
   }
 
+  /* ---------- parts coloured by channel (D124) ---------- */
+
+  // The theme's channel colour ({bg, fg}) for each part, when the report colours its parts by channel
+  // (options.partColors 'channel') and every part is a channel; else null, and the parts stay region shades.
+  // keys: part keys ending in the channel id ('rc.nb.arr.partner') or the ids themselves.
+  function channelPaints(def, keys) {
+    var pal = th().channels || {};
+    if (((def && def.options) || {}).partColors !== 'channel' || !keys || !keys.length) return null;
+    var out = keys.map(function (key) { return pal[String(key).split('.').pop()] || null; });
+    return out.every(Boolean) ? out : null;
+  }
+
+  // Without the region colour on the bars, the focus region stands out by a bold name on the axis (D124).
+  function axisEmphasis(rows) {
+    return { fontSize: th().type.chart, interval: 0, rich: { focus: { fontSize: th().type.chart, fontWeight: 800, color: th().ink } },
+      formatter: function (v, i) { var r = rows[i]; return r && r.entity && r.entity.role === 'focus' ? '{focus|' + v + '}' : v; } };
+  }
+
+  // The bar's outline: the Show me ring first, then an ink outline for the focus region when parts are channels.
+  function partBorder(entity, on, paints) {
+    var x = th();
+    if (on) return { borderColor: x.echarts.tap.highlight.color, borderWidth: x.echarts.tap.highlight.width };
+    if (paints && entity && entity.role === 'focus') return { borderColor: x.ink, borderWidth: x.border.rule };
+    return { borderColor: x.ground, borderWidth: x.border.control };
+  }
+
+  // The key: the channels in their colours, in stacking order. labels: the parts' names.
+  function channelLegend(labels, paints) {
+    return labels.map(function (l, i) { return { label: l, color: paints[i].bg, role: 'channel' }; });
+  }
+
+  // D124: Amount or Share of total, one click away where the report offers both stacked views. The panel turns
+  // the pick (key 'type') into the chart type.
+  function shareSwitch(def, type) {
+    var ts = def.types || [];
+    if (!(def.options || {}).amountShare || ts.indexOf('stackedBar') < 0 || ts.indexOf('stacked100') < 0) return [];
+    return [{ key: 'type', label: t('chart.scale'), kind: 'segmented', value: type === 'stacked100' ? 'stacked100' : 'stackedBar',
+      options: [{ value: 'stackedBar', label: t('chart.scaleAmount') }, { value: 'stacked100', label: t('chart.scaleShare') }] }];
+  }
+
+  // Tooltip title for a channel part: "Partner · Region A: €2.1M, 40%".
+  function channelTitle(channel, row, c, col, total) {
+    var share = c && c.state === 'value' && total && total.state === 'value' && total.v ? TAP.format.pct(c.v / total.v) : null;
+    return t(share ? 'chart.channelTip' : 'chart.channelTipNoShare', { channel: channel, row: row, value: exact(c, col), share: share });
+  }
+
   function legendOf(ds) {
     return ds.entities.map(function (e) { return { label: e.label, color: e.color, role: e.role }; });
   }
@@ -219,6 +265,7 @@
     th: th, t: t, lower: lower, colOf: colOf, visibleRows: visibleRows, tip: tip, exact: exact, cellRows: cellRows,
     axisFormatter: axisFormatter, valueAxis: valueAxis, grid: grid, npSeries: npSeries, ringSeries: ringSeries,
     highlighted: highlighted, sizeScale: sizeScale, sizeLegend: sizeLegend, table: table, notes: notes, legendOf: legendOf,
-    result: result, safely: safely, refLines: refLines
+    result: result, safely: safely, refLines: refLines, channelPaints: channelPaints, axisEmphasis: axisEmphasis, partBorder: partBorder,
+    channelLegend: channelLegend, shareSwitch: shareSwitch, channelTitle: channelTitle
   } };
 })(window.TAP);
