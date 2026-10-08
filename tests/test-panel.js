@@ -623,13 +623,13 @@
   }
 
   T.suite('panel-compare', function () {
-    T.test('TPV-TC-228', '"Compare differently" offers the same four modes as the comparison bar (D99)', scene(function (a, s) {
+    T.test('TPV-TC-228', '"Compare differently" offers the same three modes as the comparison bar (D99, D114)', scene(function (a, s) {
       s.report(fakeDef());
       var ed = openCompare(s.panel('x-fake'));
       a.ok(ed, 'editor opens');
       var opts = qsa('select[data-control="cmp-mode"] option', ed);
-      a.deepEqual(opts.map(function (o) { return o.value; }), ['all', 'set', 'one', 'org']);
-      a.deepEqual(opts.map(function (o) { return txt(o); }), ['all', 'set', 'one', 'org'].map(function (m) {
+      a.deepEqual(opts.map(function (o) { return o.value; }), ['all', 'set', 'one']);
+      a.deepEqual(opts.map(function (o) { return txt(o); }), ['all', 'set', 'one'].map(function (m) {
         return TAP.content.text('compare.modes.' + m);
       }), 'same words');
     }));

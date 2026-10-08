@@ -132,7 +132,7 @@
       a.equal(last().opts.sort, 'name:desc', 'then descending');
       click(qs('.x-other', p.el));
       a.deepEqual(last().opts, { sort: 'name:desc', density: 'compact' }, 'generic: any key, not list-specific');
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
       a.deepEqual(last().opts, {}, 'reset when the comparison changes');
     }));
 
@@ -256,7 +256,7 @@
       a.equal(pressed(p), 'year', 'year pressed');
       click(qs('[data-control="breakdown"] [data-value="none"]', p.el));
       a.equal(pressed(p), 'none', 'none can still be chosen');
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
       a.equal(pressed(p), 'year', 'a change of comparison returns to the default breakdown');
       click(qs('[data-control="breakdown"] [data-value="none"]', p.el));
       TAP.bus.emit('charts:reset');
@@ -268,7 +268,7 @@
       var p = s.panel('x-bd3');
       a.equal(pressed(p), 'none', 'opens with none');
       click(qs('[data-control="breakdown"] [data-value="year"]', p.el));
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
       a.equal(pressed(p), 'year', 'kept');
     }));
 
@@ -659,7 +659,7 @@
       levels(s);
       var p = s.panel('x-d1');
       down2(p);
-      TAP.store.set({ cmp: { mode: 'org' } });
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo' } });
       a.equal(last().def.id, 'x-d1', 'comparison changed: top');
       a.equal(qs('.tap-panel__crumbs', p.el), null);
       down2(p);
@@ -675,10 +675,10 @@
       click(qs('[data-action="more"]', p.el));
       click(qs('[data-action="compare"]', p.el));
       var sel = qs('select[data-control="cmp-mode"]', p.el);
-      sel.value = 'org';
+      sel.value = 'one';
       sel.dispatchEvent(new Event('change', { bubbles: true }));
       a.equal(last().def.id, 'x-d1');
-      a.equal(last().cmp.mode, 'org', 'with the panel\'s own comparison');
+      a.equal(last().cmp.mode, 'one', 'with the panel\'s own comparison');
     }));
 
     T.test('TPV-TC-280', 'Without drill levels a click opens details, as in Phase 1', scene(function (a, s) {

@@ -398,8 +398,8 @@
       run(function () {
         var root = startApp();
         var labels = qsa('.tap-cmp__mode', root).map(txt);
-        a.deepEqual(labels, ['All regions', 'Selected regions', 'One vs the rest', 'All regions combined'], 'four modes (D99)');
-        var expect = { all: [], set: ['set'], one: ['focus', 'rest'], org: [] };
+        a.deepEqual(labels, ['All regions', 'Selected regions', 'One vs the rest'], 'three modes (D99, D114)');
+        var expect = { all: [], set: ['set'], one: ['focus', 'rest'] };
         Object.keys(expect).forEach(function (mode) {
           clickMode(root, mode);
           a.equal(TAP.store.get().cmp.mode, mode, 'mode written: ' + mode);
@@ -566,8 +566,9 @@
         a.ok(txt(qs('.tap-cmp__pop', root)).indexOf(TAP.content.text('combined.explainTotal')) >= 0, 'total wording');
         esc();
         a.ok(!shown(root, '.tap-cmp__pop'), 'Esc closes it');
-        clickMode(root, 'org');
-        a.ok(shown(root, '.tap-cmp__explain'), 'icon for all regions combined');
+        clickMode(root, 'all');
+        clickMode(root, 'one');
+        a.ok(shown(root, '.tap-cmp__explain'), 'icon again on returning to one vs the rest');
         TAP.store.set({ cmp: { mode: 'one', restAs: 'individual' } });
         a.ok(!shown(root, '.tap-cmp__explain'), 'no icon when the others are shown individually');
       });

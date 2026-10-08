@@ -1,9 +1,9 @@
 /*
  * File: tests/test-compare-modes.js
- * Purpose: Tests for the four comparison modes (D99): All regions, Selected regions (one region or more), One vs
- *          the rest and All regions combined. "One vs one" is gone from the screen; an old 'pair' setting is read
- *          as a selection of its regions.
- * Provides: test cases X-d99-compare-modes
+ * Purpose: Tests for the comparison modes: All regions, Selected regions (one region or more) and One vs the rest
+ *          (D99, D114). "One vs one" and "All regions combined" are gone from the screen; an old 'pair' setting is read
+ *          as a selection of its regions, an old 'org' as All regions.
+ * Provides: test cases X-d99-compare-modes, X-d114-no-combined
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js
  * Used by: tests.html
  */
@@ -11,7 +11,8 @@
   'use strict';
 
   var TH = window.TAP_THEME;
-  var ID = 'X-d99-compare-modes';
+  var ID = 'X-d99-compare-modes', D114 = 'X-d114-no-combined';
+  var THREE = ['all', 'set', 'one'], LABELS = ['All regions', 'Selected regions', 'One vs the rest'];
   var qs = function (sel, root) { return root.querySelector(sel); };
   var qsa = function (sel, root) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
   var txt = function (el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; };
@@ -53,12 +54,10 @@
   }
 
   T.suite('compare-modes', function () {
-    T.test(ID, 'The bar offers exactly four modes, in this order, with these labels', function (a) {
+    T.test(ID, 'The bar has no one vs one mode and no second-region picker', function (a) {
       run(function () {
         var root = startApp();
-        var modes = qsa('.tap-cmp__mode', root);
-        a.deepEqual(modes.map(function (b) { return b.getAttribute('data-mode'); }), ['all', 'set', 'one', 'org'], 'the ids, in order');
-        a.deepEqual(modes.map(txt), ['All regions', 'Selected regions', 'One vs the rest', 'All regions combined'], 'the labels');
+        a.equal(qs('.tap-cmp__mode[data-mode="pair"]', root), null, 'no one vs one button');
         a.equal(qs('[data-picker="second"]', root), null, 'no second-region picker at all');
       });
     });
@@ -140,19 +139,7 @@
       });
     });
 
-    T.test(ID, 'All regions combined: the sentence and the bar label say "combined"', function (a) {
-      run(function () {
-        var root = startApp();
-        clickMode(root, 'org');
-        a.equal(sentence(root), 'All 4 regions combined into one figure, as if they were one region');
-        a.deepEqual(build('ov-ambition', 'stackedBar', { mode: 'org' }).option.yAxis.data, ['All 4 regions combined'], 'the bar label');
-        a.ok(shown(root, '.tap-cmp__explain'), '"What the combined figure means" still shows');
-        click(qs('.tap-cmp__explain', root));
-        a.ok(txt(qs('.tap-cmp__pop', root)).indexOf('All 4 regions combined') >= 0, 'and names the figure as the chart does');
-      });
-    });
-
-    T.test(ID, 'The panel’s own comparison menu offers the same four modes, and a selection of one region', function (a) {
+    T.test(ID, 'The panel’s own comparison menu offers a selection of one region', function (a) {
       run(function () {
         TAP.data.load(T_FIXTURE('mini'));
         var p = TAP.panel.create(T.dom.mount(), 'ov-ambition');
@@ -160,8 +147,7 @@
           click(qs('[data-action="more"]', p.el));
           click(qs('[data-action="compare"]', p.el));
           var sel = qs('select[data-control="cmp-mode"]', p.el);
-          a.deepEqual(qsa('option', sel).map(function (o) { return o.value; }), ['all', 'set', 'one', 'org'], 'four modes, in order');
-          a.deepEqual(qsa('option', sel).map(txt), ['All regions', 'Selected regions', 'One vs the rest', 'All regions combined'], 'same labels');
+          a.equal(qs('option[value="pair"]', sel), null, 'no one vs one');
           sel.value = 'set';
           sel.dispatchEvent(new Event('change', { bubbles: true }));
           var chips = qsa('[data-control="cmp-set"] [aria-pressed="true"]', p.el);
@@ -217,6 +203,82 @@
         var step = TAP.presentRecord.stepOf(p, { def: TAP.reports.get('ov-ambition'), title: 'T', ctx: { type: 'bar' } });
         a.deepEqual(step.cmp, { mode: 'set', set: ['na', 'mea'] }, 'recorded as a selection');
       } finally { TAP.present.clearRecorded(); TAP.notes.clear('presentation'); TAP.data.load(T_FIXTURE('mini')); }
+    });
+
+    // D114: "All regions combined" leaves the comparison choices; an old 'org' setting opens as All regions.
+    T.test(D114, 'The bar offers exactly three modes, in this order, with these labels', function (a) {
+      run(function () {
+        var modes = qsa('.tap-cmp__mode', startApp());
+        a.deepEqual(modes.map(function (b) { return b.getAttribute('data-mode'); }), THREE, 'the ids, in order');
+        a.deepEqual(modes.map(txt), LABELS, 'the labels');
+      });
+    });
+
+    T.test(D114, 'The panel’s own comparison menu offers the same three modes', function (a) {
+      run(function () {
+        var p = TAP.panel.create(T.dom.mount(), 'ov-ambition');
+        try {
+          click(qs('[data-action="more"]', p.el));
+          click(qs('[data-action="compare"]', p.el));
+          var sel = qs('select[data-control="cmp-mode"]', p.el);
+          a.deepEqual(qsa('option', sel).map(function (o) { return o.value; }), THREE, 'three modes, in order');
+          a.deepEqual(qsa('option', sel).map(txt), LABELS, 'the bar’s labels');
+        } finally { p.destroy(); }
+      });
+    });
+
+    T.test(D114, 'An address with ?mode=org opens as All regions', function (a) {
+      run(function () {
+        var root;
+        withSearch('?screenshot=1&mode=org', function () { root = startApp(); });
+        a.equal(TAP.store.get().cmp.mode, 'all', 'the mode is all');
+        a.equal(qs('.tap-cmp__mode[aria-pressed="true"]', root).getAttribute('data-mode'), 'all', 'All regions is pressed');
+        a.equal(sentence(root), 'Showing all 4 regions side by side', 'the sentence says all regions');
+      });
+    });
+
+    T.test(D114, 'A presentation step with mode org plays as All regions', function (a) {
+      try {
+        var res = TAP.presentSteps.check([{ report: 'ov-ambition', cmp: { mode: 'org' } }]);
+        a.deepEqual(res.skipped, [], 'not skipped');
+        a.equal(res.ok[0].cmp.mode, 'all', 'all regions');
+      } finally { TAP.notes.clear('presentation'); }
+    });
+
+    T.test(D114, 'A stored recorded org step plays as All regions; the recorder never writes org', function (a) {
+      try {
+        TAP.storage.set('runningOrder.recorded', [{ report: 'ov-ambition', cmp: { mode: 'org' } }]);
+        var res = TAP.presentSteps.check(TAP.presentRecord.recorded());
+        a.equal(res.ok[0].cmp.mode, 'all', 'played as all regions');
+        var host = T.dom.mount(), extra = TAP.guideExtras.filter(function (x) { return x.id === 'runningOrder'; })[0];
+        extra.render(host);
+        a.ok(txt(host).indexOf('Showing all 4 regions side by side') >= 0, 'the Guide describes it as all regions');
+        var p = { id: 'ov-ambition', st: {}, drill: null, cmp: function () { return cmp({ mode: 'org' }); } };
+        var step = TAP.presentRecord.stepOf(p, { def: TAP.reports.get('ov-ambition'), title: 'T', ctx: { type: 'bar' } });
+        a.deepEqual(step.cmp, { mode: 'all' }, 'recorded as all regions');
+      } finally { TAP.present.clearRecorded(); TAP.notes.clear('presentation'); }
+    });
+
+    T.test(D114, 'TAP.scope.upgrade reads org as All regions; the engine still draws the combined total for internal callers', function (a) {
+      a.equal(TAP.scope.upgrade(cmp({ mode: 'org' })).mode, 'all', 'org becomes all');
+      a.deepEqual(TAP.scope.upgrade({ mode: 'one', focus: 'bravo' }), { mode: 'one', focus: 'bravo' }, 'other modes come back as they are');
+      a.deepEqual(TAP.scope.entities(cmp({ mode: 'org' })).map(function (e) { return [e.id, e.kind]; }), [['org', 'combined']], 'the org entity stays');
+    });
+
+    T.test(D114, 'The starter presentation file has no org step', function (a) {
+      var steps = (window.TAP_RUNNING_ORDER || {}).steps || [];
+      a.ok(steps.length > 0, steps.length + ' steps');
+      a.ok(steps.every(function (s) { return !s.cmp || s.cmp.mode !== 'org'; }), 'no step uses org');
+    });
+
+    T.test(D114, 'The organization total insight on the strategic plan still fires on the sample', function (a) {
+      TAP.data.load(sample());
+      try {
+        var x = TAP.insights.all().filter(function (i) { return i.ruleId === 'spTotal'; });
+        a.equal(x.length, 1, 'one finding');
+        a.equal(x[0] && x[0].sentence, 'Together, the three-year plans of the 6 regions with a strategic plan are 8% below their ' +
+          'strategic plans (€71.4M against €77.6M). Not included, with no strategic plan: Northern Europe.', 'as on the sample');
+      } finally { TAP.data.load(T_FIXTURE('mini')); }
     });
   });
 })(window.TAP);

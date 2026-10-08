@@ -206,15 +206,15 @@
     T.test('TPV-TC-187', 'The open panel follows the shared comparison while it is open', function (a) {
       withExplain('ov-ambition', function (panel) {
         a.ok(txt(panel).indexOf(TAP.content.text('explain.noCombined')) >= 0, 'all regions: nothing combined');
-        TAP.store.set({ cmp: { mode: 'org' } });
-        a.ok(txt(layerEl()).indexOf(TAP.content.text('combined.explainTotal')) >= 0, 'organization total: explained as a total');
+        TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'total' } });
+        a.ok(txt(layerEl()).indexOf(TAP.content.text('combined.explainTotal')) >= 0, 'total of the rest: explained as a total');
       });
     });
 
     T.test('TPV-TC-187', 'A panel with its own comparison is explained for that comparison', function (a) {
       withExplain('ov-ambition', function (panel) {
         a.ok(txt(panel).indexOf(TAP.content.text('combined.explainTotal')) >= 0, 'explains the panel comparison, not the shared one');
-      }, { cmp: { mode: 'org' } });
+      }, { cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'total' } });
     });
 
     T.test('X-pages-explain-terms', 'Glossary terms are marked once in the whole panel', function (a) {
