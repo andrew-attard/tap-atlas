@@ -140,6 +140,8 @@
     if (named[0] !== 'custom' && typeof step[named[0]] !== 'string') throw new Skip('step', '');
     var cmp = cmpOf(step.cmp);
     var out = named[0] === 'report' ? fromReport(step) : named[0] === 'insight' ? fromInsight(step) : fromCustom(step);
+    // A custom chart fixed to one region (def.cmp, D140) shows that region unless the step writes its own comparison
+    if (step.cmp == null && out.def && out.def.cmp) cmp = cmpOf(out.def.cmp);
     // The Overview always shows every region (D118): a step on its chart drops its comparison quietly
     var def = out.def || TAP.reports.get(out.reportId);
     out.cmp = def && def.view === 'overview' ? TAP.store.defaults().cmp : cmp;

@@ -1,25 +1,45 @@
 /*
  * File: css/custom.css
- * Purpose: Styles for the Build a chart view's builder.
+ * Purpose: Styles for the Build a chart view's builder (D140): the kept charts as chips at the top, the controls
+ *          on the left and the chart beside them, stacked when the chart would be too narrow.
  * Provides: styles for this area only
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: CUSTOM stream. Colours and font sizes come from theme variables only.
  */
 
-.tap-custom { display: flex; flex-direction: column; gap: var(--tap-sp-4); }
-.tap-custom__lead { margin: 0; font-size: var(--tap-fs-body); max-width: 72ch; }
-
-/* The three pickers: Measure, By and Chart type, wrapping on narrow screens */
-.tap-custom__pickers {
-  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--tap-sp-3) var(--tap-sp-6);
-  padding: var(--tap-sp-3) 0; border-top: var(--tap-rule-w) solid var(--tap-ink); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
+/* Stacked by default: the kept charts, the controls, then the chart under them. Two columns, controls of 400 px
+   and the chart beside them, from the width where the chart keeps at least 760 px (D140). */
+.tap-custom { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--tap-sp-4) var(--tap-sp-6); align-items: start; }
+.tap-custom__lead, .tap-custom__kept { grid-column: 1 / -1; }
+@media (min-width: 1232px) {
+  .tap-custom { grid-template-columns: 400px minmax(0, 1fr); }
 }
+.tap-custom__lead { margin: 0; font-size: var(--tap-fs-body); max-width: 72ch; }
+.tap-custom__controls { display: flex; flex-direction: column; gap: var(--tap-sp-4); min-width: 0; }
+.tap-custom__chart { display: flex; flex-direction: column; gap: var(--tap-sp-3); min-width: 0; }
+
 .tap-custom__field { display: flex; flex-direction: column; gap: var(--tap-sp-1); }
 .tap-custom__label { font-size: var(--tap-fs-body); font-weight: 600; }
 
-/* The measure picker (D122): search, topics, then the topic's measures as radios in up to two columns, on its own row */
-.tap-custom__measure { flex: 1 1 100%; min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--tap-sp-3); }
+/* Step 1: the three questions, each a button with its name and a line of help */
+.tap-custom__asks { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
+.tap-custom__ask {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--tap-sp-2) var(--tap-sp-3);
+  font: inherit; font-size: var(--tap-fs-body); text-align: left; color: var(--tap-ink); background: var(--tap-paper);
+  border: var(--tap-control-w) solid var(--tap-ink); cursor: pointer;
+}
+.tap-custom__ask:hover { background: var(--tap-surface); }
+.tap-custom__ask[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-custom__ask-label { font-weight: 700; }
+.tap-custom__ask-help { font-size: var(--tap-fs-body); }
+
+/* The Region dropdown and its note (the chart ignores the comparison bar) */
+.tap-custom .tap-custom__field > .tap-panel__select { align-self: flex-start; max-width: 100%; font-size: var(--tap-fs-body); }
+.tap-custom__region-note { font-size: var(--tap-fs-body); color: var(--tap-muted); }
+
+/* The measure picker (D122): search, topics, then the topic's measures as radios, one column in the controls */
+.tap-custom__measure { min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--tap-sp-3); }
 .tap-custom__measure > legend { padding: 0; margin-bottom: var(--tap-sp-2); }
 .tap-custom__findrow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3); }
 .tap-custom__findlabel { font-size: var(--tap-fs-body); }
@@ -41,7 +61,7 @@
 .tap-custom__opt:has(.tap-custom__radio:checked) .tap-custom__name { font-weight: 700; }
 .tap-custom__more, .tap-custom__none { font-size: var(--tap-fs-body); margin: 0; }
 
-/* The panel takes the view's width, as a single panel does on the other views */
+/* The chart panel takes its column's width */
 .tap-custom__panel { min-width: 0; }
 .tap-custom__failed { padding: var(--tap-sp-4) var(--tap-sp-6); }
 
@@ -53,11 +73,18 @@
 .tap-custom__keep { font-size: var(--tap-fs-body); }
 .tap-custom__status { margin: 0; font-size: var(--tap-fs-body); font-weight: 600; }
 
-/* The session list: one row per kept chart, reopened with one click */
-.tap-custom__kept { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
-.tap-custom__h3 { margin: 0; font-size: var(--tap-fs-h3); }
+/* The kept charts: "Your charts" and one chip per chart, reopened with one click, removed with its × */
+.tap-custom__kept { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3); }
+.tap-custom__h3 { margin: 0; font-size: var(--tap-fs-body); font-weight: 700; }
 .tap-custom__note { margin: 0; font-size: var(--tap-fs-body); }
-.tap-custom__list { margin: 0; padding-left: var(--tap-sp-6); display: flex; flex-direction: column; gap: var(--tap-sp-2); }
-.tap-custom__item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3); }
-.tap-custom__open { font-size: var(--tap-fs-body); text-align: left; text-decoration: underline; }   /* reads as a link to the chart */
-.tap-custom__remove { font-size: var(--tap-fs-body); }
+.tap-custom__chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
+.tap-custom__chip { display: inline-flex; align-items: stretch; border: var(--tap-control-w) solid var(--tap-ink); background: var(--tap-paper); }
+.tap-custom__open {
+  min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3); font: inherit; font-size: var(--tap-fs-body); font-weight: 600;
+  text-align: left; color: var(--tap-ink); background: transparent; border: 0; cursor: pointer;
+}
+.tap-custom__remove {
+  min-width: 40px; padding: 0 var(--tap-sp-3); font: inherit; font-size: var(--tap-fs-lead); line-height: 1; color: var(--tap-ink);
+  background: transparent; border: 0; border-left: var(--tap-control-w) solid var(--tap-ink); cursor: pointer;
+}
+.tap-custom__open:hover, .tap-custom__remove:hover { background: var(--tap-surface); }

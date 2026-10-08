@@ -12,9 +12,17 @@ Object.assign(window.TAP_CONTENT.text, {
   custom: {
     // The Build a chart view (js/views/build.js, D96): the header's kicker and title; the lead line follows them
     heading: 'Build a chart',
-    viewTitle: 'Which figure would you like to compare?',
-    // The builder (js/ui/custom-builder.js)
-    lead: 'Pick a topic, then a measure from its short list, or find one by name; then what to show it by and a chart type. Only combinations that make sense are offered: rates and ratings are never added up. The chart follows the comparison like any other.',
+    viewTitle: 'Which question would you like to chart?',
+    // The builder (js/ui/custom-builder.js, D140)
+    lead: 'Start from the question: compare the regions, break one region down, or see the plan years. Then pick a measure by topic or by name. Only combinations that read well are offered: rates and ratings are never added up. The chart redraws with every change.',
+    // Step 1 (js/ui/custom-controls.js): the three questions, each with one line of help
+    ask: {
+      label: 'What do you want to see?',
+      regions: { label: 'Compare regions', help: 'One bar per region, for the regions in the comparison bar.' },
+      one: { label: 'Break one region down', help: 'One region split by industry, channel or another dimension the measure has.' },
+      years: { label: 'See the plan years', help: 'A bar per plan year for each region in the comparison bar.' }
+    },
+    region: { label: 'Region', note: 'This chart shows the region chosen here and ignores the comparison bar.' },
     measure: 'Measure',
     // The measure picker (js/ui/custom-measure-picker.js, D122): topics named after the menu, then the measures
     topic: 'Topic',
@@ -28,19 +36,19 @@ Object.assign(window.TAP_CONTENT.text, {
       rate: { glyph: '÷', word: 'rate or average' }, rating: { glyph: '★', word: 'rating' } },
     byPicker: 'By',
     by: { entity: 'Region' },
-    type: 'Chart type',
+    showAs: 'Show as',
+    showAsBar: 'Bar',
+    showAsTable: 'Table',
     measureBy: '{measure} (by {by})',
     failed: 'This chart can’t be drawn',
     none: 'No measure in the data can be charted.',
-    // The session list (US-3.5.3)
+    // The kept charts (US-3.5.3): a row of chips at the top of the view
     list: {
       keep: 'Keep this chart',
-      heading: 'Charts kept for this session',
-      intro: 'Up to six charts are kept while this tab is open. Nothing is kept after it closes.',
-      empty: 'No charts kept yet.',
-      open: '{title}, {type}',
-      remove: 'Remove',
-      removeLabel: 'Remove {title}, {type}',
+      heading: 'Your charts',
+      empty: 'No charts kept yet. Up to six are kept while this tab is open; nothing is kept after it closes.',
+      remove: '×',
+      removeLabel: 'Remove {title}',
       kept: 'Kept: {title}.',
       full: 'Six charts are kept already. Remove one first, then keep this chart.'
     },
@@ -48,10 +56,13 @@ Object.assign(window.TAP_CONTENT.text, {
     badge: 'Custom chart',
     // A custom chart's title and its "About this chart" text (js/engine/custom.js)
     title: '{measure} by {by}',
+    titleOne: '{region} {measure} by {by}',
+    titleYears: '{measure} by plan year',
     explain: {
       shows: 'A chart you built: {measure} by {by}. It is not one of the prepared reports.',
-      readEntity: 'One bar or dot per region, or per combined figure, in the current comparison.',
+      readEntity: 'One bar per region, or per combined figure, in the current comparison.',
       readBy: 'Each region, or combined figure, is split by {by}. Every group is labelled.',
+      readOne: 'One bar per {by} for {region}, largest first, with its value on the bar. The comparison bar is ignored.',
       combine: {
         sum: 'Combined figures add up the regions as a total, or average them, as the comparison says.',
         rate: 'Rates are never added up: combined figures are weighted averages of the regions.',
@@ -63,7 +74,10 @@ Object.assign(window.TAP_CONTENT.text, {
       measure: 'There is no measure called "{id}".',
       notValue: '{measure} is words or a category, so it can’t be drawn as a chart value.',
       by: '{measure} can’t be shown by {by}.',
-      noBy: '{measure} has no region or dimension it can be shown by.',
+      noRegions: '{measure} has no region total to compare.',
+      noDims: '{measure} has no dimension to break a region down by.',
+      noYears: '{measure} has no plan years.',
+      region: 'There is no region called "{id}".',
       type: 'A {type} chart doesn’t suit a chart by {by}.'
     }
   }
