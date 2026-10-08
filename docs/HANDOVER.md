@@ -112,6 +112,7 @@ These are open on purpose: each needs the real data, the real template or a deci
 8. **What the strategic plan is compared with.** The app compares the strategic plan with the plan's books value of the same year and product category, as the template does. If leadership wants it against customer value instead, that is a new measure, not a data change.
 9. **Revenue release shares.** The revenue outlook is read as the template works it out, from central release shares the app does not import. A change to those shares shows up only after the workbooks are recalculated and imported again.
 10. **Stories not built.** None from Phases 1 to 3.
+11. **The region's own headcount (D113).** The template gives partner staff only. Without the region's own sales and consultant headcount, the app cannot check sales capacity against the wins a plan needs, or delivery capacity against the services it sells; the services delivery insight can only say that the rest relies on the region's own consultants. A candidate addition to the template for the next planning cycle (Data Contract, open question 5).
 
 Other limits by design:
 
