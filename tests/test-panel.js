@@ -111,12 +111,12 @@
       ['refresh', 'highlight', 'expand', 'destroy'].forEach(function (f) { a.equal(typeof p[f], 'function', f); });
     }));
 
-    T.test('TPV-TC-050', 'Every Phase 1 panel shows its title, takeaway, body, source line and controls', scene(function (a, s) {
+    T.test('TPV-TC-050', 'Every Phase 1 panel shows its title, body, source line and controls, and no takeaway under the question (D120)', scene(function (a, s) {
       ['ov-ambition', 'ind-tiers', 'ind-quad', 'ind-ratings'].forEach(function (id) {
         var p = s.panel(id), def = TAP.reports.get(id);
         a.ok(txt(qs('.tap-panel__title', p.el)).length > 0, id + ': title');
         a.ok(txt(qs('.tap-panel__title', p.el)).indexOf('{industry}') < 0, id + ': no unfilled placeholder');
-        a.ok(qs('.tap-panel__takeaway', p.el), id + ': takeaway line is always there');
+        a.equal(qs('.tap-panel__takeaway', p.el), null, id + ': no takeaway line under the question (D120)');
         a.ok(qs('.tap-panel__chart, .tap-panel__html, .tap-panel__error, .tap-panel__empty', p.el), id + ': body');
         a.ok(qs('.tap-panel__source', p.el), id + ': source line');
         a.ok(qs('.tap-panel__tools [data-action="insights"]', p.el), id + ': insights control');
@@ -144,13 +144,16 @@
       a.match(src, /Data: 2 Oct 2026/, 'latest import date of the mini fixture');
     }));
 
-    T.test('TPV-TC-052', 'The takeaway shows the top insight, and is empty with no placeholder when there is none', scene(function (a, s) {
+    // D120: no insight sentence under the question; the top insight leads the list behind the Insights button
+    T.test('TPV-TC-052', 'No insight sentence sits under the question; the top insight leads the panel\u2019s list', scene(function (a, s) {
       s.report(fakeDef());
       var p = s.panel('x-fake');
-      a.equal(txt(qs('.tap-panel__takeaway', p.el)), '', 'no insights: empty line');
+      a.equal(txt(qs('.tap-panel__titles', p.el)).indexOf('Observation'), -1, 'no insights: nothing under the question');
       TAP.insights = fakeInsights([insight(1), insight(2)]);
       p.refresh();
-      a.match(txt(qs('.tap-panel__takeaway', p.el)), /^Observation number 1\./, 'top insight');
+      a.equal(txt(qs('.tap-panel__titles', p.el)).indexOf('Observation'), -1, 'with insights: still nothing under the question');
+      click(qs('[data-action="insights"]', p.el));
+      a.match(txt(qs('.tap-panel__insight-text', p.el)), /^Observation number 1\./, 'the top insight leads the list');
     }));
 
     T.test('TPV-TC-053', 'The insights icon counts every insight, lists 3 on click and links to the Insights page', scene(function (a, s) {
@@ -329,11 +332,12 @@
       s.report(fakeDef());
       var fake = TAP.insights = fakeInsights([insight(1), insight(2)]);
       var p = s.panel('x-fake');
-      click(qs('.tap-panel__takeaway [data-action="hide-insight"]', p.el));
-      a.deepEqual(fake.hidden, ['r1:k'], 'hidden');
-      a.match(txt(qs('.tap-panel__takeaway', p.el)), /^Observation number 2\./, 'the next one takes its place');
       click(qs('[data-action="insights"]', p.el));
-      a.equal(qsa('.tap-panel__insight [data-action="hide-insight"]', p.el).length, 1, 'list items have it too');
+      click(qs('.tap-panel__insight [data-action="hide-insight"]', p.el));
+      a.deepEqual(fake.hidden, ['r1:k'], 'hidden');
+      if (!qs('.tap-panel__insight', p.el)) click(qs('[data-action="insights"]', p.el));
+      a.match(txt(qs('.tap-panel__insight-text', p.el)), /^Observation number 2\./, 'the next one takes its place');
+      a.equal(qsa('.tap-panel__insight [data-action="hide-insight"]', p.el).length, 1, 'and keeps its own hide control');
     }));
 
     T.test('X-panel-legend-parts', 'Stacked parts are named in words by shade, with no grey swatches', scene(function (a, s) {
@@ -989,8 +993,9 @@
       a.equal(qs('[data-control="measure"]', s.panel('ind-quad').el), null, 'the quadrant report: none');
       a.ok(qs('[data-control="measure"]', s.panel('ov-ambition').el), 'a parts report keeps it');
     }));
-    // QA-1: the takeaway follows the comparison, on the sample data with the real insight engine.
-    T.test('X-panel-takeaway-scope', 'The takeaway never names a region that is only inside the rest or the organization total', scene(function (a, s) {
+    // QA-1 asked the takeaway to follow the comparison; D120 removed the takeaway, so no comparison puts an insight
+    // sentence under the question, and the Insights button still counts the chart's insights.
+    T.test('X-panel-takeaway-scope', 'No comparison puts an insight sentence under the question (D120); the list still counts it', scene(function (a, s) {
       TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
       TAP.insights.reset();
       try {
@@ -998,17 +1003,16 @@
         a.ok(all.length > 0, 'the ambition chart has an insight in All regions');
         var who = all[0].regionIds[0], name = TAP.content.regionName(TAP.data.region(who));
         var other = TAP.data.regions().map(function (r) { return r.id; }).filter(function (id) { return all[0].regionIds.indexOf(id) < 0; })[0];
-        var p = s.panel('ov-ambition'), take = function () { return txt(qs('.tap-panel__takeaway', p.el)); };
-        a.ok(take().indexOf(name) >= 0, 'All regions: the insight leads');
+        var p = s.panel('ov-ambition'), take = function () { return txt(qs('.tap-panel__titles', p.el)); };
+        var sentence = all[0].sentence.slice(0, 30);
+        a.equal(take().indexOf(sentence), -1, 'All regions: not under the question');
         TAP.store.set({ cmp: { mode: 'org' } });
         a.equal(take().indexOf(name), -1, 'organization total: not named');
         TAP.store.set({ cmp: { mode: 'one', focus: other, restAs: 'combined' } });
-        a.equal(take().indexOf(name), -1, 'one against the rest: not named when inside the rest');
+        a.equal(take().indexOf(name), -1, 'one against the rest: not named');
         TAP.store.set({ cmp: { mode: 'one', focus: who } });
-        a.ok(take().indexOf(name) >= 0, 'its own region in focus: it leads');
-        TAP.store.set({ cmp: { mode: 'one', focus: other, restAs: 'individual' } });
-        a.ok(take().indexOf(name) >= 0, 'the rest drawn one by one: it may lead');
-        a.match(txt(qs('[data-action="insights"]', p.el)), /\d/, 'the list still counts it');
+        a.equal(take().indexOf(sentence), -1, 'its own region in focus: not under the question');
+        a.match(txt(qs('[data-action="insights"]', p.el)), /[1-9]/, 'the list still counts it');
       } finally {
         TAP.data.load(T_FIXTURE('mini'));
         TAP.insights.reset();

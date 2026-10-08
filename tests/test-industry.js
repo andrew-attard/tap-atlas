@@ -1385,7 +1385,7 @@
     }
     function countOf(p) { return Number((p.el.querySelector('[data-action="insights"]').textContent.match(/\d+/) || ['0'])[0]); }
 
-    T.test('X-d102-ratings-insights', 'The ratings chart lists only the insights about the industry it shows; with none it shows 0 and no takeaway', function (a) {
+    T.test('X-d102-ratings-insights', 'The ratings chart lists only the insights about the industry it shows; with none it shows 0', function (a) {
       sample();
       var root = T.dom.mount(), view = TAP.views.get('industry').mount(root);
       function panel(id) { return { el: root.querySelector('.tap-panel[data-report="' + id + '"]') }; }
@@ -1397,14 +1397,12 @@
         var r = panel('ind-ratings');
         a.equal(countOf(r), 0, 'Healthcare: 0 insights on the ratings chart');
         a.ok(r.el.querySelector('[data-action="insights"]').disabled, 'the usual no-insight state');
-        a.equal(r.el.querySelector('.tap-panel__takeaway').textContent.trim(), '', 'no takeaway borrowed from another industry');
         a.equal(countOf(panel('ind-quad')), TAP.insights.ranked(cmp({ mode: 'all' }), { reportId: 'ind-quad' }).length, 'the quadrant keeps all its insights');
         TAP.store.set({ industry: window.SAMPLE_EXPECT.p04.industry });
         a.equal(countOf(panel('ind-ratings')), 0, 'Pharma and Biotech: its strong rating is context, so 0 (D111)');
         TAP.store.set({ industry: window.SAMPLE_EXPECT.p05.industry });
         r = panel('ind-ratings');
         a.equal(countOf(r), 1, 'Manufacturing: one insight');
-        a.match(r.el.querySelector('.tap-panel__takeaway').textContent, /Manufacturing/, 'the takeaway is about it');
         r.el.querySelector('[data-action="insights"]').click();
         var texts = Array.prototype.map.call(r.el.querySelectorAll('.tap-panel__insight-text'), function (n) { return n.textContent; });
         a.equal(texts.length, 1, 'the list holds it alone');
