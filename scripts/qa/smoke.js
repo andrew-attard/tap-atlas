@@ -254,7 +254,12 @@
 
   function insightsViewSteps() {
     step('insights view: open', function () { click($('.tap-menu__item[data-view="insights"]')); });
-    step('insights view: filter by a region', function () { click($$('.tap-ins__chip').filter(shown)[0]); });
+    step('insights view: open the Regions dropdown', function () { click($('.tap-ms[data-ms="regions"] .tap-ms__btn')); });
+    step('insights view: filter by a region', function () { click($$('.tap-ms[data-ms="regions"] input[data-value]').filter(shown)[0]); });
+    step('insights view: Esc closes the dropdown', function () {
+      esc();
+      expect(!shown($('.tap-ms__panel')), 'dropdown still open');
+    });
     step('insights view: clear the filter', function () { var c = $('.tap-ins__clear'); if (shown(c)) click(c); });
     step('insights view: figures, rule and sources', function () {
       click($$('.tap-ins__toggle').filter(shown)[0]);

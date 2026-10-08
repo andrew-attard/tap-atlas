@@ -153,6 +153,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/glossary.js` | Term popovers: a marked term's definition and why it matters, where the term appears |
 | `js/ui/explain.js` | The plain-English explanation of a report |
 | `js/ui/view-head.js` | The header the newer views share: question, lead line, tip line with "Hide tips", headline insight |
+| `js/ui/multi-select.js` | A dropdown multi-select: a button naming the choice and a checklist with "All" and "Clear" (D126) |
 | `js/ui/tour.js` | The optional welcome tour |
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
@@ -169,6 +170,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/views/regions.js` | Regions: pick a region, then its profile with the main reports for that region against the rest |
 | `js/views/regions-parts.js` | The profile's lower parts: the plan at a glance, the region's insights and what its leader wrote |
 | `js/views/insights.js` | The Insights page: every insight, ranked and grouped, each with why it matters; background facts in a closed Context group |
+| `js/views/insights-filters.js` | The Insights page counts (insights apart from background facts) and its two filter dropdowns, Regions and Families (D126) |
 | `js/views/build.js` | The Build a chart view, beside the Guide in the menu: the view header and the builder |
 | `js/views/other.js` | Other sections: one list per extra template section, shown only when the data has any |
 | `js/views/outlook.js` | Outlook: the plans against the strategic plan and the base year, pipeline coverage, revenue and product categories |

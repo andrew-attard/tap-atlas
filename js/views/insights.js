@@ -4,12 +4,14 @@
  *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
  *          session" with an "N hidden · Show hidden" note (US-1.7.11). Each shows its line on why it matters; context
  *          insights (background facts) follow the ranked groups in one closed group (D111). Figures naming several
- *          regions read one line per region (D121).
+ *          regions read one line per region (D121). Insights and background facts are counted apart, and the region
+ *          and family filters are two dropdowns (D126, js/views/insights-filters.js).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
  *             js/core/sources.js, js/ui/source-tip.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
  *             js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails),
- *             config/settings.js (family weights), js/panel/panel-insights.js (figureLines, at call time)
+ *             config/settings.js (family weights), js/panel/panel-insights.js (figureLines, at call time),
+ *             js/views/insights-filters.js and js/ui/multi-select.js (the counts and the two dropdowns)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {
@@ -18,7 +20,6 @@
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   function t(key, vars) { return TAP.content.text('insightsPage.' + key, vars); }
   function has(list, x) { return list.indexOf(x) >= 0; }
-  function toggle(list, x) { return has(list, x) ? list.filter(function (y) { return y !== x; }) : list.concat(x); }
 
   // Families in the order of the settings, then any others the rules use.
   function familyOrder(list) {
@@ -85,7 +86,7 @@
   /* ---------- the page ---------- */
 
   function mount(root) {
-    var ui = { regions: [], families: [], open: {}, status: '', showHidden: false, contextOpen: false };
+    var ui = { regions: [], families: [], menu: null, open: {}, status: '', showHidden: false, contextOpen: false };
     var page = el('div', { class: 'tap-ins' });
     TAP.dom.clear(root);
     root.appendChild(page);
@@ -106,37 +107,12 @@
     function byRegion(x) { return !ui.regions.length || x.regionIds.some(function (r) { return has(ui.regions, r); }); }
     function byFamily(x) { return !ui.families.length || has(ui.families, x.family); }
 
-    function chip(attr, id, label, n, on, color, onclick) {
-      var b = el('button', { type: 'button', class: 'tap-ins__chip', 'aria-pressed': String(on), onclick: onclick },
-        [color ? el('span', { class: 'tap-swatch tap-ins__sw', 'aria-hidden': 'true' }) : null, label,
-          el('span', { class: 'tap-ins__n' }, String(n))]);
-      b.setAttribute(attr, id);
-      b.setAttribute('data-key', attr + ':' + id);
-      if (color) b.firstChild.style.background = color;
-      return b;
-    }
-
-    function filters(list, families) {
-      var inScope = TAP.scope.regionIds(cmp());
-      var regionRow = el('div', { class: 'tap-ins__row', role: 'group', 'aria-label': t('regionsLabel') },
-        [el('span', { class: 'tap-ins__rowlabel' }, t('regionsLabel'))].concat(inScope.map(function (id) {
-          var n = list.filter(function (x) { return byFamily(x) && has(x.regionIds, id); }).length;
-          return chip('data-region', id, TAP.content.regionName(TAP.data.region(id)), n, has(ui.regions, id), TAP.scope.colorOf(id),
-            function () { ui.regions = toggle(ui.regions, id); draw(); });
-        })));
-      var famRow = el('div', { class: 'tap-ins__row', role: 'group', 'aria-label': t('familiesLabel') },
-        [el('span', { class: 'tap-ins__rowlabel' }, t('familiesLabel'))].concat(families.map(function (f) {
-          var n = list.filter(function (x) { return byRegion(x) && x.family === f; }).length;
-          return chip('data-family', f, t('families.' + f + '.name'), n, has(ui.families, f), null,
-            function () { ui.families = toggle(ui.families, f); draw(); });
-        })));
-      return el('div', { class: 'tap-ins__filters' }, [el('p', { class: 'tap-ins__hint' }, t('filterHint')), regionRow, famRow]);
-    }
-
-    function summary(shown, total) {
-      var any = ui.regions.length || ui.families.length;
+    // A filter narrows only while some but not every option is ticked ("All" ticks every one, D126).
+    function narrows(sel, all) { return sel.length > 0 && all.some(function (x) { return !has(sel, x); }); }
+    function summary(shown, list, families) {
+      var any = narrows(ui.regions, TAP.scope.regionIds(cmp())) || narrows(ui.families, families);
       return el('div', { class: 'tap-ins__summary' }, [
-        el('span', { class: 'tap-ins__shown' }, t('shown', { n: shown, total: total })),
+        el('span', { class: 'tap-ins__shown' }, TAP.insightsFilters.shown(shown, list, any)),
         any ? el('button', { type: 'button', class: 'tap-ins__clear', 'data-key': 'clear', onclick: clear }, t('clear')) : null,
         hiddenNote(),
         el('span', { class: 'tap-ins__status', role: 'status', 'aria-live': 'polite' }, ui.status)
@@ -206,7 +182,7 @@
           onclick: function () { if (hid) TAP.insights.unhide(x.id); else TAP.insights.hide(x.id); } },
           [TAP.icons.svg('hide', { size: 18 }), hid ? t('unhide') : t('hide')])
       ]);
-      return el('article', { class: 'tap-ins__item' + (hid ? ' is-hidden' : ''), 'data-insight': x.id }, [
+      return el('article', { class: 'tap-ins__item' + (hid ? ' is-hidden' : ''), 'data-insight': x.id, 'data-family': x.family }, [
         el('div', { class: 'tap-ins__badges' }, [
           el('span', { class: 'tap-badge tap-ins__label' }, x.label || t('label')),
           hid ? el('span', { class: 'tap-badge tap-ins__hiddenbadge' }, t('hiddenBadge')) : null
@@ -236,7 +212,7 @@
         ontoggle: function (e) { ui.contextOpen = e.target.open; } }, [
         el('summary', { class: 'tap-ins__csum' }, [
           el('span', { class: 'tap-ins__gname' }, t('context.name')),
-          el('span', { class: 'tap-ins__gcount' }, list.length === 1 ? t('countOne') : t('count', { n: list.length })),
+          el('span', { class: 'tap-ins__gcount' }, list.length === 1 ? t('factCountOne') : t('factCount', { n: list.length })),
           el('span', { class: 'tap-ins__gline' }, t('context.line'))
         ]),
         el('div', { class: 'tap-ins__list' }, list.map(itemEl))
@@ -260,12 +236,13 @@
       page.appendChild(el('header', { class: 'tap-ins__head' }, [
         el('p', { class: 'tap-ins__kicker' }, t('kicker')),
         el('h1', { class: 'tap-ins__h1', tabindex: '-1' }, t('heading')),
-        el('p', { class: 'tap-ins__intro' }, list.length === 1 ? t('introOne') : t('intro', { n: list.length })),
+        el('p', { class: 'tap-ins__intro' }, TAP.insightsFilters.intro(list)),
         el('p', { class: 'tap-ins__scope' }, t('scope', { sentence: TAP.scope.sentence(cmp()) })),
         TAP.viewHead.tip('insights')
       ]));
-      page.appendChild(filters(list, families));
-      page.appendChild(summary(shown.length, list.length));
+      page.appendChild(TAP.insightsFilters.bar({ list: list, families: families, inScope: inScope, ui: ui,
+        byRegion: byRegion, byFamily: byFamily, redraw: draw }));
+      page.appendChild(summary(shown, list, families));
       families.forEach(function (f) {
         var inF = shown.filter(function (x) { return x.family === f && !x.context; });
         if (inF.length) page.appendChild(group(f, inF));
@@ -285,13 +262,15 @@
     }
 
     var dead = false;
+    // An outside click or Esc closes the open dropdown (D126)
+    var offMenu = TAP.multiSelect.watch(page, function () { return ui.menu; }, function () { ui.menu = null; });
     var off = TAP.store.on(function (state, changed) {
       if (dead) return;   // destroyed; the store may still call this once from its listener copy
-      if (!root.isConnected) { off(); return; }   // off the page (removed without destroy()): stop listening
+      if (!root.isConnected) { off(); offMenu(); return; }   // off the page (removed without destroy()): stop listening
       if (has(changed, 'cmp') || has(changed, 'hiddenInsights')) { ui.status = ''; draw(); }
     });
     draw();
-    return { destroy: function () { dead = true; off(); TAP.dom.clear(root); } };
+    return { destroy: function () { dead = true; off(); offMenu(); TAP.dom.clear(root); } };
   }
 
   // The menu title comes from config/views.js

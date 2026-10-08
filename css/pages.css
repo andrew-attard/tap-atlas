@@ -69,23 +69,41 @@
 .tap-ins__h1 { margin: 0; font-size: var(--tap-fs-h1); line-height: 1.15; font-weight: 800; }
 .tap-ins__intro { margin: 0; font-size: var(--tap-fs-lead); line-height: 1.5; }
 .tap-ins__scope { margin: 0; font-weight: 600; }
-.tap-ins__filters {
-  display: flex; flex-direction: column; gap: var(--tap-sp-3);
-  padding: var(--tap-sp-3) 0; border-top: var(--tap-rule-w) solid var(--tap-ink);
-}
+.tap-ins__filters { padding: var(--tap-sp-3) 0; border-top: var(--tap-rule-w) solid var(--tap-ink); }
+/* D126: the two dropdowns on one line, the hint beside them */
+.tap-ins__menus { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-4); }
 .tap-ins__hint { margin: 0; color: var(--tap-muted); }
-.tap-ins__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
-.tap-ins__rowlabel { min-width: 6em; font-weight: 800; }
-.tap-ins__chip {
-  display: inline-flex; align-items: center; gap: var(--tap-sp-2); min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3);
+/* An option's count: insights first and bold, then "+N background" muted (still 16 px, D24) */
+.tap-ins__cnt { margin-left: auto; padding-left: var(--tap-sp-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tap-ins__n { font-size: var(--tap-fs-lead); font-weight: 800; }
+.tap-ins__bg { font-size: var(--tap-fs-body); font-weight: 400; color: var(--tap-muted); }
+
+/* The dropdown multi-select (js/ui/multi-select.js) */
+.tap-ms { position: relative; }
+.tap-ms__btn {
+  display: inline-flex; align-items: center; gap: var(--tap-sp-1); min-height: 40px; padding: var(--tap-sp-1) var(--tap-sp-3);
   border: var(--tap-control-w) solid var(--tap-ink); background: var(--tap-ground); color: var(--tap-ink);
-  font: inherit; font-size: var(--tap-fs-body); font-weight: 600; cursor: pointer;
+  font: inherit; font-size: var(--tap-fs-body); cursor: pointer;
 }
-.tap-ins__chip:hover { background: var(--tap-surface); }
-.tap-ins__chip[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
-.tap-ins__chip[aria-pressed="true"]::before { content: "✓"; font-weight: 800; }
-.tap-ins__n { min-width: 1.5em; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
-.tap-ins__sw { outline: 1px solid currentColor; }
+.tap-ms__btn:hover, .tap-ms__btn[aria-expanded="true"] { background: var(--tap-surface); }
+.tap-ms__label { font-weight: 800; }
+.tap-ms__value { font-weight: 600; }
+.tap-ms__panel {
+  position: absolute; top: calc(100% + var(--tap-sp-1)); left: 0; z-index: 30;
+  width: 480px; max-width: calc(100vw - 32px); max-height: 70vh; overflow: auto;
+  padding: var(--tap-sp-2) 0; background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); box-shadow: var(--tap-shadow-lg);
+}
+.tap-ms__panel[hidden] { display: none; }
+.tap-ms__head { display: flex; gap: var(--tap-sp-2); padding: 0 var(--tap-sp-4) var(--tap-sp-2); border-bottom: var(--tap-rule-w) solid var(--tap-grid); }
+.tap-ms__head .tap-btn { font-size: var(--tap-fs-body); }
+.tap-ms__list { margin: 0; padding: var(--tap-sp-1) 0 0; list-style: none; }
+.tap-ms__opt {
+  display: flex; align-items: center; gap: var(--tap-sp-2); padding: var(--tap-sp-2) var(--tap-sp-4);
+  font-size: var(--tap-fs-body); font-weight: 600; cursor: pointer;
+}
+.tap-ms__opt:hover { background: var(--tap-surface); }
+.tap-ms__opt input { width: 18px; height: 18px; margin: 0; flex: none; accent-color: var(--tap-ink); }
+.tap-ms__sw { flex: none; outline: 1px solid currentColor; }
 .tap-ins__summary {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-6);
   padding-bottom: var(--tap-sp-3); border-bottom: var(--tap-rule-w) solid var(--tap-ink);

@@ -3,7 +3,7 @@
  * Purpose: Wording for the Insights and Guide pages, explanations and the tour.
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
- * Used by: js/views/insights.js, js/views/guide.js, js/ui/explain.js, js/ui/tour.js
+ * Used by: js/views/insights.js, js/views/insights-filters.js, js/ui/multi-select.js, js/views/guide.js, js/ui/explain.js, js/ui/tour.js
  * Owner: the PAGES stream. Placeholders in {braces} are filled in by the code; the organization layer can
  *        replace any phrase by using the same key.
  */
@@ -106,17 +106,27 @@ Object.assign(window.TAP_CONTENT.text, {
     }
   },
 
+  // The dropdown multi-select (js/ui/multi-select.js, D126): "Regions: All", "Regions: 2 selected"
+  multiSelect: { button: '{label}:', all: 'All', clear: 'Clear', selected: '{n} selected' },
+
   // The Insights page (US-1.7.3). Every insight is an observation to discuss, never a verdict (D20).
   insightsPage: {
     kicker: 'Insights',
     heading: 'What is worth discussing?',
-    intro: '{n} observations, found by fixed rules in the plans and ranked by significance. Each one points to a difference worth a conversation; none of them grades a plan.',
-    introOne: '1 observation, found by fixed rules in the plans. It points to a difference worth a conversation; it does not grade a plan.',
+    // D126: insights to discuss and background facts (D111) are counted apart. {insights} is count or countOne,
+    // {facts} factCount or factCountOne.
+    intro: '{insights} to discuss, plus {facts}, found by fixed rules in the plans and ranked by significance. Each one points to a difference worth a conversation; none of them grades a plan.',
+    introNoFacts: '{insights} to discuss, found by fixed rules in the plans and ranked by significance. Each one points to a difference worth a conversation; none of them grades a plan.',
     scope: 'This list follows the comparison bar. {sentence}.',
     regionsLabel: 'Regions',
     familiesLabel: 'Families',
-    filterHint: 'Choose any to filter the list. The number on each shows how many insights it would list.',
-    shown: '{n} of {total} insights shown',
+    filterHint: 'Each choice shows how many insights it would list, then its background facts.',
+    shownBoth: 'Showing {insights} and {facts}',
+    shownInsights: 'Showing {insights}',
+    shownOf: '{n} of {total}',
+    factCount: '{n} background facts',
+    factCountOne: '1 background fact',
+    countBackground: '+{n} background',
     clear: 'Clear filters',
     count: '{n} insights',
     countOne: '1 insight',
