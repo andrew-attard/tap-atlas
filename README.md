@@ -159,7 +159,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/present*.js` | Presentation mode: plays a presentation full screen, one step at a time, and records one from the screen ("Add to presentation") |
 | `js/ui/custom-builder.js` | The builder of the Build a chart view: pickers for measure, dimension and chart type, the custom chart and the session list |
 | `js/views/overview.js` | The Overview: headline, region cards, ambition chart |
-| `js/views/overview-cards.js` | The region cards |
+| `js/views/overview-cards.js` | The region cards: 3-year ambition, the new business and customer growth split with a swatch and share per part, Open profile |
+| `js/views/overview-land.js` | The card's "will it land?" parts (D117): the plan against the strategic plan, and pipeline cover in year 1, new customers needed and growth in the top 3 accounts, each against the other regions, with a "discuss" marker where an insight exists |
 | `js/views/industry.js` | Market coverage in two parts: all industries (tier grid, quadrant), then one industry under the view's one picker (the ratings, then the commentary) |
 | `js/views/new-business.js` | New business: industries, channels, levers, the sub-industry list, success factors, themes |
 | `js/views/customers.js` | Customer growth: segments, growth, exposure, the account bubble and list; also the layout Partners uses |

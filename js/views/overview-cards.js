@@ -1,18 +1,19 @@
 /*
  * File: js/views/overview-cards.js
- * Purpose: One card per region (or combined figure) summarising its plan in four lines (US-1.5.1), and the
- *          clickable figure that shows where a value comes from, shared with the headline.
+ * Purpose: One card per region (or combined figure): its 3-year ambition against the strategic plan, the split
+ *          with a swatch and share per part, and "Will it land?" (US-1.5.1, D117); and the clickable figure that
+ *          shows where a value comes from, shared with the headline.
  * Provides: TAP.overviewCards (render, layout, columns, figure, openSource, sourceRow)
  * Depends on: js/engine/measures.js, js/engine/scope.js, js/engine/aggregate.js (describe), js/core/dom.js,
  *             js/core/format.js, js/core/sources.js, js/ui/layers.js, js/core/store.js, js/theme.js,
- *             content/text-overview.js, js/views/regions.js (TAP.profile.link, at call time)
+ *             content/text-overview.js, js/views/overview-land.js (TAP.overviewLand, at call time),
+ *             js/views/regions.js (TAP.profile.link, at call time)
  * Used by: js/views/overview.js
  */
 (function (TAP) {
   'use strict';
 
   var MIN_W = 140, MAX_W = 320, GAP = 8;   // px: narrowest readable card, widest useful card, gap between cards
-  var SEGS = ['strategic', 'growth', 'core', 'scaled'];
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var t = function (key, vars) { return TAP.content.text('overview.' + key, vars); };
 
@@ -69,10 +70,11 @@
   }
 
   // A figure: a button showing the value, its kind in the title, opening the source panel (the address is behind
-  // the panel's data icon, D100). spec: {measure, cell, unit, label, text?, rows?}; rows are the lines the panel lists.
+  // the panel's data icon, D100). spec: {measure, cell, unit, label, text?, exact?, rows?}: text replaces the formatted
+  // value (exact is then the title's precise value); rows are the lines the panel lists.
   function figure(spec, cls) {
     var c = spec.cell || {};
-    var title = t('cards.figureTitle', { label: spec.label, value: fmt(c, spec.unit, true), kind: kindText(c) });
+    var title = t('cards.figureTitle', { label: spec.label, value: spec.exact || fmt(c, spec.unit, true), kind: kindText(c) });
     return el('button', {
       type: 'button', class: 'tap-ov-fig' + (c.state === 'notProvided' ? ' is-np' : '') + (cls ? ' ' + cls : ''),
       'data-measure': spec.measure || null, 'data-state': c.state || null, 'data-v': c.state === 'value' ? String(c.v) : '',
@@ -81,50 +83,58 @@
     }, spec.text != null ? spec.text : fmt(c, spec.unit));
   }
 
-  /* ---------- cards ---------- */
+  /* ---------- the figures a card needs ---------- */
 
   function label(id) { var m = TAP.measures.meta(id); return m ? m.label : id; }
-  function short(id) { var m = TAP.measures.meta(id); return m ? m.short : id; }
   function isNp(c) { return !c || c.state !== 'value'; }
-
   function cellsFor(ent) {
-    var ids = ['amb.arr', 'nb.arr', 'cg.arr', 'amb.services', 'focus.tier1', 'focus.tier2', 'nb.targetAccounts']
-      .concat(SEGS.map(function (s) { return 'cg.segment.' + s; }));
     var out = {};
-    ids.forEach(function (id) { out[id] = TAP.measures.combined(id, ent, {}); });
-    return out;
+    ['amb.arr', 'nb.arr', 'cg.arr', 'amb.services'].forEach(function (id) { out[id] = TAP.measures.combined(id, ent, {}); });
+    return TAP.overviewLand.cells(ent, out);
   }
 
-  function line(cls, title, body) {
-    return el('div', { class: 'tap-ov-card__line ' + cls }, [el('span', { class: 'tap-ov-card__label' }, title)].concat(body));
-  }
-  // "€12.4M New business": the figure first, so figures line up down the card and the words wrap after them.
-  function row(text, fig, cls) {
-    return el('div', { class: 'tap-ov-card__row' + (cls ? ' ' + cls : '') }, [fig, ' ', el('span', null, text)]);
-  }
-  // "3 Tier 1", "4 Strategic": the number first, then the word, wrapping as the card narrows.
-  function chips(cls, specs, word) {
-    if (specs.every(function (s) { return isNp(s.cell); })) {
-      var all = { measure: specs[0].measure, cell: specs[0].cell, unit: 'count', label: specs[0].label, rows: specs };
-      return el('div', { class: 'tap-ov-card__chips ' + cls }, figure(all));
-    }
-    return el('div', { class: 'tap-ov-card__chips ' + cls }, specs.map(function (s) {
-      return el('span', { class: 'tap-ov-card__chip' }, [figure(s), ' ', word(s)]);
-    }));
+  /* ---------- the card's parts ---------- */
+
+  // The split's two colours: the region's colour and its lighter shade; on a dark combined card, paper and grey.
+  function colours(ent) {
+    var th = window.TAP_THEME, dark = ent.kind === 'combined';
+    return { nb: dark ? th.paper : ent.color, cg: dark ? th.rule : th.shade(ent.color, 1) };
   }
 
-  // Two-part bar for the ambition split. Words in the rows below name both parts, so colour is never alone.
-  function split(c, ent) {
-    var nb = c['nb.arr'], cg = c['cg.arr'], th = window.TAP_THEME;
-    if (isNp(nb) || isNp(cg) || !(nb.v + cg.v > 0)) return null;
-    var dark = ent.kind === 'combined', w = Math.max(0, Math.min(100, nb.v / (nb.v + cg.v) * 100));
+  // Two-part bar for the ambition split. The swatched lines below name both parts, so colour is never alone.
+  function split(w, col) {
     var a = el('span', { class: 'tap-ov-card__split-nb' }), b = el('span', { class: 'tap-ov-card__split-cg' });
     a.style.width = w + '%';
-    a.style.backgroundColor = dark ? th.paper : ent.color;
+    a.style.backgroundColor = col.nb;
     b.style.width = (100 - w) + '%';
-    b.style.backgroundColor = dark ? th.rule : th.shade(ent.color, 1);
+    b.style.backgroundColor = col.cg;
     return el('span', { class: 'tap-ov-card__split', 'aria-hidden': 'true' }, [a, b]);
   }
+
+  // "■ New business €11.2M 65%": the swatch matches its bar segment; the words name the part.
+  function part(words, fig, colour, share, cls) {
+    var sw = null;
+    if (colour) { sw = el('span', { class: 'tap-ov-card__swatch', 'aria-hidden': 'true' }); sw.style.backgroundColor = colour; }
+    return el('div', { class: 'tap-ov-card__row ' + (cls || 'tap-ov-card__part') }, [
+      el('span', { class: 'tap-ov-card__partname' }, [sw, words]), ' ',
+      el('span', { class: 'tap-ov-card__partvalue' }, [fig, share ? ' ' : null,
+        share ? el('span', { class: 'tap-ov-card__share' }, share) : null])
+    ]);
+  }
+
+  function mix(c, ent, spec) {
+    var nb = c['nb.arr'], cg = c['cg.arr'], col = colours(ent), whole = !isNp(nb) && !isNp(cg) && nb.v + cg.v > 0;
+    // Whole percentages that add up to 100: customer growth takes what new business leaves
+    var w = whole ? Math.max(0, Math.min(100, Math.round(nb.v / (nb.v + cg.v) * 100))) : null;
+    return el('div', { class: 'tap-ov-card__mix', 'data-part': 'mix' }, [
+      whole ? split(nb.v / (nb.v + cg.v) * 100, col) : null,
+      part(t('cards.nb'), figure(spec('nb.arr', 'money')), whole && col.nb, whole && TAP.format.pct(w / 100)),
+      part(t('cards.cg'), figure(spec('cg.arr', 'money')), whole && col.cg, whole && TAP.format.pct((100 - w) / 100)),
+      part(t('cards.services'), figure(spec('amb.services', 'money')), null, null, 'tap-ov-card__row--minor')
+    ]);
+  }
+
+  /* ---------- cards ---------- */
 
   function kicker(ent) {
     if (ent.role === 'focus') return t('cards.kickerFocus');
@@ -134,11 +144,14 @@
   }
 
   // "Open profile" for a region's card (US-2.4.1, PROFILE stream): the link and its words come from the Regions view.
+  // A combined card keeps an empty slot, so its parts line up with the region cards beside it.
   function profileLink(ent) {
-    if (!TAP.profile || !TAP.profile.link) return null;
-    var id = ent.regionIds[0];
-    return TAP.profile.link(id, { class: 'tap-ov-card__profile', 'data-action': 'open-profile',
-      'aria-label': TAP.content.text('profile.openProfileFor', { name: ent.label }) }, TAP.content.text('profile.openProfile'));
+    var link = ent.kind !== 'combined' && TAP.profile && TAP.profile.link ? TAP.profile.link(ent.regionIds[0], {
+      class: 'tap-ov-card__profile', 'data-action': 'open-profile',
+      'aria-label': TAP.content.text('profile.openProfileFor', { name: ent.label }) }, TAP.content.text('profile.openProfile')) : null;
+    var node = link || el('span', { class: 'tap-ov-card__noprofile' });
+    node.setAttribute('data-part', 'profile');
+    return node;
   }
 
   function buildCard(ent, withKicker) {
@@ -146,41 +159,33 @@
     var spec = function (id, unit) { return { measure: id, cell: c[id], unit: unit, label: label(id) }; };
     var amb = spec('amb.arr', 'money');
     amb.rows = [amb, spec('nb.arr', 'money'), spec('cg.arr', 'money')];
-    var all = amb.rows.concat([spec('amb.services', 'money'), spec('focus.tier1', 'count'), spec('focus.tier2', 'count'),
-      spec('nb.targetAccounts', 'count')], SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }));
+    var sp = TAP.overviewLand.available() ? TAP.overviewLand.SP : [];
+    var all = amb.rows.concat([spec('amb.services', 'money'), spec('nb.wins', 'count'), spec('cg.top3Share', 'pct')],
+      sp.map(function (id) { return spec(id, id === 'sp.variancePct' ? 'pct' : 'money'); }));
     var k = kicker(ent), partial = c['amb.arr'].state === 'value' && c['amb.arr'].partial;
-    var role = combined ? 'is-combined' : 'is-' + ent.role;
-    var bar = el('span', { class: 'tap-ov-card__bar' });
+    var bar = el('span', { class: 'tap-ov-card__bar', 'data-part': 'bar' });
     if (!combined) bar.style.backgroundColor = ent.color;
 
-    var node = el('div', { class: 'tap-ov-card ' + role, 'data-entity': ent.id }, [
+    var node = el('div', { class: 'tap-ov-card ' + (combined ? 'is-combined' : 'is-' + ent.role), 'data-entity': ent.id }, [
       bar,
-      el('div', { class: 'tap-ov-card__head' }, [
+      el('div', { class: 'tap-ov-card__head', 'data-part': 'head' }, [
         k || withKicker ? el('span', { class: 'tap-ov-card__kicker' }, k) : null,
         el('button', { type: 'button', class: 'tap-ov-card__open tap-ov-card__name',
           'aria-label': t(combined ? 'cards.openSources' : 'cards.openDetails', { name: ent.label }) }, ent.label),
         combined ? el('p', { class: 'tap-ov-card__how' }, TAP.agg.describe(c['amb.arr'])) : null
       ]),
-      line('tap-ov-card__ambition', t('cards.ambition'), [
+      el('div', { class: 'tap-ov-card__line tap-ov-card__ambition', 'data-part': 'ambition' }, [
+        el('span', { class: 'tap-ov-card__label' }, t('cards.ambition')),
         figure(amb, 'tap-ov-fig--big'),
         partial ? el('p', { class: 'tap-ov-card__partial' }, t('cards.partial', { note: c['amb.arr'].note })) : null,
-        split(c, ent),
-        el('div', { class: 'tap-ov-card__rows' }, [
-          row(t('cards.nb'), figure(spec('nb.arr', 'money'))),
-          row(t('cards.cg'), figure(spec('cg.arr', 'money'))),
-          row(t('cards.services'), figure(spec('amb.services', 'money')), 'tap-ov-card__row--minor')
-        ])
+        TAP.overviewLand.strategic(c, ent, spec)
       ]),
-      line('tap-ov-card__focus', t('cards.focus'), chips('tap-ov-card__tiers', [spec('focus.tier1', 'count'), spec('focus.tier2', 'count')],
-        function (s) { return t('cards.tier', { n: s.measure.slice(-1) }); })),
-      line('tap-ov-card__pool', t('cards.pool'), el('div', { class: 'tap-ov-card__chips' },
-        el('span', { class: 'tap-ov-card__chip' }, [figure(spec('nb.targetAccounts', 'count')), ' ', t('cards.targetAccounts')]))),
-      line('tap-ov-card__customers', t('cards.customers'), chips('tap-ov-card__segments',
-        SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }), function (s) { return short(s.measure); })),
-      combined ? null : profileLink(ent)
-    ]);
-    // The whole card opens the region's details; a combined card lists where its figures come from.
-    node.addEventListener('click', function () {
+      mix(c, ent, spec)
+    ].concat(TAP.overviewLand.checks(c, ent, spec), [profileLink(ent)]));
+    // The whole card opens the region's details; a combined card lists where its figures come from. A glossary term
+    // on the card opens its definition instead.
+    node.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.tap-term')) return;
       if (combined) openSource(ent.label, all);
       else TAP.layers.openDetails({ regionIds: [ent.regionIds[0]] });
     });
