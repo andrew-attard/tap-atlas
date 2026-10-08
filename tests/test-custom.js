@@ -38,17 +38,38 @@
     var host = T.dom.mount(), h = TAP.customBuilder.render(host, { spec: spec || null });
     builders.push(h);
     return { host: host, h: h,
-      measures: function () { return qsa('select[data-custom="measure"] option', host).map(function (o) { return o.value; }); },
+      // Every measure the picker offers (D122): each topic in turn, with "Show all" pressed where it has more
+      measures: function () { return everyRow(host).map(function (r) { return r.id; }); },
+      labels: function () { return everyRow(host).map(function (r) { return r.label; }); },
       by: function () { return qsa('[data-control="custom-by"] button', host).map(function (b) { return b.getAttribute('data-value'); }); },
       types: function () { return qsa('[data-control="custom-type"] button', host).map(function (b) { return b.getAttribute('data-value'); }); },
-      pick: function (id) {
-        var sel = qs('select[data-custom="measure"]', host);
-        sel.value = id;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      },
+      pick: function (id) { measureRadio(host, id).click(); },
       panel: function () { return qs('.tap-panel', host); } };
   }
   function click(node) { node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); }
+  // The measure picker (D122): a topic's rows, opened to the full list when it has more than its key measures.
+  function radioOf(host, id) { return qs('input[type="radio"][data-custom="measure"][value="' + id + '"]', host); }
+  function showAll(host) {
+    var more = qs('button[data-action="custom-more"][aria-expanded="false"]', host);
+    if (more) click(more);
+  }
+  function everyRow(host) {
+    var out = [];
+    qsa('[data-control="custom-topic"] button', host).map(function (b) { return b.getAttribute('data-value'); }).forEach(function (tid) {
+      click(qs('[data-control="custom-topic"] button[data-value="' + tid + '"]', host));
+      showAll(host);
+      qsa('input[type="radio"][data-custom="measure"]', host).forEach(function (r) {
+        out.push({ id: r.value, label: qs('.tap-custom__name', r.closest('label')).textContent });
+      });
+    });
+    return out;
+  }
+  // The radio for a measure, brought into view the way a person would: its topic, then "Show all" if needed.
+  function measureRadio(host, id) {
+    if (!radioOf(host, id)) click(qs('[data-control="custom-topic"] button[data-value="' + TAP.customPicker.topicOf(id) + '"]', host));
+    if (!radioOf(host, id)) showAll(host);
+    return radioOf(host, id);
+  }
   var SEVEN = [{ measure: 'nb.arr', by: 'entity', type: 'bar' }, { measure: 'nb.arr', by: 'entity', type: 'dot' },
     { measure: 'nb.arr', by: 'year', type: 'groupedBar' }, { measure: 'nb.hitRate', by: 'entity', type: 'bar' },
     { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, { measure: 'base.arr', by: 'entity', type: 'table' },
@@ -240,7 +261,7 @@
       a.ok(listed.length > 10, 'measures offered');
       listed.forEach(function (id) { a.ok(!!byId(opts, id), id + ' comes from options()'); });
       // Each label once: a per-industry copy of a figure (for example ind.currentArr, "Current ARR") is not listed twice
-      var labels = qsa('select[data-custom="measure"] option', b.host).map(function (o) { return o.textContent; });
+      var labels = b.labels();
       labels.forEach(function (l, i) { a.equal(labels.indexOf(l), i, 'one entry for ' + l); });
       a.ok(listed.indexOf('base.arr') >= 0 && listed.indexOf('ind.currentArr') < 0, 'the per-industry copy of current ARR adds nothing');
       a.ok(listed.indexOf('cg.segment.strategic') >= 0 && listed.indexOf('cg.seg.strategic.accounts') >= 0,
@@ -345,11 +366,11 @@
       yr.focus();
       click(yr);
       a.equal(document.activeElement, qs('[data-control="custom-by"] button[data-value="year"]', b.host), 'the By button');
-      var sel = qs('select[data-custom="measure"]', b.host);
-      sel.focus();
+      var r = radioOf(b.host, 'nb.hitRate');
+      r.focus();
       b.pick('nb.hitRate');
-      a.equal(document.activeElement, qs('select[data-custom="measure"]', b.host), 'the Measure picker');
-      var opts = qsa('select[data-custom="measure"] option', b.host).map(function (o) { return o.textContent; });
+      a.equal(document.activeElement, radioOf(b.host, 'nb.hitRate'), 'the measure picked (D122: a radio, was the select)');
+      var opts = b.labels();
       opts.forEach(function (x) { a.ok(!/\(by \)/.test(x), 'no empty "by": ' + x); });
     }));
 
@@ -375,7 +396,7 @@
         a.equal(TAP.views.title('build'), 'Build a chart', 'menu title');
         a.ok(!!head, 'the standard view header');
         a.ok(title && /\S/.test(title.textContent), 'with a title');
-        a.ok(!!qs('select[data-custom="measure"]', view) && !!qs('[data-control="custom-by"]', view) && !!qs('[data-control="custom-type"]', view),
+        a.ok(!!qs('[data-custom-picker] input[data-custom="measure"]', view) && !!qs('[data-control="custom-by"]', view) && !!qs('[data-control="custom-type"]', view),
           'the Measure, By and Chart type pickers');
         a.ok(!!qs('.tap-custom__panel .tap-panel', view), 'the custom chart panel');
         a.ok(!!qs('.tap-custom__kept .tap-custom__h3', view), 'the session list');
