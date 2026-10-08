@@ -54,9 +54,9 @@
           { report: 'nb-levers', measure: 'nb.wins' },
           { report: 'nb-levers', type: 'dot' },
           { report: 'cg-growth', breakdown: 'year' },
-          { report: 'ov-ambition', cmp: { mode: 'one', focus: 'seu', restAs: 'combined', restAgg: 'total' } },
-          { report: 'ov-ambition', cmp: { mode: 'pair', focus: 'na', second: 'apac' } },
-          { report: 'ov-ambition', cmp: { mode: 'set', set: ['na', 'neu', 'seu'] } },
+          { report: 'nb-levers', cmp: { mode: 'one', focus: 'seu', restAs: 'combined', restAgg: 'total' } },
+          { report: 'nb-levers', cmp: { mode: 'pair', focus: 'na', second: 'apac' } },
+          { report: 'nb-levers', cmp: { mode: 'set', set: ['na', 'neu', 'seu'] } },
           { report: 'nb-levers', highlight: { regionIds: ['na'], mark: 'bar' } },
           { insight: 'winsVsPeers:na' },
           { report: 'ind-tiers', title: 'Where the regions agree' }
@@ -274,7 +274,7 @@
       withApp(function () {
         function said() { var n = document.querySelector('.tap-present .tap-panel__expand-sentence'); return n ? n.textContent : ''; }
         var one = { mode: 'one', focus: 'seu', restAgg: 'total' };
-        TAP.present.start([{ report: 'ov-ambition', cmp: one }, { report: 'cg-growth' }]);
+        TAP.present.start([{ report: 'nb-levers', cmp: one }, { report: 'cg-growth' }]);
         a.equal(said(), TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, one)), 'step 1: one vs the rest');
         TAP.present.next();
         a.equal(said(), TAP.scope.sentence(TAP.store.defaults().cmp), 'step 2: the default comparison, all regions');
