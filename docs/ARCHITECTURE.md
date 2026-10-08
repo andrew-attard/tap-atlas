@@ -529,6 +529,7 @@ Phase 2 adds three report views, a region profile, list reports, more breakdowns
 - Measure context keys: `{year, industryId, channel, motion, segment, risk}`. `channel` is a `lookups.channels` id; `motion` is `'nb'` or `'cg'`; `segment` is a `lookups.segments` id; `risk` is `'high'`, `'medium'` or `'none'`.
 - `TAP.prepare.run` adds one column per breakdown value. Year columns keep the key `<id>@y1..3`; the others use `<id>@<dim>:<value>`, with `column.breakdown = {dim, value, label}`. Industry values are the industries with a value for some entity in scope; the others are fixed lists.
 - `compare` draws grouped bars; `parts` draws one stack per entity and breakdown value. Every group is labelled.
+- One region only (D125): `TAP.reports.BREAKDOWN_META` describes what a dimension needs, and `TAP.reports.oneRegion(dim)` is true for one flagged `oneRegion: true` (`industry` and `solution`, the dimensions with more than six categories in the sample). The panel offers a flagged option only while `TAP.scope.entities(cmp)` is one region entity; otherwise the option stays visible with `aria-disabled="true"` and the note "One region only" beside the control (`TAP.panelBuild.held(def, entities, dim)`). A flagged breakdown on while several regions show (the comparison widened, a step or `opts.initial` asked for it) falls back to no breakdown, with one line under the controls (`.tap-panel__bd-note`) until the next change. Custom charts (Build a chart) are left alone.
 
 ### 17.4 List reports (US-2.7.2; engine ENGINE2, panel PANEL2)
 

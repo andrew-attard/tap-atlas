@@ -1,7 +1,8 @@
 /*
  * File: js/engine/registry.js
  * Purpose: Keeps the lists of reports, chart builders and views, and checks report definitions before use.
- * Provides: TAP.reports (get, list, all, validate, measureIds, SHAPES, TYPES, SHAPE_TYPES, BREAKDOWNS), TAP.builders (register, get, names), TAP.views (register, get, order, list)
+ * Provides: TAP.reports (get, list, all, validate, measureIds, oneRegion, SHAPES, TYPES, SHAPE_TYPES, BREAKDOWNS, BREAKDOWN_META),
+ *           TAP.builders (register, get, names), TAP.views (register, get, order, list)
  * Depends on: js/core/namespace.js, config/reports-*.js (window.TAP_REPORTS), config/views.js (window.TAP_VIEWS),
  *             js/engine/measures.js (validate, at call time)
  * Used by: js/panel/panel.js, js/ui/app.js, js/ui/shell.js, js/ui/explain.js, js/engine/prepare.js,
@@ -12,6 +13,11 @@
 
   // The breakdown dimensions a report may allow (ARCHITECTURE 17.3, US-2.7.5; the last five from 19.2, US-4.1.4)
   var BREAKDOWNS = ['year', 'industry', 'channel', 'motion', 'segment', 'risk', 'solution', 'category', 'route', 'maturity', 'partnerType'];
+  // What each dimension needs (D125): oneRegion marks one with more than six categories in the sample (industry, 20;
+  // solution, six plus "not named"), whose bars are unreadable for several regions at once. The panel offers it only
+  // while one region is compared. Dimensions not listed need nothing.
+  var BREAKDOWN_META = { industry: { oneRegion: true }, solution: { oneRegion: true } };
+  function oneRegion(dim) { return !!(BREAKDOWN_META[dim] && BREAKDOWN_META[dim].oneRegion); }
   var SHAPES = ['compare', 'parts', 'xy', 'xyz', 'grid', 'years', 'spread', 'list'];
   var TYPES = ['bar', 'groupedBar', 'stackedBar', 'stacked100', 'treemap', 'dot', 'radar', 'scatter', 'bubble',
     'heatmap', 'bubbleGrid', 'line', 'table', 'list', 'grid'];
@@ -138,7 +144,7 @@
   };
 
   TAP.reports = { get: get, list: list, all: all, validate: validate, measureIds: measureIds,
-    SHAPES: SHAPES, TYPES: TYPES, SHAPE_TYPES: SHAPE_TYPES, BREAKDOWNS: BREAKDOWNS };
+    SHAPES: SHAPES, TYPES: TYPES, SHAPE_TYPES: SHAPE_TYPES, BREAKDOWNS: BREAKDOWNS, BREAKDOWN_META: BREAKDOWN_META, oneRegion: oneRegion };
   TAP.builders = builderApi;
   TAP.views = viewApi;
 })(window.TAP);

@@ -139,6 +139,7 @@
       p.drill.back(),
       p.st.editing && b.types ? TAP.panelMenus.compareEditor(p) : null,
       b.def && !b.errors.length ? TAP.panelMenus.render(TAP.panelMenus.spec(p, b)) : null,
+      p.st.bdNote ? el('p', { class: 'tap-panel__bd-note', role: 'status' }, p.st.bdNote) : null,   // D125: why no breakdown
       ok ? I.strip(p, highlightOf(p, s)) : null,
       bodyBox,
       ok && !tabled(p, b) ? TAP.panelChart.legend(b.res) : null,
@@ -237,7 +238,7 @@
     p.render = function () { render(p); };
     p.cmp = function () { return cmpOf(p, TAP.store.get()); };
     p.toggle = function (name) { p.st.pop = name && p.st.pop !== name ? name : null; render(p); };
-    p.set = function (patch) { Object.assign(p.st, patch); render(p); };
+    p.set = function (patch) { Object.assign(p.st, { bdNote: null }, patch); render(p); };   // a change clears that line
     p.setType = function (type) {
       var id = p.drill.current(), def = TAP.reports.get(id);   // each drill level remembers its own type
       remember(id, def && type === def.defaultType ? null : type);   // the default needs no memory
@@ -267,7 +268,8 @@
     return {
       id: reportId, el: p.root,
       refresh: p.render,
-      highlight: function (target) { p.set({ highlight: target || null, selected: null, sentence: null }); },
+      // Not p.set: a step's highlight keeps the line saying its breakdown was dropped (D125)
+      highlight: function (target) { Object.assign(p.st, { highlight: target || null, selected: null, sentence: null }); render(p); },
       expand: p.expand,
       destroy: function () { destroy(p); }
     };

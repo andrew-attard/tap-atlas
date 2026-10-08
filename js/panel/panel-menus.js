@@ -7,7 +7,8 @@
  *           fitBreakdown)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/data.js, js/core/store.js,
  *             js/engine/shapes.js, js/engine/scope.js, js/engine/prepare.js, js/engine/measures.js, js/ui/layers.js,
- *             js/ui/explain.js, js/panel/panel-insights.js, js/ui/present.js (Add to presentation) (all read at call time)
+ *             js/ui/explain.js, js/panel/panel-insights.js, panel-build.js (held, D125), js/ui/present.js (Add to presentation)
+ *             (all read at call time)
  * Used by: js/panel/panel.js, which passes its panel object p (state p.st; p.set, p.toggle, p.setType)
  */
 (function (TAP) {
@@ -39,12 +40,14 @@
 
   function same(a, b) { return String(a) === String(b); }
 
-  // A row of mutually exclusive buttons. options: [{value, label}]. Values may be strings, numbers or booleans.
+  // A row of mutually exclusive buttons. options: [{value, label, off}]. Values may be strings, numbers or booleans.
+  // off: why the option can't be picked now; it stays visible and focusable, greyed, and says so (D125).
   function seg(key, label, value, options, onPick) {
     var group = el('div', { class: 'tap-panel__seg', role: 'group', 'aria-label': label, 'data-control': key });
     options.forEach(function (o) {
       group.appendChild(el('button', { type: 'button', class: 'tap-panel__seg-opt', 'data-value': String(o.value),
-        'aria-pressed': String(same(o.value, value)), onclick: function () { onPick(o.value); } }, o.label));
+        'aria-pressed': String(same(o.value, value)), 'aria-disabled': o.off ? 'true' : null, 'aria-label': o.off || null,
+        title: o.off || null, onclick: function () { if (!o.off) onPick(o.value); } }, o.label));
     });
     return group;
   }
@@ -60,12 +63,13 @@
     return s;
   }
 
-  // One labelled control: {key, label, kind: 'segmented'|'select', value, options}.
+  // One labelled control: {key, label, kind: 'segmented'|'select', value, options, note}. note: a short visible line.
   function control(c, onPick) {
     var make = c.kind === 'select' ? select : seg;
     return el('div', { class: 'tap-panel__control' }, [
       el('span', { class: 'tap-panel__control-label' }, c.label),
-      make(c.key, c.label, c.value, c.options || [], function (v) { onPick(c.key, v); })
+      make(c.key, c.label, c.value, c.options || [], function (v) { onPick(c.key, v); }),
+      c.note ? el('span', { class: 'tap-panel__control-note' }, c.note) : null
     ]);
   }
 
@@ -248,10 +252,12 @@
         options: ms.map(function (m) { return { value: m.id, label: m.label }; }), onPick: function (k, v) { p.set({ measureId: v }); } });
     }
     // A custom chart is named for its dimension, so "None" would remove what the chart is about (#362)
-    var bds = def.custom ? [] : breakdowns(def, p.st);
+    var bds = def.custom ? [] : breakdowns(def, p.st), off = function (x) { return TAP.panelBuild.held(def, b.ctx.entities, x); };
     if (bds.length) {
-      own.push({ key: 'breakdown', label: t('breakdown'), kind: 'segmented', value: p.st.breakdown || 'none',
-        options: [{ value: 'none', label: t('breakdownNone') }].concat(bds.map(function (x) { return { value: x, label: t('breakdowns.' + x) }; })),
+      own.push({ key: 'breakdown', label: t('breakdown'), kind: 'segmented', value: p.st.breakdown || 'none', note: bds.some(off) ? t('oneRegion') : null,
+        options: [{ value: 'none', label: t('breakdownNone') }].concat(bds.map(function (x) {
+          return { value: x, label: t('breakdowns.' + x), off: off(x) ? t('oneRegionAria', { dim: t('breakdowns.' + x) }) : null };
+        })),
         onPick: function (k, v) { p.set({ breakdown: v === 'none' ? null : v }); } });
     }
     var sizes = (def.size && def.size.options) || [];

@@ -50,6 +50,11 @@ Object.assign(window.TAP_CONTENT.text, {
     breakdownNone: 'None',
     breakdowns: { year: 'Plan year', industry: 'Industry', productLine: 'Product line', channel: 'Channel', segment: 'Segment',
       motion: 'New business or customers', risk: 'Risk level' },
+    // A breakdown with many categories needs one region (D125): the note beside the control, the disabled option's
+    // name, and the line shown when the panel had to drop one
+    oneRegion: 'One region only',
+    oneRegionAria: '{dim}, needs one region selected',
+    oneRegionDropped: 'Breakdown by {dim} needs one region; showing no breakdown.',
     industry: 'Industry',
     more: 'More',
 
