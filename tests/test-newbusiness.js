@@ -1095,7 +1095,7 @@
       a.ok(one.option.yAxis.axisLabel.rich.focus.fontWeight >= 700, 'bold');
     });
 
-    T.test('X-d124-channel-books', 'pt-books split by channel takes the channel colours; split by category keeps its shades', function (a) {
+    T.test('X-d124-channel-books', 'pt-books split by channel takes the channel colours; split by category the category colours (D135)', function (a) {
       sample();
       var def = TAP.reports.get('pt-books'), b = TAP.builders.get('ptBooks');
       var res = b(ctxFor(def, { mode: 'all' }));
@@ -1105,6 +1105,7 @@
       a.equal(res.legend.filter(function (l) { return l.role === 'channel'; }).length, 4, 'four channel keys');
       var cat = b(ctxFor(def, { mode: 'all' }, { opts: { split: 'category' } }));
       a.equal(cat.legend.filter(function (l) { return l.role === 'channel'; }).length, 0, 'categories: no channel keys');
+      a.equal(cat.legend.filter(function (l) { return l.role === 'category'; }).length, 4, 'categories: four category keys');
     });
 
     T.test('X-d124-channel-explain', 'The explanation says leaders enter the split as percentages and the recap adds the amounts up', function (a) {
