@@ -133,7 +133,7 @@
     remove();
     returnTo = null;
     if (TAP.store.get().layer) TAP.store.set({ layer: null });
-    if (back && back.isConnected && back.focus) back.focus();
+    if (back && back.isConnected && back.focus) back.focus({ preventScroll: true });   // closing never moves the page (D110)
   }
 
   function openDetails(target) { open('details', { target: target }); }
