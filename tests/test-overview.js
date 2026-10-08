@@ -675,6 +675,20 @@
       try { fn(root); } finally { TAP.sourceTip.close(); TAP.layers.close(); TAP.app.stop(); }
     }
 
+    T.test(ID, 'The ambition figure opens the popover too, listing its parts as short lines, never the side panel', function (a) {
+      var host = onScreen(40, 120), f = qs('.tap-ov-card[data-entity="na"] [data-measure="amb.arr"]', host), e = window.SAMPLE_EXPECT.totals.na;
+      try {
+        spy(TAP.layers, 'open', function (calls) { f.click(); a.equal(calls.length, 0, 'no side panel opens'); });
+        var p = pop();
+        a.ok(!!p, 'a popover opens');
+        if (!p) return;
+        a.ok(txt(p).indexOf(TAP.format.moneyExact(e['amb.arr'])) >= 0, 'the exact ambition: ' + txt(p));
+        var parts = qsa('.tap-figpop__part', p);
+        a.equal(parts.length, 2, 'two part lines, new business and customer growth');
+        a.ok(txt(parts[0]).indexOf(TAP.measures.meta('nb.arr').label) >= 0 && txt(parts[0]).indexOf(TAP.format.moneyExact(e['nb.arr'])) >= 0, 'new business with its value: ' + txt(parts[0]));
+        a.ok(txt(parts[1]).indexOf(TAP.measures.meta('cg.arr').label) >= 0, 'customer growth: ' + txt(parts[1]));
+      } finally { TAP.sourceTip.close(); }
+    });
     T.test(ID, 'North America’s new business figure opens a popover beside it, with the label, exact value and address', function (a) {
       var host = onScreen(40, 120), f = naFig(host), e = window.SAMPLE_EXPECT.totals.na;
       try {
