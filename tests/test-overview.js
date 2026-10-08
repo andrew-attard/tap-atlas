@@ -241,7 +241,8 @@
         var m = mountView();
         a.equal(made.length, 1, 'one panel');
         a.equal(made[0][1], 'ov-ambition', 'the ambition report');
-        a.deepEqual(made[0][2], { broadOnly: true }, 'broad insights only (D119)');
+        a.deepEqual(made[0][2], { cmp: TAP.store.defaults().cmp, noCompare: true, broadOnly: true },
+          'every region and no comparison menu (D118); broad insights only (D119)');
         a.equal(made[0][0], qs('[data-part="panel"]', m.host), 'inside the panel slot');
         m.handle.destroy();
         a.equal(destroyed, 1, 'destroyed with the view');
@@ -255,15 +256,18 @@
       });
     });
 
-    T.test('X-overview-follows-cmp', 'Cards follow the comparison bar at once, and stop listening once the view is gone', function (a) {
+    T.test('X-overview-follows-cmp', 'D118: the cards stay on every region whatever the comparison, and stop listening once the view is gone', function (a) {
       var m = mountView();
       TAP.store.set({ cmp: { mode: 'set', set: ['charlie'] } });
-      a.equal(qsa('.tap-ov-card', m.host).length, 1, 'one region selected: one card');
-      TAP.store.set({ cmp: { mode: 'pair', focus: 'bravo', second: 'alpha' } });
-      a.deepEqual(qsa('.tap-ov-card', m.host).map(function (n) { return n.getAttribute('data-entity'); }), ['bravo', 'alpha'], 'pair');
+      a.equal(qsa('.tap-ov-card', m.host).length, 4, 'one region selected: still four cards');
+      TAP.store.set({ cmp: { mode: 'one', focus: 'bravo', restAs: 'combined', restAgg: 'average' } });
+      a.deepEqual(qsa('.tap-ov-card', m.host).map(function (n) { return n.getAttribute('data-entity'); }), ['alpha', 'bravo', 'charlie', 'delta'],
+        'one vs the rest: every region, in file order');
       m.handle.destroy();
-      TAP.store.set({ cmp: { mode: 'all' } });
-      a.ok(qsa('.tap-ov-card', m.host).length <= 2, 'no redraw after destroy');
+      var before = m.host.querySelector('.tap-ov-card');
+      TAP.store.set({ hiddenInsights: ['x:y'] });   // the cards would redraw for this while mounted (D117)
+      a.equal(m.host.querySelector('.tap-ov-card'), before, 'no redraw after destroy');
+      TAP.store.reset();
     });
 
     T.test('X-overview-ambition-def', 'The ambition report matches US-1.5.2 (TPV-TC-094)', function (a) {
@@ -391,58 +395,35 @@
       } finally { m.handle.destroy(); }
     });
 
-    T.test('X-overview-headline-focus', 'With a focus region, the headline is about it against the rest (TPV-TC-100)', function (a) {
-      var R = window.TEST_EXPECT.mini.region.alpha, rest = window.TEST_EXPECT.mini.combined.restOfAlphaAverage;
+    T.test('X-overview-headline-focus', 'D118: with a focus region chosen on another view, the headline stays about every region (was TPV-TC-100)', function (a) {
+      TAP.store.set({ cmp: { mode: 'all' } });
+      var all = headlineText();
       TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: 'average' } });
-      // Utilities is Tier 2 in Region B, C and D (3 of the other 3), and in Region A too
-      a.equal(headlineText(), [
-        H('region', { name: 'Region A', amb: TAP.format.money(R['amb.arr']), nbShare: TAP.format.pct(R['nb.arr'] / R['amb.arr']),
-          cgShare: TAP.format.pct(R['cg.arr'] / R['amb.arr']) }),
-        H('restAverage', { n: 3, regions: words(3), rest: TAP.format.money(rest['amb.arr']) }),
-        H('cgMissing', { names: 'Region C' }),
-        H('tier2FocusAll', { focus: 'Region A', m: 3, regions: words(3), industry: 'Utilities' })
-      ].join(' '));
-      TAP.store.set({ cmp: { restAgg: 'total' } });
-      a.ok(headlineText().indexOf(H('restTotal', { n: 3, regions: words(3), rest: TAP.format.money(7150 + 418) })) >= 0,
-        'as a total: 7150 new business + 418 customer growth (150 + 268)');
+      a.equal(headlineText(), all, 'the all-regions headline');
+      TAP.store.reset();
     });
 
-    // Review fix #372 (SV-16): one other region reads as one region, not "the other 1 region"
-    T.test('X-review-SV-1', 'With two regions, the headline names the other region in the singular', function (a) {
-      var p = T_FIXTURE('mini');
-      p.regions = p.regions.slice(0, 2);
-      a.ok(TAP.data.load(p).ok, 'two-region data loads');
-      ['average', 'total'].forEach(function (how) {
-        TAP.store.set({ cmp: { mode: 'one', focus: 'alpha', restAs: 'combined', restAgg: how } });
-        var s = headlineText();
-        // Region B by hand: 4150 (mini-expected), the same as an average or a total of one region
-        a.ok(s.indexOf(H('restOne', { rest: TAP.format.money(4150) })) >= 0, how + ': "' + s + '"');
-        a.ok(!/other 1 /.test(s), how + ': no "other 1"');
-      });
-    });
 
-    T.test('X-overview-headline-modes', 'Every comparison mode gives a complete sentence with no gaps', function (a) {
+    T.test('X-overview-headline-modes', 'D118: every comparison mode leaves the complete all-regions headline, with no gaps', function (a) {
       sample();
-      [{ mode: 'all' }, { mode: 'one', focus: 'ceu' }, { mode: 'one', focus: 'na', restAs: 'individual' }, { mode: 'pair', focus: 'na', second: 'ceu' },
-        { mode: 'set', set: ['neu', 'apac'] }, { mode: 'org' }].forEach(function (c) {
+      TAP.store.reset();
+      var all = headlineText();
+      a.ok(all.length > 20 && all.indexOf('[') < 0 && all.indexOf('{') < 0 && !/NaN|undefined/.test(all), 'complete: ' + all);
+      [{ mode: 'one', focus: 'ceu' }, { mode: 'one', focus: 'na', restAs: 'individual' }, { mode: 'set', set: ['neu', 'apac'] }].forEach(function (c) {
         TAP.store.reset();
         TAP.store.set({ cmp: c });
-        var s = headlineText();
-        a.ok(s.length > 20, JSON.stringify(c) + ': ' + s);
-        a.equal(s.indexOf('['), -1, 'no missing wording key');
-        a.equal(s.indexOf('{'), -1, 'no unfilled placeholder');
-        a.equal(/NaN|undefined/.test(s), false, 'no broken figure');
+        a.equal(headlineText(), all, JSON.stringify(c) + ': the same headline');
       });
+      TAP.store.reset();
     });
 
-    T.test('X-overview-headline-follows', 'The headline follows the comparison bar at once', function (a) {
+    T.test('X-overview-headline-follows', 'D118: the headline on screen stays as it is when the comparison changes', function (a) {
       var m = mountView();
       try {
         var before = txt(qs('.tap-ov__sentence', m.host));
-        TAP.store.set({ cmp: { mode: 'pair', focus: 'bravo', second: 'delta' } });
-        var after = txt(qs('.tap-ov__sentence', m.host));
-        a.ok(after !== before && after.indexOf('Region B') === 0, 'now about Region B');
-      } finally { m.handle.destroy(); }
+        TAP.store.set({ cmp: { mode: 'set', set: ['bravo', 'delta'] } });
+        a.equal(txt(qs('.tap-ov__sentence', m.host)), before, 'unchanged');
+      } finally { m.handle.destroy(); TAP.store.reset(); }
     });
 
     T.test('X-overview-headline-source', 'Headline figures are plain bold; one Sources button lists where each comes from (TPV-TC-101)', function (a) {

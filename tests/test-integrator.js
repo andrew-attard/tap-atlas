@@ -511,18 +511,18 @@
       });
     });
 
-    T.test('X-int-qa13-guide-bar', 'QA-13: on the Guide the comparison bar shrinks to its sentence line; other views keep it whole', function (a) {
+    T.test('X-int-qa13-guide-bar', 'QA-13, D116: on the Guide the comparison bar shrinks to its buttons; other views keep it whole', function (a) {
       withApp(function (root) {
-        TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });
-        var bar = root.querySelector('.tap-cmp'), controls = bar.querySelector('.tap-cmp__row--controls');
-        var full = bar.getBoundingClientRect().height, controlsH = controls.getBoundingClientRect().height;
-        a.ok(controlsH > 0, 'Overview: the controls show');
+        TAP.store.set({ view: 'industry', cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });
+        var bar = root.querySelector('.tap-cmp'), controls = bar.querySelector('.tap-cmp__controls');
+        var full = bar.getBoundingClientRect().height;
+        a.ok(controls.getBoundingClientRect().height > 0, 'Market coverage: the controls show');
         TAP.store.set({ view: 'guide' });
         a.equal(controls.getBoundingClientRect().height, 0, 'Guide: the controls are hidden');
-        a.ok(bar.querySelector('.tap-cmp__sentence').textContent.length > 0, 'Guide: the sentence stays');
-        a.ok(bar.querySelector('.tap-cmp__date').getBoundingClientRect().height > 0, 'Guide: the data date stays');
+        a.ok(bar.querySelector('.tap-cmp__sentence').textContent.length > 0, 'Guide: screen readers still have the sentence');
+        a.ok(bar.querySelector('.tap-cmp__date').getBoundingClientRect().height > 0, 'Guide: the Data button stays');
         var slim = bar.getBoundingClientRect().height;
-        a.ok(slim <= full - controlsH + 1 && slim <= 64, 'Guide: only the sentence line (' + Math.round(slim) + ' of ' + Math.round(full) + ' px)');
+        a.ok(slim <= full && slim <= 64, 'Guide: only the buttons (' + Math.round(slim) + ' of ' + Math.round(full) + ' px)');
         TAP.store.set({ view: 'insights' });
         a.ok(controls.getBoundingClientRect().height > 0, 'Insights follows the comparison: the controls are back');
       });
@@ -539,7 +539,7 @@
     // Groups the bar's visible parts into rows by their vertical middle.
     function barRows(bar) {
       var parts = qsa('.tap-cmp__title, .tap-cmp__mode, .tap-cmp__label, .tap-cmp__select, [data-picker] .tap-seg, .tap-cmp__setbtn, ' +
-        '.tap-cmp__sentence, .tap-cmp__explain, .tap-cmp__date', bar).filter(visible);
+        '.tap-cmp__explain, .tap-cmp__date', bar).filter(visible);
       var rows = [];
       parts.forEach(function (n) {
         var r = n.getBoundingClientRect(), mid = (r.top + r.bottom) / 2;
@@ -549,9 +549,10 @@
       return rows.sort(function (x, y) { return x.mid - y.mid; });
     }
 
-    T.test('X-int-qa11-bar-rows', 'QA-11, D50: at 1280 px every mode\'s comparison bar is two rows: the controls, then the sentence', function (a) {
+    T.test('X-int-qa11-bar-rows', 'QA-11, D116: at 1280 px the comparison bar is one row, or two when One vs the rest needs the room', function (a) {
       withApp(function (root) {
         screen(root, 1280);
+        TAP.store.set({ view: 'industry' });   // the Overview has no comparison (D118)
         var ids = longest(), bar = root.querySelector('.tap-cmp');
         var cases = {
           all: { mode: 'all' },
@@ -563,18 +564,15 @@
         Object.keys(cases).forEach(function (m) {
           TAP.store.set({ cmp: cases[m] });
           var rows = barRows(bar), h = Math.round(bar.getBoundingClientRect().height);
-          a.ok(rows.length <= 2, m + ': ' + rows.length + ' rows');
-          var last = rows[rows.length - 1].parts;
-          a.ok(last.indexOf(bar.querySelector('.tap-cmp__sentence')) >= 0 && last.indexOf(bar.querySelector('.tap-cmp__date')) >= 0,
-            m + ': the sentence and the data date share the last row');
+          a.ok(rows.length <= (m.indexOf('one') === 0 ? 2 : 1), m + ': ' + rows.length + ' rows');
           a.ok(rows[0].parts.indexOf(bar.querySelector('.tap-cmp__mode')) >= 0, m + ': the modes lead the first row');
-          // D99: "selected" is longer than "chosen", so the three longest names may wrap the sentence once
-          a.ok(h <= (m === 'set' ? 150 : 120), m + ': the bar is ' + h + ' px high (was about 220 in one vs the rest)');
+          a.ok(rows[rows.length - 1].parts.indexOf(bar.querySelector('.tap-cmp__date')) >= 0, m + ': the Data button on the last row');
+          a.ok(h <= (m.indexOf('one') === 0 ? 120 : 70), m + ': the bar is ' + h + ' px high (was about 220 in one vs the rest)');
         });
         // Every region in the set: the button only counts them, so the controls stay one line
         TAP.store.set({ cmp: { mode: 'set', set: ids.slice() } });
-        var controls = bar.querySelector('.tap-cmp__row--controls').getBoundingClientRect().height;
-        a.ok(controls <= 48, 'set of all ' + ids.length + ' regions: the controls row is ' + Math.round(controls) + ' px, one line');
+        var controls = bar.querySelector('.tap-cmp__controls').getBoundingClientRect().height;
+        a.ok(controls <= 48, 'set of all ' + ids.length + ' regions: the controls are ' + Math.round(controls) + ' px, one line');
       });
     });
 
