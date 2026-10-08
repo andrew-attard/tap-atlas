@@ -82,6 +82,10 @@
       if (a.regions.length) body.push(line(null, t('source.regions') + ': ' + TAP.format.list(a.regions)));
     }
     if (c.partial && c.note) body.push(line(null, t('source.note') + ': ' + c.note));
+    // A figure that stands for several (the ambition and its parts): each part as one short line
+    (spec.rows || []).filter(function (r) { return r !== spec; }).forEach(function (r) {
+      body.push(line('tap-figpop__part', r.label + ': ' + fmt(r.cell || {}, r.unit, true)));
+    });
     if (kind || where) {
       body.push(el('p', { class: 'tap-figpop__line tap-figpop__src' }, [TAP.icons.svg('data', { size: 18 }),
         el('span', null, [kind, kind && where ? ' · ' : '', where].join(''))]));
@@ -90,7 +94,7 @@
   }
 
   // A figure: a button showing the value, its kind in the title. Selecting it opens a popover beside it (D129); a figure
-  // that stands for several (rows) lists them in the source panel. spec: {measure, cell, unit, label, text?, exact?,
+  // that stands for several (rows) lists them as lines in the popover. spec: {measure, cell, unit, label, text?, exact?,
   // rows?}: text replaces the formatted value (exact is then the precise value); rows are the lines the panel lists.
   function figure(spec, cls) {
     var c = spec.cell || {};
@@ -101,8 +105,7 @@
       title: title,
       onclick: function (e) {
         e.stopPropagation();
-        if (spec.rows && spec.rows.length > 1) openSource(spec.label, spec.rows);
-        else popover(e.currentTarget, spec);
+        popover(e.currentTarget, spec);   // one figure never opens the side panel, parts included (D129)
       }
     }, spec.text != null ? spec.text : fmt(c, spec.unit));
   }
