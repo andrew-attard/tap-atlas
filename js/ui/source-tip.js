@@ -106,7 +106,7 @@
   function closeAndReturn() {
     var anchor = open && open.pinned ? open.anchor : null;
     close();
-    if (anchor && anchor.focus && anchor.isConnected) anchor.focus();
+    if (anchor && anchor.focus && anchor.isConnected) anchor.focus({ preventScroll: true });   // never moves the page (D110)
   }
 
   // A popover never outlives its view, or the icon it points at (a panel redrawn under it).

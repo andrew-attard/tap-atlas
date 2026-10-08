@@ -84,7 +84,8 @@
     if (!hashIs(hashFor(state))) {
       if (correcting) replaceHash(hashFor(state)); else window.location.hash = hashFor(state);
     }
-    if (viewChanged) mountView(state.view);
+    // A new view starts at its top; scrolled first, so a view that scrolls while mounting (a Guide section) wins (D110)
+    if (viewChanged) { window.scrollTo(0, 0); mountView(state.view); }
   }
 
   function start(opts) {
