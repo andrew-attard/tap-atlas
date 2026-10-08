@@ -169,25 +169,26 @@
       a.equal(head.tagName, 'BUTTON', 'a real button for the keyboard');
     });
 
-    T.test('X-overview-card-source', 'Every card figure names its source and shows it when clicked (TPV-TC-092)', function (a) {
+    T.test('X-overview-card-source', 'Every card figure names itself in its title and shows its source when clicked (TPV-TC-092, D129)', function (a) {
       var el = cards(), f = fig(el, 'alpha', 'nb.arr');
       var where = TAP.sources.address(TAP.measures.get('nb.arr')('alpha', {}).src).text;
-      a.ok(f.getAttribute('title').indexOf(where) < 0, 'the title leaves the address to the data icon (D100)');
+      a.ok(f.getAttribute('title').indexOf(where) < 0, 'the title leaves the address to the popover (D100)');
       qsa('[data-measure]', card(el, 'alpha')).forEach(function (n) {
         a.ok(!!n.getAttribute('title'), n.getAttribute('data-measure') + ' has a title');
       });
-      spy(TAP.layers, 'openDetails', function (details) {
-        spy(TAP.layers, 'open', function (calls) {
-          f.click();
-          a.equal(details.length, 0, 'a figure click does not open the card details');
-          a.equal(calls.length, 1, 'a side panel opened');
-          var body = T.dom.mount();
-          calls[0][1].render(body);
-          a.ok(txt(body).indexOf(where) < 0, 'no address as text (D100)');
-          a.ok(window.T_TIP_TEXT(qs('.tap-srctip', body)).indexOf(where) >= 0, 'the panel’s data icon shows the source address');
-          a.ok(txt(body).indexOf(TAP.format.moneyExact(2255)) >= 0, 'and the exact value');
+      try {
+        spy(TAP.layers, 'openDetails', function (details) {
+          spy(TAP.layers, 'open', function (calls) {
+            f.click();
+            a.equal(details.length, 0, 'a figure click does not open the card details');
+            a.equal(calls.length, 0, 'nor a side panel (D129)');
+          });
         });
-      });
+        var p = qs('.tap-figpop', document);
+        a.ok(!!p, 'a popover opened');
+        a.ok(txt(p).indexOf(where) >= 0, 'it shows the source address');
+        a.ok(txt(p).indexOf(TAP.format.moneyExact(2255)) >= 0, 'and the exact value');
+      } finally { TAP.sourceTip.close(); }
     });
 
     T.test('X-overview-card-missing', 'A missing section reads "not provided", never 0, and a partial ambition says so (TPV-TC-090)', function (a) {
@@ -530,6 +531,133 @@
       a.ok(!!rest && rest.classList.contains('is-combined'), 'the rest is one combined card');
       a.equal(qsa('.tap-ov-card__part', rest).length, 2, 'two swatched lines');
       a.deepEqual(order(rest), order(card(el, 'na')), 'region and combined card line up part by part');
+    });
+  });
+
+  /* ---------- D129 (#547): one figure opens a small popover beside it, not the side panel ---------- */
+
+  T.suite('figure-popover', function () {
+    var ID = 'X-d129-figure-popover';
+    function pop() { return document.querySelector('.tap-figpop'); }
+    function esc() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); }
+    function vw() { return document.documentElement.clientWidth; }
+    function vh() { return document.documentElement.clientHeight; }
+    // The cards on the sample, in a box fixed on screen at (left, top), so where the popover lands can be measured.
+    function onScreen(left, top) {
+      sample();
+      TAP.store.reset();
+      var host = T.dom.mount();
+      host.style.cssText = 'position:fixed;z-index:50;width:300px;left:' + left + 'px;top:' + top + 'px';
+      TAP.overviewCards.render(host, { mode: 'set', set: ['na'] });
+      return host;
+    }
+    function naFig(host) { return qs('.tap-ov-card[data-entity="na"] [data-measure="nb.arr"]', host); }
+    // "North America plan.xlsx › 2. New Business", read from the sample's source map, not the app.
+    function naAddress() {
+      var p = window.PLAN_DATA, reg = p.regions.filter(function (r) { return r.id === 'na'; })[0];
+      return reg.source.fileName + ' › ' + p.meta.sourceMap.newBusiness.sheet + ' › ';
+    }
+    function inWindow(a, r, label) {
+      a.ok(r.left >= 0 && r.top >= 0 && r.right <= vw() && r.bottom <= vh(), label + ': inside the window ' + JSON.stringify([r.left, r.top, r.right, r.bottom]));
+    }
+    // Starts the app on the sample data (the Overview), runs fn(root) and always stops it again.
+    function withApp(fn) {
+      var root = T.dom.mount();
+      TAP.app.start({ root: root, plan: JSON.parse(JSON.stringify(window.PLAN_DATA)) });
+      try { fn(root); } finally { TAP.sourceTip.close(); TAP.layers.close(); TAP.app.stop(); }
+    }
+
+    T.test(ID, 'North America’s new business figure opens a popover beside it, with the label, exact value and address', function (a) {
+      var host = onScreen(200, 120), f = naFig(host), e = window.SAMPLE_EXPECT.totals.na;
+      try {
+        spy(TAP.layers, 'open', function (calls) {
+          spy(TAP.layers, 'openDetails', function (details) {
+            f.click();
+            a.equal(calls.length + details.length, 0, 'no side panel opens');
+          });
+        });
+        var p = pop(), r = p && p.getBoundingClientRect(), b = f.getBoundingClientRect();
+        a.ok(!!p, 'a popover opens');
+        if (!p) return;
+        a.equal(qsa('.tap-figpop, .tap-srcpop', document).length, 1, 'one popover');
+        a.equal(txt(qs('.tap-figpop__title', p)), TAP.measures.meta('nb.arr').label, 'titled with the figure’s label');
+        a.ok(txt(p).indexOf(TAP.format.moneyExact(e['nb.arr'])) >= 0, 'the exact value: ' + txt(p));
+        a.ok(txt(p).indexOf(naAddress()) >= 0, 'the file › sheet › cell from the source map: ' + txt(p));
+        a.ok(!!qs('svg', qs('.tap-figpop__src', p)), 'with the data icon');
+        a.ok(r.left >= b.right && r.left - b.right <= 16, 'beside it, to the right (gap ' + (r.left - b.right) + ' px)');
+        a.ok(r.top < b.bottom && r.bottom > b.top, 'level with it');
+        inWindow(a, r, 'the popover');
+        a.equal(getComputedStyle(qs('.tap-figpop__value', p)).fontSize, '16px', '16 px text (D24)');
+        a.equal(getComputedStyle(p).animationName, 'none', 'no animation');
+        a.ok(p.contains(document.activeElement), 'focus moves into the popover');
+        a.equal(f.getAttribute('aria-expanded'), 'true', 'the figure says it is open');
+        var x = qs('.tap-figpop__close', p);
+        a.equal(x.getAttribute('aria-label'), 'Close', 'a close button named Close');
+        x.click();
+        a.equal(pop(), null, 'the close button closes it');
+        a.equal(document.activeElement, f, 'focus goes back to the figure');
+        a.equal(f.getAttribute('aria-expanded'), 'false', 'and it says it is closed');
+      } finally { TAP.sourceTip.close(); }
+    });
+
+    T.test(ID, 'Near the right or bottom edge the popover flips left or up and stays inside the window', function (a) {
+      try {
+        var right = onScreen(vw() - 160, 120), f = naFig(right);
+        f.click();
+        var r = pop().getBoundingClientRect(), b = f.getBoundingClientRect();
+        a.ok(r.right <= b.left, 'to the left of a figure near the right edge');
+        inWindow(a, r, 'right edge');
+        TAP.sourceTip.close();
+        // The figure itself a few pixels above the bottom edge, so the popover cannot open below its top
+        var low = onScreen(200, 0), g = naFig(low), gr = g.getBoundingClientRect();
+        low.style.top = (vh() - (gr.bottom - low.getBoundingClientRect().top) - 4) + 'px';
+        g.click();
+        var q = pop().getBoundingClientRect(), gb = g.getBoundingClientRect();
+        a.ok(gb.bottom <= vh() && gb.bottom > vh() - 40, 'the figure sits at the bottom edge');
+        a.ok(q.top < gb.top, 'the popover rises above the figure’s top');
+        inWindow(a, q, 'bottom edge');
+      } finally { TAP.sourceTip.close(); }
+    });
+
+    T.test(ID, 'Esc closes the popover before any side panel; a click elsewhere closes it; another figure swaps it', function (a) {
+      withApp(function (root) {
+        TAP.layers.openDetails({ regionIds: ['latam'] });
+        a.equal(TAP.layers.top(), 'details', 'a side panel is open underneath');
+        var na = qs('.tap-ov-card[data-entity="na"]', root);
+        qs('[data-measure="nb.arr"]', na).click();
+        a.ok(!!pop(), 'the popover opens');
+        esc();
+        a.equal(pop(), null, 'Esc closes the popover');
+        a.equal(TAP.layers.top(), 'details', 'and leaves the side panel open');
+        esc();
+        a.equal(TAP.layers.top(), null, 'the next Esc closes the side panel');
+        qs('[data-measure="nb.arr"]', na).click();
+        qs('[data-measure="cg.arr"]', na).click();
+        a.equal(qsa('.tap-figpop', document).length, 1, 'selecting another figure swaps the popover');
+        a.ok(txt(pop()).indexOf(TAP.measures.meta('cg.arr').label) >= 0, 'to the new figure');
+        document.body.click();
+        a.equal(pop(), null, 'a click elsewhere closes it');
+        a.equal(TAP.layers.top(), null, 'without opening anything');
+      });
+    });
+
+    T.test(ID, 'A combined figure says how it was combined; the headline Sources still opens the side panel', function (a) {
+      try {
+        sample();
+        TAP.store.reset();
+        var el = cards({ mode: 'one', focus: 'na', restAs: 'combined', restAgg: 'average' });
+        var f = fig(el, 'rest', 'nb.arr'), cell = TAP.measures.combined('nb.arr', TAP.scope.entities()[1], {});
+        f.click();
+        a.ok(!!pop(), 'a popover for the combined figure');
+        a.ok(txt(pop()).indexOf(TAP.agg.describe(cell)) >= 0, 'how it was combined: ' + TAP.agg.describe(cell));
+        a.ok(txt(pop()).indexOf(TAP.format.moneyExact(cell.v)) >= 0, 'its exact value');
+        TAP.sourceTip.close();
+      } finally { TAP.sourceTip.close(); TAP.store.reset(); }
+      withApp(function (root) {
+        qs('.tap-ov__sources', root).click();
+        a.equal(TAP.layers.top(), 'headline-sources', 'the headline Sources lists its figures in the side panel');
+        a.equal(pop(), null, 'not in a popover');
+      });
     });
   });
 

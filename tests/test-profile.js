@@ -2,7 +2,7 @@
  * File: tests/test-profile.js
  * Purpose: Tests for the Regions view: the region picker and one region's profile against the average of the rest
  *          (Epic 2.4).
- * Provides: test cases TPV-TC-434 to TPV-TC-458 (automated ones) and X-profile-*
+ * Provides: test cases TPV-TC-434 to TPV-TC-458 (automated ones), X-profile-* and X-d129-figure-popover (glance figures)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample)
  * Used by: tests.html
  * Owner: PROFILE stream
@@ -290,14 +290,28 @@
       a.ok(n >= 10, n + ' figures checked');
     });
 
-    T.test('X-profile-glance-click', 'A figure on the glance opens the region\'s details', function (a) {
-      var m = mountFor('alpha');
+    // D129: one figure opens a small popover beside it; the side panel stays for a region's details (the card name)
+    T.test('X-d129-figure-popover', 'A glance figure and an average each open a popover, not the side panel', function (a) {
+      var m = mountFor('alpha'), pop = function () { return document.querySelector('.tap-figpop'); };
       try {
-        qs('.tap-pf-glance [data-measure="amb.arr"] [data-part="region"]', m.root).click();
-        var l = TAP.store.get().layer;
-        a.equal(l && l.name, 'details', 'the details panel opened');
-        a.deepEqual(l && l.payload.target.regionIds, ['alpha'], 'for Region A');
-      } finally { m.handle.destroy(); TAP.layers.close(); }
+        var row = qs('.tap-pf-glance [data-measure="nb.targetAccounts"]', m.root), mine = qs('[data-part="region"]', row);
+        mine.click();
+        a.equal(TAP.store.get().layer, null, 'no side panel opens');
+        a.ok(!!pop(), 'a popover opens');
+        a.equal(txt(qs('.tap-figpop__title', pop())), TAP.measures.meta('nb.targetAccounts').label, 'titled with the figure’s label');
+        a.ok(txt(pop()).indexOf('30') >= 0, 'Region A’s 30 target accounts');
+        // By hand from the mini fixture: Region A plan.xlsx, the New Business sheet
+        a.ok(txt(pop()).indexOf('Region A plan.xlsx › ') >= 0, 'where it comes from: ' + txt(pop()));
+        a.ok(pop().contains(document.activeElement), 'focus moves into it');
+        qs('[data-part="rest"]', row).click();
+        a.equal(document.querySelectorAll('.tap-figpop').length, 1, 'the average swaps it: one popover');
+        // (50 + 15 + 100) / 3 = 55, combined from Regions B, C and D
+        a.ok(txt(pop()).indexOf('55') >= 0, 'the average: ' + txt(pop()));
+        a.ok(/Region B, Region C and Region D/.test(txt(pop())), 'the regions it covers');
+        a.equal(TAP.store.get().layer, null, 'still no side panel');
+        qs('.tap-figpop__close', pop()).click();
+        a.equal(pop(), null, 'the close button closes it');
+      } finally { TAP.sourceTip.close(); m.handle.destroy(); TAP.layers.close(); }
     });
 
     T.test('TPV-TC-448', 'The region with an empty customer growth section reads "not provided" on its customers line', function (a) {
