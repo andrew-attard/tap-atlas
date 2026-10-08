@@ -247,19 +247,20 @@
         p = panelEl(root, 'ind-quad');
         p.querySelector('[data-action="select-insight"]').click();
         a.ok(drawn(root, 'ind-quad'), 'drawn on the quadrant');
-        // A focus region no ambition insight names, so the insight's regions sit inside the combined rest
+        // A focus region no strategic plan insight names, so the insight's regions sit inside the combined rest. The
+        // Outlook's strategic plan chart, as the Overview's ambition chart lists only broad insights (D119).
         var named = [];
-        TAP.insights.all().filter(function (i) { return i.reportId === 'ov-ambition'; }).forEach(function (i) { named = named.concat(i.regionIds); });
+        TAP.insights.ranked(null, { reportId: 'ol-strategic' }).forEach(function (i) { named = named.concat(i.regionIds); });
         var focus = TAP.data.regions().map(function (r) { return r.id; }).filter(function (id) { return named.indexOf(id) < 0; })[0];
-        a.ok(focus, 'a region no ambition insight names: ' + focus);
-        reset({ mode: 'one', focus: focus, restAgg: 'total' }, 'overview');
-        p = panelEl(root, 'ov-ambition');
+        a.ok(focus, 'a region no strategic plan insight names: ' + focus);
+        reset({ mode: 'one', focus: focus, restAgg: 'total' }, 'outlook');
+        p = panelEl(root, 'ol-strategic');
         var btn = p.querySelector('[data-action="insights"]');
-        a.ok(btn && !btn.disabled, 'the ambition chart has insights against the total of the rest');
+        a.ok(btn && !btn.disabled, 'the strategic plan chart has insights against the total of the rest');
         btn.click();
-        panelEl(root, 'ov-ambition').querySelector('[data-action="select-insight"]').click();
+        panelEl(root, 'ol-strategic').querySelector('[data-action="select-insight"]').click();
         a.equal(TAP.store.get().cmp.mode, 'all', 'switched to All regions');
-        a.ok(drawn(root, 'ov-ambition'), 'drawn on the ambition chart');
+        a.ok(drawn(root, 'ol-strategic'), 'drawn on the strategic plan chart');
       });
     });
 

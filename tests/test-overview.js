@@ -1,8 +1,9 @@
 /*
  * File: tests/test-overview.js
- * Purpose: Tests for region cards, the Overview view and ambition chart, and the headline (no top insights, D92).
+ * Purpose: Tests for region cards, the Overview view and ambition chart, the headline, and the top insights for the
+ *          organization as a whole (D119, superseding D92).
  *          TPV-TC-095 and 096 live with the engine tests (test-shapes.js, test-measures.js).
- * Provides: test cases for OVERVIEW stories (#29, #30, #31, #487, #523): TPV-TC-087, TPV-TC-099, X-overview-*, X-d92-*,
+ * Provides: test cases for OVERVIEW stories (#29, #30, #31, #523, #529): TPV-TC-087, TPV-TC-099, X-overview-*, X-d119-*,
  *           X-d117-* (the cards answer "will it land?")
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample, insights)
  * Used by: tests.html
@@ -224,11 +225,11 @@
       a.equal(TAP.views.title('overview'), 'Overview');
     });
 
-    T.test('X-overview-layout', 'Headline, then the cards, then the ambition panel', function (a) {
+    T.test('X-overview-layout', 'Headline, top insights (D119), then the cards, then the ambition panel', function (a) {
       var m = mountView();
       try {
         var order = qsa('.tap-ov > *', m.host).map(function (n) { return n.getAttribute('data-part'); });
-        a.deepEqual(order, ['headline', 'cards', 'panel'], 'section order');
+        a.deepEqual(order, ['headline', 'insights', 'cards', 'panel'], 'section order');
         a.equal(qs('[data-part="panel"]', m.host).getAttribute('data-report'), 'ov-ambition');
         a.equal(qsa('.tap-ov-card', m.host).length, 4, 'one card per region');
       } finally { m.handle.destroy(); }
@@ -240,7 +241,7 @@
         var m = mountView();
         a.equal(made.length, 1, 'one panel');
         a.equal(made[0][1], 'ov-ambition', 'the ambition report');
-        a.deepEqual(made[0][2], {}, 'no options');
+        a.deepEqual(made[0][2], { broadOnly: true }, 'broad insights only (D119)');
         a.equal(made[0][0], qs('[data-part="panel"]', m.host), 'inside the panel slot');
         m.handle.destroy();
         a.equal(destroyed, 1, 'destroyed with the view');
@@ -298,7 +299,7 @@
     });
   });
 
-  /* ---------- US-1.5.3: headline (#31); top insights removed by D92 (#487) ---------- */
+  /* ---------- US-1.5.3: headline (#31); top insights for the organization (D119, #529) ---------- */
 
   var H = function (key, vars) { return TAP.content.text('overview.headline.' + key, vars); };
   var words = function (n) { return TAP.content.text(n === 1 ? 'combined.region' : 'combined.regions'); };
@@ -320,32 +321,6 @@
       if (n > bestN) { best = ind; bestN = n; }
     });
     return { industry: best, n: bestN };
-  }
-
-  // A stand-in insight engine over the fixture, for the length of fn.
-  function withInsights(list, fn) {
-    var orig = TAP.insights, hidden = [], calls = [];
-    TAP.insights = {
-      top: function (cmp, reportId, n) {
-        calls.push([cmp, reportId, n]);
-        return list.filter(function (x) { return hidden.indexOf(x.id) < 0; }).slice(0, n);
-      },
-      // The ambition panel reads its own insights through ranked
-      ranked: function (cmp, opts) {
-        var rid = opts && opts.reportId;
-        return list.filter(function (x) { return hidden.indexOf(x.id) < 0 && (!rid || (x.attach || []).indexOf(rid) >= 0); });
-      },
-      all: function () { return list.slice(); },
-      failures: function () { return []; },
-      hide: function (id) { hidden.push(id); TAP.store.set({ hiddenInsights: hidden.slice() }); },
-      unhide: function (id) { hidden.splice(hidden.indexOf(id), 1); },
-      hidden: function () { return hidden.slice(); }
-    };
-    try { return fn(calls, hidden); } finally { TAP.insights = orig; }
-  }
-  function fixture() {
-    var list = window.TEST_FIXTURES.insights;
-    return JSON.parse(JSON.stringify(list));
   }
 
   // Review polish #382 (SV-19): the Overview keeps the same side gutter as every other view, so titles don't shift
@@ -641,28 +616,118 @@
     });
   });
 
-  // D92 (amends US-1.5.3): the Overview no longer lists top insights. They stay on the Insights page and in each panel.
+  // D119 (supersedes D92, amends US-1.5.3): a "Top insights" block for the organization as a whole. An insight qualifies
+  // when it names at least overviewMinRegions regions or its rule is marked broad (built on all regions' total);
+  // context insights never do. Nothing about one or two regions shows anywhere on the Overview.
   T.suite('overview-insights', function () {
-    T.test('X-d92-no-top-insights', 'The Overview has no insight list and no Show me or Hide buttons; the headline still shows', function (a) {
+    // Read by hand from the sample's insight list (dump-insights.js): the four that are not context and name 3+ regions
+    // or come from a broad rule, by significance: spTotal (0.55, 6 regions, broad), notYetWinnable (0.46, 4 regions),
+    // priorityVsPlan (0.44, 5 regions), groupPriority (0.43, 4 regions). Every other figure-based insight names one region.
+    var EXPECT = ['spTotal:org', 'notYetWinnable:fsm', 'priorityVsPlan:manufacturing'], NEXT = 'groupPriority:datacenters:ability';
+    // The figures of PLANTED-CASES R03 (SAMPLE_EXPECT.r03), as the D114 check reads them
+    function spTotalSentence() {
+      var R3 = window.SAMPLE_EXPECT.r03, F = TAP.format;
+      return 'Together, the three-year plans of the 6 regions with a strategic plan are ' + F.pct(-R3.variancePct3) +
+        ' below their strategic plans (' + F.money(R3.plans3) + ' against ' + F.money(R3.strategicPlans3) + '). Not included, with no strategic plan: Northern Europe.';
+    }
+    var S = function () { return window.TAP_SETTINGS.insights; };
+
+    function fresh(cmp) {
       sample();
-      var list = fixture();
-      a.ok(list.length >= 3, 'fixture has insights to show');
-      withInsights(list, function () {
-        var m = mountView();
-        try {
-          // The ambition chart's panel keeps its own insight list (D92 removes only the Overview's block), so look outside it
-          var outside = function (n) { return !n.closest('.tap-ov__panel'); };
-          a.equal(qsa('[data-part="insights"], [data-insight]', m.host).filter(outside).length, 0, 'no insight list or insight items');
-          // The wording any insight's buttons use, on the Insights page, in a panel or under a view title
-          var words = ['Show me', 'Hide for this session', TAP.content.text('insightsPage.showMe'), TAP.content.text('insightsPage.hide'),
-            TAP.content.text('viewHead.showMe')];
-          var buttons = qsa('button', m.host).filter(outside).map(txt).filter(function (s) { return words.indexOf(s) >= 0; });
-          a.deepEqual(buttons, [], 'no Show me or Hide buttons');
-          a.equal(qsa('a[href="#insights"]', m.host).length, 0, 'no link to the Insights page');
-          a.ok(txt(qs('.tap-ov__sentence', m.host)).length > 0, 'the headline still shows');
-          a.ok(!!qs('[data-part="headline"] .tap-ov__sentence', m.host), 'inside the headline part');
-        } finally { m.handle.destroy(); }
-      });
+      TAP.store.reset();
+      TAP.insights.unhide();
+      if (cmp) TAP.store.set({ cmp: cmp });
+    }
+    function block(host) { return qs('[data-part="insights"]', host); }
+    function ids(host) {
+      var b = block(host);
+      return b ? qsa('[data-insight]', b).map(function (n) { return n.getAttribute('data-insight'); }) : [];
+    }
+    function byId(id) { return TAP.insights.all().filter(function (x) { return x.id === id; })[0]; }
+    function broad(x) {
+      var rule = (window.TAP_RULES.rules || []).filter(function (r) { return r.id === x.ruleId; })[0] || {};
+      return rule.broad === true || x.regionIds.length >= (S().overviewMinRegions || 3);
+    }
+    T.test('X-d119-top-insights', 'The setting and the broad rule mark exist: overviewMinRegions is 3, spTotal is broad', function (a) {
+      a.equal(S().overviewMinRegions, 3, 'overviewMinRegions in config/settings.js');
+      var sp = window.TAP_RULES.rules.filter(function (r) { return r.id === 'spTotal'; })[0];
+      a.equal(sp && sp.broad, true, 'spTotal is marked broad in config/insight-rules.js');
+    });
+
+    T.test('X-d119-top-insights', 'On the sample, the block lists the three broad insights by significance, spTotal first', function (a) {
+      fresh();
+      var m = mountView();
+      try {
+        var b = block(m.host);
+        a.ok(!!b, 'the block shows');
+        a.deepEqual(ids(m.host), EXPECT, 'the three broad insights, in the engine’s order');
+        a.equal(txt(qs('h2', b)), TAP.content.text('overview.insights.title'), 'titled from the content file');
+        a.equal(TAP.content.text('overview.insights.title'), 'Top insights', 'block title');
+        a.equal(txt(qs('.tap-ov__insights-intro', b)), 'Findings that span the organization; region findings are on each view.', 'its intro line');
+        var sigs = EXPECT.map(function (id) { return byId(id).significance; });
+        a.ok(sigs[0] >= sigs[1] && sigs[1] >= sigs[2], 'ordered by significance');
+        EXPECT.forEach(function (id) {
+          var x = byId(id), item = qs('[data-insight="' + id + '"]', b);
+          a.ok(!x.context, id + ': not context');
+          a.ok(broad(x), id + ': names 3+ regions or comes from a broad rule');
+          a.equal(txt(qs('.tap-ov-insight__sentence', item)), x.sentence, id + ': its sentence');
+          a.ok(!!x.why && txt(qs('.tap-ov-insight__why', item)) === x.why, id + ': its why line');
+          var words = qsa('button', item).map(txt);
+          a.ok(words.indexOf(TAP.content.text('overview.insights.showMe')) >= 0, id + ': Show me');
+          a.ok(words.indexOf(TAP.content.text('overview.insights.hide')) >= 0, id + ': Hide for this session');
+        });
+        a.equal(txt(qs('[data-insight="spTotal:org"] .tap-ov-insight__sentence', b)), spTotalSentence(), 'spTotal reads as expected');
+        // Under the headline, above the cards
+        var parts = qsa('.tap-ov > [data-part]', m.host).map(function (n) { return n.getAttribute('data-part'); });
+        a.deepEqual(parts.slice(0, 3), ['headline', 'insights', 'cards'], 'headline, then the block, then the cards');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-d119-top-insights', 'No insight about only one or two regions anywhere on the Overview: block, panel, headline', function (a) {
+      fresh();
+      // The ambition chart has region insights attached (pipeline cover, plan make-up), so the panel test means something
+      var attached = TAP.insights.ranked(TAP.store.get().cmp, { reportId: 'ov-ambition' });
+      a.ok(attached.some(function (x) { return x.regionIds.length < 3; }), 'the chart has region insights to leave out');
+      var m = mountView();
+      try {
+        var shown = qsa('[data-insight]', m.host).map(function (n) { return byId(n.getAttribute('data-insight').replace(/:\d+$/, '')); });
+        a.ok(shown.length >= 3, 'insights on the page');
+        a.deepEqual(shown.filter(function (x) { return !x || !broad(x) || x.context; }), [], 'every insight shown is broad');
+        var count = qs('.tap-ov__panel [data-action="insights"] .tap-panel__count', m.host);
+        a.equal(count ? txt(count) : '0', String(attached.filter(broad).length), 'the panel counts broad insights only');
+        var head = TAP.viewHead.headline('overview', TAP.store.get().cmp);
+        a.ok(!head || broad(head), 'the Overview’s headline insight, if any, is broad');
+      } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-d119-top-insights', 'The Overview ranks for all regions: a focus region does not reorder or narrow the block', function (a) {
+      fresh({ mode: 'one', focus: 'na', restAs: 'separate', restAgg: 'average' });
+      var m = mountView();
+      try { a.deepEqual(ids(m.host), EXPECT, 'the same three in the same order'); } finally { m.handle.destroy(); }
+    });
+
+    T.test('X-d119-top-insights', 'Hiding one brings in the next; hiding every one leaves the block out, with no empty text', function (a) {
+      fresh();
+      var m = mountView();
+      try {
+        qs('[data-insight="spTotal:org"] .tap-ov-insight__hide', m.host).click();
+        a.ok(TAP.insights.hidden().indexOf('spTotal:org') >= 0, 'Hide goes through the engine');
+        a.deepEqual(ids(m.host), EXPECT.slice(1).concat([NEXT]), 'the next broad insight comes in');
+        EXPECT.slice(1).concat([NEXT]).forEach(function (id) { TAP.insights.hide(id); });
+        var b = block(m.host);
+        a.ok(!b || (b.hidden && !b.children.length), 'no block: left out, nothing in it');
+        a.equal(txt(m.host).indexOf(TAP.content.text('overview.insights.title')), -1, 'no title and no empty-state text');
+      } finally { m.handle.destroy(); TAP.insights.unhide(); }
+    });
+
+    T.test('X-d119-top-insights', 'Show me sends the insight to its chart', function (a) {
+      fresh();
+      var m = mountView(), got = [], off = TAP.bus.on('showme', function (e) { got.push(e); });
+      try {
+        qs('[data-insight="spTotal:org"] .tap-ov-insight__show', m.host).click();
+        a.equal(got.length && got[0].insightId, 'spTotal:org', 'showme for spTotal');
+        a.equal(got.length && got[0].target.reportId, byId('spTotal:org').reportId, 'at its chart');
+      } finally { if (typeof off === 'function') off(); m.handle.destroy(); TAP.store.reset(); }
     });
   });
 })(window.TAP);
