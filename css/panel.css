@@ -125,7 +125,7 @@ button.tap-panel__crumb {
 }
 .tap-panel__chip[aria-pressed="true"] { border-width: var(--tap-rule-w); font-weight: 800; }
 
-/* Controls row: industry picker and the options a builder offers */
+/* Controls row: industry picker and builder options; an option needing one region is greyed, with a note (D125) */
 .tap-panel__controls {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) 28px;
   padding: var(--tap-sp-3) var(--tap-sp-6); border-top: var(--tap-rule-w) solid var(--tap-ink);
@@ -135,9 +135,7 @@ button.tap-panel__crumb {
 .tap-panel__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); }
 /* A switch that has to wrap fills each line, so the lines are even (#370): the rules between options are the ink
    showing through the gaps, so they also run between lines */
-.tap-panel__seg {
-  display: inline-flex; flex-wrap: wrap; gap: var(--tap-rule-w); border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ink);
-}
+.tap-panel__seg { display: inline-flex; flex-wrap: wrap; gap: var(--tap-rule-w); border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ink); }
 .tap-panel__control > .tap-panel__seg { flex: 0 1 auto; min-width: 0; }
 .tap-panel__seg-opt {
   flex: 1 1 auto; padding: 7px 14px; font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink);
@@ -145,6 +143,8 @@ button.tap-panel__crumb {
 }
 .tap-panel__seg-opt:hover { background: var(--tap-surface); }
 .tap-panel__seg-opt[aria-pressed="true"] { background: var(--tap-ink); color: var(--tap-on-colour); }
+.tap-panel__seg-opt[aria-disabled="true"] { color: var(--tap-muted); background: var(--tap-surface); cursor: not-allowed; }
+.tap-panel__control-note { font-size: var(--tap-fs-body); font-style: italic; color: var(--tap-muted); }
 
 /* Highlight strip: names what is ringed on the chart */
 .tap-panel__strip {
@@ -287,14 +287,14 @@ html.tap-noscroll, html.tap-noscroll body { overflow: hidden; }
 .tap-panel__expand-sentence { flex: 1 1 360px; font-size: var(--tap-fs-lead); font-weight: 800; }
 .tap-panel--expanded .tap-panel__head, .tap-panel--expanded .tap-panel__controls, .tap-panel--expanded .tap-panel__strip,
 .tap-panel--expanded .tap-panel__body, .tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes,
-.tap-panel--expanded .tap-panel__source { padding-left: 0; padding-right: 0; }
+.tap-panel--expanded .tap-panel__source, .tap-panel--expanded .tap-panel__bd-note { padding-left: 0; padding-right: 0; }
 .tap-panel--expanded .tap-panel__title { font-size: var(--tap-fs-h1); }
 .tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes { font-size: var(--tap-fs-lead); }
 .tap-panel--expanded .tap-panel__chart { height: max(340px, calc(100vh - 340px)); }
 .tap-panel--expanded .tap-panel__tablewrap { max-height: max(340px, calc(100vh - 380px)); }
 
-/* More menu separator, and the panel's status line for copy and save messages */
+/* More menu separator, the panel's status line for copy and save messages, and the line saying a breakdown was dropped */
 .tap-panel__sep { margin: 6px 0; border-top: var(--tap-rule-w) solid var(--tap-grid); }
 .tap-panel__item:disabled { opacity: 0.5; cursor: not-allowed; }
-.tap-panel__status { margin: 0; padding: 0 var(--tap-sp-6) 10px; font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-panel__status, .tap-panel__bd-note { margin: 0; padding: 0 var(--tap-sp-6) 10px; font-size: var(--tap-fs-body); font-weight: 600; }
 .tap-panel__status:empty { display: none; }
