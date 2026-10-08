@@ -2,7 +2,7 @@
  * File: tests/test-newbusiness.js
  * Purpose: Tests for the New business view (Epic 2.1): the view and its header, the industry grid, channels,
  *          levers, sub-industries and success factors.
- * Provides: test cases TPV-TC-317 to TPV-TC-368 (automated ones), X-nb-*
+ * Provides: test cases TPV-TC-317 to TPV-TC-368 (automated ones), X-nb-*, X-d124-channel-* (channel colours, D124)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: NB stream
@@ -962,6 +962,154 @@
         a.equal(getComputedStyle(text).overflow, 'visible', 'the text itself is never clipped');
         a.equal(root.querySelector('.tap-nbf img'), null, 'shown as text');
       });
+    });
+  });
+
+  /* ---------- D124 channel charts coloured by channel, with an amount or share switch ---------- */
+
+  T.suite('channel-colours', function () {
+    var REL = 'pt-reliance';
+    function valueSeries(res) { return res.option.series.filter(function (s) { return s.tapRole === 'value'; }); }
+    function chanOf(key) { return String(key).split('.').pop(); }
+    function drawn(s) { return s.data.filter(function (d) { return d && d.raw != null; }); }
+    // Hand sums from the sample recap: the region's items for the motions and types asked, per channel, all plan years
+    function recapSums(regionId, motions, types) {
+      var r = window.PLAN_DATA.regions.filter(function (x) { return x.id === regionId; })[0];
+      return CHANNELS.map(function (c) {
+        return r.recap.filter(function (it) {
+          return it.channel === c && motions.indexOf(it.motion) >= 0 && types.indexOf(it.type) >= 0 && typeof it.value === 'number';
+        }).reduce(function (s, it) { return s + it.value; }, 0);
+      });
+    }
+    function txt(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function qsa(sel, root) { return Array.prototype.slice.call(root.querySelectorAll(sel)); }
+
+    T.test('X-d124-channel-colours', 'Each channel has one colour, the same in every region’s bar, and the four differ', function (a) {
+      sample();
+      [[CHN, 'stackedBar'], [CHN, 'stacked100'], [REL, 'stackedBar'], [REL, 'stacked100']].forEach(function (c) {
+        var res = build(c[0], { mode: 'all' }, { type: c[1] }), seen = {}, label = c.join(' ');
+        var ss = valueSeries(res);
+        a.equal(ss.length, 4, label + ': four channel series');
+        ss.forEach(function (s) {
+          var cs = drawn(s), ch = chanOf(cs[0] && cs[0].key);
+          a.equal(cs.length, 7, label + ' ' + ch + ': one part per region');
+          cs.forEach(function (d) {
+            a.equal(d.itemStyle.color, TH.channels[ch].bg, label + ' ' + d.entityId + ' ' + ch + ': the channel’s colour');
+            a.ok(TH.regions.indexOf(d.itemStyle.color) < 0, label + ' ' + d.entityId + ': not a region colour');
+          });
+          seen[ch] = cs[0].itemStyle.color;
+        });
+        a.deepEqual(Object.keys(seen), CHANNELS, label + ': in stacking order');
+        var colours = CHANNELS.map(function (ch) { return seen[ch]; });
+        a.equal(colours.filter(function (x, i) { return colours.indexOf(x) === i; }).length, 4, label + ': four different colours');
+        a.deepEqual(res.option.yAxis.data, TAP.scope.entities(cmp({ mode: 'all' })).map(function (e) { return e.label; }), label + ': regions named on the axis');
+      });
+    });
+
+    T.test('X-d124-channel-colours', 'The legend lists the four channels with their colours, in stacking order, and no region', function (a) {
+      sample();
+      [CHN, REL].forEach(function (id) {
+        var res = build(id, { mode: 'all' }), m = TAP.prepare.selected(TAP.reports.get(id), {});
+        a.deepEqual(res.legend.map(function (l) { return [l.label, l.color, l.role]; }), CHANNELS.map(function (c) {
+          return [TAP.measures.meta(m + '.' + c).short, TH.channels[c].bg, 'channel'];
+        }), id + ': four channel keys');
+      });
+    });
+
+    T.test('X-d124-channel-colours', 'Share of total: one region’s parts add up to 100 and equal its recap shares', function (a) {
+      sample();
+      // nb-channels, ARR: Southern Europe's new business recap per channel, summed by hand from the sample
+      var nb = recapSums('seu', ['newBusiness'], ['arr']), nbTot = nb.reduce(function (s, v) { return s + v; }, 0);
+      var res = build(CHN, { mode: 'all' }, { type: 'stacked100' }), sum = 0;
+      valueSeries(res).forEach(function (s) {
+        var d = s.data.filter(function (x) { return x && x.entityId === 'seu'; })[0], i = CHANNELS.indexOf(chanOf(d.key));
+        a.near(d.value, nb[i] / nbTot * 100, 1e-6, 'nb-channels seu ' + CHANNELS[i]);
+        sum += d.value;
+      });
+      a.near(sum, 100, 1e-6, 'nb-channels seu: the parts add up to 100');
+      // pt-reliance, total order intake: the shares SAMPLE_EXPECT gives for Southern Europe
+      var shares = window.SAMPLE_EXPECT.q01.shares.seu, rel = build(REL, { mode: 'all' }, { type: 'stacked100', measureId: 'rc.all.oi' });
+      sum = 0;
+      valueSeries(rel).forEach(function (s) {
+        var d = s.data.filter(function (x) { return x && x.entityId === 'seu'; })[0], ch = chanOf(d.key);
+        a.near(d.value, shares[ch].share * 100, 1e-3, 'pt-reliance seu ' + ch);
+        sum += d.value;
+      });
+      a.near(sum, 100, 1e-6, 'pt-reliance seu: the parts add up to 100');
+    });
+
+    T.test('X-d124-channel-switch', 'A visible Amount / Share of total switch moves between the stacked and 100% views', function (a) {
+      sample();
+      [CHN, REL].forEach(function (id) {
+        var root = T.dom.mount(), p = TAP.panel.create(root, id, {});
+        try {
+          var sw = root.querySelector('.tap-panel__controls [data-control="type"]');
+          a.ok(sw, id + ': the switch is in the controls row');
+          if (!sw) return;
+          a.deepEqual(qsa('button', sw).map(txt), ['Amount', 'Share of total'], id + ': its two options');
+          var def = TAP.reports.get(id), on = function () { return txt(sw.querySelector('[aria-pressed="true"]')); };
+          a.equal(on(), def.defaultType === 'stacked100' ? 'Share of total' : 'Amount', id + ': the default view is picked');
+          sw.querySelector('[data-value="' + (def.defaultType === 'stacked100' ? 'stackedBar' : 'stacked100') + '"]').click();
+          sw = root.querySelector('[data-control="type"]');
+          a.equal(on(), def.defaultType === 'stacked100' ? 'Amount' : 'Share of total', id + ': a click moves to the other view');
+          a.match(txt(root.querySelector('[data-action="type"]')), def.defaultType === 'stacked100' ? /^Stacked bar/ : /^100% stacked bar/,
+            id + ': the chart type follows');
+          a.ok(qsa('.tap-panel__legend-item--channel', root).length === 4, id + ': four channel keys under the chart');
+        } finally { p.destroy(); TAP.storage.clear('chart:'); }
+      });
+    });
+
+    T.test('X-d124-channel-tooltip', 'A tooltip names the channel first, then the region, the value and the share', function (a) {
+      sample();
+      var res = build(CHN, { mode: 'all' }), nb = recapSums('seu', ['newBusiness'], ['arr']);
+      var tot = nb.reduce(function (s, v) { return s + v; }, 0), s = valueSeries(res)[1];
+      var d = s.data.filter(function (x) { return x && x.entityId === 'seu'; })[0];
+      var div = document.createElement('div');
+      div.innerHTML = s.tooltip.formatter({ data: d });   // html-ok: test reads the tooltip the chart would show
+      var title = txt(div.querySelector('.tap-tip-title')), region = TAP.content.regionName(TAP.data.region('seu'));
+      a.equal(title.indexOf('Partner · ' + region + ':'), 0, 'channel, then region: ' + title);
+      a.ok(title.indexOf(TAP.format.cell({ v: nb[1], state: 'value' }, { unit: 'money', exact: true })) > 0, 'the value');
+      a.ok(title.indexOf(TAP.format.pct(nb[1] / tot)) > 0, 'the share');
+    });
+
+    T.test('X-d124-channel-focus', 'Show me and the focus region still read without the region colour', function (a) {
+      sample();
+      var hl = build(CHN, { mode: 'all' }, { highlight: { reportId: CHN, regionIds: ['seu'] } });
+      valueSeries(hl).forEach(function (s) {
+        drawn(s).forEach(function (d) {
+          a.equal(d.itemStyle.borderColor === TH.echarts.tap.highlight.color, d.entityId === 'seu', 'Show me ring: ' + d.entityId);
+        });
+      });
+      var one = build(CHN, { mode: 'one', focus: 'seu', restAs: 'individual' }), rows = one.option.yAxis.data;
+      valueSeries(one).forEach(function (s) {
+        drawn(s).forEach(function (d) {
+          a.equal(d.itemStyle.color, TH.channels[chanOf(d.key)].bg, 'channel colour in One vs the rest: ' + d.entityId);
+          a.equal(d.itemStyle.borderColor === TH.ink, d.entityId === 'seu', 'the focus region is outlined: ' + d.entityId);
+        });
+      });
+      var fmt = one.option.yAxis.axisLabel.formatter, i = rows.indexOf(TAP.content.regionName(TAP.data.region('seu')));
+      a.ok(i >= 0 && /^\{focus\|/.test(fmt(rows[i], i)), 'the focus region’s name is bold on the axis');
+      a.ok(!/^\{focus\|/.test(fmt(rows[(i + 1) % rows.length], (i + 1) % rows.length)), 'the others are not');
+      a.ok(one.option.yAxis.axisLabel.rich.focus.fontWeight >= 700, 'bold');
+    });
+
+    T.test('X-d124-channel-books', 'pt-books split by channel takes the channel colours; split by category keeps its shades', function (a) {
+      sample();
+      var def = TAP.reports.get('pt-books'), b = TAP.builders.get('ptBooks');
+      var res = b(ctxFor(def, { mode: 'all' }));
+      valueSeries(res).forEach(function (s) {
+        drawn(s).forEach(function (d) { a.equal(d.itemStyle.color, TH.channels[d.part].bg, 'channel ' + d.part + ' ' + d.rowId); });
+      });
+      a.equal(res.legend.filter(function (l) { return l.role === 'channel'; }).length, 4, 'four channel keys');
+      var cat = b(ctxFor(def, { mode: 'all' }, { opts: { split: 'category' } }));
+      a.equal(cat.legend.filter(function (l) { return l.role === 'channel'; }).length, 0, 'categories: no channel keys');
+    });
+
+    T.test('X-d124-channel-explain', 'The explanation says leaders enter the split as percentages and the recap adds the amounts up', function (a) {
+      var ex = TAP.reports.get(CHN).explain, all = [ex.shows, ex.read, ex.lookFor].join(' ');
+      a.match(all, /percentages? (for|per|on) (each|every) new business row/i, 'the split is entered as percentages per row');
+      a.match(all, /recap adds/i, 'the recap adds the amounts up');
+      a.ok(!/shades of the region/i.test(all), 'no longer describes region shades');
     });
   });
 })(window.TAP);
