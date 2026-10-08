@@ -2,7 +2,8 @@
  * File: js/engine/shapes.js
  * Purpose: Decides which chart types suit a report's data shape and the current comparison (D18), and holds the
  *          small drawing kit the generic builders share: escaped tooltips, the not-provided mark, highlight rings,
- *          axes, bubble sizes, tables, notes, the builder result, and parts coloured by channel with the Amount / Share switch (D124).
+ *          axes, bubble sizes, tables, notes, the builder result, and parts coloured from a palette (channels, D124; segments
+ *          and risk levels, D131) with the Amount / Share switch.
  * Provides: TAP.shapes (types, label, kit, including refLines)
  * Depends on: js/engine/registry.js, js/theme.js, js/core/dom.js, js/core/format.js, js/core/content.js,
  *             js/engine/aggregate.js (combined-figure labels)
@@ -168,15 +169,21 @@
     return out;
   }
 
-  /* ---------- parts coloured by channel (D124) ---------- */
+  /* ---------- parts coloured from a palette: channels (D124), segments and risk levels (D131) ---------- */
 
-  // The theme's channel colour ({bg, fg}) for each part, when the report colours its parts by channel
-  // (options.partColors 'channel') and every part is a channel; else null, and the parts stay region shades.
-  // keys: part keys ending in the channel id ('rc.nb.arr.partner') or the ids themselves.
-  function channelPaints(def, keys) {
-    var pal = th().channels || {};
-    if (((def && def.options) || {}).partColors !== 'channel' || !keys || !keys.length) return null;
-    var out = keys.map(function (key) { return pal[String(key).split('.').pop()] || null; });
+  // The theme palette options.partColors names: 'channel', 'segment' or 'risk'.
+  var PALETTES = { channel: 'channels', segment: 'segments', risk: 'risk' };
+
+  // The palette colour ({bg, fg}) for each part, when the report colours its parts from a palette and every part names
+  // one of its ids; else null, and the parts stay region shades. keys: part keys holding the id as one of their
+  // dot-separated pieces, the last one that is an id ('rc.nb.arr.partner', 'cg.seg.core.arr'), or the ids themselves.
+  function partPaints(def, keys) {
+    var name = PALETTES[((def && def.options) || {}).partColors], pal = name ? th()[name] : null;
+    if (!pal || !keys || !keys.length) return null;
+    var out = keys.map(function (key) {
+      var ids = String(key).split('.').filter(function (x) { return Object.prototype.hasOwnProperty.call(pal, x); });
+      return ids.length ? pal[ids[ids.length - 1]] : null;
+    });
     return out.every(Boolean) ? out : null;
   }
 
@@ -194,9 +201,10 @@
     return { borderColor: x.ground, borderWidth: x.border.control };
   }
 
-  // The key: the channels in their colours, in stacking order. labels: the parts' names.
-  function channelLegend(labels, paints) {
-    return labels.map(function (l, i) { return { label: l, color: paints[i].bg, role: 'channel' }; });
+  // The key: the parts in their palette colours, in stacking order. labels: the parts' names; role: the palette's
+  // ('channel', the default, 'segment' or 'risk'), so each key is a swatch.
+  function channelLegend(labels, paints, role) {
+    return labels.map(function (l, i) { return { label: l, color: paints[i].bg, role: role || 'channel' }; });
   }
 
   // D124: Amount or Share of total, one click away where the report offers both stacked views. The panel turns
@@ -208,7 +216,7 @@
       options: [{ value: 'stackedBar', label: t('chart.scaleAmount') }, { value: 'stacked100', label: t('chart.scaleShare') }] }];
   }
 
-  // Tooltip title for a channel part: "Partner · Region A: €2.1M, 40%".
+  // Tooltip title for a palette part, named first: "Partner · Region A: €2.1M, 40%", "Strategic · Region A: 4, 14%".
   function channelTitle(channel, row, c, col, total) {
     var share = c && c.state === 'value' && total && total.state === 'value' && total.v ? TAP.format.pct(c.v / total.v) : null;
     return t(share ? 'chart.channelTip' : 'chart.channelTipNoShare', { channel: channel, row: row, value: exact(c, col), share: share });
@@ -265,7 +273,7 @@
     th: th, t: t, lower: lower, colOf: colOf, visibleRows: visibleRows, tip: tip, exact: exact, cellRows: cellRows,
     axisFormatter: axisFormatter, valueAxis: valueAxis, grid: grid, npSeries: npSeries, ringSeries: ringSeries,
     highlighted: highlighted, sizeScale: sizeScale, sizeLegend: sizeLegend, table: table, notes: notes, legendOf: legendOf,
-    result: result, safely: safely, refLines: refLines, channelPaints: channelPaints, axisEmphasis: axisEmphasis, partBorder: partBorder,
+    result: result, safely: safely, refLines: refLines, partPaints: partPaints, axisEmphasis: axisEmphasis, partBorder: partBorder,
     channelLegend: channelLegend, shareSwitch: shareSwitch, channelTitle: channelTitle
   } };
 })(window.TAP);

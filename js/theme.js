@@ -2,7 +2,7 @@
  * File: js/theme.js
  * Purpose: THE theme file: every colour, font, size and the logo slot, plus the chart theme built from them.
  *          To rebrand, replace this file only (US-1.1.9). It writes the CSS variables the stylesheets use.
- * Provides: window.TAP_THEME (values, channels, shade(), regionColor(), echarts), CSS variables --tap-* on :root,
+ * Provides: window.TAP_THEME (values, channels, segments, risk, shade(), regionColor(), echarts), CSS variables --tap-* on :root,
  *           the ECharts theme 'tap'
  * Depends on: vendor/echarts.min.js (optional: the chart theme is registered only if ECharts loaded first)
  * Used by: css/*.css (through the variables), js/engine/scope.js (region colours), js/engine/shapes.js (chart colours
@@ -49,6 +49,21 @@
       partner: { bg: '#e69f00', fg: '#201e1d' },
       allianceA: { bg: '#009e73', fg: '#201e1d' },
       allianceB: { bg: '#cc79a7', fg: '#201e1d' }
+    },
+
+    /* Segment and risk colours (D131), for the Customer growth charts, checked as the channel colours are. Segments
+       are categories, in their fixed order; risk levels are ordered by lightness, so high reads strongest. */
+    segments: {
+      strategic: { bg: '#1b4f72', fg: '#ffffff' },
+      growth: { bg: '#2a9d8f', fg: '#201e1d' },
+      core: { bg: '#e9c46a', fg: '#201e1d' },
+      scaled: { bg: '#8fb8de', fg: '#201e1d' }
+    },
+    risk: {
+      high: { bg: '#3f1d6e', fg: '#ffffff' },
+      medium: { bg: '#7a5aa6', fg: '#ffffff' },
+      low: { bg: '#b3a3d1', fg: '#201e1d' },
+      none: { bg: '#dcd6e6', fg: '#201e1d' }   // not flagged
     },
 
     /* Tiers: neutral ink steps, so no tier reads as good or bad */
@@ -150,6 +165,8 @@
     T.regions.forEach(function (c, i) { v['r' + (i + 1)] = c; });
     [1, 2, 3].forEach(function (k) { v['tier' + k] = T.tiers[k].bg; v['tier' + k + '-fg'] = T.tiers[k].fg; });
     Object.keys(T.channels).forEach(function (c) { v['ch-' + c] = T.channels[c].bg; v['ch-' + c + '-fg'] = T.channels[c].fg; });
+    Object.keys(T.segments).forEach(function (c) { v['seg-' + c] = T.segments[c].bg; });
+    Object.keys(T.risk).forEach(function (c) { v['risk-' + c] = T.risk[c].bg; });
     return v;
   };
 

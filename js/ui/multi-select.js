@@ -3,9 +3,9 @@
  * Purpose: A dropdown multi-select: a button naming the choice ("Regions: All", "Regions: 2 selected") that opens a
  *          checklist with "All" and "Clear" at the top (D126). The caller keeps the state and redraws on each change,
  *          so the open dropdown survives a redraw; watch() closes it on an outside click or Esc.
- * Provides: TAP.multiSelect (render, watch)
+ * Provides: TAP.multiSelect (render, watch, field: the same as a panel control, D134)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js (wording under multiSelect.*)
- * Used by: js/views/insights-filters.js
+ * Used by: js/views/insights-filters.js, js/panel/panel-menus.js (a list report's dropdown filters)
  *
  * Keyboard: Tab reaches the button, Enter or Space opens it, the arrow keys move through "All", "Clear" and the
  * options, Space ticks an option (a native checkbox) and Esc closes. "All" ticks every option and "Clear" unticks
@@ -111,5 +111,20 @@
     };
   }
 
-  TAP.multiSelect = { render: render, watch: watch };
+  /* ---------- as a panel control (D134) ---------- */
+
+  // A panel redraws on every change, so the open dropdown is kept here by id: one open at a time on the page, closed
+  // by an outside click or Esc as on the Insights page. c: a builder control {label, value: [values], options:
+  // [{value, label, count}]}; onPick(values) after each change; redraw() after opening or closing.
+  var held = null, watching = false;
+  function field(id, c, onPick, redraw) {
+    if (!watching) { watching = true; watch(document, function () { return held; }, function () { held = null; }); }
+    return render({ id: id, label: c.label, selected: c.value || [], open: held === id, onChange: onPick,
+      onOpen: function (open) { held = open ? id : null; redraw(); },
+      options: (c.options || []).map(function (o) {
+        return { value: o.value, label: o.label, count: o.count == null ? null : el('span', { class: 'tap-ms__cnt' }, String(o.count)) };
+      }) });
+  }
+
+  TAP.multiSelect = { render: render, watch: watch, field: field };
 })(window.TAP);

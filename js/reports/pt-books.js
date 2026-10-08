@@ -154,7 +154,7 @@
     var d = { label: TAP.measures.meta(BK).short, unit: 'money', parts: mo.parts, rows: rowsOf(mo), entities: mo.entities, groups: [],
       numbered: false, highlight: ctx.highlight, right: th.space[12] * 5, tip: tipFn(mo),
       // Split by channel, the parts take the channel colours (D124); by category they stay region shades
-      paints: kit.channelPaints(def, mo.parts.map(function (p) { return p.value; })) };
+      paints: kit.partPaints(def, mo.parts.map(function (p) { return p.value; })) };
     res.option = D.bars(d, 'stackedBar');
     res.legend = D.legend(d);
     if (d.rows.length > 8) res.height = th.space[12] * 2 + d.rows.length * th.space[8];

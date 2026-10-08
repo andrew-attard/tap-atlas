@@ -1,10 +1,11 @@
 /*
  * File: js/reports/cg-builders.js
- * Purpose: Thin wrappers round the generic builders for the Customer growth reports: segment shades, the multiplier
- *          note, exposure reference lines from the rule thresholds, and bar targets that list accounts.
+ * Purpose: Thin wrappers round the generic builders for the Customer growth reports: segment and risk colours (D131),
+ *          the multiplier note, exposure reference lines from the rule thresholds, and bar targets that list accounts.
  * Provides: builders 'cgSegments', 'cgGrowth', 'cgExposure'; TAP.cgBuilders (SEGMENTS, segmentOf, refLines, accountItems)
  * Depends on: js/engine/build-parts.js, js/engine/build-compare.js, js/engine/prepare.js, js/engine/scope.js,
- *             js/core/data.js, js/core/content.js, js/core/format.js, config/insight-rules.js, js/theme.js (all at call time)
+ *             js/engine/shapes.js, js/reports/stack-draw.js, js/core/data.js, js/core/content.js, js/core/format.js,
+ *             config/insight-rules.js, js/theme.js (all at call time)
  * Used by: config/reports-customers.js
  * Owner: CGP stream (#204)
  */
@@ -20,35 +21,22 @@
     return m ? m[1] : null;
   }
 
-  // Every item of every series, ignoring the placeholders ECharts keeps for gaps.
-  function eachItem(series, fn) {
-    (series.data || []).forEach(function (d) { if (d && typeof d === 'object' && d.key) fn(d); });
-  }
+  /* ---------- US-2.2.2: segments in their own colours, risk levels in theirs (D131) ---------- */
 
-  /* ---------- US-2.2.2: segments in neutral ink steps ---------- */
-
-  // The segment bars take ink steps (darkest Strategic), not the region colour: the segment is what is compared,
-  // and the region is named on the axis. The legend keeps only the segments, each named.
-  function segments(ctx) {
-    var th = window.TAP_THEME, res = TAP.builders.get('parts')(ctx);
-    if (res.error) return res;
-    var shade = function (seg) { return th.shade(th.ink, Math.max(0, SEGMENTS.indexOf(seg))); };
-    ((res.option && res.option.series) || []).forEach(function (s) {
-      if (s.tapRole !== 'value') return;
-      var first = null;
-      eachItem(s, function (d) {
-        var seg = segmentOf(d.key);
-        if (!seg) return;
-        first = first || seg;
-        d.itemStyle = Object.assign({}, d.itemStyle, { color: shade(seg) });
-        d.label = Object.assign({}, d.label, { color: seg === SEGMENTS[0] ? th.onColour : th.ink });
-      });
-      if (first) s.itemStyle = Object.assign({}, s.itemStyle, { color: shade(first) });
-    });
-    // The key: the four segments in their fixed order and ink steps, named as the lookups do, whatever the figure
+  function segNames() {
     var names = {};
     (((TAP.data.lookups() || {}).segments) || []).forEach(function (s) { names[s.id] = s.name; });
-    res.legend = SEGMENTS.map(function (seg, i) { return { label: names[seg] || seg, color: th.shade(th.ink, i), role: 'part' }; });
+    return names;
+  }
+
+  // Each segment takes its colour from the segment palette (options.partColors 'segment'), the same in every bar; the
+  // region is named on the axis. The legend names the four segments as the lookups do, whatever the figure. Broken
+  // down by risk, the bars are each region's segments and the risk levels take the risk palette (byRisk).
+  function segments(ctx) {
+    var th = window.TAP_THEME, res = TAP.builders.get('parts')(ctx), type = ctx.type || ctx.def.defaultType, names = segNames();
+    if (res.error) return res;
+    if (ctx.breakdown === 'risk' && type !== 'table' && !res.empty && th.risk) byRisk(ctx, type, res, names);
+    else if (th.segments) res.legend = SEGMENTS.map(function (seg) { return { label: names[seg] || seg, color: th.segments[seg].bg, role: 'segment' }; });
     var target = res.target;
     // A click lists the segment thresholds of each region behind the bar, since they differ by region
     res.target = function (params) {
@@ -57,6 +45,49 @@
       return Object.assign({}, tg, { items: tg.regionIds.map(function (r) { return { section: 'customerGrowth', regionId: r, row: null }; }) });
     };
     return res;
+  }
+
+  // One bar per region and segment (just the segment with one region), split into the risk levels in their ordered
+  // palette, so a bar reads as how much of the segment is flagged. The cells are the prepared report's risk columns.
+  function byRisk(ctx, type, res, names) {
+    var k = TAP.shapes.kit, th = k.th(), def = ctx.def, ds = TAP.prepare.run(def, ctx), m = TAP.prepare.selected(def, ctx);
+    var parts = (def.parts || {})[m] || [], col = k.colOf(ds, m), levels = [];
+    ds.columns.forEach(function (c) {
+      var b = c.breakdown;
+      if (b && b.dim === 'risk' && c.measureId === m) levels.push({ key: String(b.value), value: b.value, label: b.label });
+    });
+    var rows = k.visibleRows(ds, [m].concat(parts)), out = [];
+    rows.forEach(function (r) {
+      parts.forEach(function (p) {
+        var seg = names[segmentOf(p)] || segmentOf(p), cells = {}, keys = {};
+        levels.forEach(function (l) { keys[l.key] = p + '@risk:' + l.value; cells[l.key] = r.cells[keys[l.key]]; });
+        out.push({ id: r.id + ':' + segmentOf(p), entityId: r.entityId, entity: r.entity, group: null, cells: cells, total: r.cells[p], keys: keys,
+          label: rows.length === 1 ? seg : k.t('breakdown.entityValue', { entity: r.label, value: seg }), segment: seg, region: r.label });
+      });
+    });
+    var paints = levels.map(function (l) { return th.risk[l.value] || th.risk.none; });
+    res.option = TAP.stackDraw.bars({ label: col.label, unit: col.unit, parts: levels, rows: out, highlight: ctx.highlight, paints: paints }, type);
+    res.option.series.filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s, i) {
+      s.tooltip = { formatter: function (prm) {
+        var row = out.filter(function (r) { return r.id === (prm.data || {}).rowId; })[0];
+        return row ? riskTip(k, col, levels, row, i) : '';
+      } };
+    });
+    res.legend = levels.map(function (l, i) { return { label: l.label, color: paints[i].bg, role: 'risk' }; });
+  }
+
+  // "Strategic · High risk · Region A: 4, 40%", then the other levels, the segment's total and how it was combined.
+  function riskTip(k, col, levels, row, i) {
+    var l = levels[i], c = row.cells[l.key], tot = row.total;
+    var share = c && c.state === 'value' && tot && tot.state === 'value' && tot.v ? TAP.format.pct(c.v / tot.v) : null;
+    var title = TAP.content.text(share ? 'cgSegments.riskTip' : 'cgSegments.riskTipNoShare',
+      { segment: row.segment, risk: l.label, region: row.region, value: k.exact(c, col), share: share });
+    var lines = k.cellRows(c, { label: l.label, unit: col.unit, scale: col.scale }).slice(1);
+    levels.forEach(function (x) { if (x !== l) lines.push([x.label, k.exact(row.cells[x.key], col)]); });
+    lines.push([k.t('chart.total'), k.exact(tot, col)]);
+    var how = TAP.agg.describe(tot);
+    if (how) lines.push([k.t('chart.how'), how]);
+    return k.tip(title, lines);
   }
 
   /* ---------- US-2.2.3: growth, with a note on accounts planned with a multiplier ---------- */

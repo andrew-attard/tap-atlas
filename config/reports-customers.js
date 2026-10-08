@@ -20,7 +20,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How is each region’s customer base segmented?',
     explain: {
       shows: 'Each region’s accounts split into the four segments, Strategic, Growth, Core and Scaled, counted as accounts, current ARR or three-year order intake.',
-      read: 'One bar per region, darkest for Strategic and lightest for Scaled, each segment named in the legend. Segments come from the workbook, and each region sets its own thresholds: click a bar to see them.',
+      read: 'One bar per region, each segment in its own colour, the same in every bar and named in the legend; Amount or Share of total switches between the figures and each segment’s share. Segments come from the workbook, and each region sets its own thresholds: click a bar to see them. With one region, break it down by risk level to see how much of each segment is flagged.',
       lookFor: 'Regions whose base leans on one segment, and segments whose share of order intake is far from their share of accounts.'
     },
     shape: 'parts',
@@ -36,7 +36,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['stacked100', 'stackedBar', 'table'],
     breakdowns: ['risk'],
     sources: ['DER', 'PRE'],
-    options: {}
+    options: { partColors: 'segment', amountShare: true }   // D131: segment colours and the Amount / Share switch
   };
 
   // US-2.2.3: the yearly growth each region assumes for its existing customers.
@@ -73,8 +73,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     view: 'customers',
     title: 'Which accounts carry each region’s planned growth?',
     explain: {
-      shows: 'Every account in the plans: its current ARR across, the incremental ARR planned over three years up, and its three-year order intake as the bubble size.',
-      read: 'Each bubble is one account in its region’s colour. The accounts with the largest planned growth are named with the name the data holds. Click a bubble for the account’s details and source row.',
+      shows: 'The accounts that carry the planned growth: current ARR across, the incremental ARR planned over three years up, and three-year order intake as the bubble size.',
+      read: 'With several regions, each region’s 5 accounts with the most planned growth, in its colour; the list below has every account. With one region, every account, coloured by its risk level. The accounts with the largest planned growth are named with the name the data holds. Click a bubble for the account’s details and source row.',
       lookFor: 'Growth that rests on a few large accounts growing a little, or on small accounts growing a lot.'
     },
     shape: 'xyz',
@@ -89,7 +89,8 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     types: ['bubble', 'table'],
     breakdowns: [],
     sources: ['PRE', 'DER'],
-    options: { label: 'top', labelBy: 'incr3' }
+    // D133: topPerRegion accounts per region (or combined group) with several regions; with one, every account by risk level
+    options: { label: 'top', labelBy: 'incr3', topPerRegion: 5, oneRegionColors: 'risk' }
   };
 
   // US-2.2.6: every account in the plans, as a sortable list.
@@ -112,7 +113,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
       { key: 'multiplier3y' }, { key: 'incr3' }, { key: 'oi3' }
     ],
     sort: { key: 'incr3', dir: 'desc' },
-    filter: [{ key: 'segment' }, { key: 'riskLevel' }],
+    filter: [{ key: 'segment', label: 'Segments', multi: true }, { key: 'riskLevel', label: 'Risk', multi: true }],   // D134: dropdowns
     defaultType: 'list',
     types: ['list'],
     breakdowns: [],
