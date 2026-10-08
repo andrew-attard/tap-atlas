@@ -2,8 +2,8 @@
  * File: js/views/overview.js
  * Purpose: The Overview view: the headline sentence and the top insights for the organization as a whole (US-1.5.3,
  *          D119), the region cards (US-1.5.1) and the ambition chart (US-1.5.2), always for every region: the
- *          comparison the other views use is left as it is and ignored here (D118). Nothing about one or two regions
- *          shows here: the block and the chart's list are broad only.
+ *          comparison the other views use is left as it is and ignored here (D118). The block and the chart's list are
+ *          broad only; the one region finding here is each card's "To discuss" line (D130).
  * Provides: view 'overview' (registered with TAP.views), TAP.overviewInsights (item, showMe: one insight as the
  *           block shows it, reused by the region profile's Top insights, D128, and the cards' line, D130)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/data.js,
@@ -227,7 +227,7 @@
     var off = TAP.store.on(function (state, changed) {
       if (dead) return;
       if (!root.isConnected) { handle.destroy(); return; }   // off the page (removed without destroy()): stop listening
-      if (changed.indexOf('hiddenInsights') >= 0) { drawText(); drawCards(); }   // the block and the cards' markers (D117)
+      if (changed.indexOf('hiddenInsights') >= 0) { drawText(); drawCards(); }   // the block and the cards' "To discuss" lines (D130)
     });
     // Keeps the card rows even when the window or zoom changes.
     var ro = window.ResizeObserver ? new window.ResizeObserver(function () { TAP.overviewCards.layout(cardsHost); }) : null;

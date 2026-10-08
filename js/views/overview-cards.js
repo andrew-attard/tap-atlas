@@ -2,12 +2,13 @@
  * File: js/views/overview-cards.js
  * Purpose: One card per region (or combined figure), a quick snapshot of its plan (US-1.5.1, D127): the 3-year
  *          ambition, the split with a swatch and share per part (D117), Services, focus tiers, the new business pool
- *          and customers by segment; and the clickable figure that shows where a value comes from, shared with the
- *          headline.
+ *          and customers by segment, and one insight to discuss (D130); and the clickable figure that shows where a value
+ *          comes from, shared with the headline.
  * Provides: TAP.overviewCards (render, layout, columns, figure, popover, openSource, sourceRow)
  * Depends on: js/engine/measures.js, js/engine/scope.js, js/engine/aggregate.js (describe), js/core/dom.js,
  *             js/core/format.js, js/core/sources.js, js/ui/layers.js, js/ui/source-tip.js (figure), js/core/store.js, js/theme.js,
- *             content/text-overview.js, js/views/regions.js (TAP.profile.link, at call time)
+ *             content/text-overview.js, js/insights/engine.js (forRegion), js/views/regions.js (TAP.profile.link) and
+ *             js/views/overview.js (TAP.overviewInsights), all three at call time
  * Used by: js/views/overview.js; js/views/regions-parts.js (popover, the profile's glance figures)
  */
 (function (TAP) {
@@ -189,6 +190,31 @@
     return '';
   }
 
+  // The insight's popover: its sentence, the line on why it matters, and Show me, which closes it and goes to the chart.
+  function discussPop(anchor, x) {
+    var show = el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-figpop__show', onclick: function () {
+      TAP.sourceTip.close();
+      TAP.overviewInsights.showMe(x);
+    } }, t('insights.showMe'));
+    return TAP.sourceTip.figure(anchor, x.label || t('cards.toDiscuss'), [
+      el('p', { class: 'tap-figpop__line tap-figpop__sentence' }, x.sentence),
+      x.why ? el('p', { class: 'tap-figpop__line tap-figpop__why' }, x.why) : null,
+      el('p', { class: 'tap-figpop__line tap-figpop__actions' }, show)
+    ]);
+  }
+
+  // "To discuss: 78 new customers needed, 3× peers" (D130): the region's most significant insight, the one that leads
+  // its profile's Top insights (TAP.insights.forRegion), in its rule's short form. The only region finding on the
+  // Overview. A combined card, or a region with none, keeps an empty slot so the cards in a row still line up.
+  function discuss(ent) {
+    var I = TAP.insights, x = null;
+    try { x = ent.kind !== 'combined' && I && I.forRegion ? I.forRegion(ent.regionIds[0])[0] || null : null; } catch (e) { x = null; }
+    if (!x || !TAP.overviewInsights) return el('span', { class: 'tap-ov-card__nodiscuss', 'data-part': 'discuss' });
+    return el('button', { type: 'button', class: 'tap-ov-card__todiscuss', 'data-part': 'discuss', 'data-discuss': x.id,
+      onclick: function (e) { e.stopPropagation(); discussPop(e.currentTarget, x); } },
+    [el('span', { class: 'tap-ov-card__label' }, t('cards.toDiscuss')), ' ', el('span', { class: 'tap-ov-card__short' }, x.short || t('cards.oneFinding'))]);
+  }
+
   // "Open profile" for a region's card (US-2.4.1, PROFILE stream): the link and its words come from the Regions view.
   // A combined card keeps an empty slot, so its parts line up with the region cards beside it.
   function profileLink(ent) {
@@ -231,6 +257,7 @@
         el('span', { class: 'tap-ov-card__chip' }, [figure(spec('nb.targetAccounts', 'count')), ' ', t('cards.targetAccounts')]))),
       line('customers', t('cards.customers'), chips('tap-ov-card__segments',
         SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }), function (s) { return short(s.measure); })),
+      discuss(ent),
       profileLink(ent)
     ]);
     // The whole card opens the region's details; a combined card lists where its figures come from.

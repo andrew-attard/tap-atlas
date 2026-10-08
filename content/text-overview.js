@@ -26,6 +26,9 @@ Object.assign(window.TAP_CONTENT.text, {
       pool: 'New business pool',
       targetAccounts: 'target accounts',
       customers: 'Customers',
+      // D130: the region's most significant insight, in its rule's short form; "1 finding" when the rule has none
+      toDiscuss: 'To discuss:',
+      oneFinding: '1 finding',
       partial: 'Partial: {note}',
       kickerFocus: 'Focus region',
       kickerSecond: 'Compared with',
