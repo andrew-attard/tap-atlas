@@ -1068,7 +1068,9 @@
       div.innerHTML = s.tooltip.formatter({ data: d });   // html-ok: test reads the tooltip the chart would show
       var title = txt(div.querySelector('.tap-tip-title')), region = TAP.content.regionName(TAP.data.region('seu'));
       a.equal(title.indexOf('Partner · ' + region + ':'), 0, 'channel, then region: ' + title);
-      a.ok(title.indexOf(TAP.format.cell({ v: nb[1], state: 'value' }, { unit: 'money', exact: true })) > 0, 'the value');
+      var col = res.table.columns.filter(function (c) { return c.key === d.key; })[0], cell = ccell(res, 'seu', d.key);
+      a.near(cell.v, nb[1], 1e-6, 'the partner figure is the hand sum');
+      a.ok(title.indexOf(TAP.format.cell(cell, { unit: col.unit, exact: true, field: col.field })) > 0, 'the value, written as in the table');
       a.ok(title.indexOf(TAP.format.pct(nb[1] / tot)) > 0, 'the share');
     });
 
