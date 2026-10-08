@@ -172,17 +172,19 @@
       });
     });
 
-    T.test('X-shell-actions', 'The page-wide actions slot sits beside the data date, holding Present, for other streams to fill (D72)', function (a) {
+    T.test('X-shell-actions', 'The page-wide actions slot sits after the Data button, holding Present and Tour, for other streams to fill (D72, D116)', function (a) {
       withApp(function () {
         var root = startApp();
         root.style.width = '1280px';
         var slot = TAP.shell.actionsEl(), date = qs('.tap-cmp__date', root);
-        a.ok(slot && qs('.tap-cmp__row--sentence', root).contains(slot), 'in the comparison bar, on the sentence row');
+        a.ok(slot && qs('.tap-cmp__row', root).contains(slot), 'in the comparison bar\'s row');
         a.ok(!qs('.tap-topbar', root).contains(slot), 'not in the top bar');
         a.ok(slot.classList.contains('tap-topbar__actions'), 'the actions slot');
-        var others = Array.prototype.filter.call(slot.children, function (c) { return !c.classList.contains('tap-present__start'); });
-        a.equal(others.length, 0, 'only Present (US-3.1.2) until another stream adds to it');
-        a.equal(date && date.nextElementSibling, slot, 'right after the data date');
+        var others = Array.prototype.filter.call(slot.children, function (c) {
+          return !c.classList.contains('tap-present__start') && !c.classList.contains('tap-tour__button');
+        });
+        a.equal(others.length, 0, 'only Present (US-3.1.2) and Tour until another stream adds to it');
+        a.equal(date && date.nextElementSibling, slot, 'right after the Data button');
         slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Example action'));
         a.ok(slot.getBoundingClientRect().left >= date.getBoundingClientRect().right - 1, 'right of the data date');
         var sr = slot.getBoundingClientRect(), dr = date.getBoundingClientRect();
@@ -375,22 +377,19 @@
       withEleven(function (root) { check(root, 'with Other sections'); });
     });
 
-    T.test('X-shell-actions-narrow', 'The sentence shares its row with the data date and the actions: one action at 853 px, two at 1024 px', function (a) {
+    T.test('X-shell-actions-narrow', 'The actions stay beside the Data button at 853 and 1024 px (D116)', function (a) {
       withApp(function () {
         var root = startApp(), slot = TAP.shell.actionsEl(), date = qs('.tap-cmp__date', root);
-        TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });   // a long sentence
+        TAP.store.set({ view: 'industry', cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });   // the most pickers
         function sameLine() {
           var s = slot.getBoundingClientRect(), d = date.getBoundingClientRect();
           return s.top < d.bottom && s.bottom > d.top;
         }
-        slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Present'));
-        root.style.width = '853px';
-        a.ok(sameLine(), '853 px: the action stays beside the data date');
-        slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Take the tour'));
-        root.style.width = '1024px';
-        a.ok(sameLine(), '1024 px: both actions stay beside the data date');
-        var say = qs('.tap-cmp__say', root).getBoundingClientRect(), d = date.getBoundingClientRect();
-        a.ok(say.top < d.bottom && say.bottom > d.top, '1024 px: the sentence on the same row');
+        [853, 1024].forEach(function (w) {
+          root.style.width = w + 'px';
+          a.ok(sameLine(), w + ' px: Present and Tour stay beside the Data button');
+          a.ok(slot.getBoundingClientRect().right <= qs('.tap-cmp', root).getBoundingClientRect().right + 1, w + ' px: inside the bar');
+        });
       });
     });
 
@@ -636,7 +635,7 @@
     T.test('X-compare-set-button', 'D50: Selected regions is one button with the count; it opens the regions by click and closes with Esc', function (a) {
       run(function () {
         var root = startApp();
-        TAP.store.set({ cmp: { mode: 'set', set: ['alpha', 'bravo'] } });
+        TAP.store.set({ view: 'industry', cmp: { mode: 'set', set: ['alpha', 'bravo'] } });   // the Overview has no comparison (D118)
         var btn = qs('[data-picker="set"] .tap-cmp__setbtn', root);
         a.ok(btn && shown(root, '.tap-cmp__setbtn'), 'one button in the bar');
         a.equal(txt(btn), TAP.content.text('compare.setButton', { n: 2, total: 4 }), 'it shows the count');
@@ -666,6 +665,7 @@
     T.test('X-review-SV-13', 'The "Selected regions" popover stays inside the comparison bar at every width', function (a) {
       run(function () {
         var root = startApp(), bar = qs('.tap-cmp', root), out = [];
+        TAP.store.set({ view: 'industry' });   // the Overview has no comparison (D118)
         clickMode(root, 'set');
         [1280, 1024, 853].forEach(function (w) {
           root.style.width = w + 'px';
@@ -718,6 +718,7 @@
     T.test('TPV-TC-017', 'Changing the comparison redraws in under half a second', function (a) {
       run(function () {
         var root = startApp(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        TAP.store.set({ view: 'industry' });   // a view that follows the comparison (the Overview does not, D118)
         var t0 = performance.now();
         clickMode(root, 'one');
         qs('[data-picker="rest"] [data-value="total"]', root).click();
@@ -744,9 +745,9 @@
     T.test('TPV-TC-018', 'The bar shows the data date', function (a) {
       run(function () {
         var root = startApp();
-        var expected = TAP.content.text('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) });
-        a.equal(txt(qs('.tap-cmp__date', root)), expected);
-        a.equal(expected, 'Data: 2 Oct 2026', 'latest import date in the fixture');
+        var btn = qs('.tap-cmp__date', root);
+        a.equal(txt(btn), 'Data · 2 Oct', 'the short date on the button (D116): latest import date in the fixture');
+        a.ok((btn.getAttribute('aria-label') || '').indexOf('2 Oct 2026') >= 0, 'the full date in its label');
       });
     });
 

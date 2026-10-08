@@ -700,14 +700,15 @@
       });
     });
 
-    T.test('TPV-TC-237', 'A "Take the tour" button in the top bar replays the tour', function (a) {
+    T.test('TPV-TC-237', 'A Tour button on the comparison bar replays the tour', function (a) {
       withTour(function () {
         withApp(function (root) {
           TAP.storage.set('tour:done', true);
           TAP.tour.offer();
           var btn = root.querySelector('.tap-topbar__actions .tap-tour__button');
-          a.ok(btn, 'the button is in the top bar');
-          a.equal(txt(btn), TAP.content.text('tourUi.button'), 'labelled from the content file');
+          a.ok(btn, 'the button is in the comparison bar\'s actions slot');
+          a.equal(txt(btn), TAP.content.text('tourUi.buttonShort'), 'labelled from the content file: "Tour" (D116)');
+          a.equal(btn.getAttribute('aria-label'), TAP.content.text('tourUi.button'), '"Take the tour" for a screen reader');
           TAP.tour.offer();
           a.equal(root.querySelectorAll('.tap-tour__button').length, 1, 'added once only');
           btn.click();
