@@ -102,6 +102,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/rows.js` | Figures for single rows (a new business row, an account, a partner), each with its source, for lists, bubbles and details |
 | `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and filters (a select, or a dropdown with counts, D134) |
 | `js/engine/custom.js` | Custom charts: which measure and dimension pairs each measure allows, the report definition for a choice, the session list |
+| `js/engine/build-custom-one.js` | The "Break one region down" chart of Build a chart: one region's figure by a dimension, one bar per value, largest first, with the value on the bar (D140) |
 
 ### `js/reports/`, `js/insights/`, `js/panel/`
 
@@ -158,7 +159,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
 | `js/ui/present*.js` | Presentation mode: plays a presentation full screen, one step at a time, and records one from the screen ("Add to presentation") |
-| `js/ui/custom-builder.js` | The builder of the Build a chart view: pickers for measure, dimension and chart type, the custom chart and the session list |
+| `js/ui/custom-builder.js` | The builder of the Build a chart view (D140): the kept charts as chips at the top, the controls on the left and the custom chart beside them, redrawn at every change |
+| `js/ui/custom-controls.js` | The Build a chart controls (D140): the question (Compare regions, Break one region down, See the plan years), the Region dropdown and By choice of one region, the measure picker narrowed to the question, and Show as (Bar or Table) |
 | `js/ui/custom-measure-picker.js` | The Build a chart measure picker (D122): a search box, topics named after the menu, each topic's key measures, and "Show all" for the rest |
 | `js/views/overview.js` | The Overview: headline, top insights for the organization as a whole (D119), region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards, a quick snapshot (D127): 3-year ambition, the new business and customer growth split with a swatch and share per part, Services, focus tiers, the new business pool, customers by segment, one insight to discuss (D130), Open profile |

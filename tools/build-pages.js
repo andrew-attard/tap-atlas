@@ -29,7 +29,7 @@ const APP = [
   'js/engine/registry.js', 'js/engine/aggregate.js', 'js/engine/scope.js', 'js/engine/measures.js', 'js/engine/scores.js',
   'js/engine/measures-p2.js', 'js/engine/measures-pt.js', 'js/engine/measures-p4.js', 'js/engine/measures-p4b.js', 'js/engine/rows.js',
   'js/engine/shapes.js', 'js/engine/prepare.js',
-  'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js', 'js/engine/custom.js',
+  'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js', 'js/engine/custom.js', 'js/engine/build-custom-one.js',
   'config/reports.js', 'config/reports-overview.js', 'config/reports-industry.js', 'config/reports-newbusiness.js',
   'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/reports-outlook.js', 'config/views.js', 'config/profile.js', 'config/running-order.js', 'config/custom-topics.js',
   'config/comment-themes.js', 'config/insight-rules.js', 'config/insight-wording.js',
@@ -45,7 +45,7 @@ const APP = [
   'js/ui/glossary.js', 'js/ui/source-tip.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/multi-select.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
-  'js/views/customers.js', 'js/views/partners.js', 'js/views/outlook.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights-filters.js', 'js/views/insights.js', 'js/ui/custom-measure-picker.js', 'js/ui/custom-builder.js', 'js/views/build.js', 'js/views/guide-cards.js', 'js/views/guide.js',
+  'js/views/customers.js', 'js/views/partners.js', 'js/views/outlook.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights-filters.js', 'js/views/insights.js', 'js/ui/custom-measure-picker.js', 'js/ui/custom-controls.js', 'js/ui/custom-builder.js', 'js/views/build.js', 'js/views/guide-cards.js', 'js/views/guide.js',
   'js/ui/app.js'
 ];
 

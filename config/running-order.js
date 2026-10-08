@@ -15,7 +15,10 @@
  *   report     the id of a chart, for example 'nb-levers' (the ids are in config/reports-*.js)
  *   insight    the id of an insight, for example 'consensus:education'. The step shows the insight's chart with
  *              the insight highlighted, and the insight's sentence as its title
- *   custom     a custom chart: {measure, by, type}, or a full chart definition copied from the app
+ *   custom     a custom chart from Build a chart: {ask, measure, by, type, region}. ask is 'regions' (one bar per
+ *              region), 'one' (the region named in region, split by the dimension in by; the comparison bar is
+ *              ignored) or 'years' (a bar per plan year). type is 'bar' or 'table'. An older {measure, by, type}
+ *              still plays (a 'dot' draws as bars). Or a full chart definition copied from the app
  * and may also set any of these (leave one out to get the chart's usual setting):
  *   title      a short title, shown in the progress row with "Step 3 of 11"
  *   measure    which of the chart's measures to show, for example 'nb.wins'
