@@ -367,7 +367,7 @@
       // row 11 300, row 15 280 (services blank, so ARR alone), row 13 270, row 16 60; by ARR alone row 13 (250) would
       // beat row 14 (100)
       [[11, [300, 0, 0], [0, 0, 0]], [12, [200, 0, 0], [150, 0, 0]], [13, [250, 0, 0], [20, 0, 0]], [14, [100, 0, 0], [300, 0, 0]],
-        [15, [280, 0, 0], null], [16, [50, 0, 0], [10, 0, 0]]].forEach(function (p) {
+        [15, [280, 0, 0], [null, null, null]], [16, [50, 0, 0], [10, 0, 0]]].forEach(function (p) {
         alpha.partners.push({ sourceRow: p[0], name: 'Fictional Partner A' + (p[0] - 9), channel: 'partner', maturity: 'Developing',
           expertiseGeo: 'Home market', expertiseProduct: 'Product line 1', fteSales: 1, fteConsultants: 1, centralSupportPct: 0.1, arr: p[1], services: p[2] });
       });
