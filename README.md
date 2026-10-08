@@ -61,7 +61,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `index.html` | Internal edition: real data plus the organization layer |
 | `index-sample.html` | Public edition: fictional sample data |
 | `tests.html` | The test page: runs every automated test and shows a summary |
-| `js/theme.js` | The theme: every colour (regions, the four channel colours of D124, tiers), font, size and the logo slot. Writes the CSS variables and the chart theme |
+| `js/theme.js` | The theme: every colour (regions, the four channel colours of D124, the segment and risk colours of D131, tiers), font, size and the logo slot. Writes the CSS variables and the chart theme |
 
 ### `js/core/`
 
@@ -100,7 +100,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/measures-p4.js` | The Phase 4 measures read from the recap-shaped lists: books value against customer value, strategic plan and variance, revenue, product categories |
 | `js/engine/measures-p4b.js` | The Phase 4 measures read from rows: base year, year 1 growth and pipeline coverage, solutions, routes and partner maturity |
 | `js/engine/rows.js` | Figures for single rows (a new business row, an account, a partner), each with its source, for lists, bubbles and details |
-| `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and a filter |
+| `js/engine/build-list.js` | Generic builder: a list report, one row per item, with sortable columns and filters (a select, or a dropdown with counts, D134) |
 | `js/engine/custom.js` | Custom charts: which measure and dimension pairs each measure allows, the report definition for a choice, the session list |
 
 ### `js/reports/`, `js/insights/`, `js/panel/`
@@ -116,8 +116,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/quadrant-labels.js` | Places the quadrant chart's names and numbers so none overlap |
 | `js/reports/nb-grid.js` | New business by region and industry, with each region's tier in the cell |
 | `js/reports/nb-levers.js` | The new business levers: bars and dots per lever, plus the bubble of targets against hit rate |
-| `js/reports/cg-builders.js` | Small additions to the generic builders for the Customer growth charts (segment shades, notes, reference lines) |
-| `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled |
+| `js/reports/cg-builders.js` | Small additions to the generic builders for the Customer growth charts (segment and risk colours, notes, reference lines) |
+| `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled; each region's top accounts with several regions, one region by risk level (D133) |
 | `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
 | `js/reports/dim-stack.js` | A figure split by one dimension (solution, route, category, maturity): stacked bars, a heatmap grid and a table |
 | `js/reports/outlook-side.js` | Figures side by side per region (the strategic plan and the plan, the base year and plan year 1, order intake and revenue) with a closing variance, growth or share |
@@ -153,7 +153,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/glossary.js` | Term popovers: a marked term's definition and why it matters, where the term appears |
 | `js/ui/explain.js` | The plain-English explanation of a report |
 | `js/ui/view-head.js` | The header the newer views share: question, lead line, tip line with "Hide tips", headline insight |
-| `js/ui/multi-select.js` | A dropdown multi-select: a button naming the choice and a checklist with "All" and "Clear" (D126) |
+| `js/ui/multi-select.js` | A dropdown multi-select: a button naming the choice and a checklist with "All" and "Clear" (D126), also as a list report's filter (D134) |
 | `js/ui/tour.js` | The optional welcome tour |
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
