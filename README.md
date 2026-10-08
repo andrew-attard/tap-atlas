@@ -61,7 +61,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `index.html` | Internal edition: real data plus the organization layer |
 | `index-sample.html` | Public edition: fictional sample data |
 | `tests.html` | The test page: runs every automated test and shows a summary |
-| `js/theme.js` | The theme: every colour, font, size and the logo slot. Writes the CSS variables and the chart theme |
+| `js/theme.js` | The theme: every colour (regions, the four channel colours of D124, tiers), font, size and the logo slot. Writes the CSS variables and the chart theme |
 
 ### `js/core/`
 
@@ -90,7 +90,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/engine/scope.js` | Turns the comparison setting into what a chart draws, with colours and the plain sentence |
 | `js/engine/measures.js` | The one catalogue of figures, used by charts, cards and insights alike |
 | `js/engine/scores.js` | Attractiveness and ability-to-win scores, and the per-industry measures |
-| `js/engine/shapes.js` | Which chart types suit a report, plus the drawing kit the builders share |
+| `js/engine/shapes.js` | Which chart types suit a report, plus the drawing kit the builders share, including channel colours and the Amount / Share of total switch (D124) |
 | `js/engine/prepare.js` | Runs a report's measures over the comparison into one dataset for chart and table |
 | `js/engine/build-compare.js` | Generic builder: one value per region (bar, dot, radar) |
 | `js/engine/build-parts.js` | Generic builder: parts of a whole (stacked bars, treemap, bubble) |

@@ -2,7 +2,7 @@
  * File: js/theme.js
  * Purpose: THE theme file: every colour, font, size and the logo slot, plus the chart theme built from them.
  *          To rebrand, replace this file only (US-1.1.9). It writes the CSS variables the stylesheets use.
- * Provides: window.TAP_THEME (values, shade(), regionColor(), echarts), CSS variables --tap-* on :root,
+ * Provides: window.TAP_THEME (values, channels, shade(), regionColor(), echarts), CSS variables --tap-* on :root,
  *           the ECharts theme 'tap'
  * Depends on: vendor/echarts.min.js (optional: the chart theme is registered only if ECharts loaded first)
  * Used by: css/*.css (through the variables), js/engine/scope.js (region colours), js/engine/shapes.js (chart colours
@@ -40,6 +40,16 @@
     focusGrey: '#bdb9b9',             // other regions when one is in focus
     combined: '#3d3a3a',              // "the rest" and "organization total", always
     shadeSteps: [0, 0.45, 0.7, 0.85], // lighter shades for stacked parts (mixed toward white), up to 4 parts
+
+    /* Channel colours (D124), for charts whose parts are the sales channels: one per channel, the same in every bar,
+       in stacking order. From the Okabe-Ito set: every pair stays apart by CIEDE2000 10 or more for normal vision and
+       for protanopia, deuteranopia and tritanopia, clear of the highlight red. bg fill, fg its labels, at 4.5:1. */
+    channels: {
+      direct: { bg: '#005a9c', fg: '#ffffff' },
+      partner: { bg: '#e69f00', fg: '#201e1d' },
+      allianceA: { bg: '#009e73', fg: '#201e1d' },
+      allianceB: { bg: '#cc79a7', fg: '#201e1d' }
+    },
 
     /* Tiers: neutral ink steps, so no tier reads as good or bad */
     tiers: {
@@ -139,6 +149,7 @@
     Object.keys(T.space).forEach(function (k) { v['sp-' + k] = T.space[k] + 'px'; });
     T.regions.forEach(function (c, i) { v['r' + (i + 1)] = c; });
     [1, 2, 3].forEach(function (k) { v['tier' + k] = T.tiers[k].bg; v['tier' + k + '-fg'] = T.tiers[k].fg; });
+    Object.keys(T.channels).forEach(function (c) { v['ch-' + c] = T.channels[c].bg; v['ch-' + c + '-fg'] = T.channels[c].fg; });
     return v;
   };
 

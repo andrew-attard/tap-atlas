@@ -268,7 +268,8 @@
       } } : null,
       own: own,
       builder: (b.res && b.res.controls) || [],
-      onBuilder: function (key, v) { p.st.opts[key] = v; p.render(); }
+      // 'type' is the Amount / Share of total switch (D124): it picks the chart type, as the type menu does
+      onBuilder: function (key, v) { if (key === 'type') { p.setType(v); return; } p.st.opts[key] = v; p.render(); }
     };
   }
 

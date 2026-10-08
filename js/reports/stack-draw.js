@@ -19,6 +19,8 @@
  *   numbered         true: segments and key carry each part's number, so many parts are told apart without colour
  *   highlight        a Target; by: the dimension the parts are values of
  *   right, tip       optional: room right of the bars (px) for long closing texts; tip(row, part) gives more tooltip lines
+ *   paints           optional: [{bg, fg}] per part when the parts are channels (TAP.shapes.kit.channelPaints, D124): the
+ *                    parts take the channel colours, the key names the channels, tooltips name the channel first
  */
 (function (TAP) {
   'use strict';
@@ -40,13 +42,14 @@
 
   // Tooltip: the part hovered (exact value, kind, how combined), the other parts, then the total.
   function tipFor(d, row, part) {
-    var kit = k(), col = { label: part.label, unit: d.unit }, lines = kit.cellRows(row.cells[part.key], col);
+    var kit = k(), col = { label: part.label, unit: d.unit }, lines = kit.cellRows(row.cells[part.key], col), title = row.label;
+    if (d.paints) { title = kit.channelTitle(part.label, row.label, row.cells[part.key], col, row.total); lines = lines.slice(1); }
     d.parts.forEach(function (p) { if (p !== part) lines.push([p.label, kit.exact(row.cells[p.key], col)]); });
     lines.push([kit.t('chart.total'), kit.exact(row.total, col)]);
     var how = TAP.agg.describe(row.total);
     if (how) lines.push([kit.t('chart.how'), how]);
     if (d.tip) lines = lines.concat(d.tip(row, part) || []);
-    return kit.tip(row.label, lines);
+    return kit.tip(title, lines);
   }
 
   // The label on a segment: its part's number, and the value where there is room for it.
@@ -63,7 +66,7 @@
 
   // type: 'stackedBar' or 'stacked100'. Colour shows the region, shade and number the part.
   function bars(d, type) {
-    var kit = k(), th = kit.th(), hl = th.echarts.tap.highlight, pct = type === 'stacked100', n = d.parts.length;
+    var kit = k(), th = kit.th(), pct = type === 'stacked100', n = d.parts.length;
     var totals = d.rows.map(function (r) { return r.total; }), np = [];
     var maxT = Math.max.apply(null, totals.map(function (c) { return c.state === 'value' ? c.v : 0; }).concat([0]));
     d.rows.forEach(function (r, i) {
@@ -78,11 +81,11 @@
         data: d.rows.map(function (r, i) {
           var c = r.cells[p.key], tot = totals[i].state === 'value' ? totals[i].v : 0;
           if (!c || c.state !== 'value') return { value: null };
-          var on = kit.highlighted(r.entity, d.highlight), dark = tone(pi, n) < 0.4 && r.entity.role !== 'muted';
+          var on = kit.highlighted(r.entity, d.highlight), dark = tone(pi, n) < 0.4 && r.entity.role !== 'muted', paint = d.paints && d.paints[pi];
           return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: (r.keys || {})[p.key] || p.key, part: p.value, entityId: r.entityId, rowId: r.id,
             name: r.label, mark: 'bar',
-            itemStyle: { color: shade(r.entity.color, pi, n), borderColor: on ? hl.color : th.ground, borderWidth: on ? hl.width : th.border.control },
-            label: { color: dark ? th.onColour : th.ink } };
+            itemStyle: Object.assign({ color: paint ? paint.bg : shade(r.entity.color, pi, n) }, kit.partBorder(r.entity, on, d.paints)),
+            label: { color: paint ? paint.fg : dark ? th.onColour : th.ink } };
         }),
         label: { show: true, position: 'inside', fontSize: th.type.chart, formatter: segmentLabel(d, pi, pct, maxT), rich: { n: badge } },
         tooltip: { formatter: function (prm) {
@@ -96,7 +99,7 @@
       : kit.valueAxis({ unit: d.unit }, d.unit === 'count' ? { minInterval: 1 } : null);   // counts: whole numbers on the axis
     return { grid: kit.grid({ right: d.right || th.space[12] * 2 }), tooltip: { trigger: 'item' }, xAxis: vax,
       yAxis: { type: 'category', inverse: true, data: d.rows.map(function (r) { return r.label; }),
-        axisLabel: { fontSize: th.type.chart, interval: 0 } },
+        axisLabel: d.paints ? kit.axisEmphasis(d.rows) : { fontSize: th.type.chart, interval: 0 } },
       series: series };
   }
 
@@ -115,6 +118,7 @@
   // The key: each region once, then the parts. Numbered parts get a numbered key in the same ink steps as the stack.
   function legend(d) {
     var kit = k(), th = kit.th(), seen = [], n = d.parts.length;
+    if (d.paints) return kit.channelLegend(d.parts.map(function (p) { return p.label; }), d.paints);
     d.rows.forEach(function (r) { if (seen.indexOf(r.entity) < 0) seen.push(r.entity); });
     return kit.legendOf({ entities: seen }).concat(d.parts.map(function (p, i) {
       if (!d.numbered) return { label: p.label, color: th.shade(th.ink, i), role: 'part' };

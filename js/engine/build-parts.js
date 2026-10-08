@@ -1,7 +1,8 @@
 /*
  * File: js/engine/build-parts.js
  * Purpose: Generic chart builder for parts of a whole (stacked bars, 100% stacked bars, grouped bars, treemap),
- *          with one stack per region and value when broken down (US-2.7.5),
+ *          with one stack per region and value when broken down (US-2.7.5), parts that are channels in the channel colours
+ *          with an Amount / Share of total switch (D124),
  *          and the parts bubble view, drawn from the definition's x, y and size.
  * Provides: chart builder 'parts' (registered with TAP.builders)
  * Depends on: js/engine/registry.js, js/engine/prepare.js, js/engine/shapes.js (drawing kit), js/engine/aggregate.js
@@ -25,12 +26,15 @@
     var bd = byYear ? [] : ds.columns.filter(function (c) { return c.breakdown && c.breakdown.dim === ctx.breakdown; });
     // The table shows the selected measure per value, so every heading is unique; the chart reads the parts too
     var bdTable = bd.filter(function (c) { return c.measureId === m; });
+    // D124: parts that are channels take the channel colours (not with the year breakdown, whose parts are years)
+    var paints = byYear ? null : k.channelPaints(def, parts);
     var res = k.result(def, ds, { table: k.table(ds, keys.concat(bdTable.map(function (c) { return c.key; })), rows),
-      legend: legend(k, ds, parts, rows), notes: k.notes({ rows: rows, columns: ds.columns }, [m]).concat(short(k, ds, m, parts, rows)) });
+      legend: paints ? k.channelLegend(parts.map(function (p) { return partName(k, ds, p); }), paints) : legend(k, ds, parts, rows),
+      notes: k.notes({ rows: rows, columns: ds.columns }, [m]).concat(short(k, ds, m, parts, rows)), controls: k.shareSwitch(def, type) });
     if (ds.empty || !rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;
     if (bd.length) rows = split(k, rows, bd, keys);
-    var draw = { k: k, ds: ds, ctx: ctx, m: m, parts: parts, rows: rows, res: res };
+    var draw = { k: k, ds: ds, ctx: ctx, m: m, parts: parts, rows: rows, res: res, paints: paints };
     res.option = type === 'treemap' ? treemap(draw) : bars(draw, type);
     return res;
   }
@@ -77,6 +81,9 @@
     return res;
   }
 
+  // A part's short name ("Partner"), for the channel key and tooltips.
+  function partName(k, ds, key) { var c = k.colOf(ds, key); return c.short || c.label; }
+
   // Colour shows the region; shade shows the part. The legend says both.
   function legend(k, ds, parts, rows) {
     var th = k.th();
@@ -86,8 +93,13 @@
   }
 
   // Tooltip: the part hovered (exact value, kind, how combined), the other parts, then the total.
+  // With channel colours the title names the channel first, then the row, the value and its share (D124).
   function tipFor(draw, row, key) {
-    var k = draw.k, lines = k.cellRows(row.cells[key], k.colOf(draw.ds, key));
+    var k = draw.k, col = k.colOf(draw.ds, key), lines = k.cellRows(row.cells[key], col), title = row.label;
+    if (draw.paints) {
+      title = k.channelTitle(partName(k, draw.ds, key), row.label, row.cells[key], col, row.cells[draw.m]);
+      lines = lines.slice(1);
+    }
     draw.parts.forEach(function (p) {
       if (p !== key) lines.push([k.colOf(draw.ds, p).label, k.exact(row.cells[p], k.colOf(draw.ds, p))]);
     });
@@ -96,7 +108,7 @@
       var how = TAP.agg.describe(row.cells[draw.m]);
       if (how) lines.push([k.t('chart.how'), how]);
     }
-    return k.tip(row.label, lines);
+    return k.tip(title, lines);
   }
 
   // The row a mark belongs to: by row id (a region has several rows once broken down), else by region.
@@ -108,7 +120,7 @@
   function chartValue(v, unit) { return TAP.format.cell({ v: v, state: 'value' }, { unit: unit }); }
 
   function bars(draw, type) {
-    var k = draw.k, th = k.th(), hl = th.echarts.tap.highlight, pct = type === 'stacked100', stack = type !== 'groupedBar';
+    var k = draw.k, th = k.th(), pct = type === 'stacked100', stack = type !== 'groupedBar';
     var mc = k.colOf(draw.ds, draw.m), totals = draw.rows.map(function (r) { return r.cells[draw.m]; });
     var maxT = Math.max.apply(null, totals.map(function (c) { return c.state === 'value' ? c.v : 0; }).concat([0]));
     var np = [];
@@ -123,10 +135,10 @@
         data: draw.rows.map(function (r, i) {
           var c = r.cells[key], tot = totals[i].state === 'value' ? totals[i].v : 0;
           if (c.state !== 'value') return { value: null };
-          var on = k.highlighted(r.entity, draw.ctx.highlight), dark = pi === 0 && r.entity.role !== 'muted';
+          var on = k.highlighted(r.entity, draw.ctx.highlight), dark = pi === 0 && r.entity.role !== 'muted', paint = draw.paints && draw.paints[pi];
           return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: key, entityId: r.entityId, rowId: r.id, name: r.label, mark: 'bar',
-            itemStyle: { color: th.shade(r.entity.color, pi), borderColor: on ? hl.color : th.ground, borderWidth: on ? hl.width : th.border.control },
-            label: { color: dark ? th.onColour : th.ink } };
+            itemStyle: Object.assign({ color: paint ? paint.bg : th.shade(r.entity.color, pi) }, k.partBorder(r.entity, on, draw.paints)),
+            label: { color: paint ? paint.fg : dark ? th.onColour : th.ink } };
         }),
         label: { show: true, position: 'inside', fontSize: th.type.chart, formatter: function (p) {
           var d = p.data;
@@ -142,7 +154,7 @@
       : k.valueAxis(mc);
     return { grid: k.grid({ right: th.space[12] * 2 }), tooltip: { trigger: 'item' }, xAxis: vax,
       yAxis: { type: 'category', inverse: true, data: draw.rows.map(function (r) { return r.label; }),
-        axisLabel: { fontSize: th.type.chart, interval: 0 } },
+        axisLabel: draw.paints ? k.axisEmphasis(draw.rows) : { fontSize: th.type.chart, interval: 0 } },
       series: series };
   }
 
