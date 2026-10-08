@@ -73,7 +73,7 @@ window.TAP_CONTENT.guide = {
         'Every chart sits in a panel that works the same way. The title is the question the chart answers. The chart\u2019s insights sit behind its Insights button, each with its figures one line per region.',
         'The explanation icon says what the chart shows, how to read it and what to look for. Clicking a bar, point or cell opens a side panel with everything known about that item.',
         'A panel can be expanded to fill the screen for discussion, and saved or copied as an image for slides. Esc returns to the view.',
-        'Some charts open one level down when you select a bar, for example from a region to its industries. The trail of names above the chart goes back up.'
+        'Some charts open one level down when you select part of them, for example from a block of the New business industries chart to the rows behind it. A band at the top of the panel then says you are drilled in, a line under the question says what you selected and what is shown, and the \u201cBack to\u201d button returns to the chart. The trail of names above the question goes back to any earlier step.'
       ] },
       { id: 'chartTypes', title: 'Chart types', paragraphs: [
         'The chart type menu lists only the types that suit the data, such as bars, dots, bubbles or a heatmap. The default type is marked and one click goes back to it.',

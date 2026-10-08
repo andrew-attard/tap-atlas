@@ -37,6 +37,13 @@ button.tap-panel__crumb {
 .tap-panel__crumb-keys { color: var(--tap-muted); font-size: var(--tap-fs-label); }
 .tap-panel__drill-hint { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }
 
+/* While drilled (D123): a band with words across the header's top, the level heading, the back button (44px) */
+.tap-panel__band { flex: 0 0 calc(100% + 2 * var(--tap-sp-6)); margin: -20px calc(-1 * var(--tap-sp-6)) 0; padding: var(--tap-sp-1) var(--tap-sp-6);
+  font-size: var(--tap-fs-body); font-weight: 800; background: var(--tap-accent-deep); color: var(--tap-on-colour); }
+.tap-panel__level { margin: 0; font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-panel__backrow { padding: 0 var(--tap-sp-6) var(--tap-sp-3); }
+.tap-panel__back { min-height: 44px; font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); }
+
 /* Toolbar: words beside every icon, nothing hover-only */
 .tap-panel__tools { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
 .tap-panel__tool { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); white-space: nowrap; }
