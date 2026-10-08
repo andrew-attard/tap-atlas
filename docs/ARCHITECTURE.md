@@ -41,7 +41,7 @@ The three pages load the same app scripts in the same order (lint checks this). 
 | `PLAN_DATA` | data file | The plan data (Data Contract v0.2, `docs/DATA-CONTRACT.md`) |
 | `TAP_THEME` | `js/theme.js` | Colours, fonts, sizes, logo, ECharts theme |
 | `TAP_SETTINGS` | `config/settings.js` | Tunable numbers: weights, thresholds, limits |
-| `TAP_VIEWS` | `config/views.js` | View order, titles and report lists |
+| `TAP_VIEWS` | `config/views.js` | Menu groups and the view order made from them, titles and report lists |
 | `TAP_REPORTS` | `config/reports-*.js` | Report definitions by id (schema in `config/reports.js`) |
 | `TAP_RULES` | `config/insight-rules.js` | Insight rule definitions and the wording guide |
 | `TAP_CONTENT` | `content/*.js` | Glossary, guide and all on-screen wording |
@@ -646,9 +646,10 @@ Phase 3 adds presentation mode, custom charts, extra template sections, the hand
 
 ### 18.1 Views
 
-- Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`. As built today (`config/views.js`): `overview`, `industry`, `newBusiness`, `customers`, `partners`, `outlook`, `other`, `regions`, `insights`, `build`, `guide`; number keys 1 to 9, then 0 for the tenth item (D90), none for an eleventh.
+- Menu order: `overview`, `industry`, `newBusiness`, `customers`, `partners`, `other`, `regions`, `insights`, `guide`. As built today (`config/views.js`, D115): three groups, `groups.start` (`overview`, `regions`), `groups.data` (`industry`, `newBusiness`, `customers`, `partners`, `outlook`, `other`) and `groups.tools` (`insights`, `build`, `guide`); every view is in exactly one group and `order` is the groups one after the other. Number keys 1 to 9, then 0 for the tenth item (D90), none for an eleventh.
 - `other` ("Other sections", US-3.2.2) is shown only when the data has extra sections. A view spec may carry `available()`; `TAP.views.order()` leaves out a view whose `available()` returns false. Number keys follow `order()`.
 - "Build a chart" (US-3.5.1) is its own view, `build` (`js/views/build.js`, address `#build`), just before the Guide. The two sit together at the right end of the top bar, apart from the plan views (D94, D96), in one group (`.tap-menu__tools`) that wraps as a whole when the menu needs a second line (D104). It was a Guide section until D96.
+- The menu (`js/ui/shell.js`, D115) draws one list per group (`ul.tap-menu__group[data-group]`, named by `menu.groups.*` in `content/text-shell.js`) inside the one `nav[data-tour="menu"]`, with Insights joining the tools group. On one row the centre group is centred on the bar; the right group starts as wide as the brand (`--tap-menu-offset`, measured by the shell). On a narrow bar (container queries in `css/shell.css`) the start and tools groups share the first line and the plan views take the second.
 - **Guide extras:** other streams add Guide sections with `TAP.guideExtras.push({id, title, render(el)})` at load time (the running order, "Your presentation" on screen, US-3.1.3). `js/views/guide.js` draws them after its own sections and lists them in the Guide's contents; one that throws shows its error in its own section. `render` may return `{destroy()}`, which the Guide calls when it is unmounted.
 
 ### 18.2 Running order and presentation mode (Epic 3.1, PRESENT)

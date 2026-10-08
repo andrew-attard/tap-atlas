@@ -1,6 +1,7 @@
 /*
  * File: config/views.js
- * Purpose: Lists the views in menu order and the reports each view shows.
+ * Purpose: Lists the views in the menu's three groups, the menu order that follows from them, and the reports each
+ *          view shows.
  * Provides: window.TAP_VIEWS
  * Depends on: nothing
  * Used by: js/engine/registry.js (TAP.views, TAP.reports.list), js/ui/shell.js (menu)
@@ -9,7 +10,13 @@
  * section 17; a view still being built may list reports that don't exist yet.
  */
 window.TAP_VIEWS = {
-  order: ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other', 'regions', 'insights', 'build', 'guide'],
+  // The menu in three groups, left to right (D115): start points, the plan's data views, then tools. Every view
+  // is in exactly one group; `order` below is made from them, so the number keys follow the screen too.
+  groups: {
+    start: ['overview', 'regions'],
+    data: ['industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other'],
+    tools: ['insights', 'build', 'guide']
+  },
   overview: { title: 'Overview', reports: ['ov-ambition'] },
   industry: { title: 'Market coverage', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
   newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
@@ -26,3 +33,8 @@ window.TAP_VIEWS = {
   build: { title: 'Build a chart', reports: [] },
   guide: { title: 'Guide', reports: [] }
 };
+// The menu order: the groups one after the other, in the order they are listed. Tests may change this list in
+// place and put it back.
+window.TAP_VIEWS.order = Object.keys(window.TAP_VIEWS.groups).reduce(function (all, g) {
+  return all.concat(window.TAP_VIEWS.groups[g]);
+}, []);

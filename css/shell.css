@@ -24,8 +24,9 @@
 }
 .tap-banner--internal { background: var(--tap-banner-internal); }
 
-/* Top bar: logo slot, app name, menu */
+/* Top bar: logo slot, app name, menu. A container, so the menu wraps by the bar's width (D115) */
 .tap-topbar {
+  container: tap-topbar / inline-size;
   display: flex; align-items: stretch; gap: var(--tap-sp-8);
   min-height: 64px; padding: 0 var(--tap-edge);
   border-bottom: var(--tap-rule-w) solid var(--tap-ink);
@@ -34,10 +35,17 @@
 .tap-topbar__logo { display: block; height: 28px; width: auto; }
 .tap-topbar__name { font-size: var(--tap-fs-h3); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
 
-/* Menu: one line at 1280 px (D72). The current view is bold with an ink bar; red is kept for actions and highlights */
-.tap-menu { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 var(--tap-sp-1); flex: 1; min-width: 0; }
-/* Ten items fit one line at 1280 px at body size, the D24 floor (D90, D96). With an eleventh (Other sections, only on a
-   file with extra sections) or narrower (125% and 150% zoom) the menu wraps, so every view stays reachable (D104) */
+/* Menu: three groups (D115), start points, the plan's data views and tools. On one row when they fit, with the centre
+   group centred on the bar: the side groups grow alike, the right one starting as wide as the brand and its gap
+   (--tap-menu-offset, measured by js/ui/shell.js). Short of room the groups wrap whole, the tools first, to a line of
+   their own at the right (D104); the container rules below give the usual narrow bars a tidier two lines.
+   The current view is bold with an ink bar; red is kept for actions and highlights */
+.tap-menu { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 var(--tap-sp-6); flex: 1; min-width: 0; }
+.tap-menu__group { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0 var(--tap-sp-1); margin: 0; padding: 0; list-style: none; }
+.tap-menu__entry { display: flex; }
+.tap-menu__group--start { flex: 1 1 0; }
+.tap-menu__group--data { flex: 0 1 auto; flex-wrap: wrap; justify-content: center; margin-inline: auto; }
+.tap-menu__tools { flex: 1 1 var(--tap-menu-offset, 0px); justify-content: flex-end; }
 .tap-menu__item {
   display: flex; align-items: center; min-height: 40px; padding: 0 var(--tap-sp-2);
   font: inherit; font-size: var(--tap-fs-body); font-weight: 600; color: var(--tap-ink); white-space: nowrap;
@@ -45,10 +53,23 @@
   cursor: pointer;
 }
 .tap-menu__item:hover { background: var(--tap-surface); }
-/* D94, D96, D104: Build a chart and the Guide are not views of the plans, so they sit together at the right end of
-   the bar. They wrap as one group, never the Guide alone */
-.tap-menu__tools { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0 var(--tap-sp-1); margin-left: auto; }
 .tap-menu__item[aria-current="page"] { font-weight: 800; border-bottom-color: var(--tap-ink); }
+/* A bar too narrow for one row: ten items fit at 1280 px but not at 125% zoom (70rem), eleven (with Other sections)
+   fit at 1536 px but not at 1280 px (78rem). The start points and tools then share the first line and the data views
+   take a line of their own, centred on the bar (it runs under the brand), wrapping within it if they must. A wider
+   brand (a logo) that runs out of room sooner falls back to the plain wrap above */
+@container tap-topbar (max-width: 70rem) {
+  .tap-topbar__brand { align-self: flex-start; min-height: 40px; }
+  .tap-menu__group--data {
+    order: 1; flex-basis: calc(100% + var(--tap-menu-offset, 0px)); margin-left: calc(-1 * var(--tap-menu-offset, 0px));
+  }
+}
+@container tap-topbar (max-width: 78rem) {
+  .tap-topbar:has([data-view="other"]) .tap-topbar__brand { align-self: flex-start; min-height: 40px; }
+  .tap-topbar:has([data-view="other"]) .tap-menu__group--data {
+    order: 1; flex-basis: calc(100% + var(--tap-menu-offset, 0px)); margin-left: calc(-1 * var(--tap-menu-offset, 0px));
+  }
+}
 
 /* Comparison bar, two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
    Controls keep a 40 px touch height; their words are label size so row 1 fits at 1280 px. */

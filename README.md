@@ -178,7 +178,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | File | What it does |
 |---|---|
 | `config/settings.js` | Every tunable number: combining weights, score weights, insight ranking, limits |
-| `config/views.js` | The views in menu order and the reports each one shows |
+| `config/views.js` | The menu's three groups of views (start points, plan views, tools), the menu order made from them, and the reports each view shows |
 | `config/reports.js` | The report schema, explained field by field |
 | `config/reports-overview.js` | Report definitions for the Overview |
 | `config/reports-industry.js` | Report definitions for Market coverage |

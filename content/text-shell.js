@@ -10,7 +10,8 @@
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
-  menu: { label: 'Views' },
+  // The menu's three groups (D115), named for screen readers: start points, the plan's data views, tools
+  menu: { label: 'Views', groups: { start: 'Start', data: 'Plan data', tools: 'Tools' } },
 
   // The comparison bar (US-1.1.3). The sentence itself comes from scope.* in content/text-engine.js.
   compare: {
