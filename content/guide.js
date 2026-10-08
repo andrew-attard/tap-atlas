@@ -78,7 +78,7 @@ window.TAP_CONTENT.guide = {
       { id: 'chartTypes', title: 'Chart types', paragraphs: [
         'The chart type menu lists only the types that suit the data, such as bars, dots, bubbles or a heatmap. The default type is marked and one click goes back to it.',
         'Your choice is remembered for that chart in this browser. The "Reset all charts to default" button on this page clears every choice.',
-        'Some charts can also be broken down by a second dimension, such as plan year. Only one breakdown is shown at a time. A dimension with many values, such as industry or solution, needs one region: while several regions are compared it is greyed and marked \u201cOne region only\u201d. To use it, compare Selected regions with one region chosen.'
+        'Some charts can also be broken down by a second dimension, such as plan year, one at a time. A dimension with many values, such as industry or solution, needs one region: while several regions are compared it is greyed and marked \u201cOne region only\u201d. To use it, compare Selected regions with one region chosen.'
       ] },
       { id: 'table', title: 'Table view', paragraphs: [
         'Every chart can be shown as a table with the exact figures. Charts round to one decimal, for example 1.2M; tables show the full value.',
