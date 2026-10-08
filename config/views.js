@@ -17,7 +17,8 @@ window.TAP_VIEWS = {
     data: ['industry', 'newBusiness', 'customers', 'partners', 'outlook', 'other'],
     tools: ['insights', 'build', 'guide']
   },
-  overview: { title: 'Overview', reports: ['ov-ambition'] },
+  // broadOnly: the Overview shows only insights for the organization as a whole (D119)
+  overview: { title: 'Overview', reports: ['ov-ambition'], broadOnly: true },
   industry: { title: 'Market coverage', reports: ['ind-tiers', 'ind-quad', 'ind-ratings'] },
   newBusiness: { title: 'New business', reports: ['nb-industries', 'nb-solutions', 'nb-channels', 'nb-levers', 'nb-rows', 'nb-themes'] },
   customers: { title: 'Customer growth', reports: ['cg-segments', 'cg-growth', 'cg-exposure', 'cg-bubble', 'cg-accounts'] },

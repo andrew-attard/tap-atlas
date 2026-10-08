@@ -39,6 +39,9 @@ window.TAP_CONTENT.guide = {
         'Each view answers a few questions, one chart per question. The browser’s back button takes you to the view you came from.',
         'A one-line tip under each view’s title says where to start. "Hide tips" hides the tips until the page is reloaded.'
       ] },
+      { id: 'viewOverview', title: 'The Overview', link: { view: 'overview' }, paragraphs: [
+        'The Overview tells the organization’s story: a headline sentence, then the top insights, the three most significant findings that span at least three regions or the total of all regions, each with why it matters, "Show me" and "Hide for this session". Findings about one or two regions are on the other views and the Insights page. The region cards and the ambition chart follow.'
+      ] },
       { id: 'viewNewBusiness', title: 'The New business view', link: { view: 'newBusiness' }, paragraphs: [
         'New business shows where each region expects new customers to come from: the industries, solutions and channels its new business rests on, and the assumptions behind the number.',
         'Start with the industry grid and the solution chart, then compare levers such as target accounts and hit rate. The list below names every sub-industry and market each region targets, and which other regions target the same one.'

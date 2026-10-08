@@ -19,15 +19,17 @@
 
   // The insights for one chart in a comparison: {list (at most 3), count}. Nothing while insights is a stub.
   // industryId: a chart that shows one industry (the ratings) lists only the insights about it, so its count and list
-  // never borrow another industry's insight (D102).
-  function get(cmp, reportId, industryId) {
+  // never borrow another industry's insight (D102). opts.broadOnly: insights for the organization as a whole only, as
+  // the Overview's panel asks (D119).
+  function get(cmp, reportId, industryId, opts) {
     var I = TAP.insights, none = { list: [], count: 0 };
     if (!I || I.__stub) return none;
     var hidden = TAP.store.get().hiddenInsights || [];
     var shown = function (x) { return x && hidden.indexOf(x.id) < 0 && (!industryId || (x.industryIds || []).indexOf(industryId) >= 0); };
     try {
-      var all = (I.ranked(cmp, { reportId: reportId }) || []).filter(shown);
-      var list = industryId ? all.slice(0, MAX) : (I.top(cmp, reportId, MAX) || []).filter(shown);
+      var more = opts && opts.broadOnly ? { broadOnly: true } : {};
+      var all = (I.ranked(cmp, Object.assign({ reportId: reportId }, more)) || []).filter(shown);
+      var list = industryId ? all.slice(0, MAX) : (I.top(cmp, reportId, MAX, more) || []).filter(shown);
       return { list: list, count: Math.max(all.length, list.length) };
     } catch (e) {
       if (!/Not built yet/.test(e.message)) throw e;

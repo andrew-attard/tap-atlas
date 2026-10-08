@@ -17,6 +17,8 @@
  *   skipped quietly instead of logged), why (one sentence on why the finding matters, shown under it; banned words
  *   checked as for sentences) or context (true: a background fact that moves no decision, kept off the charts and
  *   headlines and listed in the closed Context group of the Insights page). Every rule has one of the two (D111).
+ *   broad (true: built on the combined total of all regions, so its findings count as organization-wide on the
+ *   Overview whatever regions they name, D119).
  * Strength runs from 0 to 1: a finding that sits twice as far past its threshold as the threshold itself scores 1.
  * Money at stake is the share of the organization's current ARR (or pipeline) the finding involves.
  * Placeholders in {braces} are filled in by the rule code.
@@ -220,7 +222,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{region}’s three-year plan is {share} {direction} its strategic plan ({plan} against {strategic}).',
     attach: ['ol-strategic'], highlight: 'bar', why: 'The gap between a region’s bottom-up plan and its strategic target is the first question in a planning review.' });
   outlook({ id: 'spTotal', description: 'The plans of every region that gives a strategic plan, together at least 5% below or above those strategic plans (a ratio of the summed figures). Regions without a strategic plan are named and left out.',
-    reads: ['strategicPlan.value', 'booksValue.value'], params: { gap: 0.05 }, compare: true,
+    reads: ['strategicPlan.value', 'booksValue.value'], params: { gap: 0.05 }, compare: true, broad: true,
     scoring: 'Strength: the difference as a share of the strategic plans, against twice the threshold. Money: the difference.',
     template: 'Together, the regions’ three-year plans are {share} {direction} their strategic plans ({plan} against {strategic}).',
     templates: { gaps: 'Together, the three-year plans of the {n} regions with a strategic plan are {share} {direction} their strategic plans ({plan} against {strategic}). Not included, with no strategic plan: {regions}.' },

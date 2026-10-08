@@ -36,7 +36,8 @@ window.TAP_SETTINGS = {
       plan: 1, shared: 1, themes: 1, outlook: 1 },
     minRegions: 3,       // no comparison insight with fewer regions providing the value (US-1.7.10)
     panelMax: 3,         // insights listed in a panel (US-1.2.2)
-    overviewMax: 3       // insights on the Overview (US-1.5.3)
+    overviewMax: 3,      // insights in the Overview's top insights block (US-1.5.3, D119)
+    overviewMinRegions: 3   // the Overview shows only insights naming this many regions, or from a broad rule (D119)
   },
 
   // Region colours repeat after this many regions; the data sources panel then shows a warning.

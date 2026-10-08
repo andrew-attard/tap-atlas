@@ -38,15 +38,16 @@
   function showTips() { setTips(false); }
 
   // The first insight attached to any report on the view, for the current comparison, or null. Insights come in the
-  // engine's order: theme insights after every figure-based one (D80), then by significance.
+  // engine's order: theme insights after every figure-based one (D80), then by significance. A view marked broadOnly in
+  // config/views.js (the Overview) takes only insights for the organization as a whole (D119).
   function late(x) { return x.family === 'themes' ? 1 : 0; }
   function headline(viewId, cmp) {
-    var I = TAP.insights, reports = ((window.TAP_VIEWS || {})[viewId] || {}).reports || [];
+    var I = TAP.insights, view = (window.TAP_VIEWS || {})[viewId] || {}, reports = view.reports || [];
     if (!I || I.__stub || !reports.length) return null;
     var best = null;
     reports.forEach(function (id) {
       var list = [];
-      try { list = I.ranked(cmp, { reportId: id }) || []; } catch (e) { list = []; }
+      try { list = I.ranked(cmp, { reportId: id, broadOnly: !!view.broadOnly }) || []; } catch (e) { list = []; }
       list.forEach(function (x) {
         if (!best || late(x) - late(best) < 0 || (late(x) === late(best) && x.significance > best.significance)) best = x;
       });
