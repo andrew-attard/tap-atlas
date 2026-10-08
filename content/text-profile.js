@@ -33,9 +33,9 @@ Object.assign(window.TAP_CONTENT.text, {
       alone: 'The data has no other region, so these figures are shown without a comparison.',
       total: 'Total',
       against: 'Compared with the rest',
-      above: 'above the average of the rest',
-      below: 'below the average of the rest',
-      same: 'the same as the average of the rest',
+      above: 'Above average',
+      below: 'Below average',
+      same: 'Same as average',
       figureTitle: '{label}. Select to see more',
       // US-4.6.3: the full template's lines, shown when the plans hold a strategic plan or a revenue outlook
       p4: {
