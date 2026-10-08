@@ -60,7 +60,7 @@ window.TAP_CONTENT.guide = {
       ] },
       { id: 'viewRegions', title: 'Region profiles', link: { view: 'regions' }, paragraphs: [
         'A region profile puts one region’s whole plan on one page: its ambition, industry priorities, new business, customers and partners, and its strategic plan and revenue when the plans hold them, with the same charts as the other views. It opens with its Top insights, the three most significant findings about that region, each with why it matters, "Show me" and "Hide for this session"; the other findings that name it are listed further down, beside what its leader wrote.',
-        'To open one, choose Regions in the menu and pick a region, or select "Open profile" on a region card on the Overview or in a details panel. The back button returns to where you were.'
+        'To open one, choose Regions in the menu and pick a region, or select "Open profile" on a region card on the Overview or in a details panel; the back button returns to where you were.'
       ] },
       { id: 'compare', title: 'The comparison bar', paragraphs: [
         'The comparison bar decides which regions every chart shows, in three modes. All regions shows each region separately. Selected regions shows only the regions you tick, one region or more, so a single region can be shown on its own.',
