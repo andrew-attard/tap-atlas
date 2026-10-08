@@ -96,6 +96,14 @@
     TAP.dom.append(page, [top, title]);
     var head = TAP.viewHead.render(title, { viewId: VIEW, kicker: t('kicker'), title: name(id),
       lead: t('lead', { sentence: TAP.scope.sentence(c) }) });
+    // The region's Top insights open the page (D128); an empty marker holds the place when none qualifies
+    var topNode = null;
+    var drawTop = function () {
+      var node = TAP.profileParts.drawTop(id) || el('div', { class: 'tap-pf-top-none', hidden: true });
+      if (topNode) page.replaceChild(node, topNode); else page.appendChild(node);
+      topNode = node;
+    };
+    drawTop();
     TAP.profileParts.drawGlance(page, id);
     var body = el('section', { class: 'tap-pf__reports', 'aria-label': t('reports', { name: name(id) }) });
     page.appendChild(body);
@@ -104,12 +112,12 @@
       body.appendChild(slots.length > 1 ? TAP.viewHead.pair(slots) : el('div', { class: 'tap-pf__wide' }, slots));
       slots.forEach(function (slot, i) { panels.push(TAP.viewHead.mountPanel(slot, row[i], { cmp: c })); });
     });
-    // The region's insights and its leader's words, side by side (US-2.4.4); a hidden insight leaves the list at once
+    // The rest of the region's insights and its leader's words, side by side (US-2.4.4); a hidden insight leaves at once
     var ins = el('div', { class: 'tap-vh-slot', 'data-slot': 'insights' }), words = el('div', { class: 'tap-vh-slot', 'data-slot': 'words' });
     var drawIns = function () { TAP.dom.clear(ins); TAP.profileParts.drawInsights(ins, id); };
     drawIns();
     page.appendChild(TAP.profileParts.drawWords(words, id) ? TAP.viewHead.pair([ins, words]) : ins);
-    var off = TAP.store.on(function (s, changed) { if (changed.indexOf('hiddenInsights') >= 0) drawIns(); });
+    var off = TAP.store.on(function (s, changed) { if (changed.indexOf('hiddenInsights') >= 0) { drawTop(); drawIns(); } });
     return { destroy: function () {
       off();
       printLabel(false);

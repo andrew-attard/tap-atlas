@@ -424,6 +424,7 @@ A rule may also carry `broad: true` (D119): it is built on the combined total of
 **Engine:** `TAP.insights.all()` is computed once against all regions. The functions built on it are:
 - `ranked(cmp, {reportId, family, regionId, context, broadOnly})`: insights in scope: figure-based insights first, then the `themes` family (D80); within each group the focus region's insights first, then by significance. Context insights (D111) are left out unless `context` is `true`. `broadOnly` keeps only insights for the organization as a whole (D119, `isBroad`). `all()` uses the same order and keeps every insight;
 - `top(cmp, reportId, n, opts)`: the first `n` of `ranked`, with `opts` passed on (`{broadOnly}`);
+- `forRegion(regionId)`: the insights about one region, by significance: naming it, not broad, not context, not hidden. The region profile's Top insights are its first three (D128) and the Overview card's "To discuss" line its first (D130);
 - `isBroad(insight)`: true when the insight names at least `TAP_SETTINGS.insights.overviewMinRegions` regions (3) or its rule is `broad`. The Overview shows only these: its top insights block, its chart panel's list (panel `opts.broadOnly`) and any view headline for it (`TAP_VIEWS.overview.broadOnly`);
 - `hide(id)` / `unhide(id)` / `hidden()`, held in session state only;
 - `failures()`: rules that threw, which are shown in the data sources panel.

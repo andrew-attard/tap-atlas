@@ -47,9 +47,18 @@ Object.assign(window.TAP_CONTENT.text, {
         year: 'Year {n}'
       }
     },
-    // US-2.4.4: the region's insights and its leader's words
+    // D128: the region's Top insights, near the top of the profile, in the Overview block's style
+    top: {
+      title: 'Top insights for {name}',
+      intro: 'The findings about this region most worth discussing, most significant first.'
+    },
+    // US-2.4.4: the region's insights and its leader's words. With Top insights shown, the list keeps the rest (D128).
     insights: {
       title: 'Insights about {name}',
+      more: 'More insights for {name}',
+      introMore: '{n} more observations name this region, the most significant first.',
+      introMoreOne: 'One more observation names this region.',
+      noneMore: 'No other insight names {name} at the moment.',
       intro: '{n} observations name this region, the most significant first.',
       introOne: 'One observation names this region.',
       none: 'No insight names {name} at the moment.',
