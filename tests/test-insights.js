@@ -2,7 +2,8 @@
  * File: tests/test-insights.js
  * Purpose: Tests for the insight engine: rule definitions, the insight shape, skipped rules and guardrails
  *          (TPV-TC-128 to 133). Ranking and hiding are in tests/test-ranking.js.
- * Provides: test cases for INSIGHTS story #44, X-insights-*, X-d111-why-context (D111: why lines and context insights); window.T_INSIGHT_SHAPE and window.T_INSIGHTS (shared helpers)
+ * Provides: test cases for INSIGHTS story #44, X-insights-*, X-d111-why-context (D111: why lines and context insights),
+ *           X-d121-insight-figures (D121: figures one line per region); window.T_INSIGHT_SHAPE and window.T_INSIGHTS (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: INSIGHTS2 stream (Phase 2)
@@ -325,15 +326,12 @@
       a.equal(TAP.insights.ranked(c).filter(function (x) { return x.context; }).length, 0, 'by default, none');
     });
 
-    T.test('X-d111-why-context', 'A panel takeaway, its insight list and a view headline show the why line as visible text', function (a) {
+    T.test('X-d111-why-context', 'A panel\u2019s insight list and a view headline show the why line as visible text', function (a) {
       sample();
       var p = TAP.panel.create(T.dom.mount(), 'ov-ambition', {});
       try {
-        var top = TAP.panelInsights.get(TAP.store.get().cmp, 'ov-ambition').top;
-        a.ok(top && top.why, 'the ambition chart leads with a kept insight');
-        var line = p.el.querySelector('.tap-panel__takeaway .tap-panel__why');
-        a.equal(txt(line), top && top.why, 'the takeaway shows its why line');
-        a.ok(visible(line), 'as visible text');
+        var top = TAP.panelInsights.get(TAP.store.get().cmp, 'ov-ambition').list[0];
+        a.ok(top && top.why, 'the ambition chart\u2019s first insight is a kept one');
         p.el.querySelector('[data-action="insights"]').click();
         var items = Array.prototype.slice.call(p.el.querySelectorAll('.tap-panel__insight'));
         a.ok(items.length > 0, 'the list is open');
@@ -341,6 +339,7 @@
           var w = n.querySelector('.tap-panel__why');
           a.ok(w && txt(w).length > 20 && visible(w), 'list insight ' + (i + 1) + ' shows its why line');
         });
+        a.equal(txt(items[0] && items[0].querySelector('.tap-panel__why')), top && top.why, 'the first one\u2019s is its rule\u2019s why');
       } finally { p.destroy(); }
       var shown = 0;
       ['newBusiness', 'customers', 'partners', 'outlook'].forEach(function (view) {
@@ -379,6 +378,89 @@
         box = root.querySelector('details[data-part="context"]');
         a.equal(box.querySelectorAll('[data-insight="' + want[0] + '"]').length, 0, 'a hidden context insight leaves the group');
       } finally { v.destroy(); TAP.insights.unhide(); }
+    });
+  });
+
+  /* ---------- D121: an insight's figures fit on the screen ---------- */
+
+  T.suite('insight-figures', function () {
+    var NYW = 'notYetWinnable:fsm';   // 4 regions see Field Service Management as attractive... (the sample dump)
+    var NYW_REGIONS = ['North America', 'Southern Europe', 'Middle East & Africa', 'Asia Pacific'];
+    function txt(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function qsa(sel, root) { return Array.prototype.slice.call(root.querySelectorAll(sel)); }
+    function cmpAll() { return Object.assign(TAP.store.defaults().cmp, { mode: 'all' }); }
+    // Opens a panel's insight list and returns the list entry for insight id (or null).
+    function inPanel(reportId, id, fn) {
+      var p = TAP.panel.create(T.dom.mount(), reportId, { cmp: cmpAll() });
+      try {
+        p.el.querySelector('[data-action="insights"]').click();
+        fn(p.el.querySelector('.tap-panel__insight[data-insight="' + id + '"]'));
+      } finally { p.destroy(); }
+    }
+    function onPage(id, fn) {
+      var root = T.dom.mount(), v = TAP.views.get('insights').mount(root);
+      try {
+        var item = root.querySelector('.tap-ins__item[data-insight="' + id + '"]');
+        if (item) item.querySelector('.tap-ins__toggle').click();
+        fn(root.querySelector('.tap-ins__item[data-insight="' + id + '"] .tap-ins__details'));
+      } finally { v.destroy(); }
+    }
+    // One finding naming every region, with two figures each, attached to the ambition chart.
+    function sevenRegions(ctx) {
+      var u = ctx.util, ids = u.regions(), figs = [];
+      ids.forEach(function (r) {
+        figs.push(u.fig('nb.arr', u.name(r), u.m('nb.arr', r)));
+        figs.push(u.fig('base.arr', u.name(r), u.m('base.arr', r)));
+      });
+      return [{ key: 'all', regionIds: ids, vars: { region: 'Every region', v: 'a figure' }, figures: figs, strength: 0.99, money: 0.99, provided: 7 }];
+    }
+
+    T.test('X-d121-insight-figures', 'The not-yet-winnable insight shows 4 region lines and no rating rows, in the panel and on the Insights page', function (a) {
+      sample();
+      a.equal(TAP.insights.all().filter(function (x) { return x.id === NYW; })[0].figures.length > 8, true, 'the insight has many figures behind it');
+      function check(box, where) {
+        a.ok(box, where + ': the insight is open');
+        if (!box) return;
+        var lines = qsa('[data-part="figline"]', box).map(txt);
+        a.equal(lines.length, 4, where + ': four lines, one per region');
+        NYW_REGIONS.forEach(function (n, i) {
+          a.equal((lines[i] || '').indexOf(n + ':'), 0, where + ': line ' + (i + 1) + ' starts with ' + n);
+          a.match(lines[i] || '', /attractiveness [\d.]+.*ability to win [\d.]+/, where + ': ' + n + ' gives its two scores');
+        });
+        a.equal(qsa('dt', box).length, 0, where + ': no rating rows');
+        a.equal(txt(box).indexOf('Field service references'), -1, where + ': only the first two measures');
+        a.equal(qsa('[data-part="figmore"]', box).length, 0, where + ': no "more regions" line');
+      }
+      inPanel('ind-quad', NYW, function (box) { check(box && box.querySelector('.tap-panel__figures'), 'panel'); });
+      onPage(NYW, function (box) { check(box, 'Insights page'); });
+    });
+
+    T.test('X-d121-insight-figures', 'A 7-region insight shows 5 region lines and "and 2 more regions"; Show me still marks all 7', function (a) {
+      sample();
+      window.T_INSIGHTS.withRule({ id: 'x-test-seven' }, sevenRegions, function () {
+        var x = TAP.insights.all().filter(function (i) { return i.ruleId === 'x-test-seven'; })[0];
+        function check(box, where) {
+          a.ok(box, where + ': the insight is open');
+          if (!box) return;
+          a.equal(qsa('[data-part="figline"]', box).length, 5, where + ': five region lines');
+          a.equal(txt(box.querySelector('[data-part="figmore"]')), TAP.content.text('panel.figuresMore', { n: 2 }), where + ': then the rest counted');
+          a.equal(TAP.content.text('panel.figuresMore', { n: 2 }), 'and 2 more regions', 'the wording');
+        }
+        inPanel('ov-ambition', x.id, function (box) { check(box && box.querySelector('.tap-panel__figures'), 'panel'); });
+        onPage(x.id, function (box) { check(box, 'Insights page'); });
+        a.equal(TAP.panelInsights.target(x, 'ov-ambition').regionIds.length, 7, 'Show me names all 7 regions');
+      });
+    });
+
+    T.test('X-d121-insight-figures', 'A one-region insight with two figures looks as before: one row per figure', function (a) {
+      sample();
+      var x = TAP.insights.all().filter(function (i) { return i.id === 'outlier:nb.hitRate:ceu'; })[0];
+      a.ok(x && x.figures.length === 2, 'the planted hit rate outlier has two figures');
+      inPanel('nb-levers', x.id, function (box) {
+        var figs = box && box.querySelector('.tap-panel__figures');
+        a.equal(figs ? qsa('dt', figs).length : 0, 2, 'two rows');
+        a.equal(figs ? qsa('[data-part="figline"]', figs).length : -1, 0, 'no region lines');
+      });
     });
   });
 

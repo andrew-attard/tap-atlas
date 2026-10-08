@@ -60,7 +60,7 @@
       withView(function (root) { a.equal(txt(root.querySelector('h1')), TITLE, 'the question is the title'); });
     });
 
-    T.test('TPV-TC-680', 'The view has a lead line, and its headline is the top attached insight unless the first panel leads with it (D83)', function (a) {
+    T.test('TPV-TC-680', 'The view has a lead line, and its headline is the top attached insight, the first panel\u2019s too (D120)', function (a) {
       load();
       var c = TAP.store.get().cmp, best = TAP.viewHead.headline(VIEW, c);
       withView(function (root) {
@@ -68,12 +68,10 @@
         a.equal(txt(root.querySelector('.tap-vh__kicker')), 'Outlook', 'the kicker names the view');
         var line = root.querySelector('.tap-vh__headline');
         a.ok(line, 'the header has a headline slot');
-        var first = TAP.reports.get(REPORTS[0]) ? TAP.panelInsights.get(c, REPORTS[0]).top : null;
-        if (best && first && first.sentence === best.sentence) a.ok(line.hidden, 'the first panel leads with the same sentence: no headline line');
-        else if (best) a.equal(txt(line.querySelector('.tap-vh__headline-text')), best.sentence, 'the top insight');
+        if (best) a.equal(txt(line.querySelector('.tap-vh__headline-text')), best.sentence, 'the top insight');
         else a.ok(line.hidden, 'no insight attached: no headline line');
       });
-      // With an insight attached to a later panel, the headline shows it; when the first panel leads with it, it is left out
+      // An insight attached to a later panel is the headline; so is one on the first panel, which has no takeaway (D120)
       var keepRanked = TAP.insights.ranked, keepTop = TAP.insights.top, on = 'ol-revenue';
       var fake = { id: 'x:1', ruleId: 'x', family: 'outlook', sentence: 'A planted sentence for the headline.', figures: [], description: '',
         regionIds: [], industryIds: [], accountIds: [], significance: 0.9, sources: [], attach: [], highlight: {}, fallback: 'details' };
@@ -84,7 +82,7 @@
           a.equal(txt(root.querySelector('.tap-vh__headline-text')), fake.sentence, 'an insight on a later panel is the headline');
         });
         on = REPORTS[0];
-        withView(function (root) { a.ok(root.querySelector('.tap-vh__headline').hidden, 'repeating the first panel’s takeaway: left out (D83)'); });
+        withView(function (root) { a.equal(txt(root.querySelector('.tap-vh__headline-text')), fake.sentence, 'an insight on the first panel is the headline too (D120)'); });
       } finally { TAP.insights.ranked = keepRanked; TAP.insights.top = keepTop; }
     });
 

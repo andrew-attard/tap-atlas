@@ -381,8 +381,8 @@
       });
     });
 
-    // D83: a headline that repeats the first panel's takeaway word for word is left out; a different one stays
-    T.test('X-review-POL-head', 'The headline is left out when it is the first panel\'s takeaway, and shown when it differs (D83)', function (a) {
+    // D83 left out a headline that repeated the first panel's takeaway; D120 removed the takeaway, so it always shows
+    T.test('X-review-POL-head', 'The headline shows the top insight, whichever panel it belongs to (D120)', function (a) {
       var reports = window.TAP_VIEWS.customers.reports;
       function lineFor(list) {
         return withFakeInsights(list, function () {
@@ -392,7 +392,8 @@
         });
       }
       var same = lineFor([fake('first:1', 'exposure', 0.8, reports[0]), fake('other:1', 'plan', 0.5, reports[1])]);
-      a.ok(same.hidden, 'the most significant insight leads the first panel: no headline line');
+      a.ok(!same.hidden, 'the most significant insight is on the first panel: the headline shows it');
+      a.equal(same.text, 'Sentence first:1.', 'with its sentence');
       var differs = lineFor([fake('first:1', 'exposure', 0.5, reports[0]), fake('other:1', 'plan', 0.8, reports[1])]);
       a.ok(!differs.hidden, 'an insight from another panel: the headline shows');
       a.equal(differs.text, 'Sentence other:1.', 'with its sentence');
