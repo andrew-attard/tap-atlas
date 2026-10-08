@@ -124,7 +124,8 @@
       if (!TAP.custom || TAP.custom.__stub) throw new Skip('custom', c.measure);
       def = TAP.custom.definition(c);
       if (!isObj(def) || def.errors) throw new Skip('custom', c.measure);
-      if (c.type && step.type == null) step = Object.assign({}, step, { type: c.type });
+      // The type as the definition reads it (an older 'dot' draws as bars, D140), unless the step names its own
+      if (def.spec && def.spec.type && step.type == null) step = Object.assign({}, step, { type: def.spec.type });
     }
     if (!/^custom:/.test(String(def.id)) || TAP.reports.validate(def).length) throw new Skip('custom', def.id);
     return { kind: 'custom', reportId: def.id, def: def, title: step.title || plainTitle(def),

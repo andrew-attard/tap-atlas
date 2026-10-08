@@ -382,6 +382,7 @@
       ask.focus();
       click(ask);
       a.equal(document.activeElement, qs('[data-control="custom-ask"] button[data-value="years"]', b.host), 'the question pressed');
+      click(qs('[data-control="custom-ask"] button[data-value="one"]', b.host));   // the hit rate has no plan years: back to one region
       var r = radioOf(b.host, 'nb.hitRate');
       r.focus();
       b.pick('nb.hitRate');
@@ -441,7 +442,8 @@
       recordReady ? scene(function (a, s) {
         TAP.present.clearRecorded();
         try {
-          var p = s.panel(TAP.custom.definition({ ask: 'one', measure: 'nb.hitRate', by: 'industry', region: 'bravo' }));
+          var def = TAP.custom.definition({ ask: 'one', measure: 'nb.hitRate', by: 'industry', region: 'bravo' });
+          var p = s.panel(def, { cmp: def.cmp });   // as the builder draws it: fixed to its region
           click(qs('[data-action="more"]', p.el));
           click(qs('[data-action="record"]', p.el));
           var step = TAP.present.recorded()[0];
