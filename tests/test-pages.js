@@ -254,23 +254,25 @@
 
     /* ---------- US-1.6.1: the Guide page (#37) ---------- */
 
-    T.test('TPV-TC-172', 'The Guide has its sections with a contents list at the top that jumps to each', function (a) {
+    T.test('TPV-TC-172', 'The Guide has its sections with a contents list beside them that jumps to each (D139)', function (a) {
       withGuide(function (root) {
         var g = TAP.content.guide();
-        var links = qsa('.tap-guide__toc button', root);
-        // Sections added through TAP.guideExtras join the contents list after the Guide's own (ARCHITECTURE 18.1);
-        // there is no glossary section (D98)
-        var own = g.contents.map(function (c) { return c.title; }), added = (TAP.guideExtras || []).map(function (x) { return x.title; });
-        a.deepEqual(links.map(txt), own.concat(added), 'contents list titles, in order');
+        // D139: the contents list names the two parts and links every section; sections added through
+        // TAP.guideExtras join the first part after the Guide's own (ARCHITECTURE 18.1); no glossary section (D98)
+        a.deepEqual(qsa('.tap-guide__tocpart', root).map(txt), g.contents.map(function (c) { return c.title; }), 'the two parts, in order');
+        var added = (TAP.guideExtras || []).map(function (x) { return x.title; });
+        var titles = g.howTo.sections.map(function (s) { return s.title; }).concat(added, g.planning.sections.map(function (s) { return s.title; }));
+        var links = qsa('.tap-guide__tocitem', root);
+        a.deepEqual(links.map(txt), titles, 'every section title, in order');
         var secs = qsa('.tap-guide__sec', root).map(function (n) { return n.getAttribute('data-guide'); });
-        var extra = (TAP.guideExtras || []).map(function (x) { return x.id; });
-        a.deepEqual(secs, ['howTo', 'planning'].concat(extra), 'how to use, planning explained, then the added sections');
+        a.deepEqual(secs, ['howTo', 'planning'], 'how to use, then planning explained');
         var toc = root.querySelector('.tap-guide__toc');
         a.ok(toc.compareDocumentPosition(root.querySelector('.tap-guide__sec')) & Node.DOCUMENT_POSITION_FOLLOWING, 'contents come first');
-        links[1].click();
-        a.equal(document.activeElement, root.querySelector('[data-guide="planning"] h2'), 'the second link moves to planning explained');
-        links[0].click();
-        a.equal(document.activeElement, root.querySelector('[data-guide="howTo"] h2'), 'the first link moves to How to use this app');
+        var plan = g.planning.sections[0].id, first = g.howTo.sections[0].id;
+        root.querySelector('.tap-guide__tocitem[data-target="' + plan + '"]').click();
+        a.equal(document.activeElement, root.querySelector('[data-part="' + plan + '"] h3'), 'a planning link moves to its section');
+        root.querySelector('.tap-guide__tocitem[data-target="' + first + '"]').click();
+        a.equal(document.activeElement, root.querySelector('[data-part="' + first + '"] h3'), 'the first link moves to the first section');
       });
     });
 
