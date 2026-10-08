@@ -459,9 +459,12 @@
     function px(node, prop) { return parseFloat(getComputedStyle(node)[prop]); }
 
     T.test('X-int-qa7-card-notes', 'QA-7: the card notes on how figures combine, and partial notes, are body text (16 px)', function (a) {
-      withApp(function (root) {
-        TAP.store.set({ cmp: { mode: 'one', focus: 'ceu' } });
-        var how = root.querySelectorAll('.tap-ov-card__how'), part = root.querySelectorAll('.tap-ov-card__partial');
+      withApp(function () {
+        // The Overview always shows every region (D118), so the cards for a focus region are drawn on their own
+        var host = T.dom.mount();
+        host.className = 'tap-ov-cards';
+        TAP.overviewCards.render(host, Object.assign(TAP.store.defaults().cmp, { mode: 'one', focus: 'ceu' }));
+        var how = host.querySelectorAll('.tap-ov-card__how'), part = host.querySelectorAll('.tap-ov-card__partial');
         a.ok(how.length > 0 && part.length > 0, 'both notes are on screen (Central Europe has no customer growth)');
         Array.prototype.forEach.call(how, function (n) { a.ok(px(n, 'fontSize') >= 16, 'how-combined note at ' + px(n, 'fontSize') + ' px'); });
         Array.prototype.forEach.call(part, function (n) { a.ok(px(n, 'fontSize') >= 16, 'partial note at ' + px(n, 'fontSize') + ' px'); });

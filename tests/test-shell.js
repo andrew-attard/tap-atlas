@@ -614,7 +614,7 @@
     T.test('X-compare-rest-one-control', 'D50: the others are shown Individually, as their Average or their Total, from one control', function (a) {
       run(function () {
         var root = startApp();
-        TAP.store.set({ cmp: { mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'average' } });
+        TAP.store.set({ view: 'industry', cmp: { mode: 'one', focus: 'charlie', restAs: 'combined', restAgg: 'average' } });   // not the Overview (D118)
         var opts = qsa('[data-picker="rest"] .tap-seg__opt', root);
         a.deepEqual(opts.map(txt), ['Individually', 'Average', 'Total'], 'three options, in this order');
         var pressed = function () { return qsa('[data-picker="rest"] [aria-pressed="true"]', root).map(function (b) { return b.getAttribute('data-value'); }); };

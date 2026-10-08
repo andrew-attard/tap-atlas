@@ -194,9 +194,9 @@
     T.test(ID, 'A presentation step with pair becomes a selection of the two', function (a) {
       try {
         var res = TAP.presentSteps.check([
-          { report: 'ov-ambition', cmp: { mode: 'pair', focus: 'delta', second: 'alpha' } },
-          { report: 'ov-ambition', cmp: { mode: 'pair', focus: 'charlie' } },
-          { report: 'ov-ambition', cmp: { mode: 'pair', focus: 'bravo', second: 'bravo' } }
+          { report: 'nb-levers', cmp: { mode: 'pair', focus: 'delta', second: 'alpha' } },
+          { report: 'nb-levers', cmp: { mode: 'pair', focus: 'charlie' } },
+          { report: 'nb-levers', cmp: { mode: 'pair', focus: 'bravo', second: 'bravo' } }
         ]);
         a.deepEqual(res.skipped, [], 'none is skipped');
         a.deepEqual(res.ok.map(function (s) { return [s.cmp.mode, s.cmp.set]; }),
@@ -214,7 +214,7 @@
     T.test(ID, 'A stored recorded pair step becomes a selection of the two; the recorder never writes pair', function (a) {
       TAP.data.load(sample());
       try {
-        TAP.storage.set('runningOrder.recorded', [{ report: 'ov-ambition', cmp: { mode: 'pair', focus: 'mea', second: 'na' } }]);
+        TAP.storage.set('runningOrder.recorded', [{ report: 'nb-levers', cmp: { mode: 'pair', focus: 'mea', second: 'na' } }]);
         var res = TAP.presentSteps.check(TAP.presentRecord.recorded());
         a.deepEqual([res.ok[0].cmp.mode, res.ok[0].cmp.set], ['set', ['na', 'mea']], 'played as a selection of both');
         var host = T.dom.mount(), extra = TAP.guideExtras.filter(function (x) { return x.id === 'runningOrder'; })[0];
@@ -332,7 +332,9 @@
         a.equal(txt(live), 'Showing all 4 regions side by side', 'all regions');
         clickMode(root, 'set');
         a.equal(txt(live), 'Showing Region A only', 'follows the mode change');
-        var shownText = qsa('*', bar).filter(function (n) { return visible(n) && /Showing/.test(n.textContent); });
+        var shownText = qsa('*', bar).filter(function (n) {
+          return visible(n) && Array.prototype.some.call(n.childNodes, function (c) { return c.nodeType === 3 && /Showing/.test(c.textContent); });
+        });
         a.deepEqual(shownText.map(txt), [], 'no visible "Showing..." text in the bar');
       });
     });
@@ -382,7 +384,9 @@
         TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });
         [1536, 1280, 1024, 853].forEach(function (w) {
           screen(root, w);
-          a.ok(bar.scrollWidth <= bar.clientWidth + 1 && root.scrollWidth <= root.clientWidth + 1, w + ' px: no horizontal scroll');
+          var wide = qsa('*', bar).filter(function (n) { return visible(n) && rect(n).right > rect(bar).right + 1; });
+          a.ok(bar.scrollWidth <= bar.clientWidth + 1, w + ' px: the bar does not scroll sideways');
+          a.deepEqual(wide.map(function (n) { return n.className; }), [], w + ' px: nothing runs past the bar');
           a.ok([b.data, b.present, b.tour].every(function (n) { return rect(n).right <= rect(bar).right + 1; }), w + ' px: every button inside the bar');
           a.ok(sameRow(b.data, b.present) && sameRow(b.present, b.tour), w + ' px: the three stay together');
           a.ok(sameRow(b.data, mode) || rect(b.data).top >= rect(mode).bottom - 1, w + ' px: beside the modes or below them');
