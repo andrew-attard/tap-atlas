@@ -259,8 +259,9 @@
         a.equal(r.recap.filter(function (it) { return it.type !== 'arr' && it.type !== 'services'; }).length, 0, r.id + ' recap keeps its two types');
         a.ok(r.revenue !== r.recap && r.booksValue !== r.recap && r.revenue !== r.booksValue, 'three separate lists');
       });
-      // The figures recorded before Phase 4 still hold: the organization's three-year ARR ambition
-      a.equal(X.org['amb.arr'], 70950.5);
+      // The figures recorded before Phase 4 still hold: the organization's three-year ARR ambition (70,950.5 until D112's
+      // S03 raised Latin America's new business years 2 and 3 by 1,261.0)
+      a.equal(X.org['amb.arr'], 72211.5);
     });
 
     T.test('TPV-TC-645', 'In the sample, a value from each new part traces to its region file, sheet and cell', function (a) {
@@ -464,9 +465,14 @@
     T.skip('TPV-TC-666', 'The generator run twice gives identical files that match the committed sample data',
       'Run as "sample data reproducible" in scripts/verify.sh and in CI (node tools/generate-sample-data.js --check)');
 
-    T.test('X-p4-sample-figures-kept', 'The figures the sample had before Phase 4 are unchanged', function (a) {
-      a.equal(X.headline.ambArr, 70950.5);
-      a.equal(X.org['nb.arr'], 45822.3);
+    // D112's S03 grows Latin America's new business rows 45% into year 2 and 30% into year 3: its three-year new
+    // business ARR is year 1 (1,440.2) x (1 + 1.45 + 1.45 x 1.3) = 6,243.2 (rounded by row), 1,261.0 more than the 4,982.2
+    // before, so the organization's totals move by the same amount and nothing else does
+    T.test('X-p4-sample-figures-kept', 'The figures the sample had before Phase 4 are unchanged, but for D112’s S03', function (a) {
+      a.equal(X.totals.latam['nb.arr.y1'], 1440.2, 'Latin America’s year 1 is unchanged');
+      a.equal(X.totals.latam['nb.arr'], 6243.2, 'Latin America’s three years: 4,982.2 + 1,261.0');
+      a.equal(X.headline.ambArr, 72211.5, '70,950.5 + 1,261.0');
+      a.equal(X.org['nb.arr'], 47083.3, '45,822.3 + 1,261.0');
       a.equal(X.totals.na['nb.arr'], 11218.6);
       a.equal(X.q01.share, 0.399652);
       a.equal(X.p10.ratio, 4);

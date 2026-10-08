@@ -27,7 +27,7 @@
   function attachesNb(r) { return (r.attach || []).some(function (id) { return /^nb-/.test(id); }); }
   function rules() { return (window.TAP_RULES || {}).rules || []; }
   // TPV-TC-327 waits for the Phase 1 new business rules themselves to attach here (US-2.5.6).
-  var NB_RULES = ['outlier', 'noPipeline', 'winsVsPeers'];
+  var NB_RULES = ['outlier', 'industryCover', 'winsVsPeers'];   // industryCover replaces noPipeline (D112)
   function nbRulesMoved() {
     return NB_RULES.every(function (id) { var r = rules().filter(function (x) { return x.id === id; })[0]; return !!r && attachesNb(r); });
   }

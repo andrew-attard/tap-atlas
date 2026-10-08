@@ -3,7 +3,8 @@
  * Purpose: Tests for each insight rule against the planted cases in docs/PLANTED-CASES.md.
  *          Expected figures come from window.SAMPLE_EXPECT, never from the rules' own output.
  * Provides: test cases for INSIGHTS stories (#47 to #53): TPV-TC-144 to 147, 149 to 151, 153 to 165 X-rules-*
- *           (TPV-TC-198 is in tests/test-guardrails.js)
+ *           (TPV-TC-198 is in tests/test-guardrails.js); the D112 rules (#521): X-d112-industryCover,
+ *           X-d112-priorityVsPlan, X-d112-servicesDelivery, X-d112-partnerLoad
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-insights.js (T_INSIGHT_SHAPE), the app scripts,
  *             data/sample-plan-data.js, tests/fixtures/sample-expected.js
  * Used by: tests.html
@@ -43,15 +44,16 @@
       has: ['Central Europe rates its', 'expertise', 'Manufacturing holds its largest current ARR (' + F.money(X.p05.currentArr) + ')'] },
     { p: 'P06', id: 'tierVsPipeline:seu:retail', regions: ['seu'],
       has: ['Southern Europe placed Retail in Tier 3', F.pct(X.p06.share) + ' of the region', F.money(X.p06.pipelineTotal)] },
-    { p: 'P07', id: 'priorityNoPipeline:mea:hospitality', regions: ['mea'],
-      sentence: 'Middle East & Africa placed Hospitality in Tier 2, with no pipeline there yet. Worth discussing how that pipeline will be built.' },
+    // D112: a Tier 2 industry with no pipeline and no goal there has nothing to cover, so P07 now gives no insight
+    { p: 'P07', id: 'industryCover:mea:hospitality', absent: true },
     { p: 'P08', id: 'outlier:nb.hitRate:ceu', regions: ['ceu'],
       sentence: 'Central Europe plans a 35% hit rate, more than twice the average of the other regions (15%).' },
     { p: 'P09', id: 'outlier:nb.avgDealSize:latam', regions: ['latam'],
       has: ['Latin America plans an average deal size of ' + F.money(X.p09.value), 'higher than any other region', F.money(X.p09.othersAvg)] },
     { p: 'P10', id: 'pipelineCover:latam', regions: ['latam'],
       has: ['Latin America', F.money(X.p10.nbY1) + ') is ' + X.p10.ratio + '× the pipeline', F.money(X.p10.pipeline12m)] },
-    { p: 'P11', id: 'noPipeline:apac:transport', regions: ['apac'], has: ['Asia Pacific plans new business in Transportation', 'no pipeline yet'] },
+    { p: 'P11', id: 'industryCover:apac:transport', regions: ['apac'],
+      sentence: 'Asia Pacific’s year-1 goal in Transportation (' + F.money(X.s01.none.goal) + ') has no pipeline behind it yet.' },
     { p: 'P12', id: 'winsVsPeers:na', regions: ['na'],
       has: ['North America', 'about 3×', '(' + F.num(X.p12.value, { decimals: 0 }) + ' against ' + F.num(X.p12.othersAvg, { decimals: 0 }) + ')'] },
     { p: 'P13', id: 'concentration:na', regions: ['na'], has: [F.pct(X.p13.share) + ' of North America', 'in 3 accounts', 'one of them flagged high risk'] },
@@ -69,6 +71,7 @@
 
   function check(a, c) {
     var x = get(c.id);
+    if (c.absent) { a.ok(!x, c.p + ' gives no ' + c.id); return; }
     a.ok(x, c.p + ' produces ' + c.id);
     if (!x) return;
     if (c.sentence) a.equal(x.sentence, c.sentence, c.p + ' sentence');
@@ -139,15 +142,18 @@
       a.equal(figure(x, 'ind.currentArr').cell.v, X.p05.currentArr);
     });
 
+    // D112: a Tier 1 or 2 industry with no pipeline is industryCover's 'no pipeline yet' variant, when a goal sits there
     T.test('TPV-TC-151', 'Tier 3 with a large pipeline share and Tier 2 with no pipeline both appear, with correct figures', function (a) {
       sample();
       var x = get('tierVsPipeline:seu:retail');
       check(a, planted('P06'));
       a.equal(figure(x, 'ind.pipeline').cell.v, X.p06.pipelineTotal);
       a.equal(figure(x, 'base.pipeline').cell.v, X.p06.regionPipeline, 'the region pipeline counts every row');
+      check(a, planted('P11'));
+      a.equal(figure(get('industryCover:apac:transport'), 'ind.pipeline').cell.v, X.p11.pipelineTotal, 'Tier 2 with no pipeline');
+      a.equal(X.p11.tier, 2, 'Asia Pacific placed Transportation in Tier 2');
       check(a, planted('P07'));
-      a.equal(figure(get('priorityNoPipeline:mea:hospitality'), 'ind.pipeline').cell.v, X.p07.pipelineTotal);
-      a.ok(get('priorityNoPipeline:apac:transport'), 'P11 overlaps: Asia Pacific Transportation is Tier 2 with no pipeline');
+      a.ok(!window.TAP_RULES.rules.some(function (r) { return r.id === 'priorityNoPipeline'; }), 'the retired rule is gone');
     });
 
     T.test('X-rules-judgement-questions', 'Judgement insights end as an open point worth discussing (D51) and point at the region and industry', function (a) {
@@ -254,13 +260,16 @@
       a.equal(x.reportId, 'ov-ambition', 'Show me opens the ambition chart');
     });
 
+    // D112: industryCover replaces noPipeline; the planted case is its 'no pipeline yet' variant
     T.test('TPV-TC-158', 'Planted ambition in an industry with no pipeline gives an insight', function (a) {
       sample();
-      var x = get('noPipeline:apac:transport');
+      var x = get('industryCover:apac:transport');
       check(a, planted('P11'));
       a.equal(figure(x, 'ind.pipeline').cell.v, X.p11.pipelineTotal);
-      a.ok(figure(x, 'ind.nb.arr').cell.v > 0, 'new business is planned there');
-      a.ok(!get('noPipeline:mea:hospitality'), 'P07 has no new business rows, so this rule stays quiet');
+      a.near(figure(x, 'ind.nb.arr').cell.v, X.s01.none.goal, 1e-6, 'the year-1 goal planned there');
+      a.equal(figure(x, 'ind.nb.arr').cell.src.year, 1, 'traced to plan year 1');
+      a.ok(!get('industryCover:mea:hospitality'), 'P07 has no new business rows, so this rule stays quiet');
+      a.ok(!window.TAP_RULES.rules.some(function (r) { return r.id === 'noPipeline'; }), 'the retired rule is gone');
     });
 
     T.test('TPV-TC-159', 'A planted region needing far more implied wins than peers gives a pool-coverage insight', function (a) {
@@ -319,6 +328,182 @@
       var x = get('concentration:na'), ids = region('na').customerGrowth.accounts.map(function (c) { return c.id; });
       a.ok(x, 'still found');
       x.accountIds.forEach(function (id) { a.ok(x.sentence.indexOf('Account ' + (ids.indexOf(id) + 1)) >= 0, 'uses the label for ' + id); });
+    });
+  });
+
+  /* ---------- D112: goals against pipeline, priorities against plan, sales against delivery (#521) ---------- */
+  // Figures are the generator's own (SAMPLE_EXPECT.s01 to s04, worked out from the raw rows), or hand-worked below.
+  T.suite('rules-d112', function () {
+    function cfg(id) { return window.TAP_RULES.rules.filter(function (r) { return r.id === id; })[0]; }
+    // Runs fn with one rule's params changed, then puts them back
+    function withParams(id, change, fn) {
+      var r = cfg(id), keep = JSON.parse(JSON.stringify(r.params));
+      Object.assign(r.params, change);
+      TAP.insights.reset();
+      try { fn(); } finally { r.params = keep; TAP.insights.reset(); }
+    }
+    function nbRows(p, r, ind) { return p.regions.filter(function (x) { return x.id === r; })[0].newBusiness.filter(function (x) { return x.industryId === ind; }); }
+    function mcOf(p, r, ind) { return p.regions.filter(function (x) { return x.id === r; })[0].marketCoverage.filter(function (x) { return x.industryId === ind; })[0]; }
+    var BANNED = window.TAP_RULES.wording.banned;
+    function neutral(a, text, what) {
+      BANNED.forEach(function (w) { a.ok(!new RegExp('(^|[^A-Za-z])' + w + '([^A-Za-z]|$)', 'i').test(text), what + ' avoids "' + w + '"'); });
+    }
+    function common(a, id, family, attach) {
+      var r = cfg(id);
+      a.ok(r, id + ' is configured');
+      a.equal(r.family, family, id + ': family');
+      a.deepEqual(r.attach, attach, id + ': attaches to ' + attach.join(', '));
+      a.ok(typeof r.why === 'string' && r.why.length > 20, id + ' says why it matters');
+      neutral(a, r.why + ' ' + r.template + ' ' + JSON.stringify(r.templates || {}), id + '’s wording');
+      ofRule(id).forEach(function (x) { neutral(a, x.sentence, x.id); window.T_INSIGHT_SHAPE(a, x); });
+    }
+
+    T.test('X-d112-industryCover', 'A priority industry’s year-1 goal well above its pipeline gives one insight per region and industry', function (a) {
+      sample();
+      var S = X.s01, c = S.case, x = get('industryCover:' + c.region + ':' + c.industry);
+      common(a, 'industryCover', 'realism', ['ind-tiers', 'ind-quad', 'nb-industries']);
+      a.ok(x, 'Latin America’s Retail goal is flagged');
+      if (!x) return;
+      // Hand-worked: 259.6 / 22 = 11.8
+      a.equal(x.sentence, 'Latin America’s year-1 goal in Retail (' + F.money(c.goal) + ') is 11.8× the pipeline it created there in the last 12 months (' +
+        F.money(c.pipeline12m) + ').');
+      a.near(figure(x, 'ind.nb.arr').cell.v, c.goal, 1e-6, 'the year-1 goal');
+      a.equal(figure(x, 'ind.nb.arr').cell.src.year, 1, 'traced to plan year 1');
+      a.equal(figure(x, 'ind.pipeline').cell.v, c.pipeline, 'the whole pipeline');
+      a.equal(figure(x, 'ind.pipeline12m').cell.v, c.pipeline12m, 'created in the last 12 months');
+      a.equal(x.reportId, 'ind-tiers', 'Show me opens the tier grid');
+      a.equal(x.highlight.mark, 'cell', 'on the region’s cell');
+      a.deepEqual(x.industryIds, ['retail']);
+      a.deepEqual(ofRule('industryCover').map(function (i) { return i.id.slice(14); }).sort(),
+        S.fired.map(function (f) { return f.key; }).sort(), 'the same findings as the generator works out from the rows');
+      S.fired.forEach(function (f) {
+        var i = get('industryCover:' + f.key);
+        a.ok(i && (f.variant === 'created' ? !/whole|no pipeline/.test(i.sentence) : i.sentence.indexOf(f.variant === 'none' ? 'no pipeline behind it' : 'above its whole pipeline') >= 0),
+          f.key + ' reads as its ' + f.variant + ' variant');
+      });
+      // Above the whole pipeline: hand-worked 251.6 > 138
+      a.equal(get('industryCover:mea:ifm').sentence, 'Middle East & Africa’s year-1 goal in Facility Services (€251.6k) is above its whole pipeline there (€138k).');
+      a.equal(S.byVariant.none + S.byVariant.above + S.byVariant.created, S.fired.length);
+    });
+
+    T.test('X-d112-industryCover', 'Just under each threshold, industryCover stays quiet; a blank pipeline is not zero', function (a) {
+      var c = X.s01.case;
+      // 5x the pipeline created in 12 months: just above 1/5 of the goal is under 5x; exactly 1/5 is 5x
+      sample(function (p) { mcOf(p, c.region, c.industry).pipelineCreated12m = c.goal / 5 + 0.1; });
+      a.ok(!get('industryCover:latam:retail'), 'just under 5x: quiet');
+      sample(function (p) { mcOf(p, c.region, c.industry).pipelineCreated12m = c.goal / 5; });
+      a.ok(get('industryCover:latam:retail'), 'at 5x: flagged');
+      // Above the whole pipeline (Northern Europe's Financial Services, 2.6x in 12 months): a pipeline just over the goal is quiet
+      var nf = X.s01.fired.filter(function (f) { return f.key === 'neu:finance'; })[0];
+      a.equal(nf.variant, 'above', 'Northern Europe’s Financial Services goal is above its whole pipeline');
+      sample(function (p) { mcOf(p, 'neu', 'finance').pipelineTotal = nf.goal + 0.1; });
+      a.ok(!get('industryCover:neu:finance'), 'a pipeline just over the goal: quiet');
+      sample(function (p) { mcOf(p, 'neu', 'finance').pipelineTotal = nf.goal - 0.1; });
+      a.ok(get('industryCover:neu:finance'), 'a goal just above the pipeline: flagged');
+      // The goal floor (25k): Asia Pacific's Transportation goal is one row
+      sample(function (p) { var r = nbRows(p, 'apac', 'transport')[0]; r.arrPotential = [24.9].concat(r.arrPotential.slice(1)); });
+      a.ok(!get('industryCover:apac:transport'), 'a goal of €24.9k: under the floor');
+      sample(function (p) { var r = nbRows(p, 'apac', 'transport')[0]; r.arrPotential = [25].concat(r.arrPotential.slice(1)); });
+      a.ok(get('industryCover:apac:transport'), 'a goal of €25k: flagged');
+      sample(function (p) { mcOf(p, 'apac', 'transport').pipelineTotal = null; });
+      a.ok(!get('industryCover:apac:transport'), 'a blank pipeline is not zero');
+      a.deepEqual(TAP.insights.failures(), [], 'no rule failed');
+    });
+
+    T.test('X-d112-priorityVsPlan', 'A priority with little of its regions’ new business plan behind it gives an insight', function (a) {
+      sample();
+      var S = X.s02.fired[0], x = get('priorityVsPlan:' + S.industry);
+      common(a, 'priorityVsPlan', 'priorities', ['ind-tiers', 'nb-industries']);
+      a.ok(x, 'Manufacturing is flagged');
+      if (!x) return;
+      // Hand-worked: 1,035.8 of 34,553.5 is 3.0%
+      a.equal(x.sentence, 'Manufacturing is Tier 1 or 2 in 5 of 7 regions but holds 3% of their new business plan (' + F.money(S.amount) + ' of ' +
+        F.money(S.plan) + ').');
+      a.deepEqual(x.regionIds, S.regions, 'the regions placing it in Tier 1 or 2');
+      a.near(figure(x, 'ind.nb.arr').cell.v, S.amount, 0.05, 'its new business ARR in those regions');
+      a.near(figure(x, 'nb.arr').cell.v, S.plan, 0.05, 'their whole new business ARR');
+      a.equal(x.reportId, 'ind-tiers');
+      a.equal(x.highlight.mark, 'industryRow');
+      a.deepEqual(ofRule('priorityVsPlan').map(function (i) { return i.id; }), ['priorityVsPlan:manufacturing'], 'the only one on the sample');
+      a.equal(get('consensus:education').sentence, 'Education is Tier 1 or 2 in 6 of 7 regions.', 'consensus is unchanged');
+      a.equal(get('consensus:manufacturing').sentence, 'Manufacturing is Tier 1 or 2 in 5 of 7 regions.', 'and reads Manufacturing too');
+    });
+
+    T.test('X-d112-priorityVsPlan', 'Just under each threshold, priorityVsPlan stays quiet; a group priority has its own wording', function (a) {
+      var S = X.s02.fired[0];
+      sample();
+      withParams('priorityVsPlan', { maxShare: S.share - 0.0001 }, function () { a.ok(!get('priorityVsPlan:manufacturing'), 'a threshold just under its share: quiet'); });
+      withParams('priorityVsPlan', { maxShare: S.share + 0.0001 }, function () { a.ok(get('priorityVsPlan:manufacturing'), 'just above: flagged'); });
+      // 4 of 7 is under the consensus share (5 of 7)
+      sample(function (p) { mcOf(p, 'apac', 'manufacturing').tier = 3; });
+      a.ok(!get('priorityVsPlan:manufacturing'), '4 of 7 regions: not a priority by consensus');
+      // Healthcare, a group priority, holds 10.5% of the plan (4,922.4 of 47,083.3): under an 11% threshold
+      sample();
+      var hc = X.s02.candidates.filter(function (c) { return c.industry === 'healthcare'; })[0];
+      withParams('priorityVsPlan', { maxShare: 0.11 }, function () {
+        a.equal((get('priorityVsPlan:healthcare') || {}).sentence, 'Healthcare is a group priority but holds 10% of the regions’ new business plan (' +
+          F.money(hc.amount) + ' of ' + F.money(hc.plan) + ').', 'the group priority variant');
+      });
+    });
+
+    T.test('X-d112-servicesDelivery', 'Services growing well beyond what partners deliver gives an insight', function (a) {
+      sample();
+      var S = X.s03.regions.latam, x = get('servicesDelivery:latam');
+      common(a, 'servicesDelivery', 'plan', ['pt-reliance', 'pt-books']);
+      a.ok(x, 'Latin America is flagged');
+      if (!x) return;
+      // Hand-worked: 782.4 / 489.5 = 1.598, so 60% more; 52.6 / 782.4 = 6.7%
+      a.equal(x.sentence, 'Latin America plans ' + F.money(S.y3) + ' of services in year 3, 60% more than in year 1 (' + F.money(S.y1) +
+        '); its partners deliver ' + F.money(S.delivered) + ' of it (7%), so the rest relies on the region’s own consultants.');
+      a.near(x.figures[0].cell.v, S.y1, 0.05, 'year 1');
+      a.near(x.figures[1].cell.v, S.y3, 0.05, 'year 3');
+      a.near(x.figures[2].cell.v, S.delivered, 0.05, 'what partners deliver in year 3');
+      a.equal(x.figures[2].cell.src.field, 'servicesFromPartners', 'traced to the partners’ own figures');
+      a.equal(x.reportId, 'pt-reliance');
+      a.equal(x.highlight.measureId, 'rc.all.services', 'Show me opens the services split');
+      a.deepEqual(ofRule('servicesDelivery').map(function (i) { return i.id; }), X.s03.fired.map(function (r) { return 'servicesDelivery:' + r; }));
+    });
+
+    T.test('X-d112-servicesDelivery', 'Just under each threshold, servicesDelivery stays quiet; no partner delivery figures, no insight', function (a) {
+      var S = X.s03.regions.latam;
+      sample();
+      withParams('servicesDelivery', { growth: S.growth + 0.001 }, function () { a.ok(!get('servicesDelivery:latam'), 'growth just under the threshold: quiet'); });
+      withParams('servicesDelivery', { growth: S.growth - 0.001 }, function () { a.ok(get('servicesDelivery:latam'), 'just over: flagged'); });
+      withParams('servicesDelivery', { partnerShare: S.share }, function () { a.ok(!get('servicesDelivery:latam'), 'a partner share at the threshold: quiet'); });
+      // With no thresholds at all, every region with partner delivery figures is flagged, and Central Europe (none, R10) never is
+      withParams('servicesDelivery', { growth: -1, partnerShare: 1.01 }, function () {
+        var ids = ofRule('servicesDelivery').map(function (i) { return i.regionIds[0]; }).sort();
+        a.deepEqual(ids, Object.keys(X.s03.regions).filter(function (r) { return X.s03.regions[r].delivered !== null; }).sort(), 'regions with partner delivery figures');
+        a.ok(ids.indexOf('ceu') < 0, 'Central Europe gives none');
+      });
+      sample(function (p) { p.regions.forEach(function (r) { r.partners.forEach(function (x) { delete x.servicesFromPartners; }); }); });
+      a.equal(ofRule('servicesDelivery').length, 0, 'a file without partner delivery: no insight');
+      a.deepEqual(TAP.insights.failures(), [], 'skipped quietly');
+    });
+
+    T.test('X-d112-partnerLoad', 'Partner order intake per partner salesperson far above the other regions gives an insight', function (a) {
+      sample();
+      var S = X.s04.regions.seu, x = get('partnerLoad:seu');
+      common(a, 'partnerLoad', 'shared', ['pt-capacity', 'pt-reliance']);
+      a.ok(x, 'Southern Europe is flagged');
+      if (!x) return;
+      // Hand-worked: 1,774.7 / 11 = 161.3 per person; 161.3 / 59.0 = 2.7
+      a.equal(x.sentence, 'Southern Europe plans ' + F.money(S.oi) + ' of year-1 order intake through partners with 11 partner sales staff, ' +
+        F.money(S.perPerson) + ' per person, 2.7× the other regions together (' + F.money(S.others) + ').');
+      a.near(x.figures[0].cell.v, S.oi, 0.05, 'year-1 order intake through partners and alliances');
+      a.equal(x.figures[1].cell.v, S.fteSales, 'partner sales staff');
+      a.equal(x.reportId, 'pt-capacity');
+      a.deepEqual(ofRule('partnerLoad').map(function (i) { return i.id; }), ['partnerLoad:seu'], 'the only one on the sample');
+      a.equal(ofRule('partnerCapacity').length, 1, 'partner capacity (Q05) still flags one partner: each partner’s total staff is unchanged');
+    });
+
+    T.test('X-d112-partnerLoad', 'Just under the threshold, partnerLoad stays quiet; it needs 3 regions', function (a) {
+      var S = X.s04.regions.seu;
+      sample();
+      withParams('partnerLoad', { ratio: S.ratio + 0.01 }, function () { a.ok(!get('partnerLoad:seu'), 'a threshold just over its ratio: quiet'); });
+      withParams('partnerLoad', { ratio: S.ratio - 0.01 }, function () { a.ok(get('partnerLoad:seu'), 'just under: flagged'); });
+      sample(function (p) { p.regions = p.regions.filter(function (r) { return r.id === 'seu' || r.id === 'na'; }); });
+      a.equal(ofRule('partnerLoad').length, 0, 'two regions: no comparison');
     });
   });
 })(window.TAP);
