@@ -3,8 +3,8 @@
  * Purpose: Tests for region cards, the Overview view and ambition chart, the headline, and the top insights for the
  *          organization as a whole (D119, superseding D92).
  *          TPV-TC-095 and 096 live with the engine tests (test-shapes.js, test-measures.js).
- * Provides: test cases for OVERVIEW stories (#29, #30, #31, #523, #529): TPV-TC-087, TPV-TC-099, X-overview-*, X-d119-*,
- *           X-d117-* (the cards answer "will it land?")
+ * Provides: test cases for OVERVIEW stories (#29, #30, #31, #529, #546): TPV-TC-087, TPV-TC-099, X-overview-*, X-d119-*,
+ *           X-d127-card-snapshot (the cards are a snapshot again), X-d117-cards-swatch (the split's swatches, kept)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini, sample, insights)
  * Used by: tests.html
  */
@@ -16,6 +16,7 @@
   var qsa = function (sel, root) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
   var txt = function (el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; };
   var NP = function () { return TAP.content.text('states.notProvided'); };
+  var SEGS = ['strategic', 'growth', 'core', 'scaled'];
 
   function sample() { TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA))); }
 
@@ -39,9 +40,7 @@
       return;
     }
     a.near(Number(f.getAttribute('data-v')), v, TOL, label + ' ' + measure + ' value');
-    // 'whole': a count of customers reads in whole numbers (implied wins are a product of a rate)
-    var want = unit === 'money' ? TAP.format.money(v) : unit === 'whole' ? TAP.format.num(v, { decimals: 0 }) : TAP.format.num(v);
-    a.equal(txt(f), want, label + ' ' + measure + ' text');
+    a.equal(txt(f), unit === 'money' ? TAP.format.money(v) : TAP.format.num(v), label + ' ' + measure + ' text');
   }
 
   // Swaps a function for a recorder for the length of fn, then puts it back.
@@ -51,11 +50,12 @@
     try { fn(calls); } finally { obj[name] = orig; }
   }
 
-  // D117: the card no longer carries tier counts, target accounts or segment counts.
-  function noOldLines(a, c, label) {
-    var old = qsa('[data-measure^="focus."], [data-measure="nb.targetAccounts"], [data-measure^="cg.segment."]', c);
-    a.equal(old.length, 0, label + ': no tier, target-account or segment figures');
-    a.equal(qsa('.tap-ov-card__focus, .tap-ov-card__pool, .tap-ov-card__customers', c).length, 0, label + ': no such lines');
+  // D127: the card no longer carries the strategic plan line, "Will it land?" or its "discuss" markers (D117).
+  function noLandParts(a, c, label) {
+    a.equal(qsa('.tap-ov-card__sp, .tap-ov-card__landtitle, .tap-ov-card__check, .tap-ov-card__others, .tap-ov-card__discuss', c).length, 0,
+      label + ': no strategic plan line, checks or markers');
+    a.equal(qsa('[data-measure^="sp."], [data-measure="nb.wins"], [data-measure="cg.top3Share"], [data-measure="cover.y1"]', c).length, 0,
+      label + ': none of their figures');
   }
 
   // A colour as the browser writes it, for comparing inline styles.
@@ -65,7 +65,7 @@
 
     /* ---------- US-1.5.1: plan at a glance, per region (#29) ---------- */
 
-    // D117: tier counts, target accounts and segment counts left the card; the profile's glance keeps them (TPV-TC-443).
+    // D127: tier counts, target accounts and segment counts are back on the card; "Will it land?" (D117) has left it.
     T.test('TPV-TC-087', 'Mini data: each card’s figures equal the hand calculation', function (a) {
       var X = window.TEST_EXPECT.mini.region, el = cards();
       // Services ambition by hand: A 451 + 50 = 501; B 400 + 12 = 412; D 712.5 + 92 = 804.5
@@ -76,8 +76,11 @@
         checkFig(a, el, r, 'nb.arr', e['nb.arr'], 'money', r);
         checkFig(a, el, r, 'cg.arr', e['cg.arr'], 'money', r);
         if (services[r]) checkFig(a, el, r, 'amb.services', services[r], 'money', r);
-        checkFig(a, el, r, 'nb.wins', e['nb.wins'], 'whole', r);
-        noOldLines(a, card(el, r), r);
+        checkFig(a, el, r, 'focus.tier1', e['focus.tier1'], 'count', r);
+        checkFig(a, el, r, 'focus.tier2', e['focus.tier2'], 'count', r);
+        checkFig(a, el, r, 'nb.targetAccounts', e['nb.targetAccounts'], 'count', r);
+        if (r !== 'charlie') SEGS.forEach(function (s) { checkFig(a, el, r, 'cg.segment.' + s, e['cg.segment.' + s], 'count', r); });
+        noLandParts(a, card(el, r), r);
       });
     });
 
@@ -87,8 +90,12 @@
       S.regions.forEach(function (r) {
         var e = S.totals[r];
         ['amb.arr', 'nb.arr', 'cg.arr', 'amb.services'].forEach(function (m) { checkFig(a, el, r, m, e[m], 'money', r); });
-        checkFig(a, el, r, 'nb.wins', e['nb.wins'], 'whole', r);
-        noOldLines(a, card(el, r), r);
+        ['focus.tier1', 'focus.tier2', 'nb.targetAccounts'].forEach(function (m) { checkFig(a, el, r, m, e[m], 'count', r); });
+        SEGS.forEach(function (s) {
+          var v = e['cg.segment.' + s];
+          if (v != null) checkFig(a, el, r, 'cg.segment.' + s, v, 'count', r);
+        });
+        noLandParts(a, card(el, r), r);
       });
     });
 
@@ -116,8 +123,8 @@
       a.ok(txt(list[1]).indexOf(TAP.agg.describe(amb)) >= 0, 'says how it was combined');
       checkFig(a, el, 'rest', 'amb.arr', window.TEST_EXPECT.mini.combined.restOfAlphaAverage['amb.arr'], 'money', 'rest of A');
       checkFig(a, el, 'rest', 'nb.arr', window.TEST_EXPECT.mini.combined.restOfAlphaAverage['nb.arr'], 'money', 'rest of A');
-      // The rest averages counts: implied wins (22 + 1 + 60) / 3 = 27.67, shown as 28 customers
-      checkFig(a, el, 'rest', 'nb.wins', 83 / 3, 'whole', 'rest of A');
+      // The rest averages counts: target accounts (50 + 15 + 100) / 3 = 55
+      checkFig(a, el, 'rest', 'nb.targetAccounts', 55, 'count', 'rest of A');
     });
 
     T.test('X-overview-card-org', 'Organization total: one dark-grey card with summed figures and the gaps named', function (a) {
@@ -127,8 +134,11 @@
       checkFig(a, el, 'org', 'amb.arr', X['amb.arr'], 'money', 'org');
       checkFig(a, el, 'org', 'nb.arr', X['nb.arr'], 'money', 'org');
       checkFig(a, el, 'org', 'cg.arr', X['cg.arr'].v, 'money', 'org');
-      // By hand from the per-region figures: implied wins 6 + 22 + 1 + 60
-      checkFig(a, el, 'org', 'nb.wins', 89, 'whole', 'org');
+      // By hand from the per-region figures: Tier 1 1+1+1+1, Tier 2 2+2+1+2, accounts 30+50+15+100, strategic 1+1+1 (C not provided)
+      checkFig(a, el, 'org', 'focus.tier1', 4, 'count', 'org');
+      checkFig(a, el, 'org', 'focus.tier2', 7, 'count', 'org');
+      checkFig(a, el, 'org', 'nb.targetAccounts', 195, 'count', 'org');
+      checkFig(a, el, 'org', 'cg.segment.strategic', 3, 'count', 'org');
       a.match(txt(card(el, 'org')), /Region C/, 'the region left out of customer growth is named');
     });
 
@@ -183,10 +193,9 @@
     T.test('X-overview-card-missing', 'A missing section reads "not provided", never 0, and a partial ambition says so (TPV-TC-090)', function (a) {
       var el = cards(), c = card(el, 'charlie');
       checkFig(a, el, 'charlie', 'cg.arr', null, 'money', 'C');
-      // D117: the growth-in-top-3-accounts check stands where the customers line was
-      checkFig(a, el, 'charlie', 'cg.top3Share', null, 'pct', 'C');
-      var top3 = qs('.tap-ov-card__check[data-check="top3"] .tap-ov-card__checkvalue', c);
-      a.equal(txt(top3).indexOf('0'), -1, 'no zero on the top-3 check');
+      var seg = qs('.tap-ov-card__segments', c);
+      a.equal(txt(seg).indexOf('0'), -1, 'no zero on the customers line');
+      a.ok(txt(seg).indexOf(NP()) >= 0, 'customers line reads not provided');
       a.ok(!!qs('.tap-ov-card__partial', c), 'partial note shown');
       a.match(txt(qs('.tap-ov-card__partial', c)), /customer growth/i, 'names the missing part');
       a.ok(!qs('.tap-ov-card__partial', card(el, 'alpha')), 'a complete ambition has no partial note');
@@ -461,33 +470,39 @@
     });
   });
 
-  /* ---------- D117 (#523, amends US-1.5.1): the cards answer "will it land?" ---------- */
+  /* ---------- D127 (#546, supersedes D117 except its swatches): the cards are a quick snapshot again ---------- */
 
-  T.suite('overview-land', function () {
-    function landCards(cmp) { sample(); TAP.store.reset(); TAP.insights.unhide(); return cards(cmp || { mode: 'all' }); }
-    function check(c, id) { return qs('.tap-ov-card__check[data-check="' + id + '"]', c); }
-    function value(c, id) { return qs('.tap-ov-card__checkvalue .tap-ov-fig', check(c, id)); }
-    function others(c, id) { return qs('.tap-ov-card__others .tap-ov-fig', check(c, id)); }
-    function markers(c) { return qsa('.tap-ov-card__discuss', c).map(function (b) { return b.getAttribute('data-rule'); }).sort(); }
-    var cardText = function (k, v) { return TAP.content.text('overview.cards.' + k, v); };
-    var RULES = ['spGap', 'pipelineCover', 'winsVsPeers', 'concentration'];
+  T.suite('overview-snapshot', function () {
+    function snapCards(cmp) { sample(); TAP.store.reset(); TAP.insights.unhide(); return cards(cmp || { mode: 'all' }); }
+    function line(c, part) { return qs('[data-part="' + part + '"]', c); }
 
-    T.test('X-d117-cards-land', 'North America: the plan against its strategic plan, in the spGap rule’s own figures', function (a) {
-      var el = landCards(), na = card(el, 'na'), P = window.SAMPLE_EXPECT.p4.regions;
-      var sp = qs('.tap-ov-card__sp .tap-ov-fig', na);
-      // By hand: plan 21,732.4 against strategic plan 23,170 over three years, 6.2% below
-      a.near(P.na.strategicPlan.variancePct3, -0.062046, 1e-6, 'the planted figure');
-      a.equal(sp.getAttribute('data-measure'), 'sp.variancePct', 'the spGap rule’s measure');
-      a.near(Number(sp.getAttribute('data-v')), P.na.strategicPlan.variancePct3, 1e-5, 'its value');
-      a.equal(txt(sp), '6% below strategic plan', 'in plain words');
-      a.equal(txt(qs('.tap-ov-card__sp .tap-ov-fig', card(el, 'latam'))), '25% above strategic plan', 'above, for Latin America');
-      a.equal(P.neu.strategicPlan, null, 'Northern Europe has no strategic plan');
-      a.equal(txt(qs('.tap-ov-card__sp', card(el, 'neu'))), cardText('sp.none'), 'and its card says so');
-      a.equal(cardText('sp.none'), 'No strategic plan');
+    T.test('X-d127-card-snapshot', 'North America reads as a snapshot, in order: name, ambition, split, Services, Focus, pool, Customers, Open profile', function (a) {
+      var el = snapCards(), na = card(el, 'na'), e = window.SAMPLE_EXPECT.totals.na;
+      var order = Array.prototype.map.call(na.children, function (n) { return n.getAttribute('data-part'); });
+      a.deepEqual(order, ['bar', 'head', 'ambition', 'mix', 'focus', 'pool', 'customers', 'profile'], 'the parts, in order');
+      a.equal(txt(qs('.tap-ov-card__name', na)), 'North America', 'the region name');
+      a.equal(txt(qs('.tap-ov-card__label', line(na, 'ambition'))), '3-year ambition (ARR)', 'the ambition label');
+      a.equal(txt(qs('.tap-ov-fig--big', na)), TAP.format.money(e['amb.arr']), 'the ambition figure');
+      a.equal(txt(qs('.tap-ov-card__row--minor', na)), 'Services ' + TAP.format.money(e['amb.services']), 'Services');
+      // By hand from the sample's totals: Tier 1 3, Tier 2 7; 520 target accounts; 4 Strategic, 4 Growth, 13 Core, 7 Scaled
+      a.equal(txt(line(na, 'focus')), 'Focus 3 Tier 1 · 7 Tier 2', 'Focus');
+      a.equal(txt(line(na, 'pool')), 'New business pool 520 target accounts', 'New business pool');
+      a.equal(txt(line(na, 'customers')), 'Customers 4 Strategic · 4 Growth · 13 Core · 7 Scaled', 'Customers');
+      a.equal(txt(line(na, 'profile')), TAP.content.text('profile.openProfile'), 'Open profile last');
     });
 
-    T.test('X-d117-cards-land', 'The split has one swatched line per part, value and share adding to 100%; Services has no swatch', function (a) {
-      var el = landCards(), na = card(el, 'na'), e = window.SAMPLE_EXPECT.totals.na;
+    T.test('X-d127-card-snapshot', 'No card carries the strategic plan line, "Will it land?" or a "discuss" marker, though the sample has insights for them', function (a) {
+      var el = snapCards();
+      a.ok(TAP.measures.available('sp.oi'), 'the sample has a strategic plan part');
+      a.ok(TAP.insights.all().some(function (x) { return x.ruleId === 'winsVsPeers' && x.regionIds[0] === 'na'; }), 'and a wins insight for North America');
+      window.SAMPLE_EXPECT.regions.forEach(function (r) { noLandParts(a, card(el, r), r); });
+      a.ok(txt(el).indexOf('Will it land?') < 0, 'no "Will it land?" heading');
+      a.ok(!/strategic plan/i.test(txt(el)), 'no strategic plan line');
+      a.ok(!/\bdiscuss\b/.test(txt(el)), 'no discuss marker');
+    });
+
+    T.test('X-d117-cards-swatch', 'The split keeps one swatched line per part, value and share adding to 100%; Services has no swatch', function (a) {
+      var el = snapCards(), na = card(el, 'na'), e = window.SAMPLE_EXPECT.totals.na;
       var parts = qsa('.tap-ov-card__part', na), segs = qsa('.tap-ov-card__split > span', na);
       a.equal(parts.length, 2, 'two swatched lines');
       a.equal(segs.length, 2, 'two bar segments');
@@ -509,91 +524,12 @@
       a.equal(qsa('.tap-ov-card__swatch', card(el, 'ceu')).length, 0, 'no customer growth: no bar, no swatches');
     });
 
-    T.test('X-d117-cards-land', 'Will it land: three checks equal the measures, each with the other regions’ figure', function (a) {
-      var el = landCards(), na = card(el, 'na'), S = window.SAMPLE_EXPECT, e = S.totals;
-      a.equal(txt(qs('.tap-ov-card__landtitle', na)), cardText('land.title'), 'the heading');
-      a.equal(cardText('land.title'), 'Will it land?');
-      // Pipeline cover, year 1: pipeline created in 12 months / year-1 new business ARR = 13,275 / 3,321.4 = 4.0
-      a.near(Number(value(na, 'cover').getAttribute('data-v')), e.na['base.pipeline12m'] / e.na['nb.arr.y1'], 1e-6, 'cover value');
-      a.equal(txt(value(na, 'cover')), '4.0×', 'cover text');
-      // The others together: (360.05 + 9,161 + 7,734 + 7,663 + 3,624 + 7,477) / (1,440.2 + 2,577 + 1,818.3 + 2,535.8 + 936.2 + 778.8)
-      a.near(Number(others(na, 'cover').getAttribute('data-v')), 36019.05 / 10086.3, 1e-6, 'others cover');
-      a.equal(txt(qs('.tap-ov-card__others', check(na, 'cover'))), 'others: 3.6×', 'others cover text');
-      a.equal(txt(value(card(el, 'latam'), 'cover')), '0.3×', 'Latin America: 360.05 / 1,440.2');
-      // New customers needed: the winsVsPeers figures, 78 against the simple average of the other six, 26
-      a.near(Number(value(na, 'wins').getAttribute('data-v')), S.p12.value, 1e-6, 'wins');
-      a.equal(txt(value(na, 'wins')), '78', 'wins text');
-      a.near(Number(others(na, 'wins').getAttribute('data-v')), S.p12.othersAvg, 1e-5, 'others wins');
-      a.equal(txt(qs('.tap-ov-card__others', check(na, 'wins'))), 'others: 26', 'others wins text');
-      // Growth in top 3 accounts: the concentration figure, 60%, against the insight engine's own "others" figure
-      a.near(Number(value(na, 'top3').getAttribute('data-v')), S.p13.share, 1e-5, 'top 3 share');
-      a.equal(txt(value(na, 'top3')), '60%', 'top 3 text');
-      a.near(Number(others(na, 'top3').getAttribute('data-v')), TAP.insights.util.others('cg.top3Share', 'na').v, 1e-9, 'others top 3');
-      // A check with no data reads not provided: Central Europe has no customer growth
-      a.equal(txt(value(card(el, 'ceu'), 'top3')), NP(), 'not provided');
-      // The pipeline cover label is a glossary term
-      var term = qs('.tap-term', check(na, 'cover'));
-      a.ok(!!term && !!TAP.content.term(term.getAttribute('data-term')), 'pipeline cover opens a glossary definition');
-    });
-
-    T.test('X-d117-cards-land', 'A "discuss" marker shows exactly where a matching insight exists, and Show me opens it', function (a) {
-      var el = landCards();
-      // From the sample's insights (the planted cases): wins and concentration for North America; strategic plan
-      // and pipeline cover for Latin America; strategic plan for Asia Pacific; concentration for Northern Europe
-      var want = { na: ['concentration', 'winsVsPeers'], latam: ['pipelineCover', 'spGap'], neu: ['concentration'], seu: [], ceu: [], mea: [],
-        apac: ['spGap'] };
-      Object.keys(want).forEach(function (r) {
-        a.deepEqual(markers(card(el, r)), want[r], r + ': markers');
-        var fromEngine = TAP.insights.all().filter(function (x) {
-          return RULES.indexOf(x.ruleId) >= 0 && x.regionIds.length === 1 && x.regionIds[0] === r;
-        }).map(function (x) { return x.ruleId; }).sort();
-        a.deepEqual(markers(card(el, r)), fromEngine, r + ': the same as the engine’s insights');
-      });
-      var m = qs('.tap-ov-card__discuss', check(card(el, 'na'), 'wins'));
-      a.equal(m.tagName, 'BUTTON', 'a button');
-      a.ok(!!qs('svg', m), 'with a glyph');
-      a.equal(txt(m), cardText('land.discuss'), 'and the visible word');
-      a.equal(cardText('land.discuss'), 'discuss');
-      spy(TAP.layers, 'openDetails', function (details) {
-        spy(TAP.bus, 'emit', function (calls) {
-          m.click();
-          a.equal(details.length, 0, 'the card’s details do not open');
-          a.equal(calls.length, 1, 'one event');
-          a.equal(calls[0][0], 'showme', 'Show me');
-          a.equal(calls[0][1].insightId, 'winsVsPeers:na', 'at that insight');
-        });
-      });
-      TAP.insights.hide('winsVsPeers:na');
-      try {
-        a.deepEqual(markers(card(cards(), 'na')), ['concentration'], 'a hidden insight takes its marker away');
-      } finally { TAP.insights.unhide(); }
-    });
-
-    T.test('X-d117-cards-land', 'A combined card shows the same lines with no "others" lines or markers', function (a) {
-      var el = landCards({ mode: 'one', focus: 'latam', restAs: 'combined', restAgg: 'average' }), rest = card(el, 'rest');
-      a.ok(!!rest && rest.classList.contains('is-combined'), 'the rest is one combined card');
-      a.ok(!!qs('.tap-ov-card__sp .tap-ov-fig', rest), 'strategic plan line');
-      a.equal(qsa('.tap-ov-card__part', rest).length, 2, 'two swatched lines');
-      ['cover', 'wins', 'top3'].forEach(function (k) { a.ok(!!value(rest, k), k + ' check'); });
-      a.equal(qsa('.tap-ov-card__others', rest).length, 0, 'no others lines');
-      a.equal(markers(rest).length, 0, 'no markers');
-      a.equal(qsa('.tap-ov-card__others', card(el, 'latam')).length, 3, 'the focus card keeps its others lines');
-      a.deepEqual(markers(card(el, 'latam')), ['pipelineCover', 'spGap'], 'and its markers');
-    });
-
-    T.test('X-d117-cards-land', 'Sections line up: every card holds the same parts in the same order', function (a) {
-      var el = landCards({ mode: 'one', focus: 'na', restAs: 'combined', restAgg: 'average' });
+    T.test('X-d117-cards-swatch', 'A combined card keeps the swatched lines and holds the same parts in the same order', function (a) {
+      var el = snapCards({ mode: 'one', focus: 'na', restAs: 'combined', restAgg: 'average' }), rest = card(el, 'rest');
       var order = function (c) { return Array.prototype.map.call(c.children, function (n) { return n.getAttribute('data-part'); }); };
-      a.deepEqual(order(card(el, 'na')), order(card(el, 'rest')), 'region and combined card');
-      a.deepEqual(order(card(el, 'na')), ['bar', 'head', 'ambition', 'mix', 'land', 'cover', 'wins', 'top3', 'profile'], 'the parts');
-    });
-
-    T.test('X-d117-cards-no-sp-part', 'A file without the strategic plan part shows no strategic plan line (D57)', function (a) {
-      TAP.store.reset();
-      var el = cards({ mode: 'all' });
-      a.ok(!TAP.measures.available('sp.oi'), 'the mini file has no strategic plan');
-      a.equal(qsa('.tap-ov-card__sp', el).length, 0, 'no strategic plan line');
-      a.equal(qsa('.tap-ov-card__check', card(el, 'alpha')).length, 3, 'the three checks still show');
+      a.ok(!!rest && rest.classList.contains('is-combined'), 'the rest is one combined card');
+      a.equal(qsa('.tap-ov-card__part', rest).length, 2, 'two swatched lines');
+      a.deepEqual(order(rest), order(card(el, 'na')), 'region and combined card line up part by part');
     });
   });
 
