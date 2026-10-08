@@ -515,8 +515,9 @@
         var list = qs('.tap-pf-insights', m.root), ids = qsa('[data-insight]', list).map(function (n) { return n.getAttribute('data-insight'); });
         a.equal(txt(qs('h2', list)), 'More insights for North America', 'its title');
         NA_TOP.forEach(function (id) { a.ok(ids.indexOf(id) < 0, id + ' is not in the list'); });
-        a.equal(ids[0], NA_NEXT, 'the next one leads the list');
-        a.ok(ids.indexOf('spTotal:org') >= 0, 'the broad one stays in the list');
+        // By significance: spTotal (0.554, broad, so never a top insight) leads the rest, then the next region insight
+        a.equal(ids[0], 'spTotal:org', 'the broad one stays in the list, first by significance');
+        a.ok(ids.indexOf(NA_NEXT) > 0, 'the next region insight follows');
       } finally { m.handle.destroy(); }
     });
 
