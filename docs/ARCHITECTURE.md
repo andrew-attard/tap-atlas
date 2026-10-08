@@ -43,7 +43,7 @@ The three pages load the same app scripts in the same order (lint checks this). 
 | `TAP_SETTINGS` | `config/settings.js` | Tunable numbers: weights, thresholds, limits |
 | `TAP_VIEWS` | `config/views.js` | Menu groups and the view order made from them, titles and report lists |
 | `TAP_REPORTS` | `config/reports-*.js` | Report definitions by id (schema in `config/reports.js`) |
-| `TAP_RULES` | `config/insight-rules.js` | Insight rule definitions and the wording guide |
+| `TAP_RULES` | `config/insight-rules.js` (`rules`), `config/insight-wording.js` (`wording`) | Insight rule definitions; the wording guide, banned words and phrases |
 | `TAP_CONTENT` | `content/*.js` | Glossary, guide and all on-screen wording |
 | `TAP_ORG` | `content/organization.js` (internal edition only) | Organization terms, wording and settings, layered over the general ones |
 
@@ -385,7 +385,9 @@ Generic builders: `compare`, `parts` and `xy` (which also serves `xyz`), in `js/
 
 **Formatting: `TAP.format`** (`js/core/format.js`). `money(v, {scale, currency})` (chart style, €1.2M; `v` is in thousands unless `scale` says otherwise), `moneyExact`, `pct(v, {exact})`, `num(v, {decimals})`, `rating(v, field)`, `tier(v)`, `cell(cell, {unit, exact, field})`, `kind(k)` (returns `{glyph, label, text}`), `date(iso, {time})`, `list(names)`. The theme's keys are documented in `js/theme.js` itself.
 
-## 12. Insights (`js/insights/*`, `config/insight-rules.js`)
+## 12. Insights (`js/insights/*`, `config/insight-rules.js`, `config/insight-wording.js`)
+
+The rules are in `config/insight-rules.js` (`TAP_RULES.rules`); the wording guide, the banned words and the phrases the rule code uses are in `config/insight-wording.js` (`TAP_RULES.wording`, split out in v0.4.1 to keep each file under 300 lines). Either file may load first; each fills its own part of `TAP_RULES`.
 
 **Rule definition** (configuration):
 
@@ -456,7 +458,7 @@ js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
 js/core/sources.js  check.js  check-rows.js  extra.js  check-p4.js  data.js
 js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  measures-pt.js  measures-p4.js  measures-p4b.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
-config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js
+config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js  insight-wording.js
 js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  ratings-grid.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js  stack-draw.js  dim-stack.js  pt-books.js  outlook-side.js  outlook-side-draw.js  outlook-coverage.js
 js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js

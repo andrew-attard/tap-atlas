@@ -190,6 +190,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/profile.js` | The reports a region profile shows, in order |
 | `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, why it matters (or context), on/off switch, where it attaches |
+| `config/insight-wording.js` | The wording guide every insight follows, the words it avoids, and the phrases the rules use |
 | `config/running-order.js` | The presentation file: the set list of charts that **Present** plays, in order, each with its own comparison and highlight (D97) |
 
 ### `content/` and `css/`
