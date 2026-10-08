@@ -78,7 +78,7 @@
           var r = mine.filter(function (q) { return q.r.entityId === p.data.entityId && q.r.industryId === p.data.industryId; })[0].r;
           var title = ds.dimension === 'industry' ? r.label + ' · ' + r.entity.label : r.label;
           var lines = k.cellRows(r.cells[keys.x], cx).concat(k.cellRows(r.cells[keys.y], cy).slice(0, 1));
-          if (cs) lines.push([cs.label, k.exact(r.cells[keys.size], cs)], [k.t('chart.kind'), TAP.format.kind(cs.kind).text]);
+          if (cs) lines.push([cs.label, k.exact(r.cells[keys.size], cs)]);
           return k.tip(title, lines);
         } } };
     }).filter(Boolean);

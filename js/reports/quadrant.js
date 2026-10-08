@@ -94,7 +94,7 @@
         lines.push(['· ' + TAP.measures.meta('ind.' + f).label, TAP.format.cell(c, { unit: 'rating', field: f })]);   // combined: always "n average"
       });
     });
-    if (sizeCol) lines.push([sizeCol.label, K.exact(r.s, sizeCol)], [K.t('chart.kind'), TAP.format.kind(sizeCol.kind).text]);
+    if (sizeCol) lines.push([sizeCol.label, K.exact(r.s, sizeCol)]);
     var how = TAP.agg.describe(r.y);
     if (how) lines.push([K.t('chart.how'), how]);
     return K.tip(r.ind.name + ' · ' + r.g.label, lines);

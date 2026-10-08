@@ -60,11 +60,11 @@
 
   function exact(c, col) { return TAP.format.cell(c, { unit: col.unit, exact: true, field: col.scale }); }
 
-  // Tooltip rows for one cell: the exact value, the kind of value and, for combined figures, how they were made.
+  // Tooltip rows for one cell: the exact value and, for combined figures, how they were made. The kind of value sits
+  // behind the data icon, not in tooltips (D109).
   function cellRows(c, col) {
     var rows = [[col.label, exact(c, col)]];
     if (!c || c.state !== 'value') return rows;
-    rows.push([t('chart.kind'), TAP.format.kind(c.kind).text]);
     var how = TAP.agg.describe(c);
     if (how) rows.push([t('chart.how'), how]);
     if (c.partial && c.note) rows.push([t('chart.partial'), c.note]);
