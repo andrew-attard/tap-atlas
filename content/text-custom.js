@@ -14,13 +14,22 @@ Object.assign(window.TAP_CONTENT.text, {
     heading: 'Build a chart',
     viewTitle: 'Which figure would you like to compare?',
     // The builder (js/ui/custom-builder.js)
-    lead: 'Pick a measure, what to show it by and a chart type. Only combinations that make sense are offered: rates and ratings are never added up. The chart follows the comparison like any other.',
+    lead: 'Pick a topic, then a measure from its short list, or find one by name; then what to show it by and a chart type. Only combinations that make sense are offered: rates and ratings are never added up. The chart follows the comparison like any other.',
     measure: 'Measure',
+    // The measure picker (js/ui/custom-measure-picker.js, D122): topics named after the menu, then the measures
+    topic: 'Topic',
+    topics: { ambition: 'Ambition', coverage: 'Market coverage', newBusiness: 'New business', customers: 'Customer growth',
+      partners: 'Partners', outlook: 'Outlook', other: 'Other measures' },
+    more: 'Show all {n} measures in {topic}',
+    fewer: 'Show fewer',
+    find: { label: 'Find a measure', none: 'No measure name has all of "{query}".', one: '1 measure found', count: '{n} measures found' },
+    // The kind of value beside each measure: a glyph and a word, so it never rests on the glyph alone
+    kinds: { amount: { glyph: '∑', word: 'amount' }, count: { glyph: '#', word: 'count' },
+      rate: { glyph: '÷', word: 'rate or average' }, rating: { glyph: '★', word: 'rating' } },
     byPicker: 'By',
     by: { entity: 'Region' },
     type: 'Chart type',
     measureBy: '{measure} (by {by})',
-    groups: { amount: 'Amounts', count: 'Counts', rate: 'Rates, shares and averages', rating: 'Ratings and scores' },
     failed: 'This chart can’t be drawn',
     none: 'No measure in the data can be charted.',
     // The session list (US-3.5.3)

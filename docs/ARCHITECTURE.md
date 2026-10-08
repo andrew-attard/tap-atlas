@@ -461,13 +461,13 @@ js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
 js/core/sources.js  check.js  check-rows.js  extra.js  check-p4.js  data.js
 js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  measures-pt.js  measures-p4.js  measures-p4b.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js
-config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  comment-themes.js  insight-rules.js  insight-wording.js
+config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  custom-topics.js  comment-themes.js  insight-rules.js  insight-wording.js
 js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  ratings-grid.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js  stack-draw.js  dim-stack.js  pt-books.js  outlook-side.js  outlook-side-draw.js  outlook-coverage.js
 js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
 js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  source-tip.js  explain.js  tour.js  showme.js  keys.js  view-head.js  present-steps.js  present-record.js  present.js
 js/views/overview-cards.js  overview-land.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights.js
-js/ui/custom-builder.js
+js/ui/custom-measure-picker.js  custom-builder.js
 js/views/build.js  guide.js
 js/ui/app.js
 ```
@@ -692,6 +692,7 @@ A step's `cmp.mode` is `'all'`, `'set'` (one region or more) or `'one'`; an old 
 - The panel accepts a definition object instead of an id: `TAP.panel.create(el, def, opts)` registers it in `TAP_REPORTS` under `def.id` first (`TAP.panelDrill.reportOf`). The "Custom chart" badge when `def.custom` is drawn by the panel (CUSTOM asks PANEL-file changes through the lead, or makes them under "Files outside ownership" when small).
 - `opts.initial: {type, measureId, breakdown}` sets a panel's starting choices (`TAP.panelDrill.initial`); presentation steps use it.
 - Session list: `TAP.custom.saved()`, `save(spec)` (refuses a seventh), `remove(i)`; held in memory only.
+- **Measure picker (D122):** `js/ui/custom-measure-picker.js` (`TAP.customPicker`: `render(list, current, state, onPick)`, `topicOf(id)`, `topics(list)`) draws the Measure picker: a "Find a measure" search box, topic buttons (`[data-control="custom-topic"]`) and the topic's measures as radios (`input[data-custom="measure"]`, one group). `config/custom-topics.js` sets `window.TAP_CUSTOM_TOPICS`, `[{id, prefixes, ids, key}]` in screen order: a measure belongs to the topic naming it in `ids`, else to the one holding its id's first part; one no topic claims shows under "Other measures". A topic shows its `key` measures (5 to 10, those the data has) with the current measure first when it is not a key one; "Show all N measures in <topic>" lists the rest A to Z. Search matches every typed word in the plain name and lists the hits under topic headings. A topic with no measure in the data is not shown. The builder keeps the picker's `{topic, expanded, query}` across its redraws; a measure set from elsewhere (a spec, a kept chart) brings its own topic.
 - As built: options also carry `by`, `kind` and `short`; `TAP.custom` also gives `types(by)` and `byLabel(by)`; definitions carry `spec: {measure, by, type}` (what a running-order step stores) and the id `custom:<measure>:<by>`; `by` may be any of `TAP.reports.BREAKDOWNS` the measure lists; per-industry figures are recognised by the `ind.` id prefix; panels for custom charts are created with `opts.initial.type` from the spec.
 
 ### 18.4 Extra sections (Epic 3.2, EXTRA)

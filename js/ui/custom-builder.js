@@ -1,10 +1,11 @@
 /*
  * File: js/ui/custom-builder.js
  * Purpose: The builder of the Build a chart view: pickers for measure, dimension and chart type, the custom chart panel and the session list (US-3.5.1, US-3.5.3).
+ *          The measure is picked by topic, then from a short list, or found by name (D122, custom-measure-picker.js).
  *          Every choice comes from TAP.custom (measure metadata, D68); the chart is an ordinary panel drawn from
  *          the custom definition, so comparison, sources and "not provided" work as on the prepared reports.
  * Provides: TAP.customBuilder (render)
- * Depends on: js/engine/custom.js, js/panel/panel.js, panel-menus.js (seg), panel-chart.js (error), js/core/dom.js,
+ * Depends on: js/engine/custom.js, js/ui/custom-measure-picker.js, js/panel/panel.js, panel-menus.js (seg), panel-chart.js (error), js/core/dom.js,
  *             content.js, format.js, storage.js, js/engine/shapes.js (label, kit.lower) (all at call time)
  * Used by: js/views/build.js (its own menu item since D96; it was a Guide section)
  * Owner: CUSTOM stream (#80)
@@ -16,7 +17,6 @@
   function t(key, vars) { return TAP.content.text('custom.' + key, vars); }
   function lower(s) { return TAP.shapes.kit.lower(s); }   // mid-sentence lower case, acronyms kept (one copy, in the kit)
 
-  var GROUPS = ['amount', 'count', 'rate', 'rating'];
   var START = { measure: 'nb.hitRate', by: 'entity' };   // a first chart that reads at once: hit rate by region
   var cur = null;   // the current choice, in memory only: nothing is kept after the tab closes (US-3.5.3)
 
@@ -56,25 +56,8 @@
     return { measure: m.id, by: by, type: types.indexOf(spec.type) >= 0 ? spec.type : types[0] };
   }
 
-  function measureSelect(list, onPick) {
-    var s = el('select', { class: 'tap-field tap-custom__select', id: 'tap-custom-measure', 'data-custom': 'measure' });
-    GROUPS.forEach(function (g) {
-      var mine = list.filter(function (c) { return c.group === g; });
-      if (!mine.length) return;
-      var og = el('optgroup', { label: t('groups.' + g) });
-      mine.forEach(function (c) { og.appendChild(el('option', { value: c.id }, c.text)); });
-      s.appendChild(og);
-    });
-    s.value = cur.measure;
-    s.addEventListener('change', function () { onPick(s.value); });
-    return s;
-  }
-
-  function field(label, control, forId) {
-    return el('div', { class: 'tap-custom__field' }, [
-      forId ? el('label', { class: 'tap-custom__label', for: forId }, label) : el('span', { class: 'tap-custom__label' }, label),
-      control
-    ]);
+  function field(label, control) {
+    return el('div', { class: 'tap-custom__field' }, [el('span', { class: 'tap-custom__label' }, label), control]);
   }
 
   // A definition that fails shows its errors in its own box, in the panel's place (US-3.5.2).
@@ -84,7 +67,7 @@
     TAP.panelChart.error(box, errors);
   }
 
-  // Which picker control has focus, so a redraw can give it back (the select, or a button of a button group).
+  // Which picker control has focus, so a redraw can give it back (a measure's radio, the search box, or a button of a button group).
   function focusOf(box) {
     var a = document.activeElement;
     if (!a || !box.contains(a)) return null;
@@ -93,7 +76,7 @@
   }
   function refocus(box, f) {
     if (!f) return;
-    var to = f.custom ? TAP.dom.qs('[data-custom="' + f.custom + '"]', box)
+    var to = f.custom ? (f.value && TAP.dom.qs('[data-custom="' + f.custom + '"][data-value="' + f.value + '"]', box)) || TAP.dom.qs('[data-custom="' + f.custom + '"]', box)
       : f.control ? (TAP.dom.qs('[data-control="' + f.control + '"] [data-value="' + f.value + '"]', box) ||
         TAP.dom.qs('[data-control="' + f.control + '"] [aria-pressed="true"]', box)) : null;
     if (to && to.focus) to.focus({ preventScroll: true });
@@ -125,7 +108,7 @@
     var list = choices();
     if (opts && Object.prototype.hasOwnProperty.call(opts, 'spec')) cur = opts.spec;
     cur = fit(cur, list);
-    var panel = null, gone = false;
+    var panel = null, gone = false, pick = { topic: null, expanded: false, query: '', synced: null };   // the measure picker's topic, "Show all" and search
     var pickers = el('div', { class: 'tap-custom__pickers' }), slot = el('div', { class: 'tap-custom__panel' });
     var status = el('p', { class: 'tap-custom__status', role: 'status' }), listBox = el('div', { class: 'tap-custom__kept' });
     var actions = el('div', { class: 'tap-custom__actions' }, [
@@ -158,7 +141,7 @@
       var m = list.filter(function (c) { return c.id === cur.measure; })[0], seg = TAP.panelMenus.seg, f = focusOf(pickers);
       TAP.dom.clear(pickers);
       TAP.dom.append(pickers, [
-        field(t('measure'), measureSelect(list, function (id) { choose({ measure: id }); }), 'tap-custom-measure'),
+        TAP.customPicker.render(list, cur.measure, pick, function (id) { choose({ measure: id }); }),
         field(t('byPicker'), seg('custom-by', t('byPicker'), cur.by, m.by.map(function (b) { return { value: b, label: TAP.custom.byLabel(b) }; }),
           function (v) { choose({ by: v }); })),
         field(t('type'), seg('custom-type', t('type'), cur.type, TAP.custom.types(cur.by).map(function (x) {

@@ -12,7 +12,7 @@ TAP Atlas shows every region's territory account plan side by side. Each regiona
 - **One comparison for every chart:** all regions, selected regions (one region or more), or one against the rest. The sentence under the bar says what is shown.
 - **Every figure traces to its source:** the data icon beside a figure shows its kind and file › sheet › cell (D100), in the details panel, lists, tables and leaders' words; the data sources panel lists each file and its import notes. Every chart has a table view.
 - **Insights:** rules in configuration flag observations worth discussing, worded neutrally and ranked, each with one line on why it matters. Descriptive background facts stay off the charts and sit in a closed Context group on the Insights page (D111). The Overview's region cards ask "Will it land?" (pipeline cover in year 1, new customers needed, growth in the top 3 accounts, each against the other regions) and mark with "discuss" where an insight exists on that figure (D117). Above them, "Top insights" lists the three most significant findings that span at least three regions or the total of all regions; findings about one or two regions stay on the other views (D119).
-- **For presenting:** large type, no hover-only details, no animation, presentation mode, which plays a set list of charts full screen, one step at a time, from the presentation file (`config/running-order.js`), and "Build a chart" in the menu, with Insights and the Guide in the tools group at its right end, for charts made in the meeting.
+- **For presenting:** large type, no hover-only details, no animation, presentation mode, which plays a set list of charts full screen, one step at a time, from the presentation file (`config/running-order.js`), and "Build a chart" in the menu, with Insights and the Guide in the tools group at its right end, for charts made in the meeting (each measure picked by topic from a short list, or found by name, D122).
 - **No server:** plain HTML, CSS and JavaScript opened from the folder by double-click, in Chrome or Edge. Nothing loads from the web.
 
 ## The two editions
@@ -93,7 +93,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | A column on a list | the list's `config/reports-*.js` file, `js/engine/rows.js` | 10 |
 | Another template section | `docs/EXTENDING-TEMPLATE.md` | 11 to 13 |
 | The presentation for a meeting | the presentation file | 14 |
-| Keeping a chart built in the meeting, or offering a measure in "Build a chart" | `js/engine/custom.js` and the view's `config/reports-*.js` file | 15 |
+| Keeping a chart built in the meeting, or offering a measure in "Build a chart" | `js/engine/custom.js`, the view's `config/reports-*.js` file, and `config/custom-topics.js` for its topic and key measures | 15 |
 | Wording | the `content/text-*.js` file that holds the phrase | none needed |
 
 The rules for every change are in the README: the app opens from a file, classic scripts only, small files with a header, colours only in the theme, words only in `content/`, numbers to tune only in `config/settings.js`, and no real data or organization names in the public repository.
