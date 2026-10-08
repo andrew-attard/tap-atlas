@@ -106,7 +106,7 @@ A measure must never read a field the contract doesn't list, and never fill a bl
 
 Use when a section deserves its own page: several reports, a question as the title, and a place in the menu and on the number keys.
 
-**How it works.** A view registers itself with `TAP.views.register(id, {title, mount})`; `config/views.js` sets the menu order and the view's report list. The number keys and the menu follow that order. A view that only makes sense with some data adds `available()` and is left out of the menu when it returns false, as **Other sections** does.
+**How it works.** A view registers itself with `TAP.views.register(id, {title, mount})`; `config/views.js` puts the view in one of the menu's three groups (start points, plan views, tools), which set the menu order, and gives the view's report list. The number keys and the menu follow that order. A view that only makes sense with some data adds `available()` and is left out of the menu when it returns false, as **Other sections** does.
 
 **Worked example (fictional): an "Events" view** with the level 2 report and the events list.
 
@@ -118,7 +118,7 @@ TAP.views.register('events', { title: 'Events',
   available: function () { return TAP.extra.any(); } });
 ```
 
-2. **The menu**: in `config/views.js`, add `'events'` to `order` where it should sit, and `events: { title: 'Events', reports: ['cg-events', 'ev-list'] }`. Give the reports `view: 'events'`. The list report is a plain definition with `shape: 'list'` and `rows: 'extra:events'` (columns by key, as `TAP.rows.columns('extra:events')` lists them).
+2. **The menu**: in `config/views.js`, add `'events'` to `groups.data` where it should sit (the menu order follows the groups), and `events: { title: 'Events', reports: ['cg-events', 'ev-list'] }`. Give the reports `view: 'events'`. The list report is a plain definition with `shape: 'list'` and `rows: 'extra:events'` (columns by key, as `TAP.rows.columns('extra:events')` lists them).
 3. **The wording**: `eventsView: { kicker, title, lead, label }` in a `content/` wording file, as `content/text-customers.js` does for its views.
 4. **Load it**: add the view file to `tools/build-pages.js` with the other views and run `node tools/build-pages.js` (or add the `<script>` line to the three pages by hand).
 5. **Tests**: add a test file modelled on `tests/test-partners.js` (the view mounts, its title is the question, it is in the menu after the view before it) and list it in `tools/build-pages.js` under the tests.
