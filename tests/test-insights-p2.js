@@ -613,7 +613,8 @@
     /* ---------- US-2.5.6: insights point to the new reports ---------- */
 
     // The Phase 1 rules that fell back to the details panel, and the reports that show their data.
-    var MOVED = { outlier: ['nb-levers', 'cg-growth'], noPipeline: ['nb-industries'], winsVsPeers: ['nb-levers'],
+    // D112: industryCover replaces noPipeline and shows on the tier grid first, the industries report last
+    var MOVED = { outlier: ['nb-levers', 'cg-growth'], industryCover: ['ind-tiers', 'ind-quad', 'nb-industries'], winsVsPeers: ['nb-levers'],
       concentration: ['cg-exposure'], atRisk: ['cg-exposure'], segmentMix: ['cg-segments'] };
 
     T.test('TPV-TC-492', 'Every Phase 1 rule that fell back to details names the Phase 2 report that shows its data', function (a) {
@@ -639,12 +640,12 @@
         ['outlier:nb.hitRate:ceu', 'nb-levers', 'newBusiness', 'nb.hitRate', ['ceu'], []],
         ['outlier:nb.avgDealSize:latam', 'nb-levers', 'newBusiness', 'nb.avgDealSize', ['latam'], []],
         ['outlier:cg.growthY2:na', 'cg-growth', 'customers', 'cg.growth.all', ['na'], []],
-        ['winsVsPeers:na', 'nb-levers', 'newBusiness', 'nb.wins', ['na'], []],
-        ['noPipeline:apac:transport', 'nb-industries', 'newBusiness', 'ind.nb.arr', ['apac'], ['transport']]
+        ['winsVsPeers:na', 'nb-levers', 'newBusiness', 'nb.wins', ['na'], []]
+        // P11 is industryCover's since D112: it shows on the tier grid, covered by X-d112-industryCover
       ];
       cases.forEach(function (c) {
         var x = byId[c[0]];
-        a.ok(x, c[0] + ' is on the sample (P08, P09, P12, P11 and the year-2 growth outlier)');
+        a.ok(x, c[0] + ' is on the sample (P08, P09, P12 and the year-2 growth outlier)');
         if (!x) return;
         a.equal(x.reportId, c[1], c[0] + ': report');
         a.equal(TAP.reports.get(x.reportId).view, c[2], c[0] + ': view');

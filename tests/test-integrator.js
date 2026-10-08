@@ -99,9 +99,12 @@
     T.test('X-int-showme-sample', 'Every sample insight lands on a drawn highlight, or on details', function (a) {
       withApp(function (root) {
         var all = TAP.insights.all();
-        // Phase 2 rule families add their own insights; the Phase 1 families give 37
-        var phase1 = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'];
-        a.equal(all.filter(function (x) { return phase1.indexOf(x.family) >= 0; }).length, 37, 'the sample data has 37 Phase 1 insights');
+        // Phase 2 rule families add their own insights; the Phase 1 families gave 37. D112 (SAMPLE_EXPECT.s01, s02) adds
+        // the industryCover and priorityVsPlan findings and Manufacturing's consensus, and takes away its split and the
+        // three findings of the two retired rules
+        var phase1 = ['priorities', 'judgement', 'assumptions', 'realism', 'exposure', 'capability'], S = window.SAMPLE_EXPECT;
+        var n1 = 37 + S.s01.fired.length + S.s02.fired.length + 1 - 1 - 3;
+        a.equal(all.filter(function (x) { return phase1.indexOf(x.family) >= 0; }).length, n1, 'the sample data has ' + n1 + ' Phase 1 insights');
         a.ok(all.some(function (x) { return x.reportId; }), 'insights with a chart are covered');
         // Every Phase 2 rule now has a report; the details-only path is checked with a synthetic target (X-int-showme-details)
         if (all.some(function (x) { return !x.reportId; })) a.ok(true, 'details-only insights are covered too');
