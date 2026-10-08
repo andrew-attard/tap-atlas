@@ -115,7 +115,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{region}’s year-1 goal in {industry} ({goal}) is {ratio} the pipeline it created there in the last 12 months ({pipeline}).',
     templates: { none: '{region}’s year-1 goal in {industry} ({goal}) has no pipeline behind it yet.', above: '{region}’s year-1 goal in {industry} ({goal}) is above its whole pipeline there ({pipeline}).',
       many: '{region}’s year-1 goals in {n} priority industries are {ratio} or more the pipeline it created there in the last 12 months, led by {industries}.', manyAbove: '{region}’s year-1 goals in {n} priority industries run ahead of their pipeline ({k} above the whole pipeline there), led by {industries}.', manyNone: '{region}’s year-1 goals in {n} priority industries run ahead of their pipeline ({k} with no pipeline yet), led by {industries}.' },
-    attach: ['ind-tiers', 'ind-quad', 'nb-industries'], highlight: 'cell', why: 'A year-1 industry goal well above its pipeline depends on deals not yet found; worth asking how that pipeline will be built.' });
+    attach: ['ind-tiers', 'nb-industries'], highlight: 'cell', why: 'A year-1 industry goal well above its pipeline depends on deals not yet found; worth asking how that pipeline will be built.' });
   rule({ id: 'winsVsPeers', family: 'realism',
     description: 'Implied new customer wins (target accounts × hit rate) at least twice the simple average of the other regions.',
     reads: ['newBusiness.targetAccounts', 'newBusiness.hitRate'], params: { ratio: 2, measure: 'nb.wins' }, compare: true,
