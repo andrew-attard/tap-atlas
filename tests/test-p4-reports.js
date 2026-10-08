@@ -598,19 +598,21 @@
       a.equal(bars.option.yAxis.data.length, 12, 'a 100% bar per region and year');
     });
 
-    T.test('X-p4-routes-bars', '100% bars: each route a numbered part, shares of the region’s total', function (a) {
+    T.test('X-p4-routes-bars', '100% bars: each route a part in its own colour (D135), shares of the region’s total', function (a) {
       load();
-      var res = build(ROUTES, { mode: 'all' }), ss = series(res);
+      var res = build(ROUTES, { mode: 'all' }), ss = series(res), TH = window.TAP_THEME;
       a.deepEqual(ss.map(function (s) { return s.name; }), ROUTE_NAMES, 'the six routes, in order');
-      a.deepEqual(res.legend.filter(function (l) { return l.mark != null; }).map(function (l) { return [l.mark, l.label]; }),
-        ROUTE_NAMES.map(function (n, i) { return [i + 1, n]; }), 'every route named in the key with its number');
+      a.deepEqual(res.legend.map(function (l) { return [l.label, l.color, l.mark == null ? null : l.mark, l.role]; }),
+        ROUTE_NAMES.map(function (n, i) { return [n, TH.routes[RT[i]].bg, null, 'route']; }), 'every route named in the key with its swatch, no number, no region');
       // Region A: 1560, 240 and 600 of 2400
       function pct(i) { var s = res.option.series[i], d = s.data[0]; return { v: d.value, text: s.label.formatter({ data: d, value: d.value }) }; }
       a.near(pct(0).v, 65, TOL, 'own sales force 65%');
       a.near(pct(1).v, 10, TOL, 'customer success 10%');
       a.near(pct(3).v, 25, TOL, 'other resellers 25%');
-      a.match(pct(0).text, /^\{n\|1\} 65%$/, 'a wide part carries its number and share');
-      a.match(pct(1).text, /^\{n\|2\}$/, 'a narrow part carries its number alone');
+      a.equal(pct(0).text, '65%', 'a wide part carries its share, with no number');
+      a.equal(pct(1).text, '10%', 'customer success carries its share too');
+      a.equal(res.option.series[1].label.formatter({ data: { raw: 1 }, value: 5 }), '', 'a part under 9% carries nothing: the colour and the key name it');
+      a.equal(res.option.series[0].data[0].itemStyle.color, TH.routes.ownSales.bg, 'own sales force in the route colour');
       a.equal(res.option.series[2].data[0].value, null, 'no part for a route the region gives no figure for');
       a.equal(res.option.xAxis.max, 100, 'the axis runs to 100%');
     });

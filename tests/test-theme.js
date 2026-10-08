@@ -3,7 +3,7 @@
  * Purpose: Tests for the theme file: distinct region colours (also for colour-blind viewers), label contrast,
  *          CSS variables and the chart theme.
  * Provides: test cases TPV-TC-027, X-theme-*, X-d124-channel-colours (the channel palette), X-d131-segment-colours (segment
- *           and risk palettes)
+ *           and risk palettes), X-d135-partner-colours (category, route and maturity palettes)
  * Depends on: tests/harness.js, tests/cvd.js, js/theme.js
  * Used by: tests.html
  */
@@ -93,6 +93,35 @@
       ids.slice(1).forEach(function (id, i) { a.ok(light[i + 1] > light[i] + 8, id + ' is lighter than ' + ids[i] + ': ' + light.map(Math.round).join(' < ')); });
       var css = getComputedStyle(document.documentElement);
       a.equal(css.getPropertyValue('--tap-risk-high').trim(), ((TH.risk || {}).high || {}).bg, 'written as a CSS variable');
+    });
+
+    /* D135: the Partners palettes (product categories, routes to market, maturity levels), checked the same way */
+
+    T.test('X-d135-partner-colours', 'The category palette: the four fixed product categories, colour-blind safe, labels at 4.5:1', function (a) {
+      paletteChecks(a, 'categories', TH.categories, ['swPerpetual', 'recurring', 'hardware', 'services']);
+      var css = getComputedStyle(document.documentElement);
+      a.equal(css.getPropertyValue('--tap-cat-recurring').trim(), ((TH.categories || {}).recurring || {}).bg, 'written as a CSS variable');
+    });
+
+    T.test('X-d135-partner-colours', 'The route palette: the six routes to market and "not provided", colour-blind safe, labels at 4.5:1', function (a) {
+      var ids = ['ownSales', 'customerSuccess', 'allianceBReseller', 'otherResellers', 'systemIntegrators', 'partnerExisting', 'none'];
+      paletteChecks(a, 'routes', TH.routes, ids);
+      var fills = ids.slice(0, 6).map(function (id) { return ((TH.routes || {})[id] || {}).bg; });
+      a.equal(fills.filter(function (f, i) { return f && fills.indexOf(f) === i; }).length, 6, 'six different colours, one per route');
+      var css = getComputedStyle(document.documentElement);
+      a.equal(css.getPropertyValue('--tap-rt-ownSales').trim(), ((TH.routes || {}).ownSales || {}).bg, 'written as a CSS variable');
+    });
+
+    T.test('X-d135-partner-colours', 'The maturity palette: five ordered levels, Recruit lightest, Strategic darkest, plus "not provided"', function (a) {
+      var ids = ['recruit', 'onboard', 'enable', 'skill', 'strategic', 'none'];
+      paletteChecks(a, 'maturity', TH.maturity, ids);
+      var light = ids.slice(0, 5).map(function (id) { return TCVD.hexToLab(((TH.maturity || {})[id] || {}).bg || '#000000')[0]; });
+      ids.slice(1, 5).forEach(function (id, i) { a.ok(light[i + 1] < light[i] - 8, id + ' is darker than ' + ids[i] + ': ' + light.map(Math.round).join(' > ')); });
+      // One hue, so the levels read as one ordered scale: every level's hue angle within 20 degrees of the first
+      var hue = ids.slice(0, 5).map(function (id) { var l = TCVD.hexToLab(((TH.maturity || {})[id] || {}).bg || '#000000'); return Math.atan2(l[2], l[1]) * 180 / Math.PI; });
+      hue.slice(1).forEach(function (h, i) { a.ok(Math.abs(h - hue[0]) < 20, ids[i + 1] + ' shares the hue: ' + hue.map(Math.round).join(', ')); });
+      var css = getComputedStyle(document.documentElement);
+      a.equal(css.getPropertyValue('--tap-mat-strategic').trim(), ((TH.maturity || {}).strategic || {}).bg, 'written as a CSS variable');
     });
 
     T.test('X-theme-css','The theme writes its values as CSS variables the stylesheets read', function (a) {
