@@ -777,6 +777,37 @@
       });
     });
 
+    T.test('X-d110-scroll-top', 'A new view starts at the top of the page, not where the last view was scrolled (D110)', function (a) {
+      var spacer = document.body.appendChild(TAP.dom.el('div', { style: 'height: 4000px' })), y0 = window.scrollY;
+      try {
+        run(function () {
+          startApp();
+          window.scrollTo(0, 400);
+          a.ok(window.scrollY > 0, 'the page was scrolled down (' + window.scrollY + ')');
+          TAP.store.set({ view: 'regions', region: TAP.data.regions()[0].id });
+          a.equal(window.scrollY, 0, 'the profile opens at its top');
+        });
+      } finally { spacer.parentNode.removeChild(spacer); window.scrollTo(0, y0); }
+    });
+
+    T.test('X-d110-close-no-scroll', 'Closing a side panel or a source popover gives focus back without scrolling (D110)', function (a) {
+      run(function () {
+        var root = startApp(), btn = root.appendChild(TAP.dom.el('button', { type: 'button' }, 'Opener')), args = null;
+        btn.focus();
+        TAP.layers.open('sources');
+        btn.focus = function (o) { args = o; };
+        TAP.layers.close();
+        a.ok(args && args.preventScroll === true, 'the side panel hands focus back with preventScroll');
+        TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+        var x = window.SAMPLE_EXPECT.sources[0], tip = root.appendChild(TAP.sourceTip.icon(x.src, x.src.kind)), got = null;
+        tip.click();
+        tip.focus = function (o) { got = o; };
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        a.ok(got && got.preventScroll === true, 'the pinned popover hands focus back with preventScroll');
+        TAP.sourceTip.close();
+      });
+    });
+
     T.test('X-layers-replace', 'Opening another side panel replaces the one that is open', function (a) {
       run(function () {
         startApp();
