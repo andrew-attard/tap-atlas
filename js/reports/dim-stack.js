@@ -4,7 +4,9 @@
  *          in the lookup's order, with "none" for rows or items that name no value. A definition names the dimension
  *          in options.by ('solution', 'category', 'route', 'maturity', 'partnerType', 'channel', ...); each of its
  *          measures must list that dimension. Draws stacked bars, 100% stacked bars, a heatmap grid and a table; the
- *          panel's own breakdown (plan year, partner type) gives a stack or a line per value.
+ *          panel's own breakdown (plan year, partner type) gives a stack or a line per value. With options.partColors
+ *          the parts take a theme palette instead of region shades and numbers (D135); options.amountShare adds the
+ *          Amount / Share of total switch.
  * Provides: builder 'dimStack' (registered with TAP.builders); TAP.dimStack (model)
  * Depends on: js/reports/stack-draw.js, js/engine/prepare.js, js/engine/measures.js, js/engine/scope.js,
  *             js/engine/shapes.js (drawing kit), js/core/content.js, js/theme.js (all at call time)
@@ -100,8 +102,9 @@
     var def = ctx.def, by = (def.options || {}).by, type = ctx.type || def.defaultType, kit = k(), D = TAP.stackDraw;
     var m = TAP.prepare.selected(def, ctx), meta = TAP.measures.meta(m);
     if (!by || !meta || (meta.dims || []).indexOf(by) < 0) return kit.result(def, null, { error: t('noBy', { by: String(by || '') }) });
-    var mo = model(ctx);
-    var res = kit.result(def, mo.ds, { table: table(mo), notes: kit.notes(mo.ds, [mo.m]), target: targetFn(mo) });
+    var mo = model(ctx), o = def.options || {};
+    var res = kit.result(def, mo.ds, { table: table(mo), notes: kit.notes(mo.ds, [mo.m]), target: targetFn(mo),
+      controls: kit.shareSwitch(def, type) });   // the Amount / Share switch, where the definition asks for it (D124)
     if (mo.ds.empty || !mo.rows.length) { res.empty = true; return res; }
     if (type === 'table') return res;
     if (type === 'heatmap') {
@@ -109,6 +112,10 @@
       res.legend = D.gridLegend();
       return res;
     }
+    // D135: parts that are routes, maturity levels or categories take their palette and need no numbers; the parts
+    // stay the dimension's values under any breakdown, so the palette holds there too
+    mo.paints = kit.partPaints(def, mo.parts.map(function (p) { return p.value; }));
+    if (mo.paints) { mo.numbered = false; mo.paintRole = o.partColors; }
     res.option = D.bars(mo, type);
     res.legend = D.legend(mo);
     // Many bars (a stack per region and breakdown value) need more room than the panel's usual chart

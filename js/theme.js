@@ -2,8 +2,8 @@
  * File: js/theme.js
  * Purpose: THE theme file: every colour, font, size and the logo slot, plus the chart theme built from them.
  *          To rebrand, replace this file only (US-1.1.9). It writes the CSS variables the stylesheets use.
- * Provides: window.TAP_THEME (values, channels, segments, risk, shade(), regionColor(), echarts), CSS variables --tap-* on :root,
- *           the ECharts theme 'tap'
+ * Provides: window.TAP_THEME (values, channels, segments, risk, categories, routes, maturity, shade(), regionColor(), echarts),
+ *           CSS variables --tap-* on :root, the ECharts theme 'tap'
  * Depends on: vendor/echarts.min.js (optional: the chart theme is registered only if ECharts loaded first)
  * Used by: css/*.css (through the variables), js/engine/scope.js (region colours), js/engine/shapes.js (chart colours
  *          for every builder), js/core/format.js, the panel (chart theme, image export), js/ui/shell.js (logo),
@@ -64,6 +64,33 @@
       medium: { bg: '#7a5aa6', fg: '#ffffff' },
       low: { bg: '#b3a3d1', fg: '#201e1d' },
       none: { bg: '#dcd6e6', fg: '#201e1d' }   // not flagged
+    },
+
+    /* Partners palettes (D135), checked as the channel colours are. Product categories and routes to market are
+       categories in their fixed order; maturity levels are one hue ordered by lightness, Recruit lightest, so the scale
+       reads from light to dark. none: a part with no value (a route outside the lookup, a partner with no level). */
+    categories: {
+      swPerpetual: { bg: '#4b4b8f', fg: '#ffffff' },
+      recurring: { bg: '#d4ac0d', fg: '#201e1d' },
+      hardware: { bg: '#6e2c00', fg: '#ffffff' },
+      services: { bg: '#88ccee', fg: '#201e1d' }
+    },
+    routes: {
+      ownSales: { bg: '#1a5276', fg: '#ffffff' },
+      customerSuccess: { bg: '#2a9d8f', fg: '#201e1d' },
+      allianceBReseller: { bg: '#6f52e6', fg: '#ffffff' },
+      otherResellers: { bg: '#e69f00', fg: '#201e1d' },
+      systemIntegrators: { bg: '#6e2c00', fg: '#ffffff' },
+      partnerExisting: { bg: '#c6a0d9', fg: '#201e1d' },
+      none: { bg: '#dcd8d8', fg: '#201e1d' }
+    },
+    maturity: {
+      recruit: { bg: '#bddba6', fg: '#201e1d' },
+      onboard: { bg: '#86b963', fg: '#201e1d' },
+      enable: { bg: '#619340', fg: '#201e1d' },
+      skill: { bg: '#3d6f1e', fg: '#ffffff' },
+      strategic: { bg: '#22490a', fg: '#ffffff' },
+      none: { bg: '#dcd8d8', fg: '#201e1d' }
     },
 
     /* Tiers: neutral ink steps, so no tier reads as good or bad */
@@ -167,6 +194,9 @@
     Object.keys(T.channels).forEach(function (c) { v['ch-' + c] = T.channels[c].bg; v['ch-' + c + '-fg'] = T.channels[c].fg; });
     Object.keys(T.segments).forEach(function (c) { v['seg-' + c] = T.segments[c].bg; });
     Object.keys(T.risk).forEach(function (c) { v['risk-' + c] = T.risk[c].bg; });
+    Object.keys(T.categories).forEach(function (c) { v['cat-' + c] = T.categories[c].bg; });
+    Object.keys(T.routes).forEach(function (c) { v['rt-' + c] = T.routes[c].bg; });
+    Object.keys(T.maturity).forEach(function (c) { v['mat-' + c] = T.maturity[c].bg; });
     return v;
   };
 

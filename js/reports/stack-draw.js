@@ -20,7 +20,8 @@
  *   highlight        a Target; by: the dimension the parts are values of
  *   right, tip       optional: room right of the bars (px) for long closing texts; tip(row, part) gives more tooltip lines
  *   paints           optional: [{bg, fg}] per part when the parts take a palette (TAP.shapes.kit.partPaints, D124): the
- *                    parts take the palette colours, the key names the parts, tooltips name the part first
+ *                    parts take the palette colours, the key names the parts, tooltips name the part first; paintRole
+ *                    names the palette for the key's role ('channel' when left out; 'category', 'route', 'maturity', D135)
  */
 (function (TAP) {
   'use strict';
@@ -118,7 +119,7 @@
   // The key: each region once, then the parts. Numbered parts get a numbered key in the same ink steps as the stack.
   function legend(d) {
     var kit = k(), th = kit.th(), seen = [], n = d.parts.length;
-    if (d.paints) return kit.channelLegend(d.parts.map(function (p) { return p.label; }), d.paints);
+    if (d.paints) return kit.channelLegend(d.parts.map(function (p) { return p.label; }), d.paints, d.paintRole);
     d.rows.forEach(function (r) { if (seen.indexOf(r.entity) < 0) seen.push(r.entity); });
     return kit.legendOf({ entities: seen }).concat(d.parts.map(function (p, i) {
       if (!d.numbered) return { label: p.label, color: th.shade(th.ink, i), role: 'part' };

@@ -4,11 +4,13 @@
  *          (US-2.2.4, US-2.3.3). The definition's x, y and size name TAP.rows column keys; options.label is 'all'
  *          (names where they fit, up to TAP_SETTINGS.rowBubble.labelMax more numbered in the key, a note for the rest)
  *          or 'top' (the largest by options.labelBy, up to labelMax). D133: options.topPerRegion draws only each region's
- *          largest rows by y when several regions show; options.oneRegionColors 'risk' colours one region's rows by risk.
+ *          largest rows when several regions show, by y or by the summed columns in options.topBy (D137);
+ *          options.oneRegionColors 'risk' or 'channel' colours one region's rows from that palette; options.names
+ *          'beside' puts every name beside its bubble, with no numbered key (D137).
  * Provides: builder 'rowBubble'; TAP.bubbleLabels (MARGIN, frame, range, place, labelOf: the name placement, also
  *           used by the levers bubble in js/reports/nb-levers.js)
  * Depends on: js/engine/rows.js, js/engine/shapes.js (drawing kit), js/engine/scope.js, js/core/data.js,
- *             js/core/content.js, js/core/format.js, config/settings.js, js/theme.js (risk colours) (all at call time)
+ *             js/core/content.js, js/core/format.js, config/settings.js, js/theme.js (risk and channel colours) (all at call time)
  * Used by: js/panel/panel.js (through TAP.builders), config/reports-customers.js (cg-bubble), config/reports-partners.js (pt-capacity)
  * Owner: CGP stream (#206)
  */
@@ -73,15 +75,20 @@
 
   /* ---------- D133: the top rows of each region with several regions, every row by risk level with one ---------- */
 
-  // With several regions, each drawn group's options.topPerRegion rows with the largest y value: a region, or the
-  // combined rest in One vs the rest. Returns the rows kept, in their order, and the line saying so (null when none
-  // was left out). all: every row in scope, as the list report shows them.
+  // With several regions, each drawn group's options.topPerRegion rows with the largest y value, or the largest sum of
+  // the columns in options.topBy (D137: ARR plus services; a blank column counts as nothing): a region, or the combined
+  // rest in One vs the rest. Returns the rows kept, in their order, and the line saying so (null when none was left
+  // out). all: every row in scope, as the list report shows them.
+  function rankOf(p, opts, source) {
+    if (!opts.topBy) return p.y.v;
+    return [].concat(opts.topBy).reduce(function (t, key) { var c = TAP.rows.cell(source, key, p.row); return t + (c.state === 'value' ? c.v : 0); }, 0);
+  }
   function topOnly(pts, opts, entities, source, regions) {
     var n = opts.topPerRegion, groups = [], kept = [];
     if (!n || regions.length < 2) return { pts: pts, note: null };
     pts.forEach(function (p) { if (groups.indexOf(p.e) < 0) groups.push(p.e); });
     groups.forEach(function (e) {
-      kept = kept.concat(pts.filter(function (p) { return p.e === e; }).sort(function (a, b) { return b.y.v - a.y.v; }).slice(0, n));
+      kept = kept.concat(pts.filter(function (p) { return p.e === e; }).sort(function (a, b) { return rankOf(b, opts, source) - rankOf(a, opts, source); }).slice(0, n));
     });
     if (kept.length === pts.length) return { pts: pts, note: null };
     var focus = entities.filter(function (e) { return e.role === 'focus'; })[0], rest = entities.some(function (e) { return e.kind === 'combined'; });
@@ -89,19 +96,27 @@
       note: TAP.content.text('rowBubble.' + (rest && focus ? 'topCombined.' : 'top.') + source, { n: n, all: TAP.rows.list(source, regions).length, focus: focus && focus.label }) };
   }
 
-  // With one region, each row in its risk level's colour (options.oneRegionColors 'risk', the D131 palette). Returns the
-  // legend of the levels present, high first, or null.
-  var LEVELS = ['high', 'medium', 'low', 'none'];
-  function riskPaint(pts, opts, regions) {
-    var pal = window.TAP_THEME.risk, seen = {};
-    if (opts.oneRegionColors !== 'risk' || regions.length !== 1 || !pal) return null;
+  // With one region, each row in the colour of its risk level (options.oneRegionColors 'risk', the D131 palette) or
+  // its channel ('channel', the D124 palette; a row with no channel takes the focus grey and reads "not provided").
+  // Sets p.paint and p.paintRow (the tooltip line); returns the legend of the values present, in the palette's
+  // order, or null.
+  var ONE = { risk: { pal: 'risk', field: 'riskLevel', none: 'none' }, channel: { pal: 'channels', field: 'channel', none: null } };
+  function onePaint(pts, opts, regions, source) {
+    var spec = ONE[opts.oneRegionColors], th = window.TAP_THEME, pal = spec && th[spec.pal], names = {}, seen = {};
+    if (!pal || regions.length !== 1) return null;
+    if (spec.pal === 'channels') ((TAP.data.lookups() || {}).channels || []).forEach(function (c) { names[c.id] = c.name; });
+    function label(v) { return spec.pal === 'risk' ? TAP.content.text('rowBubble.risk.' + v) : names[v] || v; }
+    var col = colOf(source, spec.field).label;
     pts.forEach(function (p) {
-      var l = (p.row.item || {}).riskLevel;
-      p.level = LEVELS.indexOf(l) >= 0 ? l : 'none';
-      p.paint = pal[p.level];
-      seen[p.level] = true;
+      var v = (p.row.item || {})[spec.field], known = Object.prototype.hasOwnProperty.call(pal, v);
+      p.level = known ? v : spec.none;
+      p.paint = p.level ? pal[p.level] : { bg: th.focusGrey, fg: th.ink };
+      p.paintRow = [col, p.level ? label(p.level) : TAP.content.text('states.notProvided')];
+      seen[p.level || 'none'] = true;
     });
-    return LEVELS.filter(function (l) { return seen[l]; }).map(function (l) { return { label: TAP.content.text('rowBubble.risk.' + l), color: pal[l].bg, role: 'risk' }; });
+    var out = Object.keys(pal).filter(function (l) { return seen[l]; }).map(function (l) { return { label: label(l), color: pal[l].bg, role: opts.oneRegionColors }; });
+    if (!spec.none && seen.none) out.push({ label: TAP.content.text('rowBubble.noValue', { column: col }), color: th.focusGrey, role: opts.oneRegionColors });
+    return out;
   }
 
   function isMarked(hl, p, section) {
@@ -131,16 +146,18 @@
 
   // Each named point (in priority order) gets p.lab, the name's offset from its symbol's corner, at the first spot
   // (right, left, above, below) that is inside the plot, clear of names already placed and of other bubbles' centres.
-  // A point with no clean spot gets p.num instead: a number on the bubble, with the name in the key.
-  function place(named, all, F, fs, maxNums) {
+  // A point with no clean spot gets p.num instead: a number on the bubble, with the name in the key. With beside
+  // (D137) it takes the first spot clear of other names, else the spot to its right: every name stays on the chart.
+  function place(named, all, F, fs, maxNums, beside) {
     var boxes = [], n = 0;
     named.forEach(function (p) {
       var w = Math.ceil(p.label.length * fs * 0.56) + 4, h = fs + 4, r = p.d / 2, g = 4;
-      var spots = [[p.px + r + g, p.py - h / 2], [p.px - r - g - w, p.py - h / 2], [p.px - w / 2, p.py - r - g - h], [p.px - w / 2, p.py + r + g]];
-      var hit = spots.map(function (s) { return { x: s[0], y: s[1], w: w, h: h }; }).filter(function (b) {
-        return inside(b, F) && !boxes.some(function (o) { return meet(o, b); }) &&
-          !all.some(function (q) { return q !== p && q.px > b.x && q.px < b.x + b.w && q.py > b.y && q.py < b.y + b.h; });
-      })[0];
+      var spots = [[p.px + r + g, p.py - h / 2], [p.px - r - g - w, p.py - h / 2], [p.px - w / 2, p.py - r - g - h], [p.px - w / 2, p.py + r + g]]
+        .map(function (s) { return { x: s[0], y: s[1], w: w, h: h }; });
+      var clear = spots.filter(function (b) { return inside(b, F) && !boxes.some(function (o) { return meet(o, b); }); });
+      var hit = clear.filter(function (b) {
+        return !all.some(function (q) { return q !== p && q.px > b.x && q.px < b.x + b.w && q.py > b.y && q.py < b.y + b.h; });
+      })[0] || (beside ? clear[0] || spots[0] : null);
       if (hit) { boxes.push(hit); p.lab = [Math.round(hit.x - (p.px - r)), Math.round(hit.y - (p.py - r))]; }
       else if (n < maxNums) p.num = ++n;   // past the limit the name stays in the tooltip and the table
     });
@@ -170,7 +187,7 @@
     var top = topOnly(pts, opts, entities, source, regions);
     pts = top.pts;
     if (top.note) notes.unshift(top.note);   // the first line under the chart
-    var riskKey = riskPaint(pts, opts, regions);
+    var paintKey = onePaint(pts, opts, regions, source);
     pts.forEach(function (p) { if (p.s && p.s.state === 'value' && p.s.v > max) max = p.s.v; });
 
     // Which bubbles carry a name, largest by labelBy (default the y value) first: every one ('all'), or up to the limit in
@@ -190,7 +207,7 @@
       p.px = F.x0 + (p.x.v - rx.min) / (rx.max - rx.min) * F.w;
       p.py = F.y0 + F.h - (p.y.v - ry.min) / (ry.max - ry.min) * F.h;
     });
-    place(named, pts, F, th.type.chart, labelMax);
+    place(named, pts, F, th.type.chart, labelMax, opts.names === 'beside');
     var unnamed = named.filter(function (p) { return !p.lab && !p.num; }).length;
     if (unnamed) notes.push(TAP.content.text('rowBubble.unnamed.' + source, { n: unnamed }));
     var order = { muted: 0, combined: 1, region: 2, second: 3, focus: 4 };
@@ -209,7 +226,7 @@
         tooltip: { formatter: function (q) {
           var p = pts.filter(function (x) { return x.row.id === q.data.rowId; })[0];
           return k.tip(p.label + ' · ' + rname(p.regionId), [[cx.label, k.exact(p.x, cx)], [cy.label, k.exact(p.y, cy)],
-            cs ? [cs.label, k.exact(p.s, cs)] : null, p.paint ? [colOf(source, 'riskLevel').label, TAP.content.text('rowBubble.risk.' + p.level)] : null,
+            cs ? [cs.label, k.exact(p.s, cs)] : null, p.paintRow || null,
             [TAP.content.text('rowBubble.sourceRow'), String(p.row.sourceRow)]]);
         } } };
     });
@@ -228,7 +245,7 @@
 
     var res = k.result(def, null, { table: table, notes: notes, missing: missing, empty: !pts.length,
       // A numbered key in the bubble's own colour, so its number reads as it does on the chart (dark on a pale colour)
-      legend: (riskKey || groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; })).concat(named.filter(function (p) { return p.num; })
+      legend: (paintKey || groups.map(function (e) { return { label: e.label, color: e.color, role: e.role }; })).concat(named.filter(function (p) { return p.num; })
         .map(function (p) { return { label: TAP.content.text('rowBubble.key', { name: p.label, region: rname(p.regionId) }), color: p.noSize ? null : p.paint ? p.paint.bg : p.e.color,
           mark: p.num, role: p.e.role === 'muted' || (p.paint && p.paint.fg !== th.onColour) ? 'muted' : 'key' }; })),
       sizeLegend: cs && max > 0 ? k.sizeLegend(max, cs) : null });

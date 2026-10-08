@@ -3,7 +3,7 @@
  * Purpose: Decides which chart types suit a report's data shape and the current comparison (D18), and holds the
  *          small drawing kit the generic builders share: escaped tooltips, the not-provided mark, highlight rings,
  *          axes, bubble sizes, tables, notes, the builder result, and parts coloured from a palette (channels, D124; segments
- *          and risk levels, D131) with the Amount / Share switch.
+ *          and risk levels, D131; product categories, routes and maturity levels, D135) with the Amount / Share switch.
  * Provides: TAP.shapes (types, label, kit, including refLines)
  * Depends on: js/engine/registry.js, js/theme.js, js/core/dom.js, js/core/format.js, js/core/content.js,
  *             js/engine/aggregate.js (combined-figure labels)
@@ -169,10 +169,11 @@
     return out;
   }
 
-  /* ---------- parts coloured from a palette: channels (D124), segments and risk levels (D131) ---------- */
+  /* ---------- parts coloured from a palette: channels (D124), segments and risk levels (D131), product categories,
+     routes to market and maturity levels (D135) ---------- */
 
-  // The theme palette options.partColors names: 'channel', 'segment' or 'risk'.
-  var PALETTES = { channel: 'channels', segment: 'segments', risk: 'risk' };
+  // The theme palette options.partColors names: 'channel', 'segment', 'risk', 'category', 'route' or 'maturity'.
+  var PALETTES = { channel: 'channels', segment: 'segments', risk: 'risk', category: 'categories', route: 'routes', maturity: 'maturity' };
 
   // The palette colour ({bg, fg}) for each part, when the report colours its parts from a palette and every part names
   // one of its ids; else null, and the parts stay region shades. keys: part keys holding the id as one of their
