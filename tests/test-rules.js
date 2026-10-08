@@ -365,7 +365,7 @@
     T.test('X-d112-industryCover', 'A priority industry’s year-1 goal well above its pipeline gives one insight per region', function (a) {
       sample();
       var S = X.s01, x = get('industryCover:latam');
-      common(a, 'industryCover', 'realism', ['ind-tiers', 'ind-quad', 'nb-industries']);
+      common(a, 'industryCover', 'realism', ['ind-tiers', 'nb-industries']);
       a.ok(x, 'Latin America is flagged');
       if (!x) return;
       var mine = S.fired.filter(function (f) { return f.region === 'latam'; });

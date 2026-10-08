@@ -614,7 +614,7 @@
 
     // The Phase 1 rules that fell back to the details panel, and the reports that show their data.
     // D112: industryCover replaces noPipeline and shows on the tier grid first, the industries report last
-    var MOVED = { outlier: ['nb-levers', 'cg-growth'], industryCover: ['ind-tiers', 'ind-quad', 'nb-industries'], winsVsPeers: ['nb-levers'],
+    var MOVED = { outlier: ['nb-levers', 'cg-growth'], industryCover: ['ind-tiers', 'nb-industries'], winsVsPeers: ['nb-levers'],
       concentration: ['cg-exposure'], atRisk: ['cg-exposure'], segmentMix: ['cg-segments'] };
 
     T.test('TPV-TC-492', 'Every Phase 1 rule that fell back to details names the Phase 2 report that shows its data', function (a) {
