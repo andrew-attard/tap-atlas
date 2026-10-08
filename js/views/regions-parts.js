@@ -5,7 +5,7 @@
  *          and everything its leader wrote (US-2.4.4).
  * Provides: TAP.profileParts (glance, compare, drawGlance, insights, drawInsights, words, drawWords)
  * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/sources.js, js/engine/measures.js,
- *             js/engine/scope.js, js/ui/layers.js, js/ui/source-tip.js, js/views/overview-cards.js (openSource), js/views/regions.js
+ *             js/engine/scope.js, js/ui/source-tip.js, js/views/overview-cards.js (popover), js/views/regions.js
  *             (TAP.profile.cmp), js/insights/engine.js, js/core/data.js, js/core/store.js (all at call time)
  * Used by: js/views/regions.js
  * Owner: PROFILE stream (#215, #217); the full template's lines PAGES4 (#459)
@@ -77,11 +77,13 @@
     try { return cell && cell.src ? TAP.sources.address(cell.src).text : ''; } catch (e) { return ''; }
   }
 
-  // A clickable figure: the region's opens its details; the average opens where it comes from and how it was combined.
-  function figure(f, which, open) {
+  // A clickable figure, the region's or the average: a popover beside it says where it comes from, and for the
+  // average how it was combined (D129).
+  function figure(f, which) {
     var c = f[which];
     return el('button', { type: 'button', class: 'tap-ov-fig tap-pf-glance__fig' + (isValue(c) ? '' : ' is-np'), 'data-part': which,
-      title: t('glance.figureTitle', { label: f.label }), onclick: open },
+      title: t('glance.figureTitle', { label: f.label }),
+      onclick: function (e) { TAP.overviewCards.popover(e.currentTarget, { label: f.label, cell: c, unit: f.unit }); } },
     TAP.format.cell(c, { unit: f.unit }));
   }
 
@@ -89,11 +91,9 @@
   function row(f, restLabel) {
     return el('tr', { 'data-measure': f.measure, 'data-year': f.year ? String(f.year) : null, 'data-compare': f.compare.key || null }, [
       el('th', { scope: 'row' }, f.label),
-      el('td', null, figure(f, 'region', function () { TAP.layers.openDetails(f.target); }))
+      el('td', null, figure(f, 'region'))
     ].concat(restLabel == null ? [] : [
-      el('td', null, figure(f, 'rest', function () {
-        TAP.overviewCards.openSource(restLabel, [{ label: f.label, cell: f.rest, unit: f.unit }]);
-      })),
+      el('td', null, figure(f, 'rest')),
       el('td', { 'data-part': 'compare', class: 'tap-pf-glance__cmp' }, f.compare.text)
     ]));
   }

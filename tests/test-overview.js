@@ -543,11 +543,11 @@
     function vw() { return document.documentElement.clientWidth; }
     function vh() { return document.documentElement.clientHeight; }
     // The cards on the sample, in a box fixed on screen at (left, top), so where the popover lands can be measured.
-    function onScreen(left, top) {
+    function onScreen(left, top, width) {
       sample();
       TAP.store.reset();
       var host = T.dom.mount();
-      host.style.cssText = 'position:fixed;z-index:50;width:300px;left:' + left + 'px;top:' + top + 'px';
+      host.style.cssText = 'position:fixed;z-index:50;width:' + (width || 300) + 'px;left:' + left + 'px;top:' + top + 'px';
       TAP.overviewCards.render(host, { mode: 'set', set: ['na'] });
       return host;
     }
@@ -568,7 +568,7 @@
     }
 
     T.test(ID, 'North America’s new business figure opens a popover beside it, with the label, exact value and address', function (a) {
-      var host = onScreen(200, 120), f = naFig(host), e = window.SAMPLE_EXPECT.totals.na;
+      var host = onScreen(40, 120), f = naFig(host), e = window.SAMPLE_EXPECT.totals.na;
       try {
         spy(TAP.layers, 'open', function (calls) {
           spy(TAP.layers, 'openDetails', function (details) {
@@ -602,14 +602,15 @@
 
     T.test(ID, 'Near the right or bottom edge the popover flips left or up and stays inside the window', function (a) {
       try {
-        var right = onScreen(vw() - 160, 120), f = naFig(right);
+        var right = onScreen(vw() - 190, 120, 180), f = naFig(right);
         f.click();
         var r = pop().getBoundingClientRect(), b = f.getBoundingClientRect();
-        a.ok(r.right <= b.left, 'to the left of a figure near the right edge');
+        a.ok(b.right <= vw() && b.left >= 0, 'the figure is on screen, near the right edge');
+        a.ok(r.right <= b.left, 'the popover opens to its left');
         inWindow(a, r, 'right edge');
         TAP.sourceTip.close();
         // The figure itself a few pixels above the bottom edge, so the popover cannot open below its top
-        var low = onScreen(200, 0), g = naFig(low), gr = g.getBoundingClientRect();
+        var low = onScreen(40, 0), g = naFig(low), gr = g.getBoundingClientRect();
         low.style.top = (vh() - (gr.bottom - low.getBoundingClientRect().top) - 4) + 'px';
         g.click();
         var q = pop().getBoundingClientRect(), gb = g.getBoundingClientRect();
