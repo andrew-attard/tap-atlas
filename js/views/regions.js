@@ -6,8 +6,8 @@
  *          The address bar names the region (#regions/<id>); js/ui/app.js keeps it and state.region in step.
  * Provides: view 'regions' (registered with TAP.views), TAP.profile (cmp, rows, href, link)
  * Depends on: js/ui/view-head.js, js/panel/panel.js, config/profile.js, js/engine/registry.js, js/engine/scope.js,
- *             js/core/dom.js, icons.js, content.js, store.js, data.js, format.js, sources.js, js/ui/layers.js,
- *             js/ui/shell.js (label), css/profile.css (print) (all at call time)
+ *             js/core/dom.js, content.js, store.js, data.js, format.js, sources.js,
+ *             js/ui/shell.js (label), js/ui/compare-bar.js (pageButtons), css/profile.css (print) (all at call time)
  * Used by: js/ui/app.js, js/ui/shell.js (menu), js/views/overview-cards.js (link)
  * Owner: PROFILE stream (#214)
  */
@@ -72,22 +72,6 @@
     return el('label', { class: 'tap-pf__picker' }, [el('span', { class: 'tap-pf__picker-label' }, t('picker')), sel]);
   }
 
-  // The data date and the data sources panel, which the hidden comparison bar would otherwise carry.
-  function dataButton() {
-    return el('button', { type: 'button', class: 'tap-btn tap-pf__date', 'data-action': 'sources', onclick: function () {
-      if (!TAP.layers.__stub) TAP.layers.open('sources');
-    } }, [TAP.icons.svg('data'), el('span', null, TAP.content.text('compare.dataDate', { date: TAP.format.date(TAP.sources.dataDate()) }))]);
-  }
-
-  // The page-wide buttons the hidden comparison bar would otherwise carry, beside the data date (D72).
-  function pageButtons() {
-    var box = el('div', { class: 'tap-pf__actions' });
-    try { if (!TAP.present.__stub) TAP.present.button(box); } catch (e) { /* presentation mode is optional here */ }
-    box.appendChild(el('button', { type: 'button', class: 'tap-btn tap-tour__button', onclick: function () { TAP.tour.start(); } },
-      [TAP.icons.svg('help', { size: 18 }), TAP.content.text('tourUi.button')]));
-    return box;
-  }
-
   // The data status label and date for every printed page (US-2.4.5): the print stylesheet shows this variable in
   // the page margin. It is a CSS string, so quotes and backslashes in the label are escaped.
   function printLabel(on) {
@@ -104,7 +88,7 @@
     page.setAttribute('data-region', id);
     var top = el('div', { class: 'tap-pf__top' }, [regionSelect(id),
       el('button', { type: 'button', class: 'tap-btn tap-pf__print', 'data-action': 'print', onclick: function () { window.print(); } }, t('print')),
-      dataButton(), pageButtons()]);
+      TAP.compareBar.pageButtons()]);   // Data, Present and Tour, which the hidden comparison bar would carry (D116)
     printLabel(true);
     var title = el('div', { class: 'tap-pf__head' }, [
       el('span', { class: 'tap-pf__bar', style: 'background:' + TAP.scope.colorOf(id), 'aria-hidden': 'true' })

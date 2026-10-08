@@ -71,18 +71,17 @@
   }
 }
 
-/* Comparison bar, two rows (D50): the mode and its pickers on one line, then the sentence and the data date.
-   Controls keep a 40 px touch height; their words are label size so row 1 fits at 1280 px. */
+/* Comparison bar, one row (D116): "Compare", the modes and pickers on the left, the page buttons at the end. Short of
+   room (125% and 150% zoom, or One vs the rest at 1280 px) the buttons wrap below as one group; nothing scrolls sideways.
+   Controls keep a 40 px touch height; the mode words are label size. */
 .tap-cmp {
-  display: flex; flex-direction: column; gap: var(--tap-sp-2);
   padding: var(--tap-sp-2) var(--tap-edge);
   background: var(--tap-surface); border-bottom: var(--tap-rule-w) solid var(--tap-ink);
 }
-.tap-cmp__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3); }
-.tap-cmp__row--sentence { position: relative; }
-/* On a view nothing follows (the Guide), only the sentence line and the data date stay (QA-13) */
-.tap-cmp--slim .tap-cmp__row--controls { display: none; }
-.tap-cmp--slim .tap-cmp__sentence { font-size: var(--tap-fs-body); }
+.tap-cmp__row, .tap-cmp__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3); }
+.tap-cmp__controls { min-width: 0; }
+/* A view with no comparison (the Guide, QA-13; the Overview, D118) keeps only the buttons */
+.tap-cmp--slim .tap-cmp__controls { display: none; }
 .tap-cmp__title { font-size: var(--tap-fs-body); font-weight: 800; }
 .tap-cmp__label { font-size: var(--tap-fs-label); font-weight: 600; }
 .tap-cmp__picker { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
@@ -120,14 +119,18 @@
 .tap-cmp__tick { display: inline-block; min-width: 1ch; }
 .tap-cmp__setdone { align-self: flex-start; }
 
-/* The plain sentence, its explanation, the data date and the page-wide actions beside it (D72) */
-.tap-cmp__say { flex: 1 1 280px; display: flex; align-items: center; gap: var(--tap-sp-2); margin: 0; }
-.tap-cmp__sentence { font-size: var(--tap-fs-h3); line-height: 1.3; font-weight: 800; }
+/* The explanation of a combined figure, beside the others control */
 .tap-cmp__explain { flex: none; border: var(--tap-rule-w) solid var(--tap-ink); background: var(--tap-ground); }
-.tap-cmp__date { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); background: var(--tap-ground); }
-.tap-topbar__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); flex: none; }
+
+/* The page buttons (D116), on the bar and the region profile: Data with the date, Present, Tour. Each an icon and a
+   short word in body text (D24), as high as the mode buttons; they stay together and sit at the end of the row. */
+.tap-pagebtns { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--tap-sp-2); flex: none; margin-left: auto; }
+.tap-topbar__actions { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--tap-sp-2); flex: none; }
 .tap-topbar__actions:empty { display: none; }
-.tap-topbar__actions .tap-btn { border-width: var(--tap-rule-w); background: var(--tap-ground); }
+.tap-pagebtns .tap-btn {
+  height: 40px; min-height: 40px; padding: 0 var(--tap-sp-3); font-size: var(--tap-fs-body); white-space: nowrap;
+  border-width: var(--tap-rule-w); background: var(--tap-ground);
+}
 .tap-cmp__pop {
   position: absolute; top: calc(100% + var(--tap-sp-2)); left: 0; z-index: 40;
   width: min(560px, 92vw); padding: var(--tap-sp-4) var(--tap-sp-6);

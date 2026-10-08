@@ -2,12 +2,12 @@
  * File: js/ui/tour.js
  * Purpose: The optional guided welcome tour of the screen (US-1.1.11, US-2.6.3, US-4.6.1): a welcome card offered once, then
  *          at most ten short steps that spotlight each part of the screen in turn. A few lines of custom code, no library.
- * Provides: TAP.tour (offer, start, stop, steps, fullscreen)
+ * Provides: TAP.tour (offer, start, stop, steps, fullscreen, button)
  * Depends on: js/core/storage.js, js/core/content.js, js/core/dom.js, js/core/icons.js, js/core/store.js,
  *             js/ui/shell.js (actionsEl), js/ui/layers.js (close)
- * Used by: js/ui/app.js (offer, after start-up), js/views/guide.js (start)
+ * Used by: js/ui/app.js (offer, after start-up), js/views/guide.js (start), js/ui/compare-bar.js (button)
  *
- * offer() adds the "Take the tour" button to the top bar and shows the welcome card unless the tour was taken or
+ * offer() adds the Tour button to the comparison bar and shows the welcome card unless the tour was taken or
  * skipped before (remembered with TAP.storage, so a browser that blocks storage sees the card each time), a chart
  * is expanded, or the page is full screen. Returns true when the card is shown. Step wording: content/text-pages.js.
  */
@@ -111,13 +111,15 @@
     take.focus();
   }
 
-  // The replay button in the top bar, added once per shell.
+  // The replay button, once per slot: "Tour" on screen, "Take the tour" to a screen reader (D116). The comparison bar
+  // and the region profile place it (TAP.compareBar.pageButtons).
+  function button(slot) {
+    if (!slot || slot.querySelector('.tap-tour__button')) return;
+    slot.appendChild(el('button', { type: 'button', class: 'tap-btn tap-tour__button', 'aria-label': t('button'), title: t('button'),
+      onclick: function () { start(); } }, [TAP.icons.svg('help', { size: 18 }), el('span', null, t('buttonShort'))]));
+  }
   function addButton() {
-    var slot;
-    try { slot = TAP.shell.actionsEl(); } catch (e) { return; }
-    if (slot.querySelector('.tap-tour__button')) return;
-    slot.appendChild(el('button', { type: 'button', class: 'tap-btn tap-tour__button', onclick: function () { start(); } },
-      [TAP.icons.svg('help', { size: 18 }), t('button')]));
+    try { button(TAP.shell.actionsEl()); } catch (e) { /* no shell drawn */ }
   }
 
   function offer() {
@@ -224,5 +226,5 @@
     go(0);
   }
 
-  TAP.tour = { offer: offer, start: start, stop: stop, steps: steps, fullscreen: fullscreen };
+  TAP.tour = { offer: offer, start: start, stop: stop, steps: steps, fullscreen: fullscreen, button: button };
 })(window.TAP);

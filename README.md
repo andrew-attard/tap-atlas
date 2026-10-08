@@ -145,7 +145,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 |---|---|
 | `js/ui/app.js` | Starts the app: checks the data, draws the frame, swaps views |
 | `js/ui/shell.js` | The page frame: banner, top bar and menu, view area |
-| `js/ui/compare-bar.js` | The comparison bar: three modes (all regions, selected regions, one vs the rest), the plain sentence, the data date |
+| `js/ui/compare-bar.js` | The comparison bar, one row: three modes (all regions, selected regions, one vs the rest) and their pickers, then the Data, Present and Tour buttons; the plain sentence for screen readers |
 | `js/ui/layers.js` | Side panels (details, data sources, explanations), one at a time |
 | `js/ui/sources-panel.js` | The data sources panel: files, dates, import notes, skipped rules |
 | `js/ui/source-tip.js` | The data icon beside a figure: its popover shows the kind of value and file › sheet › cell (D100) |
@@ -279,7 +279,7 @@ So: **data** says what the plans hold, **config** says what to show and how to w
 1. Run the import (built in Copilot from `docs/IMPORT-BRIEF.md`) on the regional workbooks.
 2. Save its output as `data/plan-data.js` in the internal copy of the folder, replacing the old file.
 3. Double-click `index.html`. If it stops with "The data file has problems that stop the app from opening", press **Copy the list** and use prompt 6 in `docs/COPILOT-PROMPTS.md`. Fix the import, never the data file by hand.
-4. Click the "Data:" date on the comparison bar to check every region's file, dates and import notes.
+4. Click the "Data" button (with the data date) on the comparison bar to check every region's file, dates and import notes.
 
 The full run is in `docs/REAL-DATA-CHECKLIST.md`.
 

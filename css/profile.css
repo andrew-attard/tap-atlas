@@ -27,8 +27,6 @@
 .tap-pf__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-3) var(--tap-sp-6); }
 .tap-pf__picker { display: inline-flex; max-width: 100%; align-items: center; gap: var(--tap-sp-2); font-size: var(--tap-fs-label); font-weight: 600; }
 .tap-pf__picker .tap-field { font-size: var(--tap-fs-body); min-width: min(14rem, 100%); }
-.tap-pf__date { margin-left: auto; }
-.tap-pf__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); }
 .tap-pf__head { display: flex; gap: var(--tap-sp-4); align-items: stretch; }
 .tap-pf__bar { width: 10px; flex: none; }
 .tap-pf__reports { display: flex; flex-direction: column; gap: var(--tap-sp-6); }

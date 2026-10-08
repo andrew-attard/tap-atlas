@@ -143,11 +143,12 @@
     return { glyph: t.glyph, label: label, text: (t.glyph ? t.glyph + ' ' : '') + label };
   }
 
-  // "2 Oct 2026", read in UTC so the date doesn't shift with the viewer's time zone. {time: true} adds "09:05".
+  // "2 Oct 2026", read in UTC so the date doesn't shift with the viewer's time zone. {time: true} adds "09:05";
+  // {short: true} leaves out the year ("2 Oct", the Data button, D116).
   function date(iso, opts) {
     var d = TAP.sources && TAP.sources.isoDate(iso) ? new Date(iso) : null;   // other text is never guessed at
     if (!d || isNaN(d.getTime())) return missing();
-    var s = d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    var s = d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + (opts && opts.short ? '' : ' ' + d.getUTCFullYear());
     if (opts && opts.time) s += ', ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
     return s;
   }

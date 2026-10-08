@@ -173,9 +173,8 @@
       box.appendChild(el('button', { type: 'button', class: 'tap-panel__item', role: 'menuitem', 'data-action': action,
         disabled: off || null, onclick: fn }, [TAP.icons.svg(icon, { size: 18 }), el('span', { class: 'tap-panel__item-label' }, label)]));
     }
-    item('compare', 'compare', t('compareDifferently'), function () {
-      p.set({ pop: null, editing: true });
-    });
+    // opts.noCompare: a panel whose page offers no comparison (the Overview, D118)
+    if (!p.opts.noCompare) item('compare', 'compare', t('compareDifferently'), function () { p.set({ pop: null, editing: true }); });
     var big = TAP.store.get().expanded === p.id;
     item(big ? 'collapse-menu' : 'expand', big ? 'shrink' : 'expand', t(big ? 'closeExpanded' : 'expand'), function () { p.st.pop = null; p.expand(!big); });
     item('fullscreen', 'fullscreen', t('fullscreen'), function () { p.st.pop = null; p.fullscreen(); p.render(); });

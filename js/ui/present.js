@@ -96,7 +96,9 @@
     var x = window.scrollX, y = window.scrollY;
     try {
       TAP.store.set({ expanded: s.reportId });
-      run.panel = TAP.panel.create(run.host, s.def || s.reportId, { cmp: s.cmp, initial: s.initial, local: true });
+      var def = s.def || TAP.reports.get(s.reportId);   // an Overview chart offers no comparison, as on the Overview (D118)
+      run.panel = TAP.panel.create(run.host, s.def || s.reportId, { cmp: s.cmp, initial: s.initial, local: true,
+        noCompare: !!def && def.view === 'overview' });
       if (s.highlight) run.panel.highlight(Object.assign({}, s.highlight));
     } finally { run.busy = false; }
     window.scrollTo(x, y);

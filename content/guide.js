@@ -65,7 +65,7 @@ window.TAP_CONTENT.guide = {
       { id: 'compare', title: 'The comparison bar', paragraphs: [
         'The comparison bar decides which regions every chart shows, in three modes. All regions shows each region separately. Selected regions shows only the regions you tick, one region or more, so a single region can be shown on its own.',
         'One vs the rest sets one focus region against the others.',
-        'The sentence under the bar always says in plain words what is on screen, for example "Showing North America only".',
+        'The pressed mode and the regions picked show what is compared, and screen readers announce it in plain words, for example "Showing North America only". The Overview always shows every region, so there the bar holds only its Data, Present and Tour buttons.',
         'With one focus region, the other regions can be shown one by one or as one combined figure: their average or their total. Combined figures are drawn in dark grey and say how they were made.',
         'A single chart can also compare differently for a side question. It shows a "Custom comparison" badge, and goes back to the shared setting when the bar changes.'
       ] },
