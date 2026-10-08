@@ -189,6 +189,14 @@
       a.equal(getComputedStyle(qs('.tap-list thead [data-tap-opt]', p.el)).fontSize, '16px', 'headings 16 px');
     }));
 
+    T.test('X-panel-count-one', 'A table or list with one row says "1 row", never "1 rows"', function (a) {
+      ['tableCount', 'listCount'].forEach(function (k) {
+        var one = TAP.content.text('panel.' + k + 'One', { n: 1 });
+        a.match(one, /^1 row /, k + ': ' + one);
+        a.ok(!/1 rows/.test(one), k + ' never reads "1 rows"');
+      });
+    });
+
     T.test('TPV-TC-291', 'Copy gives the list as tab-separated text with the source column and the data status label', scene(function (a, s) {
       s.report(listDef());
       var p = s.panel('x-list'), res = TAP.builders.get('x-fake-list')(last());
