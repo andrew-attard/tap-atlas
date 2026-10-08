@@ -80,16 +80,19 @@
       TAP.data.load(window.T_FIXTURE('mini'));
     });
 
-    T.test(ID, 'Each topic shows its key measures by default: 5 to 10 existing ones, in the config’s order', onSample({ measure: 'nb.hitRate', by: 'entity' }, function (a, host) {
+    T.test(ID, 'Each topic shows its key measures by default: those that fit the question, in the config’s order', onSample({ measure: 'nb.hitRate', by: 'entity' }, function (a, host) {
       var ids = TAP.custom.options().map(function (o) { return o.measureId; });
+      // Compare regions (D140): a key measure with a region total; the per-industry ratings wait for "Break one region down"
+      var fits = function (id) { var o = TAP.custom.options().filter(function (x) { return x.measureId === id; })[0]; return !!o && o.by.indexOf('entity') >= 0; };
       a.deepEqual(topicBtns(host).map(txt), Object.keys(NAMES).map(function (k) { return NAMES[k]; }), 'the six topic buttons');
       a.equal(pressed(host), 'newBusiness', 'the current measure’s topic is chosen');
       window.TAP_CUSTOM_TOPICS.forEach(function (t) {
         topic(host, t.id);
         a.equal(pressed(host), t.id, t.id + ' pressed');
-        var shown = radios(host);
-        a.ok(shown.length >= 5 && shown.length <= 10, t.id + ': 5 to 10 key measures (' + shown.length + ')');
-        a.deepEqual(shown, t.key, t.id + ': the key list, in order');
+        var shown = radios(host), key = t.key.filter(fits);
+        a.ok(t.key.length >= 5 && t.key.length <= 10, t.id + ': 5 to 10 key measures in the config (' + t.key.length + ')');
+        a.ok(shown.length >= 4 && shown.length <= 10, t.id + ': a short list on screen (' + shown.length + ')');
+        a.deepEqual(shown, key, t.id + ': the key list that fits the question, in order');
         shown.forEach(function (id) { a.ok(ids.indexOf(id) >= 0, id + ' is an offered measure'); });
         // Each row names the measure and its kind of value, in words beside it
         shown.forEach(function (id) {
