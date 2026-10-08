@@ -1,7 +1,7 @@
 /*
  * File: tests/test-custom.js
  * Purpose: Tests for custom charts: the combinations each measure allows, the definitions built from them
- *          (US-3.5.2), the Build a chart view (US-3.5.1, D96) and the session list (US-3.5.3).
+ *          (US-3.5.2), the Build a chart view (US-3.5.1, D96, in the D140 form) and the kept charts (US-3.5.3).
  * Provides: test cases TPV-TC-552 to 556, 558, 559, 561 to 565, 567, 568, 570, 572, X-custom-*, X-d96-*
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures (mini-data, mini-expected)
  * Used by: tests.html
@@ -70,10 +70,11 @@
     if (!radioOf(host, id)) showAll(host);
     return radioOf(host, id);
   }
-  var SEVEN = [{ measure: 'nb.arr', by: 'entity', type: 'bar' }, { measure: 'nb.arr', by: 'entity', type: 'dot' },
-    { measure: 'nb.arr', by: 'year', type: 'groupedBar' }, { measure: 'nb.hitRate', by: 'entity', type: 'bar' },
-    { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, { measure: 'base.arr', by: 'entity', type: 'table' },
-    { measure: 'cg.arr', by: 'entity', type: 'bar' }];
+  // Seven different charts in the D140 form (a region for "Break one region down", bar or table)
+  var SEVEN = [{ ask: 'regions', measure: 'nb.arr', by: 'entity', type: 'bar' }, { ask: 'one', measure: 'nb.arr', by: 'industry', type: 'bar', region: 'alpha' },
+    { ask: 'years', measure: 'nb.arr', by: 'year', type: 'groupedBar' }, { ask: 'regions', measure: 'nb.hitRate', by: 'entity', type: 'bar' },
+    { ask: 'one', measure: 'nb.hitRate', by: 'industry', type: 'bar', region: 'bravo' }, { ask: 'regions', measure: 'base.arr', by: 'entity', type: 'table' },
+    { ask: 'regions', measure: 'cg.arr', by: 'entity', type: 'bar' }];
   function emptyList() { while (TAP.custom.saved().length) TAP.custom.remove(0); }
   // A session list that starts empty and is emptied again afterwards
   function listScene(fn) { return scene(function (a, s) { emptyList(); try { fn(a, s); } finally { emptyList(); } }); }
@@ -212,11 +213,13 @@
       a.ok(!!TAP.custom.definition({ measure: 'ind.growthPotential', by: 'entity' }).errors, 'a per-industry figure has no region total');
     });
 
-    T.test('X-custom-types', 'Chart types follow the compare shape (D18): grouped bars only with a second dimension', function (a) {
-      a.deepEqual(TAP.custom.definition({ measure: 'nb.arr', by: 'entity' }).types, ['bar', 'dot', 'table']);
-      a.deepEqual(TAP.custom.definition({ measure: 'nb.arr', by: 'industry' }).types, ['groupedBar', 'dot', 'table']);
-      a.equal(TAP.custom.definition({ measure: 'nb.arr', by: 'entity' }).defaultType, 'bar', 'first type by default');
+    T.test('X-custom-types', 'Chart types (D140): bars and the table; grouped bars for the plan years', function (a) {
+      a.deepEqual(TAP.custom.definition({ measure: 'nb.arr', by: 'entity' }).types, ['bar', 'table']);
+      a.deepEqual(TAP.custom.definition({ measure: 'nb.arr', by: 'industry' }).types, ['bar', 'table']);
+      a.deepEqual(TAP.custom.definition({ measure: 'nb.arr', by: 'year' }).types, ['groupedBar', 'table']);
+      a.equal(TAP.custom.definition({ measure: 'nb.arr', by: 'entity' }).defaultType, 'bar', 'bars by default');
       a.equal(TAP.custom.definition({ measure: 'nb.arr', by: 'year', type: 'table' }).defaultType, 'table', 'the type asked for');
+      a.equal(TAP.custom.definition({ measure: 'nb.arr', by: 'year', type: 'bar' }).defaultType, 'groupedBar', '"Bar" for the plan years is the grouped bars');
     });
 
     T.test('X-custom-definition', 'A definition is the same for the same choice, and is marked custom', function (a) {
@@ -226,7 +229,12 @@
       a.equal(d1.id, 'custom:nb.hitRate:industry');
       a.equal(d1.custom, true);
       a.equal(d1.shape, 'compare');
-      a.deepEqual(d1.spec, { measure: 'nb.hitRate', by: 'industry', type: 'dot' });
+      a.deepEqual(d1.spec, { ask: 'one', measure: 'nb.hitRate', by: 'industry', type: 'bar' }, 'the D140 form; the dot plot reads as bars');
+      a.equal(d1.builder, 'customOne', 'one region: its own builder (sorted bars)');
+      var d3 = TAP.custom.definition({ ask: 'one', measure: 'nb.hitRate', by: 'industry', region: 'bravo' });
+      a.equal(d3.id, 'custom:nb.hitRate:industry:bravo', 'a region fixed: its own id');
+      a.equal(d3.title, 'Region B hit rate by industry');
+      a.deepEqual(d3.cmp.set, ['bravo'], 'and a comparison of that region');
       a.deepEqual(d1.breakdowns, ['industry']);
       a.equal(d1.defaultBreakdown, 'industry');
       a.deepEqual(d1.measures.map(function (m) { return m.id; }), ['nb.hitRate']);
@@ -256,7 +264,7 @@
     /* ---------- US-3.5.1: build your own chart ---------- */
 
     T.test('TPV-TC-552', 'The Measure picker offers only measures from TAP.custom.options(), and every one with a choice', scene(function (a) {
-      var b = builder({ measure: 'nb.arr', by: 'entity' }), opts = TAP.custom.options();
+      var b = builder({ ask: 'regions', measure: 'nb.arr' }), opts = TAP.custom.options();
       var listed = b.measures();
       a.ok(listed.length > 10, 'measures offered');
       listed.forEach(function (id) { a.ok(!!byId(opts, id), id + ' comes from options()'); });
@@ -266,16 +274,19 @@
       a.ok(listed.indexOf('base.arr') >= 0 && listed.indexOf('ind.currentArr') < 0, 'the per-industry copy of current ARR adds nothing');
       a.ok(listed.indexOf('cg.segment.strategic') >= 0 && listed.indexOf('cg.seg.strategic.accounts') >= 0,
         'two figures that share a name (by industry, by risk level) are both offered, told apart');
-      a.ok(listed.indexOf('nb.hitRate') >= 0 && listed.indexOf('ind.growthPotential') >= 0, 'rates and ratings are offered');
+      a.ok(listed.indexOf('nb.hitRate') >= 0, 'rates are offered');
+      a.ok(listed.indexOf('ind.growthPotential') < 0, 'a per-industry rating has no region total: not for Compare regions (D140)');
       a.ok(listed.indexOf('ind.commentary') < 0 && listed.indexOf('ind.tier') < 0, 'no text or category');
+      click(qs('[data-control="custom-ask"] button[data-value="one"]', b.host));
+      a.ok(b.measures().indexOf('ind.growthPotential') >= 0, 'ratings are offered for Break one region down');
       b.h.destroy();
     }));
 
-    T.test('TPV-TC-553', 'The By picker offers only what the measure allows, and follows a change of measure', scene(function (a) {
-      var b = builder({ measure: 'nb.arr', by: 'entity' });
-      a.deepEqual(b.by(), ['entity', 'year', 'industry'], 'new business ARR: regions, plan year, industry');
+    T.test('TPV-TC-553', 'The By choice offers only what the measure allows, and follows a change of measure', scene(function (a) {
+      var b = builder({ ask: 'one', measure: 'nb.arr' });
+      a.deepEqual(b.by(), ['year', 'industry'], 'new business ARR: plan year, industry (regions are the first choice, D140)');
       b.pick('nb.hitRate');
-      a.deepEqual(b.by(), ['entity', 'industry'], 'hit rate: regions, industry');
+      a.deepEqual(b.by(), ['industry'], 'hit rate: industry');
       b.pick('ind.growthPotential');
       a.deepEqual(b.by(), ['industry'], 'a per-industry rating: industry only');
       a.equal(b.h.spec().by, 'industry', 'the choice moved to one the measure allows');
@@ -289,19 +300,19 @@
           var list = TAP.custom.definition({ measure: o.measureId, by: by }).types;
           a.ok(list.indexOf('table') >= 0, o.measureId + ' by ' + by + ': table');
           list.forEach(function (x) { a.ok(compare.indexOf(x) >= 0, x + ' suits the compare shape'); });
-          a.equal(list.indexOf('groupedBar') >= 0, by !== 'entity', 'grouped bars only with a second dimension');
-          a.ok(list.indexOf('bubble') < 0, 'no bubble without a size measure');
+          a.equal(list.indexOf('groupedBar') >= 0, by === 'year', 'grouped bars for the plan years only (D140)');
+          a.ok(list.indexOf('bubble') < 0 && list.indexOf('dot') < 0, 'no bubble without a size measure, no dot plot (D140)');
         });
       });
     });
 
-    T.test('TPV-TC-554', 'The Chart type picker shows the types for the choice, and follows it', scene(function (a) {
-      var b = builder({ measure: 'nb.arr', by: 'entity' });
-      a.deepEqual(b.types(), ['bar', 'dot', 'table']);
-      click(qs('[data-control="custom-by"] button[data-value="year"]', b.host));
-      a.deepEqual(b.types(), ['groupedBar', 'dot', 'table']);
-      click(qs('[data-control="custom-type"] button[data-value="dot"]', b.host));
-      a.deepEqual(b.h.spec(), { measure: 'nb.arr', by: 'year', type: 'dot' });
+    T.test('TPV-TC-554', 'Show as offers Bar and Table for every choice, and follows it', scene(function (a) {
+      var b = builder({ ask: 'regions', measure: 'nb.arr' });
+      a.deepEqual(b.types(), ['bar', 'table']);
+      click(qs('[data-control="custom-ask"] button[data-value="years"]', b.host));
+      a.deepEqual(b.types(), ['bar', 'table'], 'the same two for the plan years');
+      click(qs('[data-control="custom-type"] button[data-value="table"]', b.host));
+      a.deepEqual(b.h.spec(), { ask: 'years', measure: 'nb.arr', by: 'year', type: 'table' });
       b.h.destroy();
     }));
 
@@ -339,33 +350,38 @@
 
     T.test('X-custom-builder-panel', 'The section draws a panel with the custom definition, and redraws on a new choice', scene(function (a) {
       var b = builder({ measure: 'nb.hitRate', by: 'industry', type: 'dot' });
-      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.hitRate:industry');
+      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.hitRate:industry:alpha', 'one region (D140): the first in the data');
       a.ok(!!qs('[data-custom-chart]', b.panel()), 'with its badge');
-      a.match(qs('.tap-panel__title', b.panel()).textContent, /Hit rate by industry/);
+      a.match(qs('.tap-panel__title', b.panel()).textContent, /Region A hit rate by industry/);
       b.pick('nb.arr');
-      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.arr:industry', 'the same dimension kept when allowed');
+      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.arr:industry:alpha', 'the same dimension kept when allowed');
       a.equal(qsa('.tap-panel', b.host).length, 1, 'one panel at a time');
       b.h.destroy();
     }));
 
-    T.test('X-custom-builder-type-memory', 'A chart type chosen in the panel follows into the picker, and is not kept in the browser', scene(function (a) {
-      var b = builder({ measure: 'nb.arr', by: 'entity', type: 'bar' });
-      click(qs('.tap-panel [data-action="type"]', b.host));
-      click(qs('.tap-panel [data-type="dot"]', b.host));
-      a.equal(b.h.spec().type, 'dot', 'the picker follows');
-      a.equal(qs('[data-control="custom-type"] [aria-pressed="true"]', b.host).getAttribute('data-value'), 'dot');
+    T.test('X-custom-builder-type-memory', 'The panel’s Table button follows into Show as, and is not kept in the browser', scene(function (a) {
+      var b = builder({ ask: 'regions', measure: 'nb.arr', type: 'bar' });
+      click(qs('.tap-panel [data-action="table"]', b.host));
+      a.equal(b.h.spec().type, 'table', 'Show as follows');
+      a.equal(qs('[data-control="custom-type"] [aria-pressed="true"]', b.host).getAttribute('data-value'), 'table');
       a.equal(TAP.storage.get('chart:custom:nb.arr:entity', null), null, 'nothing remembered');
-      a.equal(TAP.reports.get('custom:nb.arr:entity').defaultType, 'dot', 'the panel was drawn again from a matching definition');
-      a.equal(document.activeElement, qs('.tap-panel [data-action="type"]', b.host), 'focus back on the chart type button');
+      a.equal(TAP.reports.get('custom:nb.arr:entity').defaultType, 'table', 'the panel was drawn again from a matching definition');
+      a.equal(document.activeElement, qs('.tap-panel [data-action="table"]', b.host), 'focus back on the Table button');
+      click(qs('.tap-panel [data-action="table"]', b.host));
+      a.equal(b.h.spec().type, 'bar', 'and back to bars');
       b.h.destroy();
     }));
 
     T.test('X-custom-builder-focus', 'Focus stays on the control used when the pickers are drawn again', scene(function (a) {
-      var b = builder({ measure: 'nb.arr', by: 'entity' });
+      var b = builder({ ask: 'one', measure: 'nb.arr', by: 'industry' });
       var yr = qs('[data-control="custom-by"] button[data-value="year"]', b.host);
       yr.focus();
       click(yr);
       a.equal(document.activeElement, qs('[data-control="custom-by"] button[data-value="year"]', b.host), 'the By button');
+      var ask = qs('[data-control="custom-ask"] button[data-value="years"]', b.host);
+      ask.focus();
+      click(ask);
+      a.equal(document.activeElement, qs('[data-control="custom-ask"] button[data-value="years"]', b.host), 'the question pressed');
       var r = radioOf(b.host, 'nb.hitRate');
       r.focus();
       b.pick('nb.hitRate');
@@ -396,10 +412,10 @@
         a.equal(TAP.views.title('build'), 'Build a chart', 'menu title');
         a.ok(!!head, 'the standard view header');
         a.ok(title && /\S/.test(title.textContent), 'with a title');
-        a.ok(!!qs('[data-custom-picker] input[data-custom="measure"]', view) && !!qs('[data-control="custom-by"]', view) && !!qs('[data-control="custom-type"]', view),
-          'the Measure, By and Chart type pickers');
+        a.ok(!!qs('[data-control="custom-ask"]', view) && !!qs('[data-custom-picker] input[data-custom="measure"]', view) && !!qs('[data-control="custom-type"]', view),
+          'the question, the Measure picker and Show as (D140)');
         a.ok(!!qs('.tap-custom__panel .tap-panel', view), 'the custom chart panel');
-        a.ok(!!qs('.tap-custom__kept .tap-custom__h3', view), 'the session list');
+        a.ok(!!qs('.tap-custom__kept .tap-custom__h3', view), 'the kept charts row');
         a.ok(head.compareDocumentPosition(qs('.tap-custom', view)) & Node.DOCUMENT_POSITION_FOLLOWING, 'the header comes first');
         a.ok(/^#\/?build$/.test(window.location.hash), 'the address is #build: ' + window.location.hash);
       } finally {
@@ -425,12 +441,13 @@
       recordReady ? scene(function (a, s) {
         TAP.present.clearRecorded();
         try {
-          var p = s.panel(TAP.custom.definition({ measure: 'nb.hitRate', by: 'industry', type: 'dot' }));
+          var p = s.panel(TAP.custom.definition({ ask: 'one', measure: 'nb.hitRate', by: 'industry', region: 'bravo' }));
           click(qs('[data-action="more"]', p.el));
           click(qs('[data-action="record"]', p.el));
           var step = TAP.present.recorded()[0];
-          a.deepEqual(step.custom, { measure: 'nb.hitRate', by: 'industry', type: 'dot' });
+          a.deepEqual(step.custom, { ask: 'one', measure: 'nb.hitRate', by: 'industry', type: 'bar', region: 'bravo' }, 'the D140 spec, region and all');
           a.equal(TAP.present.check([step]).skipped.length, 0, 'passes the step check');
+          a.deepEqual(TAP.present.check([step]).ok[0].cmp.set, ['bravo'], 'and plays with its region');
         } finally { TAP.present.clearRecorded(); }
       }) : 'Waits for the running-order recording (US-3.1.3, PRESENT).');
 
@@ -515,7 +532,8 @@
       TAP.custom.save(SEVEN[0]);
       var r = TAP.custom.save({ measure: 'nb.arr', by: 'entity', type: 'bar' });
       a.equal(r.ok, true);
-      a.equal(r.index, 0, 'points at the one already kept');
+      a.equal(r.index, 0, 'points at the one already kept (an older spec of the same chart)');
+      a.equal(TAP.custom.save({ measure: 'nb.arr', by: 'entity', type: 'dot' }).index, 0, 'a dot plot of it is the same bar chart (D140)');
       a.equal(TAP.custom.saved().length, 1);
       a.equal(TAP.custom.save({ measure: 'ind.tier', by: 'industry' }).ok, false, 'a choice that can not be drawn is not kept');
     }));
@@ -523,14 +541,14 @@
     T.test('TPV-TC-568', 'A kept chart reopens with the same measure, dimension and chart type', listScene(function (a) {
       var b = builder({ measure: 'nb.hitRate', by: 'industry', type: 'dot' });
       click(qs('[data-action="custom-keep"]', b.host));
-      a.deepEqual(TAP.custom.saved()[0], { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, 'kept as built');
+      a.deepEqual(TAP.custom.saved()[0], { ask: 'one', measure: 'nb.hitRate', by: 'industry', type: 'bar', region: 'alpha' }, 'kept as built (the D140 form)');
       b.pick('nb.arr');
-      click(qs('[data-control="custom-by"] button[data-value="entity"]', b.host));
+      click(qs('[data-control="custom-ask"] button[data-value="regions"]', b.host));
       a.equal(b.panel().getAttribute('data-report'), 'custom:nb.arr:entity', 'moved on');
       click(qs('[data-custom-open="0"]', b.host));
-      a.deepEqual(b.h.spec(), { measure: 'nb.hitRate', by: 'industry', type: 'dot' }, 'reopened as built');
-      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.hitRate:industry');
-      a.equal(qs('.tap-panel [data-action="type"]', b.host).textContent.trim(), TAP.shapes.label('dot'), 'the panel draws the same type');
+      a.deepEqual(b.h.spec(), { ask: 'one', measure: 'nb.hitRate', by: 'industry', type: 'bar', region: 'alpha' }, 'reopened as built');
+      a.equal(b.panel().getAttribute('data-report'), 'custom:nb.hitRate:industry:alpha');
+      a.equal(qs('.tap-panel [data-action="type"]', b.host).textContent.trim(), TAP.shapes.label('bar'), 'the panel draws the same type');
       b.h.destroy();
     }));
 
@@ -567,8 +585,7 @@
       var b = builder({ measure: 'cg.arr', by: 'entity', type: 'bar' });
       click(qs('[data-action="custom-keep"]', b.host));
       TAP.custom.save(SEVEN[4]);
-      click(qs('.tap-panel [data-action="type"]', b.host));
-      click(qs('.tap-panel [data-type="dot"]', b.host));
+      click(qs('.tap-panel [data-action="table"]', b.host));
       a.equal(TAP.custom.saved().length, 2, 'two kept');
       a.equal(dump(window.localStorage), before.l, 'local storage unchanged');
       a.equal(dump(window.sessionStorage), before.s, 'session storage unchanged');
