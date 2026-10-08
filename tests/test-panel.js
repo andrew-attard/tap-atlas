@@ -2,7 +2,7 @@
  * File: tests/test-panel.js
  * Purpose: Tests for the report panel and its controls.
  * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
- *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125)
+ *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), X-d132-* (D132)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -1403,8 +1403,34 @@
       a.ok(txt(p.el).indexOf(ONE) < 0, 'no one-region note');
     }));
 
-    T.test('X-d125-one-region-breakdowns', 'Only industry and solution carry the one-region flag in the sample', function (a) {
-      a.deepEqual(TAP.reports.BREAKDOWNS.filter(TAP.reports.oneRegion), ['industry', 'solution']);
+    T.test('X-d125-one-region-breakdowns', 'Industry, solution and risk carry the one-region flag (D125, D132)', function (a) {
+      a.deepEqual(TAP.reports.BREAKDOWNS.filter(TAP.reports.oneRegion), ['industry', 'risk', 'solution']);
     });
+
+    /* D132: the segments chart's risk breakdown follows the same rule */
+
+    T.test('X-d132-risk-one-region', 'With several regions, the segments chart greys the risk breakdown with "One region only"', onSample(function (a, s) {
+      a.equal(TAP.reports.BREAKDOWN_META.risk && TAP.reports.BREAKDOWN_META.risk.oneRegion, true, 'risk is flagged');
+      var p = s.panel('cg-segments'), b = opt(p, 'risk');
+      a.ok(b, 'risk stays visible');
+      a.equal(b && b.getAttribute('aria-disabled'), 'true', 'disabled (aria-disabled)');
+      a.ok(b && /needs one region selected/.test(b.getAttribute('aria-label') || ''), 'the accessible name says why');
+      a.ok(txt(control(p)).indexOf(ONE) >= 0, 'the visible note "' + ONE + '"');
+      click(b);
+      a.equal(pressedBd(p), 'none', 'a click changes nothing');
+    }));
+
+    T.test('X-d132-risk-one-region', 'With one region, the risk breakdown is enabled and draws', onSample(function (a, s) {
+      TAP.store.set({ cmp: { mode: 'set', set: ['mea'] } });
+      var p = s.panel('cg-segments'), b = opt(p, 'risk');
+      a.equal(b && b.getAttribute('aria-disabled'), null, 'enabled');
+      a.ok(txt(control(p)).indexOf(ONE) < 0, 'no note');
+      click(b);
+      a.equal(pressedBd(p), 'risk', 'chosen');
+      a.ok(!qs('.tap-panel__error', p.el), 'with no error');
+      TAP.store.set({ cmp: { mode: 'set', set: ['mea', 'na'] } });
+      a.equal(pressedBd(p), 'none', 'a wider comparison falls back to no breakdown');
+      a.equal(txt(qs('.tap-panel__bd-note', p.el)), 'Breakdown by risk level needs one region; showing no breakdown.', 'and says so');
+    }));
   });
 })(window.TAP);

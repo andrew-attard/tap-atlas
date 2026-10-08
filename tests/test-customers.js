@@ -1,7 +1,8 @@
 /*
  * File: tests/test-customers.js
  * Purpose: Tests for the Customer growth view: the view itself (US-2.2.1) and its reports.
- * Provides: test cases TPV-TC-369 to TPV-TC-410 (automated ones) and X-cg-*; window.CGP_T (shared helpers for tests/test-partners.js)
+ * Provides: test cases TPV-TC-369 to TPV-TC-410 (automated ones), X-cg-* and X-d131 to X-d134 (D131 to D134); window.CGP_T
+ *           (shared helpers for tests/test-partners.js)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: CGP stream
@@ -260,16 +261,16 @@
       });
     });
 
-    when([196, 204], 'X-cg-segments-ink', 'Segments are drawn in ink steps, darkest Strategic, each named in the legend', function (a) {
+    when([196, 204], 'X-d131-segment-colours', 'Segments take the segment palette, not ink steps, named in a legend of swatches', function (a) {
       var th = window.TAP_THEME, res = build('cg-segments', { mode: 'all' });
       ((res.option || {}).series || []).filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s) {
         (s.data || []).forEach(function (d) {
           if (!d || !d.key) return;
-          a.equal(d.itemStyle.color, th.shade(th.ink, SEGS.indexOf(TAP.cgBuilders.segmentOf(d.key))), d.entityId + ' ' + d.key);
+          a.equal(d.itemStyle.color, th.segments[TAP.cgBuilders.segmentOf(d.key)].bg, d.entityId + ' ' + d.key);
         });
       });
-      a.deepEqual(res.legend.map(function (l) { return l.color; }), SEGS.map(function (s, i) { return th.shade(th.ink, i); }), 'legend swatches');
-      a.ok(res.legend.every(function (l) { return l.role === 'part' && l.label; }), 'every segment named; no region colour key');
+      a.deepEqual(res.legend.map(function (l) { return l.color; }), SEGS.map(function (s) { return th.segments[s].bg; }), 'legend swatches');
+      a.ok(res.legend.every(function (l) { return l.role === 'segment' && l.label; }), 'every segment named with a swatch; no region colour key');
     });
 
     when([196, 229], 'TPV-TC-384', 'Broken down by risk: high, medium and not flagged add up to each segment', function (a) {
@@ -750,8 +751,8 @@
       a.deepEqual(listRows(med).sort(), ['alpha:13', 'delta:11'], 'medium risk: a4, d2');
       var both = build('cg-accounts', { mode: 'all' }, { opts: { 'filter:segment': 'core', 'filter:riskLevel': medium } });
       a.deepEqual(listRows(both), ['delta:11'], 'core and medium: d2 only');
-      var ctl = core.controls.map(function (c) { return c.key; });
-      a.deepEqual(ctl, ['filter:segment', 'filter:riskLevel'], 'a select for each');
+      var ctl = core.controls.map(function (c) { return c.key + ' ' + c.kind; });
+      a.deepEqual(ctl, ['filter:segment multi', 'filter:riskLevel multi'], 'a dropdown for each (D134)');
     });
 
     T.test('TPV-TC-408', 'First prepared, rows are sorted by incremental ARR, highest first', function (a) {
@@ -781,6 +782,245 @@
       a.deepEqual(TAP.cgpLayout.rows(window.TAP_VIEWS.customers.reports), [['cg-segments', 'cg-growth'], ['cg-exposure', 'cg-bubble'], ['cg-accounts']]);
       a.deepEqual(TAP.cgpLayout.rows(['pt-reliance', 'pt-capacity', 'pt-list']), [['pt-reliance', 'pt-capacity'], ['pt-list']]);
       a.deepEqual(TAP.cgpLayout.rows(['cg-segments', 'cg-exposure', 'cg-bubble']), [['cg-segments', 'cg-exposure'], ['cg-bubble']], 'an odd one out takes a full row');
+    });
+  });
+
+  /* ---------- v0.4.1: segment and risk colours (D131), the top accounts (D133), the list's dropdowns (D134).
+     Checked against SAMPLE_EXPECT, the raw sample file or the mini fixture, worked out by hand. ---------- */
+
+  T.suite('customers-v041', function () {
+    var TH = window.TAP_THEME, SEGS = ['strategic', 'growth', 'core', 'scaled'], RISKS = ['high', 'medium', 'none'];
+    function valueSeries(res) { return ((res.option || {}).series || []).filter(function (s) { return s.tapRole === 'value'; }); }
+    function drawn(s) { return (s.data || []).filter(function (d) { return d && d.raw != null; }); }
+    function txt(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function qsa(sel, root) { return Array.prototype.slice.call(root.querySelectorAll(sel)); }
+    function tipTitle(s, d) {
+      var div = document.createElement('div');
+      div.innerHTML = s.tooltip.formatter({ data: d });   // html-ok: test reads the tooltip the chart would show
+      return txt(div.querySelector('.tap-tip-title'));
+    }
+    function rawRegion(id) { return window.PLAN_DATA.regions.filter(function (r) { return r.id === id; })[0]; }
+    function riskOf(acc) { return acc.riskLevel === 'high' || acc.riskLevel === 'medium' ? acc.riskLevel : 'none'; }
+    function segName(id) { return TAP.data.lookups().segments.filter(function (x) { return x.id === id; })[0].name; }
+
+    /* D131: segment colours */
+
+    T.test('X-d131-segment-colours', 'Each segment has one colour, the same in every region’s bar, and the four differ', function (a) {
+      sample();
+      ['stacked100', 'stackedBar'].forEach(function (type) {
+        var res = build('cg-segments', { mode: 'all' }, { type: type }), seen = {};
+        var ss = valueSeries(res);
+        a.equal(ss.length, 4, type + ': four segment series');
+        ss.forEach(function (s) {
+          var ds = drawn(s), seg = TAP.cgBuilders.segmentOf(ds[0] && ds[0].key);
+          a.equal(ds.length, 6, type + ' ' + seg + ': a part in each of the six regions with accounts');
+          ds.forEach(function (d) {
+            a.equal(d.itemStyle.color, TH.segments[seg].bg, type + ' ' + d.entityId + ' ' + seg + ': the segment’s colour');
+            a.equal(d.label.color, TH.segments[seg].fg, type + ' ' + d.entityId + ' ' + seg + ': its label colour');
+          });
+          seen[seg] = ds[0].itemStyle.color;
+        });
+        a.deepEqual(Object.keys(seen), SEGS, type + ': in stacking order');
+        var colours = SEGS.map(function (x) { return seen[x]; });
+        a.equal(colours.filter(function (x, i) { return colours.indexOf(x) === i; }).length, 4, type + ': four different colours');
+        a.ok(colours.every(function (c) { return TH.regions.indexOf(c) < 0; }), type + ': no region colour');
+      });
+    });
+
+    T.test('X-d131-segment-colours', 'One legend: the four segments in their colours, named as the lookups do, and no region', function (a) {
+      sample();
+      var res = build('cg-segments', { mode: 'all' });
+      a.deepEqual(res.legend.map(function (l) { return [l.label, l.color, l.role]; }),
+        SEGS.map(function (s) { return [segName(s), TH.segments[s].bg, 'segment']; }), 'four segment keys');
+    });
+
+    T.test('X-d131-segment-colours', 'Share of total: one region’s segments add up to 100 and match SAMPLE_EXPECT', function (a) {
+      sample();
+      var X = window.SAMPLE_EXPECT.totals.na, res = build('cg-segments', { mode: 'all' }, { type: 'stacked100' }), sum = 0;
+      valueSeries(res).forEach(function (s) {
+        var d = s.data.filter(function (x) { return x && x.entityId === 'na'; })[0], seg = TAP.cgBuilders.segmentOf(d.key);
+        a.near(d.value, X['cg.segment.' + seg] / X.accounts * 100, 1e-6, 'na ' + seg);
+        sum += d.value;
+      });
+      a.near(sum, 100, 1e-6, 'na: the segments add up to 100');
+    });
+
+    T.test('X-d131-segment-colours', 'A visible Amount / Share of total switch; share is the default', function (a) {
+      sample();
+      var root = T.dom.mount(), p = TAP.panel.create(root, 'cg-segments', {});
+      try {
+        a.equal(TAP.reports.get('cg-segments').defaultType, 'stacked100', 'the default stays the 100% view');
+        var sw = root.querySelector('.tap-panel__controls [data-control="type"]');
+        a.ok(sw, 'the switch is in the controls row');
+        if (!sw) return;
+        a.deepEqual(qsa('button', sw).map(txt), ['Amount', 'Share of total'], 'its two options');
+        a.equal(txt(sw.querySelector('[aria-pressed="true"]')), 'Share of total', 'share is picked');
+        sw.querySelector('[data-value="stackedBar"]').click();
+        sw = root.querySelector('[data-control="type"]');
+        a.equal(txt(sw.querySelector('[aria-pressed="true"]')), 'Amount', 'a click moves to amounts');
+        a.match(txt(root.querySelector('[data-action="type"]')), /^Stacked bar/, 'the chart type follows');
+        a.equal(qsa('.tap-panel__legend-item--segment', root).length, 4, 'four segment keys under the chart');
+      } finally { p.destroy(); TAP.storage.clear('chart:'); }
+    });
+
+    T.test('X-d131-segment-colours', 'A tooltip names the segment first, then the region, the value and its share', function (a) {
+      sample();
+      var X = window.SAMPLE_EXPECT.totals.na, res = build('cg-segments', { mode: 'all' }), s = valueSeries(res)[0];
+      var d = s.data.filter(function (x) { return x && x.entityId === 'na'; })[0], title = tipTitle(s, d);
+      a.equal(title.indexOf(segName('strategic') + ' · ' + TAP.content.regionName(TAP.data.region('na')) + ':'), 0, 'segment, then region: ' + title);
+      a.ok(title.indexOf(TAP.format.pct(X['cg.segment.strategic'] / X.accounts)) > 0, 'the share: ' + title);
+    });
+
+    T.test('X-d131-segment-colours', 'Broken down by risk: the risk levels in their palette, per segment, adding up to 100', function (a) {
+      sample();
+      // Middle East & Africa's accounts by segment and risk level, counted from the raw sample file
+      var hand = {};
+      SEGS.forEach(function (sg) { hand[sg] = { high: 0, medium: 0, none: 0 }; });
+      rawRegion('mea').customerGrowth.accounts.forEach(function (acc) { hand[acc.segment][riskOf(acc)]++; });
+      var res = build('cg-segments', { mode: 'set', set: ['mea'] }, { type: 'stacked100', breakdown: 'risk' });
+      a.equal(res.error, null, 'draws');
+      var ss = valueSeries(res);
+      a.deepEqual(ss.map(function (s) { var d = drawn(s)[0]; return d && d.part; }), RISKS, 'one series per risk level, high first');
+      a.deepEqual(res.option.yAxis.data, SEGS.map(segName), 'the segments on the axis');
+      ss.forEach(function (s, ri) {
+        drawn(s).forEach(function (d) { a.equal(d.itemStyle.color, TH.risk[RISKS[ri]].bg, RISKS[ri] + ' ' + d.rowId + ': the risk colour'); });
+      });
+      SEGS.forEach(function (sg, i) {
+        var n = hand[sg].high + hand[sg].medium + hand[sg].none, sum = 0;
+        if (!n) return;
+        ss.forEach(function (s, ri) {
+          var d = s.data[i], v = d && d.raw != null ? d.value : 0;
+          a.near(v, hand[sg][RISKS[ri]] / n * 100, 1e-6, sg + ' ' + RISKS[ri]);
+          sum += v;
+        });
+        a.near(sum, 100, 1e-6, sg + ': the risk levels add up to 100');
+      });
+      a.deepEqual(res.legend.map(function (l) { return [l.label, l.color, l.role]; }),
+        [['High risk', TH.risk.high.bg, 'risk'], ['Medium risk', TH.risk.medium.bg, 'risk'], ['No risk flag', TH.risk.none.bg, 'risk']], 'the risk levels in the legend');
+      var s0 = ss[0], d0 = drawn(s0)[0], title = tipTitle(s0, d0), seg = SEGS[s0.data.indexOf(d0)];
+      a.equal(title.indexOf(segName(seg) + ' · High risk'), 0, 'the tooltip names the segment, then the risk level: ' + title);
+    });
+
+    T.test('X-d131-segment-colours', 'The explanation no longer speaks of ink steps', function (a) {
+      var read = TAP.reports.get('cg-segments').explain.read;
+      a.ok(!/darkest|lightest/i.test(read), read);
+      a.match(read, /colour/i, 'it says each segment has its own colour');
+    });
+
+    /* D133: the accounts bubble */
+
+    // Each region's 5 accounts with the largest three-year incremental ARR, by source row, sorted by hand from the
+    // sample file (Central Europe has no accounts). 146 accounts in all.
+    var TOP5 = { na: [10, 14, 15, 11, 12], latam: [10, 11, 15, 14, 17], neu: [10, 12, 18, 14, 15], seu: [12, 10, 11, 16, 19],
+      mea: [16, 12, 14, 11, 19], apac: [13, 10, 14, 15, 12] };
+    function rowsOf(list, r) { return list.filter(function (b) { return b.regionId === r; }).map(function (b) { return b.row; }).sort(function (x, y) { return x - y; }); }
+    function sorted(xs) { return xs.slice().sort(function (x, y) { return x - y; }); }
+
+    T.test('X-d133-bubble-top', 'Seven regions: each region’s 5 accounts with the most planned growth, in region colours, and one line', function (a) {
+      sample();
+      a.equal(TAP.reports.get('cg-bubble').options.topPerRegion, 5, 'the number is an option of the report');
+      var res = build('cg-bubble', { mode: 'all' }, { size: { w: 1100, h: 560 } }), seen = bubbles(res);
+      a.ok(seen.length <= 35, seen.length + ' bubbles, at most 35');
+      Object.keys(TOP5).forEach(function (r) {
+        a.deepEqual(rowsOf(seen, r), sorted(TOP5[r]), r + ': its top 5 by hand');
+        seen.filter(function (b) { return b.regionId === r; }).forEach(function (b) { a.equal(b.color, TAP.scope.colorOf(r), b.rowId + ': region colour'); });
+      });
+      a.equal(seen.length, 30, 'six regions with accounts, five each');
+      a.ok(res.notes.indexOf('Showing each region’s 5 accounts with the most planned growth; the list below has all 146.') >= 0,
+        'the line under the chart: ' + res.notes.join(' | '));
+      a.equal(res.table.rows.length, seen.length, 'the table lists the bubbles drawn');
+      a.equal(seen.filter(function (b) { return b.labelled; }).length, 10, 'the 10 largest are still named or numbered');
+    });
+
+    T.test('X-d133-bubble-top', 'One vs the rest: the focus region’s top 5 and the 5 largest of the rest together', function (a) {
+      sample();
+      var res = build('cg-bubble', { mode: 'one', focus: 'na', restAs: 'combined', restAgg: 'average' }), seen = bubbles(res);
+      a.deepEqual(rowsOf(seen, 'na'), sorted(TOP5.na), 'North America: its top 5');
+      // The rest's largest by hand: neu 10 (1761.7), latam 10 (640.3), apac 13 (589.4), apac 10 (588.3), apac 14 (508.6)
+      var rest = seen.filter(function (b) { return b.regionId !== 'na'; }).map(function (b) { return b.rowId; }).sort();
+      a.deepEqual(rest, ['apac:10', 'apac:13', 'apac:14', 'latam:10', 'neu:10'], 'the rest: five accounts in all');
+      a.ok(res.notes.some(function (n) { return /5 accounts with the most planned growth.*all 146\.$/.test(n); }), 'one line says so: ' + res.notes.join(' | '));
+    });
+
+    T.test('X-d133-bubble-top', 'One region: every account, coloured by risk level, with a risk legend', function (a) {
+      sample();
+      var raw = rawRegion('mea').customerGrowth.accounts, res = build('cg-bubble', { mode: 'set', set: ['mea'] }), seen = bubbles(res);
+      a.equal(seen.length, raw.length, 'all ' + raw.length + ' accounts');
+      seen.forEach(function (b) {
+        var acc = raw.filter(function (x) { return x.sourceRow === b.row; })[0], lvl = acc.riskLevel || 'none';
+        a.equal(b.color, TH.risk[lvl].bg, b.rowId + ': ' + lvl);
+      });
+      var keys = res.legend.filter(function (l) { return l.mark == null; });
+      a.deepEqual(keys.map(function (l) { return [l.label, l.color, l.role]; }),
+        [['High risk', TH.risk.high.bg, 'risk'], ['Medium risk', TH.risk.medium.bg, 'risk'], ['No risk flag', TH.risk.none.bg, 'risk']],
+        'the risk levels present, high first, and no region key');
+      a.ok(!res.notes.some(function (n) { return /5 accounts/.test(n); }), 'no top-5 line');
+      var high = seen.filter(function (b) { return b.row === 11; })[0], d = high.series.data.filter(function (x) { return x.row === 11; })[0];
+      a.ok(high.series.tooltip.formatter({ data: d }).indexOf('High risk') >= 0, 'the tooltip names the risk level');
+    });
+
+    T.test('X-d133-bubble-top', 'A low risk flag takes its own colour', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[1].customerGrowth.accounts[0].riskLevel = 'low';   // b1
+      TAP.data.load(plan);
+      var res = build('cg-bubble', { mode: 'set', set: ['bravo'] }), b1 = bubbles(res).filter(function (b) { return b.rowId === 'bravo:10'; })[0];
+      a.equal(b1.color, TH.risk.low.bg, 'b1 is low');
+      a.ok(res.legend.some(function (l) { return l.label === 'Low risk' && l.color === TH.risk.low.bg; }), 'named in the legend');
+    });
+
+    /* D134: the account list's dropdowns */
+
+    function listIds(res) { return res.table.rows.map(function (r) { return r.id; }).sort(); }
+    function counts(c) { var o = {}; c.options.forEach(function (x) { o[x.label] = x.count; }); return o; }
+
+    T.test('X-d134-account-filters', 'Two dropdowns, "Segments" and "Risk", with a count per option', function (a) {
+      var res = build('cg-accounts', { mode: 'all' }), c = res.controls;
+      a.deepEqual(c.map(function (x) { return [x.key, x.kind, x.label]; }), [['filter:segment', 'multi', 'Segments'], ['filter:riskLevel', 'multi', 'Risk']]);
+      a.deepEqual(c[0].value, [], 'nothing ticked: all segments');
+      // Mini: strategic a1 b1 d1, growth a4, core a2 b2 d2, scaled a3 d3; high a2 b2, medium a4 d2, the rest none
+      a.deepEqual(counts(c[0]), { Core: 3, Growth: 1, Scaled: 2, Strategic: 3 }, 'segments');
+      a.deepEqual(counts(c[1]), { High: 2, Medium: 2, None: 5 }, 'risk levels');
+      var high = build('cg-accounts', { mode: 'all' }, { opts: { 'filter:riskLevel': ['High'] } });
+      a.deepEqual(counts(high.controls[0]), { Core: 2, Growth: 0, Scaled: 0, Strategic: 0 }, 'segments counted within the risk chosen');
+    });
+
+    T.test('X-d134-account-filters', 'The dropdowns filter as the selects did: alone, several values, and together', function (a) {
+      var f = function (opts) { return listIds(build('cg-accounts', { mode: 'all' }, { opts: opts })); };
+      a.deepEqual(f({ 'filter:segment': ['core'] }), ['alpha:11', 'bravo:11', 'delta:11'], 'core: a2, b2, d2');
+      a.deepEqual(f({ 'filter:segment': ['core', 'scaled'] }), ['alpha:11', 'alpha:12', 'bravo:11', 'delta:11', 'delta:12'], 'core or scaled');
+      a.deepEqual(f({ 'filter:riskLevel': ['Medium'] }), ['alpha:13', 'delta:11'], 'medium: a4, d2');
+      a.deepEqual(f({ 'filter:segment': ['core'], 'filter:riskLevel': ['Medium'] }), ['delta:11'], 'core and medium: d2');
+      a.equal(f({ 'filter:segment': [] }).length, 9, 'none ticked: every account');
+      a.equal(f({ 'filter:segment': ['core', 'growth', 'scaled', 'strategic'] }).length, 9, 'all ticked: every account');
+      a.deepEqual(f({ 'filter:segment': 'core' }), ['alpha:11', 'bravo:11', 'delta:11'], 'a single value kept from before still filters');
+    });
+
+    T.test('X-d134-account-filters', 'On screen: one line of two dropdowns that stay open while ticking, and close on Esc', function (a) {
+      var root = T.dom.mount(), p = TAP.panel.create(root, 'cg-accounts', {});
+      function rows() { return qsa('.tap-list tbody tr', root).length; }
+      function boxes() { return qsa('.tap-panel__controls .tap-ms', root); }
+      try {
+        var ms = boxes();
+        a.equal(ms.length, 2, 'two dropdowns');
+        a.ok(ms.length === 2 && ms[0].closest('.tap-panel__controls') === ms[1].closest('.tap-panel__controls'), 'in one controls row');
+        a.deepEqual(ms.map(function (m) { return txt(m.querySelector('.tap-ms__btn')); }), ['Segments: All', 'Risk: All'], 'the buttons name the choice');
+        a.equal(rows(), 9, 'every account to start');
+        ms[0].querySelector('.tap-ms__btn').click();
+        var box = root.querySelector('.tap-ms__panel:not([hidden])');
+        a.ok(box, 'the checklist opens');
+        if (!box) return;
+        a.ok(/3/.test(txt(box.querySelector('[data-value="core"]').closest('label'))), 'Core carries its count');
+        box.querySelector('[data-value="core"]').click();
+        a.equal(rows(), 3, 'Core: three accounts');
+        a.equal(txt(boxes()[0].querySelector('.tap-ms__btn')), 'Segments: Core', 'the button names it');
+        var open = root.querySelector('.tap-ms__panel:not([hidden])');
+        a.ok(open, 'still open, to tick another');
+        if (open) open.querySelector('[data-value="scaled"]').click();
+        a.equal(rows(), 5, 'Core or Scaled: five accounts');
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        a.equal(root.querySelector('.tap-ms__panel:not([hidden])'), null, 'Esc closes it');
+        a.equal(rows(), 5, 'and the choice stays');
+      } finally { p.destroy(); TAP.storage.clear('chart:'); }
     });
   });
 })(window.TAP);
