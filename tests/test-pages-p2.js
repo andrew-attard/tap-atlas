@@ -194,8 +194,8 @@
       a.equal(by.segments.link.view, 'customers', 'segments');
       strings(TAP.content.guide(), 'guide').forEach(function (s) { a.ok(!/later phase/i.test(s.text), s.path + ' promises nothing for later'); });
       var menu = TAP.content.guide().howTo.sections.filter(function (s) { return s.id === 'menu'; })[0];
-      // Other sections (Phase 3) sits between Partners and Regions in the menu (#382), after Outlook (Phase 4)
-      a.ok(/New business, Customer growth, Partners, (Outlook, )?Other sections .*Regions/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
+      // Other sections (Phase 3) follows Partners and Outlook (Phase 4) among the plan views, before the tools (#382, D115)
+      a.ok(/New business, Customer growth, Partners, (Outlook, )?Other sections .*Insights/.test(menu.paragraphs[0]), 'the menu paragraph lists the new views');
     });
 
     T.test('X-pages2-explain-ratio', 'Shares combined from parts say so, instead of calling themselves weighted', function (a) {

@@ -58,7 +58,8 @@
       TAP.app.start({ root: root, plan: plainSample() });
       a.equal(root.querySelector('.tap-menu__item[data-view="other"]'), null, 'no menu button with the sample, which has no extra section (D93)');
       a.equal(TAP.views.order().indexOf('other'), -1, 'and not in the order');
-      a.equal(TAP.views.order().indexOf('regions'), TAP.views.order().indexOf('outlook') + 1, 'Regions follows Outlook on the sample');
+      // D115: the tools follow the plan views, so Insights comes straight after Outlook on the sample
+      a.equal(TAP.views.order().indexOf('insights'), TAP.views.order().indexOf('outlook') + 1, 'Insights follows Outlook on the sample');
       TAP.app.stop();
       root = T.dom.mount();
       TAP.app.start({ root: root, plan: T_FIXTURE('mini') });
@@ -173,12 +174,13 @@
         a.equal(TAP.keys.viewFor(String(k)), order[k - 1] || null, 'key ' + k);
         a.ok(TAP.keys.viewFor(String(k)) !== 'other', 'key ' + k + ' is not Other sections');
       }
-      a.equal(TAP.keys.viewFor('7'), 'regions', 'key 7 opens Regions, the view after Outlook');
+      // D115: Overview and Regions are keys 1 and 2, the plan views 3 to 7, then Other sections when there is one
+      a.equal(TAP.keys.viewFor('8'), 'insights', 'key 8 opens Insights, the view after Outlook');
       TAP.data.load(plainSample());
-      a.equal(TAP.keys.viewFor('7'), 'regions', 'on the sample, which has no extra section, key 7 opens Regions');
+      a.equal(TAP.keys.viewFor('8'), 'insights', 'on the sample, which has no extra section, key 8 opens Insights');
       loadSample();
-      a.equal(TAP.keys.viewFor('7'), 'other', 'with an extra section, key 7 opens Other sections');
-      a.equal(TAP.keys.viewFor('8'), 'regions', 'and key 8 Regions');
+      a.equal(TAP.keys.viewFor('8'), 'other', 'with an extra section, key 8 opens Other sections');
+      a.equal(TAP.keys.viewFor('9'), 'insights', 'and key 9 Insights');
     });
   });
 })(window.TAP);
