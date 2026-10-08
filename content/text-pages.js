@@ -139,6 +139,9 @@ Object.assign(window.TAP_CONTENT.text, {
     hiddenCountOne: '1 hidden',
     showHidden: 'Show hidden',
     hideHidden: 'Hide them again',
+    // D111: background facts that move no decision, listed after the ranked groups in one closed group
+    context: { name: 'Context: background facts, not on the charts',
+      line: 'True and worth knowing when preparing, but they point to no decision, so the charts and headlines leave them out.' },
     families: {
       priorities: { name: 'Agreement and disagreement on priorities', line: 'Where regions choose the same tier for an industry, or clearly different tiers.' },
       judgement: { name: 'Leader judgement and system figures', line: 'Where a leader’s tier or rating and the system figures for the same industry point different ways.' },

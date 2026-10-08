@@ -25,6 +25,9 @@
   font-size: var(--tap-fs-lead); line-height: 1.45; font-weight: 600;
 }
 .tap-panel__takeaway:empty { min-height: 0; }
+/* Why it matters (D111): plain text on its own line under the sentence, muted but at body size */
+.tap-panel__why { display: block; margin: var(--tap-sp-1) 0 0; font-size: var(--tap-fs-body); font-weight: 400; line-height: 1.4; color: var(--tap-muted); }
+.tap-panel__insight .tap-panel__why { margin: 0; }
 .tap-panel__hide { min-height: 32px; padding: 0 var(--tap-sp-2); font-weight: 600; vertical-align: middle; }
 
 /* The panel takes focus on a click (for the drill keys), and the title after a drill step: neither draws a ring,

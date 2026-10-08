@@ -1362,7 +1362,8 @@
   /* ---------- D102: the rating insights also show on the ratings chart ---------- */
 
   T.suite('ratings-insights', function () {
-    var RULES = ['strongRating', 'weakRating', 'groupPriority', 'notYetWinnable'];
+    // strongRating attaches too, but it is context (D111): its insights stay off every chart
+    var RULES = ['weakRating', 'groupPriority', 'notYetWinnable'];
     function onRatings() { return TAP.insights.ranked(cmp({ mode: 'all' }), { reportId: 'ind-ratings' }); }
     // Hides every other insight on the ratings chart for the test, so the one wanted is the panel's only one.
     function only(id) { onRatings().forEach(function (x) { if (x.id !== id) TAP.insights.hide(x.id); }); }
@@ -1390,7 +1391,8 @@
       function panel(id) { return { el: root.querySelector('.tap-panel[data-report="' + id + '"]') }; }
       try {
         // Healthcare has no strong or weak rating, no group priority rated low and is not in the not-yet-winnable area
-        // on the sample (the dump of every sample insight); Pharma and Biotech has only the planted strong rating (P04)
+        // on the sample (the dump of every sample insight); Pharma and Biotech has only the planted strong rating (P04),
+        // which is context (D111); Manufacturing has only the planted weak rating (P05)
         TAP.store.set({ industry: 'healthcare' });
         var r = panel('ind-ratings');
         a.equal(countOf(r), 0, 'Healthcare: 0 insights on the ratings chart');
@@ -1398,21 +1400,25 @@
         a.equal(r.el.querySelector('.tap-panel__takeaway').textContent.trim(), '', 'no takeaway borrowed from another industry');
         a.equal(countOf(panel('ind-quad')), TAP.insights.ranked(cmp({ mode: 'all' }), { reportId: 'ind-quad' }).length, 'the quadrant keeps all its insights');
         TAP.store.set({ industry: window.SAMPLE_EXPECT.p04.industry });
+        a.equal(countOf(panel('ind-ratings')), 0, 'Pharma and Biotech: its strong rating is context, so 0 (D111)');
+        TAP.store.set({ industry: window.SAMPLE_EXPECT.p05.industry });
         r = panel('ind-ratings');
-        a.equal(countOf(r), 1, 'Pharma and Biotech: one insight');
-        a.match(r.el.querySelector('.tap-panel__takeaway').textContent, /Pharma and Biotech/, 'the takeaway is about it');
+        a.equal(countOf(r), 1, 'Manufacturing: one insight');
+        a.match(r.el.querySelector('.tap-panel__takeaway').textContent, /Manufacturing/, 'the takeaway is about it');
         r.el.querySelector('[data-action="insights"]').click();
         var texts = Array.prototype.map.call(r.el.querySelectorAll('.tap-panel__insight-text'), function (n) { return n.textContent; });
         a.equal(texts.length, 1, 'the list holds it alone');
-        a.match(texts[0], /Northern Europe rates its references in Pharma and Biotech as strong/, 'the planted strong rating');
+        a.match(texts[0], /Central Europe rates its references and expertise in Manufacturing at 1 of 3/, 'the planted weak rating');
       } finally { view.destroy(); }
     });
 
-    T.test('X-d102-ratings-insights', 'On the sample the ratings chart has insights, from the four rating rules only', function (a) {
+    T.test('X-d102-ratings-insights', 'On the sample the ratings chart has insights, from the rating rules only (strong ratings are context, D111)', function (a) {
       sample();
       var list = onRatings();
       a.ok(list.length > 0, 'the ratings chart’s insight count is above zero (' + list.length + ')');
-      a.deepEqual(list.filter(function (x) { return RULES.indexOf(x.ruleId) < 0; }).map(function (x) { return x.id; }), [], 'only the four rules attach');
+      a.deepEqual(list.filter(function (x) { return RULES.indexOf(x.ruleId) < 0; }).map(function (x) { return x.id; }), [], 'only the three kept rules attach');
+      a.ok(TAP.insights.ranked(cmp({ mode: 'all' }), { reportId: 'ind-ratings', context: true }).some(function (x) { return x.ruleId === 'strongRating'; }),
+        'strongRating still attaches, as context');
       RULES.forEach(function (r) { a.ok(list.some(function (x) { return x.ruleId === r; }), r + ' attaches'); });
       list.forEach(function (x) { a.ok(x.reportId === 'ind-quad' || x.reportId === 'ind-tiers', x.id + ': "Show me" elsewhere still opens its first chart'); });
       var X = window.SAMPLE_EXPECT.p04, mine = list.filter(function (x) { return x.industryIds.indexOf(X.industry) >= 0; });
@@ -1421,14 +1427,15 @@
       });
     });
 
-    T.test('X-d102-ratings-insights', '"Show me" on a strong-rating insight outlines the rating behind it', function (a) {
+    // Was the strong rating (P04) until D111 made it context; the weak rating (P05) proves the same outline
+    T.test('X-d102-ratings-insights', '"Show me" on a weak-rating insight outlines the ratings behind it', function (a) {
       sample();
-      var X = window.SAMPLE_EXPECT.p04, ins = onRatings().filter(function (x) { return x.ruleId === 'strongRating' && x.regionIds[0] === X.region; })[0];
-      a.ok(ins, 'the planted strong rating (P04) is on the ratings chart');
+      var X = window.SAMPLE_EXPECT.p05, ins = onRatings().filter(function (x) { return x.ruleId === 'weakRating' && x.regionIds[0] === X.region; })[0];
+      a.ok(ins, 'the planted weak rating (P05) is on the ratings chart');
       only(ins.id);
       withPanel(X.industry, function (p) {
         a.ok(showMe(p), 'its "Show me" is in the panel’s list');
-        a.deepEqual(outlined(p), [X.region + '|ind.references'], 'the region’s references cell, and only that, is outlined');
+        a.deepEqual(outlined(p), [X.region + '|ind.expertise', X.region + '|ind.references'], 'the region’s two ratings at 1, and only those, are outlined');
       });
     });
 

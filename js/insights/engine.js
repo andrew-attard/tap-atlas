@@ -1,7 +1,8 @@
 /*
  * File: js/insights/engine.js
  * Purpose: Runs the insight rules, applies the guardrails (no blanks, enough regions, neutral words), scores and
- *          ranks what they find, and keeps the session's hidden list (US-1.7.1, 1.7.2, 1.7.10, 1.7.11).
+ *          ranks what they find, and keeps the session's hidden list (US-1.7.1, 1.7.2, 1.7.10, 1.7.11). Each insight
+ *          carries its rule's line on why it matters, or is marked as context and left out of ranked lists (D111).
  * Provides: TAP.insights (defineRule, all, ranked, top, hide, unhide, hidden, failures, reset, significance); the
  *           helpers rule files get as ctx.util are in js/insights/util.js
  * Depends on: config/insight-rules.js, config/settings.js, js/core/store.js, js/core/data.js, js/core/content.js,
@@ -81,6 +82,9 @@
       try {
         // An optional rule reads a part of the template a file may not have (Phase 4): without it, it is quietly skipped
         if (!hasInput(rule)) { if (!rule.optional) fail(out, rule, fill(ph.noData, { fields: (rule.reads || []).join(', ') })); return; }
+        // The line on why it matters is our own words too, so it follows the same wording guide (D111)
+        var whyWord = rule.why && !rule.context ? bannedWord(' ' + rule.why + ' ') : null;
+        if (whyWord) { fail(out, rule, fill(ph.bannedWhy, { word: whyWord })); return; }
         var found = code[rule.id](context(rule)), bad = malformed(rule, found), mine = [], seen = {};
         if (bad) { fail(out, rule, bad); return; }
         found.forEach(function (f) {
@@ -163,6 +167,7 @@
     var breadth = clamp(typeof f.breadth === 'number' ? f.breadth : n ? regionIds.length / n : 0);
     return {
       id: rule.id + ':' + f.key, ruleId: rule.id, family: rule.family, sentence: sentence, figures: f.figures,
+      why: rule.context ? null : rule.why || null, context: rule.context === true,
       description: rule.description, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
       significance: significance(rule.family, strength, money, breadth),
       strength: strength, money: money, breadth: breadth,
@@ -195,7 +200,7 @@
 
   // Worked out once per data file; a reload (a new plan object) or a change to the rules or weights recomputes it.
   function key() {
-    return JSON.stringify([rules().map(function (r) { return [r.id, r.enabled, r.params]; }), settings(), Object.keys(code)]);
+    return JSON.stringify([rules().map(function (r) { return [r.id, r.enabled, r.params, r.why, r.context]; }), settings(), Object.keys(code)]);
   }
   function state() {
     var plan = TAP.data.plan(), k = key();
@@ -221,13 +226,14 @@
   }
 
   // Insights in scope, hidden ones left out: figure-based, then themes, the focus region's first in each group.
+  // Context insights (D111) are background facts: left out unless opts.context is true, so charts and headlines skip them.
   function ranked(cmp, opts) {
     cmp = cmp || TAP.store.get().cmp;
     opts = opts || {};
     var scope = TAP.scope.regionIds(cmp), off = hidden();
     var focus = (cmp.mode === 'one' || cmp.mode === 'pair') && scope.indexOf(cmp.focus) >= 0 ? cmp.focus : null;
     var list = state().list.filter(function (x) {
-      if (off.indexOf(x.id) >= 0) return false;
+      if (off.indexOf(x.id) >= 0 || (x.context && opts.context !== true)) return false;
       if (!x.regionIds.some(function (r) { return scope.indexOf(r) >= 0; })) return false;
       if (opts.reportId && x.attach.indexOf(opts.reportId) < 0) return false;
       if (opts.family && x.family !== opts.family) return false;

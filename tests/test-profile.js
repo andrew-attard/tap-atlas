@@ -374,9 +374,9 @@
     function sample() { TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA))); TAP.insights.reset(); }
     function blank(v) { return v == null || String(v).trim() === ''; }
 
-    T.test('TPV-TC-454', 'The insights panel lists every insight naming the region, most significant first, each with a Show me target', function (a) {
+    T.test('TPV-TC-454', 'The insights panel lists every insight naming the region (context ones left out, D111), most significant first, each with a Show me target', function (a) {
       sample();
-      var want = TAP.insights.all().filter(function (x) { return x.regionIds.indexOf('na') >= 0; });
+      var want = TAP.insights.all().filter(function (x) { return x.regionIds.indexOf('na') >= 0 && !x.context; });
       var got = parts().insights('na');
       a.ok(want.length > 0, want.length + ' insights name North America');
       a.deepEqual(got.map(function (x) { return x.id; }).sort(), want.map(function (x) { return x.id; }).sort(), 'every one of them, and no other');

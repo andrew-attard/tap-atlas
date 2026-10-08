@@ -23,6 +23,8 @@
 .tap-vh__headline[hidden] { display: none; }
 /* "Show me" follows the sentence on its last line, so the headline takes no row of its own */
 .tap-vh__headline-text { display: inline; margin: 0; font-size: var(--tap-fs-h3); font-weight: 600; line-height: 1.4; }
+/* Why it matters (D111): its own line under the headline, muted but at body size */
+.tap-vh__why { margin: var(--tap-sp-1) 0 0; max-width: 76ch; font-size: var(--tap-fs-body); line-height: 1.45; color: var(--tap-muted); }
 .tap-vh__showme { min-height: 0; margin-left: var(--tap-sp-3); padding: 2px var(--tap-sp-3); font-size: var(--tap-fs-body); vertical-align: baseline; }
 
 /* At most two panels side by side (D24); one column on narrow screens */

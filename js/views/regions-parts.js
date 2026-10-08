@@ -131,7 +131,7 @@
 
   /* ---------- this region's insights (US-2.4.4) ---------- */
 
-  // Every insight naming the region, hidden ones left out, most significant first.
+  // Every insight naming the region, hidden and context ones left out (D111), most significant first.
   function insights(regionId) {
     var I = TAP.insights;
     if (!I || I.__stub) return [];
@@ -151,6 +151,7 @@
       ol.appendChild(el('li', { class: 'tap-pf-insight', 'data-insight': x.id }, [
         el('span', { class: 'tap-pf-insight__label' }, x.label || t('insights.label')),
         el('p', { class: 'tap-pf-insight__text' }, x.sentence),
+        x.why ? el('p', { class: 'tap-pf-insight__why' }, x.why) : null,
         el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-pf-insight__showme', 'data-action': 'showme',
           onclick: function () { TAP.bus.emit('showme', { insightId: x.id, target: x.highlight }); } }, t('insights.showMe'))
       ]));

@@ -2,7 +2,8 @@
  * File: js/ui/view-head.js
  * Purpose: The header every Phase 2 view opens with: a kicker, the view's question as its title, a lead line,
  *          a slot for the "how to read this view" tip (US-2.6.2), and a headline sentence taken from the most
- *          significant insight attached to the view's reports, with its "Show me" link (US-2.1.1, US-2.2.1, US-2.3.1).
+ *          significant insight attached to the view's reports, with its "Show me" link (US-2.1.1, US-2.2.1, US-2.3.1)
+ *          and its line on why it matters under it (D111; context insights never head a view).
  *          Also the shared layout helpers the Phase 2 views use: a safe panel mount and a two-panel row.
  * Provides: TAP.viewHead (render, headline, mountPanel, pair, tip, hideTips, showTips, tipsHidden)
  * Depends on: js/core/dom.js, js/core/content.js, js/core/store.js, config/views.js, js/insights/engine.js,
@@ -70,6 +71,7 @@
     box.appendChild(el('button', { type: 'button', class: 'tap-btn tap-vh__showme', 'data-insight': x.id,
       onclick: function () { TAP.bus.emit('showme', { insightId: x.id, target: x.highlight }); } },
     TAP.content.text('viewHead.showMe')));
+    if (x.why) box.appendChild(el('p', { class: 'tap-vh__why' }, x.why));
   }
 
   // opts: {viewId, kicker, title, lead}. Returns {el, tipEl, refresh(), destroy()}.

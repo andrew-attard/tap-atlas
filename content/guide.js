@@ -88,9 +88,9 @@ window.TAP_CONTENT.guide = {
         'A blank in a workbook shows as "not provided", never as zero. Charts list the regions that had no data.'
       ] },
       { id: 'insights', title: 'Insights', paragraphs: [
-        'Insights are short sentences the app writes when a figure stands out, such as regions that disagree on an industry. They are observations to discuss, not conclusions.',
-        'Each insight shows the figures and the rule behind it. "Show me" highlights the data it refers to on its chart.',
-        'The Insights page lists them all, ranked and grouped by family. Any insight can be hidden for the rest of the session.'
+        'Insights are short sentences the app writes when a figure stands out, such as a year-1 goal far above the pipeline behind it. They are observations to discuss, not conclusions.',
+        'Each insight shows the figures and the rule behind it, with one line under it on why it matters. "Show me" highlights the data it refers to on its chart.',
+        'The Insights page lists them all, ranked and grouped by family. Background facts that point to no decision, such as several regions naming the same partner, stay off the charts and sit in a closed Context group at the end. Any insight can be hidden for the rest of the session.'
       ] },
       { id: 'keys', title: 'Keyboard shortcuts', shortcuts: true, paragraphs: [
         'When presenting, a number key opens the view at that place in the menu, as listed below: 1 to 9 for the first nine, and 0 for the tenth. P plays the saved presentation: a set list of charts, full screen, one step at a time. The Guide section "Your presentation" explains it and how to make your own.',

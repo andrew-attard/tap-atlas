@@ -1,7 +1,8 @@
 /*
  * File: js/panel/panel-insights.js
  * Purpose: A panel's insights: the takeaway line (the top insight), the count, and the list of at most 3 with
- *          figures, rule, a highlight button and "Hide for this session" (US-1.2.2, US-1.7.11).
+ *          figures, rule, a highlight button and "Hide for this session" (US-1.2.2, US-1.7.11). The takeaway and
+ *          each listed insight show their line on why it matters; context insights never reach a panel (D111).
  * Provides: TAP.panelInsights (get, fits, target, handlers, strip, takeaway, render)
  * Depends on: js/insights/engine.js (read at call time; quiet while it is a stub), js/panel/panel-build.js, js/ui/showme.js, js/core/dom.js,
  *             js/core/icons.js, js/core/content.js, js/core/format.js, js/core/store.js
@@ -128,6 +129,7 @@
     node.appendChild(el('span', { class: 'tap-panel__takeaway-text', html: TAP.content.mark(ins.sentence, seen) }));
     node.appendChild(document.createTextNode(' '));
     node.appendChild(hideButton(ins, onHide));
+    if (ins.why) node.appendChild(why(ins));
     return node;
   }
 
@@ -144,6 +146,7 @@
       var on = h.selected === ins.id;
       box.appendChild(el('div', { class: 'tap-panel__insight' + (on ? ' is-selected' : '') }, [
         el('p', { class: 'tap-panel__insight-text', html: TAP.content.mark(ins.sentence, h.seen) }),
+        ins.why ? why(ins, 'p') : null,
         figures(ins.figures || []),
         ins.description ? el('p', { class: 'tap-panel__rule' }, t('rule', { text: ins.description })) : null,
         el('div', { class: 'tap-panel__insight-actions' }, [
@@ -157,6 +160,9 @@
       'data-action': 'show-all', onclick: h.onShowAll }, [t('showAll'), TAP.icons.svg('arrow', { size: 18 })])));
     return box;
   }
+
+  // Why it matters (D111): one plain sentence under the insight, always shown (D24: nothing hover-only).
+  function why(ins, tag) { return el(tag || 'span', { class: 'tap-panel__why' }, ins.why); }
 
   function figures(list) {
     if (!list.length) return null;
