@@ -1,8 +1,7 @@
 /*
  * File: content/text-overview.js
- * Purpose: Wording for the Overview: card lines, headline sentence templates, the top insights block (D119), and the
- *          card's one glossary term.
- * Provides: adds to window.TAP_CONTENT.text and window.TAP_CONTENT.glossary (pipelineCoverY1)
+ * Purpose: Wording for the Overview: card lines, headline sentence templates and the top insights block (D119).
+ * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
  * Used by: js/views/overview*.js
  * Owner: the OVERVIEW stream. Placeholders in {braces} are filled in by the code; the organization layer can
@@ -13,7 +12,8 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 Object.assign(window.TAP_CONTENT.text, {
   overview: {
     title: 'Overview',
-    // Region cards (US-1.5.1, D117). focus, tier, pool and customers are the profile's glance lines (US-2.4.2).
+    // Region cards (US-1.5.1, D127; the split's swatches from D117). focus, tier, pool and customers are also the
+    // profile's glance lines (US-2.4.2).
     cards: {
       title: 'Plans at a glance',
       hint: 'Select a card for that region’s details, or a figure for its source',
@@ -24,29 +24,8 @@ Object.assign(window.TAP_CONTENT.text, {
       focus: 'Focus',
       tier: 'Tier {n}',
       pool: 'New business pool',
+      targetAccounts: 'target accounts',
       customers: 'Customers',
-      // The plan against the strategic plan, from the spGap rule's figures. {pct} is the difference as a share of
-      // the strategic plan; "in line" when it would read 0%.
-      sp: {
-        below: '{pct} below strategic plan',
-        above: '{pct} above strategic plan',
-        inLine: 'In line with strategic plan',
-        none: 'No strategic plan'
-      },
-      // "Will it land?": three checks, each with the other regions' figure beneath (D117)
-      land: {
-        title: 'Will it land?',
-        coverTerm: 'Pipeline cover',
-        coverAfter: ', year 1',
-        goal: 'Year-1 new business ARR goal',
-        noGoal: 'no year-1 goal',
-        wins: 'New customers needed',
-        top3: 'Growth in top 3 accounts',
-        others: 'others:',
-        othersLabel: '{what}, other regions',
-        discuss: 'discuss',
-        discussLabel: 'Worth discussing: {sentence} Show me.'
-      },
       partial: 'Partial: {note}',
       kickerFocus: 'Focus region',
       kickerSecond: 'Compared with',
@@ -95,10 +74,3 @@ Object.assign(window.TAP_CONTENT.text, {
   }
 });
 
-// The glossary term behind the "Pipeline cover, year 1" check on the region cards (D117)
-window.TAP_CONTENT.glossary = Object.assign(window.TAP_CONTENT.glossary || {}, {
-  pipelineCoverY1: { term: 'Pipeline cover (year 1)', aliases: ['pipeline cover'],
-    short: 'Pipeline the region created in the last 12 months, divided by its year-1 new business ARR goal. 0.5× means recent pipeline worth half the goal.',
-    why: 'A year-1 goal well above recent pipeline creation depends on pipeline not yet created; how it will be built is worth discussing.',
-    related: ['pipeline', 'pipelineCoverage', 'planYear'] }
-});

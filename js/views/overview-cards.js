@@ -1,19 +1,20 @@
 /*
  * File: js/views/overview-cards.js
- * Purpose: One card per region (or combined figure): its 3-year ambition against the strategic plan, the split
- *          with a swatch and share per part, and "Will it land?" (US-1.5.1, D117); and the clickable figure that
- *          shows where a value comes from, shared with the headline.
+ * Purpose: One card per region (or combined figure), a quick snapshot of its plan (US-1.5.1, D127): the 3-year
+ *          ambition, the split with a swatch and share per part (D117), Services, focus tiers, the new business pool
+ *          and customers by segment; and the clickable figure that shows where a value comes from, shared with the
+ *          headline.
  * Provides: TAP.overviewCards (render, layout, columns, figure, openSource, sourceRow)
  * Depends on: js/engine/measures.js, js/engine/scope.js, js/engine/aggregate.js (describe), js/core/dom.js,
  *             js/core/format.js, js/core/sources.js, js/ui/layers.js, js/core/store.js, js/theme.js,
- *             content/text-overview.js, js/views/overview-land.js (TAP.overviewLand, at call time),
- *             js/views/regions.js (TAP.profile.link, at call time)
+ *             content/text-overview.js, js/views/regions.js (TAP.profile.link, at call time)
  * Used by: js/views/overview.js
  */
 (function (TAP) {
   'use strict';
 
   var MIN_W = 140, MAX_W = 320, GAP = 8;   // px: narrowest readable card, widest useful card, gap between cards
+  var SEGS = ['strategic', 'growth', 'core', 'scaled'];
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var t = function (key, vars) { return TAP.content.text('overview.' + key, vars); };
 
@@ -86,11 +87,14 @@
   /* ---------- the figures a card needs ---------- */
 
   function label(id) { var m = TAP.measures.meta(id); return m ? m.label : id; }
+  function short(id) { var m = TAP.measures.meta(id); return m ? m.short : id; }
   function isNp(c) { return !c || c.state !== 'value'; }
   function cellsFor(ent) {
+    var ids = ['amb.arr', 'nb.arr', 'cg.arr', 'amb.services', 'focus.tier1', 'focus.tier2', 'nb.targetAccounts']
+      .concat(SEGS.map(function (s) { return 'cg.segment.' + s; }));
     var out = {};
-    ['amb.arr', 'nb.arr', 'cg.arr', 'amb.services'].forEach(function (id) { out[id] = TAP.measures.combined(id, ent, {}); });
-    return TAP.overviewLand.cells(ent, out);
+    ids.forEach(function (id) { out[id] = TAP.measures.combined(id, ent, {}); });
+    return out;
   }
 
   /* ---------- the card's parts ---------- */
@@ -134,6 +138,26 @@
     ]);
   }
 
+  // A labelled line of the card; part names it, so the cards in a row line it up (subgrid).
+  function line(part, title, body) {
+    return el('div', { class: 'tap-ov-card__line tap-ov-card__' + part, 'data-part': part },
+      [el('span', { class: 'tap-ov-card__label' }, title), ' '].concat(body));
+  }
+  // "3 Tier 1 · 7 Tier 2", "4 Strategic · 4 Growth": the number first, then the word, wrapping as the card narrows.
+  // With none of them provided, one "not provided" figure lists them all.
+  function chips(cls, specs, word) {
+    if (specs.every(function (s) { return isNp(s.cell); })) {
+      var all = { measure: specs[0].measure, cell: specs[0].cell, unit: 'count', label: specs[0].label, rows: specs };
+      return el('div', { class: 'tap-ov-card__chips ' + cls }, figure(all));
+    }
+    var out = [];
+    specs.forEach(function (s, i) {
+      if (i) out.push(el('span', { class: 'tap-ov-card__sep', 'aria-hidden': 'true' }, ' · '));
+      out.push(el('span', { class: 'tap-ov-card__chip' }, [figure(s), ' ', word(s)]));
+    });
+    return el('div', { class: 'tap-ov-card__chips ' + cls }, out);
+  }
+
   /* ---------- cards ---------- */
 
   function kicker(ent) {
@@ -159,9 +183,8 @@
     var spec = function (id, unit) { return { measure: id, cell: c[id], unit: unit, label: label(id) }; };
     var amb = spec('amb.arr', 'money');
     amb.rows = [amb, spec('nb.arr', 'money'), spec('cg.arr', 'money')];
-    var sp = TAP.overviewLand.available() ? TAP.overviewLand.SP : [];
-    var all = amb.rows.concat([spec('amb.services', 'money'), spec('nb.wins', 'count'), spec('cg.top3Share', 'pct')],
-      sp.map(function (id) { return spec(id, id === 'sp.variancePct' ? 'pct' : 'money'); }));
+    var all = amb.rows.concat([spec('amb.services', 'money'), spec('focus.tier1', 'count'), spec('focus.tier2', 'count'),
+      spec('nb.targetAccounts', 'count')], SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }));
     var k = kicker(ent), partial = c['amb.arr'].state === 'value' && c['amb.arr'].partial;
     var bar = el('span', { class: 'tap-ov-card__bar', 'data-part': 'bar' });
     if (!combined) bar.style.backgroundColor = ent.color;
@@ -177,15 +200,19 @@
       el('div', { class: 'tap-ov-card__line tap-ov-card__ambition', 'data-part': 'ambition' }, [
         el('span', { class: 'tap-ov-card__label' }, t('cards.ambition')),
         figure(amb, 'tap-ov-fig--big'),
-        partial ? el('p', { class: 'tap-ov-card__partial' }, t('cards.partial', { note: c['amb.arr'].note })) : null,
-        TAP.overviewLand.strategic(c, ent, spec)
+        partial ? el('p', { class: 'tap-ov-card__partial' }, t('cards.partial', { note: c['amb.arr'].note })) : null
       ]),
-      mix(c, ent, spec)
-    ].concat(TAP.overviewLand.checks(c, ent, spec), [profileLink(ent)]));
-    // The whole card opens the region's details; a combined card lists where its figures come from. A glossary term
-    // on the card opens its definition instead.
-    node.addEventListener('click', function (e) {
-      if (e.target && e.target.closest && e.target.closest('.tap-term')) return;
+      mix(c, ent, spec),
+      line('focus', t('cards.focus'), chips('tap-ov-card__tiers', [spec('focus.tier1', 'count'), spec('focus.tier2', 'count')],
+        function (s) { return t('cards.tier', { n: s.measure.slice(-1) }); })),
+      line('pool', t('cards.pool'), el('div', { class: 'tap-ov-card__chips' },
+        el('span', { class: 'tap-ov-card__chip' }, [figure(spec('nb.targetAccounts', 'count')), ' ', t('cards.targetAccounts')]))),
+      line('customers', t('cards.customers'), chips('tap-ov-card__segments',
+        SEGS.map(function (s) { return spec('cg.segment.' + s, 'count'); }), function (s) { return short(s.measure); })),
+      profileLink(ent)
+    ]);
+    // The whole card opens the region's details; a combined card lists where its figures come from.
+    node.addEventListener('click', function () {
       if (combined) openSource(ent.label, all);
       else TAP.layers.openDetails({ regionIds: [ent.regionIds[0]] });
     });
