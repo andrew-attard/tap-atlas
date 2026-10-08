@@ -81,11 +81,12 @@
     });
 
     T.test('X-contract-views', 'The Phase 1 and Phase 2 views are registered in menu order', function (a) {
-      a.deepEqual(TAP.views.order(), ['overview', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'regions', 'insights', 'build', 'guide']);
+      // D115: the menu's three groups, start points, the plan views, then the tools
+      a.deepEqual(TAP.views.order(), ['overview', 'regions', 'industry', 'newBusiness', 'customers', 'partners', 'outlook', 'insights', 'build', 'guide']);
     });
 
     T.test('X-contract-reports', 'Every report a view lists exists and passes validation', function (a) {
-      Object.keys(window.TAP_VIEWS).filter(function (k) { return k !== 'order'; }).forEach(function (v) {
+      Object.keys(window.TAP_VIEWS).filter(function (k) { return k !== 'order' && k !== 'groups'; }).forEach(function (v) {
         (window.TAP_VIEWS[v].reports || []).forEach(function (id) {
           var def = TAP.reports.get(id);
           // While Phase 2 is being built a listed report may not exist yet; once no stub is left, every one must
