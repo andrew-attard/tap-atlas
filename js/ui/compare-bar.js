@@ -1,7 +1,8 @@
 /*
  * File: js/ui/compare-bar.js
- * Purpose: The comparison bar: four modes (D99), only the pickers a mode needs, the plain sentence, an explanation of
- *          combined figures and the data date (which opens the data sources panel). It writes only state.cmp.
+ * Purpose: The comparison bar: three modes (D99, D114), only the pickers a mode needs, the plain sentence, an
+ *          explanation of combined figures and the data date (which opens the data sources panel). It writes only
+ *          state.cmp.
  *          Two rows (D50): the mode and its pickers on one line, then the sentence, the data date and the page-wide
  *          actions the shell hands over (opts.actions: Take the tour, Present; D72).
  * Provides: TAP.compareBar (mount: returns a function that removes the bar's listeners)
@@ -13,9 +14,10 @@
 (function (TAP) {
   'use strict';
 
-  // All regions, Selected regions, One vs the rest, All regions combined (D99). One vs one ('pair') is not offered;
-  // an old setting naming it is read as a selection of its regions (TAP.scope.upgrade).
-  var MODES = ['all', 'set', 'one', 'org'];
+  // All regions, Selected regions, One vs the rest (D99, D114). One vs one ('pair') and All regions combined ('org')
+  // are not offered; an old setting naming one is read as a selection of its regions, or as all regions
+  // (TAP.scope.upgrade).
+  var MODES = ['all', 'set', 'one'];
   var t = function (key, vars) { return TAP.content.text(key, vars); };
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   var active = null;   // cleanup for the bar on screen
@@ -169,12 +171,10 @@
   // What a combined figure on screen means, in plain words, or null when none is shown (with one region, the
   // scope draws no rest).
   function combinedNote(c) {
-    var isOrg = c.mode === 'org';
-    if (!isOrg && (c.mode !== 'one' || c.restAs !== 'combined')) return null;
+    if (c.mode !== 'one' || c.restAs !== 'combined') return null;
     var label = combinedLabel(c);
     if (!label) return null;
-    var total = isOrg || c.restAgg === 'total';
-    return { label: label, text: t(total ? 'combined.explainTotal' : 'combined.explainAverage') };
+    return { label: label, text: t(c.restAgg === 'total' ? 'combined.explainTotal' : 'combined.explainAverage') };
   }
 
   // The same label the charts use: the combined scope entity's own.
@@ -209,9 +209,10 @@
   }
 
   // A comparison can name regions the data doesn't have (an opening state from the address bar, or other data), or
-  // the old one vs one. Fill in what the mode needs from the data instead, so the pickers and the sentence agree.
+  // a mode no longer offered. Fill in what the mode needs from the data instead, so the pickers and the sentence agree.
   function repair() {
-    if (cmp().mode === 'pair') write(TAP.scope.upgrade(cmp()));
+    var up = TAP.scope.upgrade(cmp());
+    if (up !== cmp()) write(up);
     var c = cmp(), p = modePatch(c.mode), fix = {};
     ['focus', 'set'].forEach(function (k) {
       if (k in p && JSON.stringify(p[k]) !== JSON.stringify(c[k])) fix[k] = p[k];

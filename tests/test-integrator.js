@@ -124,10 +124,10 @@
       });
     });
 
-    T.test('X-int-showme-combined', 'From the organization total or one region against the rest, every insight still lands', function (a) {
+    T.test('X-int-showme-combined', 'From one region against the total or the average of the rest, every insight still lands', function (a) {
       withApp(function (root) {
         a.ok(oneOfEach().length >= 6, 'every chart and kind of highlight is covered');
-        a.deepEqual(everyInsight(root, { mode: 'org' }, oneOfEach()), [], 'organization total');
+        a.deepEqual(everyInsight(root, { mode: 'one', focus: TAP.data.regions()[0].id, restAgg: 'total' }, oneOfEach()), [], 'the total of the rest');
         a.deepEqual(everyInsight(root, { mode: 'one', focus: TAP.data.regions()[0].id }, oneOfEach()), [], 'one against the rest');
       });
     });
@@ -182,7 +182,7 @@
         reset();
         TAP.showme.go({ insightId: x.id });
         a.ok(TAP.store.get().highlight, 'highlight set');
-        TAP.store.set({ cmp: { mode: 'org' } });
+        TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });
         a.equal(TAP.store.get().highlight, null, 'cleared by a comparison change');
         reset();
         TAP.showme.go({ insightId: x.id });
@@ -244,10 +244,15 @@
         p = panelEl(root, 'ind-quad');
         p.querySelector('[data-action="select-insight"]').click();
         a.ok(drawn(root, 'ind-quad'), 'drawn on the quadrant');
-        reset({ mode: 'org' }, 'overview');
+        // A focus region no ambition insight names, so the insight's regions sit inside the combined rest
+        var named = [];
+        TAP.insights.all().filter(function (i) { return i.reportId === 'ov-ambition'; }).forEach(function (i) { named = named.concat(i.regionIds); });
+        var focus = TAP.data.regions().map(function (r) { return r.id; }).filter(function (id) { return named.indexOf(id) < 0; })[0];
+        a.ok(focus, 'a region no ambition insight names: ' + focus);
+        reset({ mode: 'one', focus: focus, restAgg: 'total' }, 'overview');
         p = panelEl(root, 'ov-ambition');
         var btn = p.querySelector('[data-action="insights"]');
-        a.ok(btn && !btn.disabled, 'the ambition chart has insights in the organization total');
+        a.ok(btn && !btn.disabled, 'the ambition chart has insights against the total of the rest');
         btn.click();
         panelEl(root, 'ov-ambition').querySelector('[data-action="select-insight"]').click();
         a.equal(TAP.store.get().cmp.mode, 'all', 'switched to All regions');
@@ -549,7 +554,7 @@
           one: { mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'average' },
           set: { mode: 'set', set: ids.slice(0, 3) },
           setOne: { mode: 'set', set: ids.slice(0, 1) },
-          org: { mode: 'org' }
+          oneTotal: { mode: 'one', focus: ids[0], restAs: 'combined', restAgg: 'total' }
         };
         Object.keys(cases).forEach(function (m) {
           TAP.store.set({ cmp: cases[m] });
@@ -606,7 +611,7 @@
         TAP.store.set({ view: 'overview' });
         TAP.insights.top = function () { calls++; return keep.apply(TAP.insights, arguments); };
         try {
-          TAP.store.set({ view: 'guide', cmp: { mode: 'org' } });   // one update: the Overview is destroyed during it
+          TAP.store.set({ view: 'guide', cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });   // one update: the Overview is destroyed during it
           calls = 0;
           TAP.store.set({ cmp: { mode: 'all' } });
           a.equal(calls, 0, 'the destroyed Overview no longer asks for insights');
@@ -623,7 +628,7 @@
         TAP.insights.top = function () { calls++; return keep.top.apply(TAP.insights, arguments); };
         TAP.insights.ranked = function () { calls++; return keep.ranked.apply(TAP.insights, arguments); };
         try {
-          TAP.store.set({ cmp: { mode: 'org' } });       // the first change tells it that it is gone
+          TAP.store.set({ cmp: { mode: 'one', focus: TAP.data.regions()[0].id } });   // the first change tells it that it is gone
           calls = 0;
           TAP.store.set({ cmp: { mode: 'all' } });
           TAP.store.set({ hiddenInsights: ['x:y'] });

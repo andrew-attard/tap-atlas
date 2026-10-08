@@ -60,8 +60,8 @@ window.TAP_CONTENT.guide = {
         'To open one, choose Regions in the menu and pick a region, or select "Open profile" on a region card on the Overview or in a details panel. The back button returns to where you were.'
       ] },
       { id: 'compare', title: 'The comparison bar', paragraphs: [
-        'The comparison bar decides which regions every chart shows, in four modes. All regions shows each region separately. Selected regions shows only the regions you tick, one region or more, so a single region can be shown on its own.',
-        'One vs the rest sets one focus region against the others. All regions combined adds every region together into one figure, as if they were one region.',
+        'The comparison bar decides which regions every chart shows, in three modes. All regions shows each region separately. Selected regions shows only the regions you tick, one region or more, so a single region can be shown on its own.',
+        'One vs the rest sets one focus region against the others.',
         'The sentence under the bar always says in plain words what is on screen, for example "Showing North America only".',
         'With one focus region, the other regions can be shown one by one or as one combined figure: their average or their total. Combined figures are drawn in dark grey and say how they were made.',
         'A single chart can also compare differently for a side question. It shows a "Custom comparison" badge, and goes back to the shared setting when the bar changes.'

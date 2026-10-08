@@ -70,7 +70,7 @@ if [ "${1:-}" = "--matrix" ]; then
     echo "<h2>$view</h2>" >> "$sheet"
     for size in 1280x800 1920x1080; do
       for zoom in 1.25 1.5; do
-        for mode in all set one org; do
+        for mode in all set one; do
           name="$view-${size%x*}-$zoom-$mode.png"
           shot "$page" "screenshot=1&view=$view&mode=$mode" "${size%x*}" "${size#*x}" "$zoom" \
             "$outdir/$name" "$browser" || status=1

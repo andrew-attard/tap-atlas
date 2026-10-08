@@ -12,7 +12,8 @@
 (function (TAP) {
   'use strict';
 
-  // 'pair' (one vs one) is still read, as a selection of its regions (D99)
+  // 'pair' (one vs one) is still read, as a selection of its regions (D99); 'org' (all regions combined) as all
+  // regions (D114)
   var MODES = ['all', 'one', 'pair', 'set', 'org'];
   var REST_AS = ['combined', 'individual'];
   var REST_AGG = ['average', 'total'];
@@ -33,7 +34,8 @@
 
   // The step's comparison over the defaults. Every region it names must be in the data; what a mode needs and the
   // step leaves out comes from the regions in file order, as the comparison bar does. `rest` may stand for restAgg.
-  // An old 'pair' becomes a selection of its two regions, or of the focus alone without a second (D99).
+  // An old 'pair' becomes a selection of its two regions, or of the focus alone without a second (D99); an old 'org'
+  // becomes all regions (D114).
   function cmpOf(c) {
     if (c != null && !isObj(c)) throw new Skip('setting', 'cmp');
     c = Object.assign({}, c || {});

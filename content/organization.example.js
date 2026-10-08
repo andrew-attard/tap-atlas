@@ -33,7 +33,7 @@ window.TAP_ORG = {
      Tour steps are under "tour", with the same step keys as content/text-pages.js. */
   text: {
     // scope: {
-    //   org: 'Showing the whole company across all {n} regions'
+    //   all: 'Showing the whole company across all {n} regions'
     // },
     // tour: {
     //   menu: 'Use the menu to move between the views. Start with the Overview.'

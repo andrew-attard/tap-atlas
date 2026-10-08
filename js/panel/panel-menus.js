@@ -106,8 +106,9 @@
 
   /* ---------- compare this chart differently (US-1.1.4) ---------- */
 
-  // The bar's four modes, in its order (D99); an old 'pair' is read as a selection of its regions.
-  var MODES = ['all', 'set', 'one', 'org'];
+  // The bar's three modes, in its order (D99, D114); an old 'pair' is read as a selection of its regions, an old
+  // 'org' as all regions.
+  var MODES = ['all', 'set', 'one'];
   function regionIds() { return TAP.data.regions().map(function (r) { return r.id; }); }
 
   // Fills in what a mode needs, from the regions in file order (never a fixed name), as the comparison bar does:

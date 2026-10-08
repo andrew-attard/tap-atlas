@@ -29,18 +29,18 @@ Generic on purpose: this copy names no organization, region, file or person. The
   *Good:* every checked figure matches its cell. Calculated figures say "calculated in the workbook" and still point to a cell. Combined figures (totals, averages) list the regions they came from. Each check is listed in the run log.
 
 - [ ] **6. Walk every view in each comparison mode.**
-  Tick each cell of the grid below. The columns follow the comparison bar's four modes, with Selected regions checked twice: one region on its own, and several. Open each panel's table at least once and check blanks read "not provided" (never 0) and unrated rows are left out quietly.
+  Tick each cell of the grid below. The columns follow the comparison bar's three modes, with Selected regions checked twice: one region on its own, and several. Open each panel's table at least once and check blanks read "not provided" (never 0) and unrated rows are left out quietly.
 
-  | View | All regions | Selected regions: one | Selected regions: several | One vs the rest | All regions combined |
-  |---|---|---|---|---|---|
-  | Overview | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Market coverage | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | New business | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Customer growth | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Partners | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Outlook (full template) | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Insights | [ ] | [ ] | [ ] | [ ] | [ ] |
-  | Guide | [ ] | n/a | n/a | n/a | n/a |
+  | View | All regions | Selected regions: one | Selected regions: several | One vs the rest |
+  |---|---|---|---|---|
+  | Overview | [ ] | [ ] | [ ] | [ ] |
+  | Market coverage | [ ] | [ ] | [ ] | [ ] |
+  | New business | [ ] | [ ] | [ ] | [ ] |
+  | Customer growth | [ ] | [ ] | [ ] | [ ] |
+  | Partners | [ ] | [ ] | [ ] | [ ] |
+  | Outlook (full template) | [ ] | [ ] | [ ] | [ ] |
+  | Insights | [ ] | [ ] | [ ] | [ ] |
+  | Guide | [ ] | n/a | n/a | n/a |
 
   *Good:* every chart draws, nothing shows "Not built yet" or an error, the sentence above the charts names the right regions, region labels use the short names, and no figure looks implausible against what you know of the plans.
 

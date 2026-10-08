@@ -62,8 +62,8 @@
 
   /* ---------- from a panel (the More menu) ---------- */
 
-  // The comparison as a step writes it: only the keys its mode uses. Never 'pair': an old one vs one is written as
-  // a selection of its regions (D99).
+  // The comparison as a step writes it: only the keys its mode uses. Never 'pair' or 'org': an old one vs one is
+  // written as a selection of its regions (D99), an old all regions combined as all regions (D114).
   function cmpOf(c) {
     c = TAP.scope.upgrade(c);
     var out = { mode: c.mode };
@@ -130,9 +130,9 @@
     ' *              or \'none\' for no breakdown on a chart that starts with one',
     ' *   industry   the industry id a one-industry chart shows (the ratings, for example)',
     ' *   cmp        what to compare, as in the comparison bar:',
-    ' *                mode     \'all\' (all regions), \'set\' (selected regions), \'one\' (one against the rest)',
-    ' *                         or \'org\' (all regions combined). An older \'pair\' (one against one, with focus',
-    ' *                         and second) is still read, as a selection of its two regions',
+    ' *                mode     \'all\' (all regions), \'set\' (selected regions) or \'one\' (one against the rest).',
+    ' *                         An older \'pair\' (one against one, with focus and second) is still read, as a',
+    ' *                         selection of its two regions, and an older \'org\' as all regions',
     ' *                focus    the region id the comparison is about (\'one\')',
     ' *                set      a list of one region id or more (\'set\')',
     ' *                restAgg  the rest as an \'average\' or a \'total\' (\'one\'); rest is accepted as a shorter name',

@@ -21,7 +21,7 @@
 
   // Opening state for screenshots only (?screenshot=1&view=industry&mode=one&focus=north). Ignored otherwise.
   // Unknown values are left out; unknown region ids in the comparison are repaired by the comparison bar.
-  // An old mode=pair opens as a selection of its two regions (D99).
+  // An old mode=pair opens as a selection of its two regions (D99), an old mode=org as all regions (D114).
   function screenshotState() {
     var q = new URLSearchParams(window.location.search);
     if (q.get('screenshot') !== '1') return null;
