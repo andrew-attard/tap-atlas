@@ -2,7 +2,7 @@
  * File: tests/test-insights.js
  * Purpose: Tests for the insight engine: rule definitions, the insight shape, skipped rules and guardrails
  *          (TPV-TC-128 to 133). Ranking and hiding are in tests/test-ranking.js.
- * Provides: test cases for INSIGHTS story #44, X-insights-*; window.T_INSIGHT_SHAPE and window.T_INSIGHTS (shared helpers)
+ * Provides: test cases for INSIGHTS story #44, X-insights-*, X-d111-why-context (D111: why lines and context insights); window.T_INSIGHT_SHAPE and window.T_INSIGHTS (shared helpers)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: INSIGHTS2 stream (Phase 2)
@@ -251,6 +251,134 @@
       a.ok(list.some(function (x) { return x.fallback === 'details'; }), 'one insight falls back to the details panel');
       var ids = list.map(function (x) { return x.id; });
       a.equal(ids.filter(function (id, i) { return ids.indexOf(id) === i; }).length, ids.length, 'ids are unique');
+    });
+  });
+
+  /* ---------- D111: why it matters, and context insights ---------- */
+
+  T.suite('insight-why', function () {
+    // The rules the owner's review found descriptive (D111): their insights are background, not on the charts
+    var CONTEXT = ['consensus', 'split', 'strongRating', 'segmentMix', 'notYetList', 'sharedSubIndustry', 'sharedPartner', 'recurringTheme'];
+    // Every insight on the sample before D111, from the dump of every sample insight: the count must not change
+    var SAMPLE_ALL = 54;
+    function cmpAll() { return Object.assign(TAP.store.defaults().cmp, { mode: 'all' }); }
+    function txt(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function visible(n) {
+      if (!n) return false;
+      var s = getComputedStyle(n);
+      return s.display !== 'none' && s.visibility !== 'hidden' && n.offsetHeight > 0;
+    }
+    function banned(s) {
+      return window.TAP_RULES.wording.banned.filter(function (w) { return new RegExp('(^|[^A-Za-z])' + w + '([^A-Za-z]|$)', 'i').test(s); });
+    }
+
+    T.test('X-d111-why-context', 'Every rule says why it matters or is marked as context, never both; no why line uses a banned word', function (a) {
+      window.TAP_RULES.rules.forEach(function (r) {
+        var why = typeof r.why === 'string' && r.why.trim().length > 0, ctx = r.context === true;
+        a.ok(why !== ctx, r.id + ': exactly one of why and context');
+        if (why) {
+          a.deepEqual(banned(r.why), [], r.id + ': why uses no banned word');
+          a.ok(/\.$/.test(r.why) && r.why.split(/\.\s/).length === 1, r.id + ': one sentence');
+        }
+      });
+      CONTEXT.forEach(function (id) { a.equal(cfg(id) && cfg(id).context, true, id + ' is context'); });
+      a.equal(cfg('spGap').why, 'The gap between a region\'s bottom-up plan and its strategic target is the first question in a planning review.',
+        'the owner’s wording, word for word');
+    });
+
+    T.test('X-d111-why-context', 'Each insight carries its rule’s why (null for context) and a context flag; all() keeps every one', function (a) {
+      sample();
+      var list = TAP.insights.all();
+      a.equal(list.length, SAMPLE_ALL, 'all() still lists every insight on the sample');
+      list.forEach(function (x) {
+        var r = cfg(x.ruleId);
+        a.equal(x.context, r.context === true, x.id + ': context flag');
+        a.equal(x.why, r.context === true ? null : r.why, x.id + ': why line');
+      });
+      a.ok(list.some(function (x) { return x.context; }) && list.some(function (x) { return !x.context; }), 'both kinds on the sample');
+    });
+
+    T.test('X-d111-why-context', 'A why line with a banned word sets the rule aside with a failure, like a sentence', function (a) {
+      sample();
+      withRule({ id: 'x-test-why', why: 'This looks wrong to the room.' }, perRegion('nb.arr'), function () {
+        a.equal(ofRule('x-test-why').length, 0, 'no insight from the rule');
+        var f = TAP.insights.failures().filter(function (x) { return x.ruleId === 'x-test-why'; });
+        a.equal(f.length, 1, 'one failure for the rule');
+        a.match(f[0] && f[0].message, /"wrong"/, 'naming the word');
+      });
+    });
+
+    T.test('X-d111-why-context', 'No panel lists a context insight; the tier grid shows no consensus or split; asked for, ranked() includes them', function (a) {
+      sample();
+      var c = cmpAll();
+      Object.keys(TAP.reports.all()).forEach(function (id) {
+        var on = TAP.insights.ranked(c, { reportId: id }).filter(function (x) { return x.context; });
+        a.equal(on.length, 0, id + ': no context insight in its ranked list');
+        a.equal(TAP.panelInsights.get(c, id).list.filter(function (x) { return x.context; }).length, 0, id + ': none in the panel list');
+      });
+      var grid = TAP.panelInsights.get(c, 'ind-tiers');
+      a.equal(grid.list.concat(grid.top ? [grid.top] : []).filter(function (x) { return x.ruleId === 'consensus' || x.ruleId === 'split'; }).length, 0,
+        'tier grid: no consensus or split insight');
+      var wide = TAP.insights.ranked(c, { context: true }), ids = wide.map(function (x) { return x.ruleId; });
+      a.ok(ids.indexOf('consensus') >= 0 && ids.indexOf('split') >= 0, 'with context: true they are there');
+      a.equal(wide.length, SAMPLE_ALL, 'with context: true, every insight in scope');
+      a.equal(TAP.insights.ranked(c).filter(function (x) { return x.context; }).length, 0, 'by default, none');
+    });
+
+    T.test('X-d111-why-context', 'A panel takeaway, its insight list and a view headline show the why line as visible text', function (a) {
+      sample();
+      var p = TAP.panel.create(T.dom.mount(), 'ov-ambition', {});
+      try {
+        var top = TAP.panelInsights.get(TAP.store.get().cmp, 'ov-ambition').top;
+        a.ok(top && top.why, 'the ambition chart leads with a kept insight');
+        var line = p.el.querySelector('.tap-panel__takeaway .tap-panel__why');
+        a.equal(txt(line), top && top.why, 'the takeaway shows its why line');
+        a.ok(visible(line), 'as visible text');
+        p.el.querySelector('[data-action="insights"]').click();
+        var items = Array.prototype.slice.call(p.el.querySelectorAll('.tap-panel__insight'));
+        a.ok(items.length > 0, 'the list is open');
+        items.forEach(function (n, i) {
+          var w = n.querySelector('.tap-panel__why');
+          a.ok(w && txt(w).length > 20 && visible(w), 'list insight ' + (i + 1) + ' shows its why line');
+        });
+      } finally { p.destroy(); }
+      var shown = 0;
+      ['newBusiness', 'customers', 'partners', 'outlook'].forEach(function (view) {
+        var root = T.dom.mount(), v = TAP.views.get(view).mount(root);
+        try {
+          var head = root.querySelector('.tap-vh__headline'), best = TAP.viewHead.headline(view, TAP.store.get().cmp);
+          if (!head || head.hidden || !best) return;
+          shown++;
+          a.ok(!best.context, view + ': the headline is not a context insight');
+          a.equal(txt(head.querySelector('.tap-vh__why')), best.why, view + ': the headline shows its why line');
+          a.ok(visible(head.querySelector('.tap-vh__why')), view + ': as visible text');
+        } finally { v.destroy(); }
+      });
+      a.ok(shown > 0, 'at least one view shows a headline on the sample');
+    });
+
+    T.test('X-d111-why-context', 'The Insights page holds the context insights in one closed group, each once; no insight appears twice', function (a) {
+      sample();
+      var root = T.dom.mount(), v = TAP.views.get('insights').mount(root);
+      try {
+        var box = root.querySelector('details[data-part="context"]');
+        a.ok(box, 'a context group');
+        a.ok(box && !box.open, 'closed by default');
+        var want = TAP.insights.ranked(TAP.store.get().cmp, { context: true }).filter(function (x) { return x.context; }).map(function (x) { return x.id; });
+        var got = Array.prototype.map.call(box ? box.querySelectorAll('[data-insight]') : [], function (n) { return n.getAttribute('data-insight'); });
+        a.deepEqual(got.slice().sort(), want.slice().sort(), 'exactly the context insights');
+        a.ok(txt(box && box.querySelector('summary')).indexOf(String(want.length)) >= 0, 'its count in the summary');
+        var page = Array.prototype.map.call(root.querySelectorAll('.tap-ins__item[data-insight]'), function (n) { return n.getAttribute('data-insight'); });
+        a.equal(page.filter(function (id, i) { return page.indexOf(id) === i; }).length, page.length, 'no insight twice on the page');
+        a.equal(page.length, TAP.insights.all().length, 'every insight is on the page once');
+        var outside = Array.prototype.filter.call(root.querySelectorAll('.tap-ins__item[data-insight]'), function (n) { return !box.contains(n); });
+        a.equal(outside.filter(function (n) { return want.indexOf(n.getAttribute('data-insight')) >= 0; }).length, 0, 'no context insight in the ranked groups');
+        var kept = outside[0];
+        a.equal(txt(kept && kept.querySelector('.tap-ins__why')), cfg(kept && kept.getAttribute('data-insight').split(':')[0]).why, 'a ranked insight shows its why line');
+        TAP.insights.hide(want[0]);
+        box = root.querySelector('details[data-part="context"]');
+        a.equal(box.querySelectorAll('[data-insight="' + want[0] + '"]').length, 0, 'a hidden context insight leaves the group');
+      } finally { v.destroy(); TAP.insights.unhide(); }
     });
   });
 
