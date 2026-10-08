@@ -1,7 +1,8 @@
 /*
  * File: tests/test-present.js
  * Purpose: Tests for presentation mode and the running order.
- * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2), 548 and 550 (US-3.1.4), 539 to 546 (US-3.1.3)
+ * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2), 548 and 550 (US-3.1.4), 539 to 546 (US-3.1.3),
+ *           X-d125-one-region-breakdowns (a step asking for a one-region breakdown)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js,
  *             config/running-order.js
  * Used by: tests.html
@@ -220,7 +221,7 @@
 
     T.test('TPV-TC-525', 'A step with measure, chart type, breakdown and comparison shows exactly those settings', function (a) {
       withApp(function () {
-        var cmp = { mode: 'set', set: ['na', 'seu'] };
+        var cmp = { mode: 'set', set: ['na'] };   // one region: an industry breakdown needs it (D125)
         TAP.present.start([{ report: 'nb-levers', measure: 'nb.avgDealSize', type: 'dot', breakdown: 'industry', cmp: cmp }]);
         var p = shown();
         a.equal(p && p.getAttribute('data-report'), 'nb-levers', 'the step report');
@@ -232,6 +233,16 @@
         a.deepEqual(TAP.store.get().cmp, TAP.store.defaults().cmp, 'the shared comparison is left alone (D74)');
         var sentence = p && p.querySelector('.tap-panel__expand-sentence');
         a.equal(sentence && sentence.textContent, TAP.scope.sentence(Object.assign(TAP.store.defaults().cmp, cmp)), 'the comparison sentence on screen');
+      });
+    });
+
+    T.test('X-d125-one-region-breakdowns', 'A step asking for industry with all regions shows no breakdown, with one line', function (a) {
+      withApp(function () {
+        TAP.present.start([{ report: 'nb-levers', breakdown: 'industry', cmp: { mode: 'all' } }]);
+        var p = shown(), note = p && p.querySelector('.tap-panel__bd-note');
+        a.equal(p && p.getAttribute('data-report'), 'nb-levers', 'the step is shown, not skipped');
+        a.equal(pressed(p, 'breakdown'), 'none', 'no breakdown');
+        a.equal(text(note), 'Breakdown by industry needs one region; showing no breakdown.', 'the one line under the controls');
       });
     });
 
@@ -537,7 +548,7 @@
 
     T.test('TPV-TC-539', 'Add to presentation records the report, measure, chart type, breakdown and comparison on screen', function (a) {
       withPanel('nb-levers', function (p) {
-        TAP.store.set({ cmp: { mode: 'set', set: ['na', 'seu'] } });
+        TAP.store.set({ cmp: { mode: 'set', set: ['na'] } });   // one region: an industry breakdown needs it (D125)
         click(p.el.querySelector('[data-control="measure"] [data-value="nb.hitRate"]'));
         click(p.el.querySelector('[data-action="type"]'));
         click(p.el.querySelector('[data-type="dot"]'));
@@ -546,7 +557,7 @@
         var steps = TAP.present.recorded(), s0 = steps[0] || {};
         a.equal(steps.length, 1, 'one step recorded');
         a.deepEqual([s0.report, s0.measure, s0.type, s0.breakdown], ['nb-levers', 'nb.hitRate', 'dot', 'industry'], 'report, measure, type and breakdown');
-        a.deepEqual(s0.cmp, { mode: 'set', set: ['na', 'seu'] }, 'the comparison on screen');
+        a.deepEqual(s0.cmp, { mode: 'set', set: ['na'] }, 'the comparison on screen');
         a.ok(p.el.querySelector('.tap-panel__status').textContent.length > 0, 'the panel says it was added');
       });
     });
