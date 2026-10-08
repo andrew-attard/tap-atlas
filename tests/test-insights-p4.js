@@ -77,13 +77,14 @@
       a.ok(list.indexOf(out[out.length - 1]) > list.indexOf(out[0]), 'spread through the list, not grouped by family');
     });
 
-    // 47 before D112, which adds industryCover's and priorityVsPlan's findings (SAMPLE_EXPECT.s01, s02), one each of
+    // 47 before D112, which adds one industryCover insight per region with a finding (D121) and priorityVsPlan's
+    // findings (SAMPLE_EXPECT.s01, s02), one each of
     // servicesDelivery and partnerLoad, and Manufacturing's consensus; and takes away its split and the three findings of
     // the two retired rules. Latin America's year-2 growth outlier takes the place of Southern Europe's year-3 one.
     T.test('X-insights4-existing', 'The earlier sample insights keep their wording and order among themselves', function (a) {
       sample();
       function said(x) { return x.id + ' | ' + x.sentence; }
-      var S = window.SAMPLE_EXPECT, n = 47 + S.s01.fired.length + S.s02.fired.length + 2 + 1 - 1 - 3;
+      var S = window.SAMPLE_EXPECT, n = 47 + S.s01.fired.map(function (f) { return f.region; }).filter(function (r, i, all) { return all.indexOf(r) === i; }).length + S.s02.fired.length + 2 + 1 - 1 - 3;
       var before = withoutOutlook(function () { return all().map(said); }), after = all().filter(function (x) { return x.family !== 'outlook'; }).map(said);
       a.equal(before.length, n, n + ' insights without the outlook rules');
       a.deepEqual(after, before, 'the same insights, in the same order');

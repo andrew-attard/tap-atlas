@@ -45,14 +45,15 @@
     { p: 'P06', id: 'tierVsPipeline:seu:retail', regions: ['seu'],
       has: ['Southern Europe placed Retail in Tier 3', F.pct(X.p06.share) + ' of the region', F.money(X.p06.pipelineTotal)] },
     // D112: a Tier 2 industry with no pipeline and no goal there has nothing to cover, so P07 now gives no insight
-    { p: 'P07', id: 'industryCover:mea:hospitality', absent: true },
+    // (Middle East & Africa's one industryCover insight, D121, is about another industry)
+    { p: 'P07', id: 'industryCover:mea', without: 'hospitality' },
     { p: 'P08', id: 'outlier:nb.hitRate:ceu', regions: ['ceu'],
       sentence: 'Central Europe plans a 35% hit rate, more than twice the average of the other regions (15%).' },
     { p: 'P09', id: 'outlier:nb.avgDealSize:latam', regions: ['latam'],
       has: ['Latin America plans an average deal size of ' + F.money(X.p09.value), 'higher than any other region', F.money(X.p09.othersAvg)] },
     { p: 'P10', id: 'pipelineCover:latam', regions: ['latam'],
       has: ['Latin America', F.money(X.p10.nbY1) + ') is ' + X.p10.ratio + '× the pipeline', F.money(X.p10.pipeline12m)] },
-    { p: 'P11', id: 'industryCover:apac:transport', regions: ['apac'],
+    { p: 'P11', id: 'industryCover:apac', regions: ['apac'],
       sentence: 'Asia Pacific’s year-1 goal in Transportation (' + F.money(X.s01.none.goal) + ') has no pipeline behind it yet.' },
     { p: 'P12', id: 'winsVsPeers:na', regions: ['na'],
       has: ['North America', 'about 3×', '(' + F.num(X.p12.value, { decimals: 0 }) + ' against ' + F.num(X.p12.othersAvg, { decimals: 0 }) + ')'] },
@@ -71,7 +72,7 @@
 
   function check(a, c) {
     var x = get(c.id);
-    if (c.absent) { a.ok(!x, c.p + ' gives no ' + c.id); return; }
+    if (c.without) { a.ok(!x || x.industryIds.indexOf(c.without) < 0, c.p + ': ' + c.id + ' leaves out ' + c.without); return; }
     a.ok(x, c.p + ' produces ' + c.id);
     if (!x) return;
     if (c.sentence) a.equal(x.sentence, c.sentence, c.p + ' sentence');
@@ -150,7 +151,7 @@
       a.equal(figure(x, 'ind.pipeline').cell.v, X.p06.pipelineTotal);
       a.equal(figure(x, 'base.pipeline').cell.v, X.p06.regionPipeline, 'the region pipeline counts every row');
       check(a, planted('P11'));
-      a.equal(figure(get('industryCover:apac:transport'), 'ind.pipeline').cell.v, X.p11.pipelineTotal, 'Tier 2 with no pipeline');
+      a.equal(figure(get('industryCover:apac'), 'ind.pipeline').cell.v, X.p11.pipelineTotal, 'Tier 2 with no pipeline');
       a.equal(X.p11.tier, 2, 'Asia Pacific placed Transportation in Tier 2');
       check(a, planted('P07'));
       a.ok(!window.TAP_RULES.rules.some(function (r) { return r.id === 'priorityNoPipeline'; }), 'the retired rule is gone');
@@ -263,12 +264,12 @@
     // D112: industryCover replaces noPipeline; the planted case is its 'no pipeline yet' variant
     T.test('TPV-TC-158', 'Planted ambition in an industry with no pipeline gives an insight', function (a) {
       sample();
-      var x = get('industryCover:apac:transport');
+      var x = get('industryCover:apac');
       check(a, planted('P11'));
       a.equal(figure(x, 'ind.pipeline').cell.v, X.p11.pipelineTotal);
       a.near(figure(x, 'ind.nb.arr').cell.v, X.s01.none.goal, 1e-6, 'the year-1 goal planned there');
       a.equal(figure(x, 'ind.nb.arr').cell.src.year, 1, 'traced to plan year 1');
-      a.ok(!get('industryCover:mea:hospitality'), 'P07 has no new business rows, so this rule stays quiet');
+      a.ok(get('industryCover:mea').industryIds.indexOf('hospitality') < 0, 'P07 has no new business rows, so this rule leaves it out');
       a.ok(!window.TAP_RULES.rules.some(function (r) { return r.id === 'noPipeline'; }), 'the retired rule is gone');
     });
 
@@ -358,55 +359,89 @@
       ofRule(id).forEach(function (x) { neutral(a, x.sentence, x.id); window.T_INSIGHT_SHAPE(a, x); });
     }
 
-    T.test('X-d112-industryCover', 'A priority industry’s year-1 goal well above its pipeline gives one insight per region and industry', function (a) {
+    // One insight per region (D121): the industries a region's insight covers, or [] with none
+    function covered(r) { var x = get('industryCover:' + r); return x ? x.industryIds : []; }
+
+    T.test('X-d112-industryCover', 'A priority industry’s year-1 goal well above its pipeline gives one insight per region', function (a) {
       sample();
-      var S = X.s01, c = S.case, x = get('industryCover:' + c.region + ':' + c.industry);
+      var S = X.s01, x = get('industryCover:latam');
       common(a, 'industryCover', 'realism', ['ind-tiers', 'ind-quad', 'nb-industries']);
-      a.ok(x, 'Latin America’s Retail goal is flagged');
+      a.ok(x, 'Latin America is flagged');
       if (!x) return;
-      // Hand-worked: 259.6 / 22 = 11.8
-      a.equal(x.sentence, 'Latin America’s year-1 goal in Retail (' + F.money(c.goal) + ') is 11.8× the pipeline it created there in the last 12 months (' +
-        F.money(c.pipeline12m) + ').');
-      a.near(figure(x, 'ind.nb.arr').cell.v, c.goal, 1e-6, 'the year-1 goal');
-      a.equal(figure(x, 'ind.nb.arr').cell.src.year, 1, 'traced to plan year 1');
-      a.equal(figure(x, 'ind.pipeline').cell.v, c.pipeline, 'the whole pipeline');
-      a.equal(figure(x, 'ind.pipeline12m').cell.v, c.pipeline12m, 'created in the last 12 months');
+      var mine = S.fired.filter(function (f) { return f.region === 'latam'; });
+      // Hand-worked: 8 industries at 5x or more; the two largest goals are Retail (259.6, 22 created) and Education (225.4, 18)
+      a.equal(mine.length, 8);
+      a.equal(x.sentence, 'Latin America’s year-1 goals in 8 priority industries are 5× or more the pipeline it created there in the last 12 months, ' +
+        'led by Retail (€259.6k against €22k) and Education (€225.4k against €18k).');
+      a.deepEqual(x.industryIds.slice().sort(), mine.map(function (f) { return f.industry; }).sort(), 'every industry that fired, for Show me');
+      a.deepEqual(x.highlight.industryIds.slice().sort(), x.industryIds.slice().sort(), 'Show me marks them all');
+      a.deepEqual(x.figures.map(function (f) { return f.measureId + ' ' + f.cell.v; }),
+        ['ind.nb.arr 259.6', 'ind.pipeline12m 22', 'ind.nb.arr 225.4', 'ind.pipeline12m 18'],
+        'a goal and a pipeline for each named industry');
+      a.equal(x.figures[0].cell.src.year, 1, 'goals traced to plan year 1');
+      // Strength from the largest ratio (Education 225.4 / 18 = 12.5, past twice the threshold's distance: 1); money the
+      // goals together, 189.2 + 83.5 + 96.4 + 113.5 + 259.6 + 218.9 + 225.4 + 94.4 = 1,280.9 of the organization's ARR
+      a.equal(x.strength, 1);
+      a.near(x.money, 1280.9 / X.org['base.arr'], 1e-6);
       a.equal(x.reportId, 'ind-tiers', 'Show me opens the tier grid');
-      a.equal(x.highlight.mark, 'cell', 'on the region’s cell');
-      a.deepEqual(x.industryIds, ['retail']);
-      a.deepEqual(ofRule('industryCover').map(function (i) { return i.id.slice(14); }).sort(),
-        S.fired.map(function (f) { return f.key; }).sort(), 'the same findings as the generator works out from the rows');
-      S.fired.forEach(function (f) {
-        var i = get('industryCover:' + f.key);
-        a.ok(i && (f.variant === 'created' ? !/whole|no pipeline/.test(i.sentence) : i.sentence.indexOf(f.variant === 'none' ? 'no pipeline behind it' : 'above its whole pipeline') >= 0),
-          f.key + ' reads as its ' + f.variant + ' variant');
+      a.equal(x.highlight.mark, 'cell', 'on the region’s cells');
+      // One insight per region with a finding, each covering exactly the industries the generator finds from the rows
+      var regs = S.fired.map(function (f) { return f.region; }).filter(function (r, i, all) { return all.indexOf(r) === i; });
+      a.deepEqual(ofRule('industryCover').map(function (i) { return i.regionIds[0]; }).sort(), regs.slice().sort(), 'one per region');
+      regs.forEach(function (r) {
+        a.deepEqual(covered(r).slice().sort(), S.fired.filter(function (f) { return f.region === r; }).map(function (f) { return f.industry; }).sort(), r + ': its industries');
       });
-      // Above the whole pipeline: hand-worked 251.6 > 138
-      a.equal(get('industryCover:mea:ifm').sentence, 'Middle East & Africa’s year-1 goal in Facility Services (€251.6k) is above its whole pipeline there (€138k).');
+      // One industry reads as before: above the whole pipeline, hand-worked 251.6 > 138
+      a.equal(get('industryCover:mea').sentence, 'Middle East & Africa’s year-1 goal in Facility Services (€251.6k) is above its whole pipeline there (€138k).');
       a.equal(S.byVariant.none + S.byVariant.above + S.byVariant.created, S.fired.length);
+    });
+
+    T.test('X-d112-industryCover', 'Two or more industries take the strongest variant’s wording and count them all; one reads as before', function (a) {
+      // Only Retail left in Latin America: the other seven get pipeline created equal to their goal
+      sample(function (p) {
+        X.s01.fired.filter(function (f) { return f.region === 'latam' && f.industry !== 'retail'; }).forEach(function (f) {
+          mcOf(p, 'latam', f.industry).pipelineCreated12m = f.goal;
+        });
+      });
+      // Hand-worked: 259.6 / 22 = 11.8
+      a.equal(get('industryCover:latam').sentence, 'Latin America’s year-1 goal in Retail (€259.6k) is 11.8× the pipeline it created there in the last 12 months (€22k).');
+      a.deepEqual(get('industryCover:latam').figures.map(function (f) { return f.measureId; }), ['ind.nb.arr', 'ind.pipeline', 'ind.pipeline12m']);
+      // Middle East & Africa: Facility Services above its whole pipeline, and Healthcare 38.8 / 5 = 7.8x created: the
+      // stronger variant words it, both count, the larger goal first
+      sample(function (p) { mcOf(p, 'mea', 'healthcare').pipelineCreated12m = 5; });
+      a.equal(get('industryCover:mea').sentence, 'Middle East & Africa’s year-1 goals in 2 priority industries run ahead of their pipeline (1 above the whole pipeline there), ' +
+        'led by Facility Services (€251.6k against €138k) and Healthcare (€38.8k against €5k).');
+      a.deepEqual(get('industryCover:mea').figures.map(function (f) { return f.measureId; }), ['ind.nb.arr', 'ind.pipeline', 'ind.nb.arr', 'ind.pipeline12m']);
+      // Asia Pacific: Culture and Tourism (175.4) with no pipeline either; a name holding "and" makes the list use semicolons
+      sample(function (p) { var m = mcOf(p, 'apac', 'culture'); m.pipelineTotal = 0; m.pipelineCreated12m = 0; });
+      a.equal(get('industryCover:apac').sentence, 'Asia Pacific’s year-1 goals in 2 priority industries run ahead of their pipeline (2 with no pipeline yet), ' +
+        'led by Culture and Tourism (€175.4k with no pipeline yet); and Transportation (€27k with no pipeline yet).');
+      a.equal(get('industryCover:apac').strength, 1, 'no pipeline: the strongest');
+      a.deepEqual(TAP.insights.failures(), [], 'no rule failed');
     });
 
     T.test('X-d112-industryCover', 'Just under each threshold, industryCover stays quiet; a blank pipeline is not zero', function (a) {
       var c = X.s01.case;
       // 5x the pipeline created in 12 months: just above 1/5 of the goal is under 5x; exactly 1/5 is 5x
       sample(function (p) { mcOf(p, c.region, c.industry).pipelineCreated12m = c.goal / 5 + 0.1; });
-      a.ok(!get('industryCover:latam:retail'), 'just under 5x: quiet');
+      a.ok(covered('latam').indexOf('retail') < 0, 'just under 5x: Retail is left out');
+      a.equal(covered('latam').length, 7, 'the other seven still count');
       sample(function (p) { mcOf(p, c.region, c.industry).pipelineCreated12m = c.goal / 5; });
-      a.ok(get('industryCover:latam:retail'), 'at 5x: flagged');
+      a.ok(covered('latam').indexOf('retail') >= 0, 'at 5x: counted');
       // Above the whole pipeline (Northern Europe's Financial Services, 2.6x in 12 months): a pipeline just over the goal is quiet
       var nf = X.s01.fired.filter(function (f) { return f.key === 'neu:finance'; })[0];
       a.equal(nf.variant, 'above', 'Northern Europe’s Financial Services goal is above its whole pipeline');
       sample(function (p) { mcOf(p, 'neu', 'finance').pipelineTotal = nf.goal + 0.1; });
-      a.ok(!get('industryCover:neu:finance'), 'a pipeline just over the goal: quiet');
+      a.ok(!get('industryCover:neu'), 'a pipeline just over the goal: quiet');
       sample(function (p) { mcOf(p, 'neu', 'finance').pipelineTotal = nf.goal - 0.1; });
-      a.ok(get('industryCover:neu:finance'), 'a goal just above the pipeline: flagged');
+      a.ok(get('industryCover:neu'), 'a goal just above the pipeline: flagged');
       // The goal floor (25k): Asia Pacific's Transportation goal is one row
       sample(function (p) { var r = nbRows(p, 'apac', 'transport')[0]; r.arrPotential = [24.9].concat(r.arrPotential.slice(1)); });
-      a.ok(!get('industryCover:apac:transport'), 'a goal of €24.9k: under the floor');
+      a.ok(!get('industryCover:apac'), 'a goal of €24.9k: under the floor');
       sample(function (p) { var r = nbRows(p, 'apac', 'transport')[0]; r.arrPotential = [25].concat(r.arrPotential.slice(1)); });
-      a.ok(get('industryCover:apac:transport'), 'a goal of €25k: flagged');
+      a.ok(get('industryCover:apac'), 'a goal of €25k: flagged');
       sample(function (p) { mcOf(p, 'apac', 'transport').pipelineTotal = null; });
-      a.ok(!get('industryCover:apac:transport'), 'a blank pipeline is not zero');
+      a.ok(!get('industryCover:apac'), 'a blank pipeline is not zero');
       a.deepEqual(TAP.insights.failures(), [], 'no rule failed');
     });
 
