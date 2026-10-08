@@ -159,7 +159,7 @@
       });
     } }, [TAP.icons.svg('copy', { size: 18 }), el('span', null, t('copy'))]);
     box.appendChild(el('div', { class: 'tap-panel__table-head' }, [
-      el('span', { class: 'tap-muted' }, t(countKey || 'tableCount', { n: table.rows.length })), copy
+      el('span', { class: 'tap-muted' }, t((countKey || 'tableCount') + (table.rows.length === 1 ? 'One' : ''), { n: table.rows.length })), copy
     ]));
     box.appendChild(status);
   }
