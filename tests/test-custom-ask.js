@@ -139,8 +139,13 @@
         a.equal(qs('[data-control="custom-by"]', host), null, 'no By choice: the years are the breakdown');
         a.equal(qs('[data-control="custom-region"]', host), null, 'no Region dropdown');
         a.deepEqual(h.spec(), { ask: 'years', measure: 'nb.arr', by: 'year', type: 'groupedBar' });
-        a.equal(legendCount(host), 2 + 3, 'two regions and three plan years in the legend');
-        a.ok(!TAP.custom.definition(h.spec()).cmp, 'follows the comparison bar');
+        a.equal(qsa('.tap-panel__legend-item--region', panel(host)).length, 2, 'the two regions compared, in the legend');
+        var def = TAP.custom.definition(h.spec()), cmp = TAP.store.get().cmp;
+        a.ok(!def.cmp, 'follows the comparison bar');
+        var res = TAP.builders.get('compare')({ def: def, type: 'groupedBar', measureId: null, sizeId: null, breakdown: 'year', cmp: cmp,
+          entities: TAP.scope.entities(cmp), year: null, industryId: null, highlight: null, expanded: false, theme: window.TAP_THEME, opts: {}, size: null, drill: null });
+        a.equal(res.option.series.filter(function (x) { return x.tapRole === 'value'; }).length, 3, 'one bar series per plan year');
+        a.equal(res.option.yAxis.data.length, 2, 'grouped within each of the two regions');
       }));
 
     T.test(ID, 'Compare regions follows the comparison bar', scene({ ask: 'regions', measure: 'nb.arr' }, cmpWith({ mode: 'one', focus: 'alpha' }), function (a, host, h) {
