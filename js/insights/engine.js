@@ -112,6 +112,15 @@
 
   /* ---------- one finding -> one insight ---------- */
 
+  // The short form for the Overview card's line (D130), or null: no template for it, a placeholder the finding left
+  // empty, or a banned word. A missing short form never sets the rule aside; the card then says "1 finding".
+  function shortForm(rule, f) {
+    var tpl = rule.context ? null : (f.variant && rule.shorts && rule.shorts[f.variant]) || rule.short;
+    if (!tpl) return null;
+    var empty = (String(tpl).match(/\{\w+\}/g) || []).some(function (m) { var v = f.vars && f.vars[m.slice(1, -1)]; return v == null || v === ''; });
+    return empty || bannedWord(ownWords(tpl, f.vars)) ? null : fill(tpl, f.vars);
+  }
+
   function blankFigure(f) {
     return f.figures.some(function (g) { return !g.cell || g.cell.state === 'notProvided'; });
   }
@@ -168,7 +177,7 @@
     var breadth = clamp(typeof f.breadth === 'number' ? f.breadth : n ? regionIds.length / n : 0);
     return {
       id: rule.id + ':' + f.key, ruleId: rule.id, family: rule.family, sentence: sentence, figures: f.figures,
-      why: rule.context ? null : rule.why || null, context: rule.context === true, broad: rule.broad === true,
+      why: rule.context ? null : rule.why || null, context: rule.context === true, broad: rule.broad === true, short: shortForm(rule, f),
       description: rule.description, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
       significance: significance(rule.family, strength, money, breadth),
       strength: strength, money: money, breadth: breadth,
@@ -201,7 +210,8 @@
 
   // Worked out once per data file; a reload (a new plan object) or a change to the rules or weights recomputes it.
   function key() {
-    return JSON.stringify([rules().map(function (r) { return [r.id, r.enabled, r.params, r.why, r.context, r.broad]; }), settings(), Object.keys(code)]);
+    return JSON.stringify([rules().map(function (r) { return [r.id, r.enabled, r.params, r.why, r.context, r.broad, r.short, r.shorts]; }),
+      settings(), Object.keys(code)]);
   }
   function state() {
     var plan = TAP.data.plan(), k = key();
