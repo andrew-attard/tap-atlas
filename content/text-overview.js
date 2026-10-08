@@ -17,7 +17,6 @@ Object.assign(window.TAP_CONTENT.text, {
     cards: {
       title: 'Plans at a glance',
       hint: 'Select a card for that region’s details, or a figure for its source',
-      hintCombined: 'Select a figure for its source',
       ambition: '3-year ambition (ARR)',
       nb: 'New business',
       cg: 'Customer growth',
@@ -56,7 +55,7 @@ Object.assign(window.TAP_CONTENT.text, {
       openSources: '{name}: where each figure comes from',
       figureTitle: '{label}: {value}. {kind}. Select to see where it comes from'
     },
-    // Headline (US-1.5.3). {amb}, {nbShare}, {cgShare}, {rest} and {n} in the Tier 2 sentences are figures, shown in
+    // Headline (US-1.5.3). {amb}, {nbShare}, {cgShare} and {n} in the Tier 2 sentence are figures, shown in
     // bold and listed with their sources behind the Sources button.
     // Tier 1 is set by group strategy, so the headline names the industry most often placed in Tier 2 instead.
     headline: {
@@ -68,17 +67,9 @@ Object.assign(window.TAP_CONTENT.text, {
       regionCgOnly: '{name} plans {amb} of new ARR over three years from existing customers; new business is not provided.',
       none: 'No ARR ambition is provided for the regions shown.',
       regionNone: 'No ARR ambition is provided for {name}.',
-      restAverage: 'The other {n} {regions} plan {rest} each on average.',
-      restTotal: 'The other {n} {regions} plan {rest} together.',
-      restOne: 'The other region plans {rest}.',
       cgMissing: 'Customer growth is not provided for {names}.',
       tier2: '{n} {regions} make {industry} a focus industry (Tier 2).',
-      tier2FocusToo: '{focus} makes {industry} a focus industry (Tier 2), as do {n} of the other {m} {regions}.',
-      tier2FocusAll: '{focus} and the other {m} {regions} all make {industry} a focus industry (Tier 2).',
-      tier2FocusNot: '{n} of the other {m} {regions} make {industry} a focus industry (Tier 2); {focus} places it in {tier}.',
-      tier2FocusBlank: '{n} of the other {m} {regions} make {industry} a focus industry (Tier 2); {focus} leaves its tier blank.',
       ambLabel: '3-year ARR ambition',
-      restLabel: '3-year ARR ambition, {who}',
       nbShareLabel: 'Share from new business',
       cgShareLabel: 'Share from existing customers',
       tier2Label: 'Regions with {industry} in Tier 2',

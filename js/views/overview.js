@@ -27,7 +27,7 @@
   /* ---------- headline (US-1.5.3) ---------- */
 
   // Placeholders that hold names from the workbooks: shown as written, never marked as glossary terms.
-  var NAMES = ['name', 'focus', 'industry', 'names'];
+  var NAMES = ['name', 'industry', 'names'];
 
   // Fills a template from the content file: words are marked for the glossary (first use only), figures are plain
   // bold text and are collected in figs for the Sources panel.
@@ -86,53 +86,20 @@
     return { industry: best.ind, n: best.n, fig: fig(count) };
   }
 
-  function focusTier2(focusId, others) {
-    var top = others.length >= 2 ? topTier2(others) : null;
-    if (!top) return null;
-    var own = TAP.measures.get('ind.tier')(focusId, { industryId: top.industry.id }), m = others.length;
-    var vars = { focus: nameOf(focusId), industry: top.industry.name, n: top.fig, m: m, regions: words(m) };
-    if (isVal(own) && own.v === 2) return { key: top.n === m ? 'tier2FocusAll' : 'tier2FocusToo', vars: vars };
-    if (!isVal(own)) return { key: 'tier2FocusBlank', vars: vars };
-    vars.tier = TAP.format.tier(own.v);
-    return { key: 'tier2FocusNot', vars: vars };
-  }
-
-  // The sentences for the comparison on screen, in order.
+  // The sentences for every region (the Overview's only comparison since D118), in order: the regions together, or
+  // the one region by name when the file has only one.
   function sentences(cmp) {
-    var ents = TAP.scope.entities(cmp), all = TAP.scope.regionIds(cmp), out = [];
-    var focus = ents[0] && ents[0].role === 'focus' ? ents[0] : null, pair = !!(ents[1] && ents[1].role === 'second');
+    var all = TAP.scope.regionIds(cmp), one = all.length === 1, out = [];
     if (!all.length) return [{ key: 'none', vars: {} }];
-    if (focus) {
-      var fid = focus.regionIds[0], others = all.filter(function (id) { return id !== fid; });
-      out.push(ambition(focus, { name: focus.label }));
-      if (pair) out.push(ambition(ents[1], { name: ents[1].label }));
-      else if (others.length && !out[0].none) {
-        var rest = ents[1] && ents[1].kind === 'combined' ? ents[1]
-          : { kind: 'combined', regionIds: others, how: 'average', label: TAP.content.text('combined.restAverage', { n: others.length, regions: words(others.length) }) };
-        var r = cellOf('amb.arr', rest);
-        if (isVal(r)) {
-          // One other region: its own figure, as an average or a total alike
-          out.push({ key: others.length === 1 ? 'restOne' : rest.how === 'total' ? 'restTotal' : 'restAverage', vars: { n: others.length, regions: words(others.length),
-            rest: fig({ measure: 'amb.arr', cell: r, unit: 'money', label: H('restLabel', { who: rest.label }) }) } });
-        }
-      }
-    } else {
-      var one = all.length === 1;
-      out.push(ambition({ kind: one ? 'region' : 'combined', regionIds: all, how: 'total' },
-        one ? { name: nameOf(all[0]) } : { n: all.length, regions: words(all.length) }));
-    }
+    out.push(ambition({ kind: one ? 'region' : 'combined', regionIds: all, how: 'total' },
+      one ? { name: nameOf(all[0]) } : { n: all.length, regions: words(all.length) }));
     if (out[0].none) return [out[0]];
     // Regions with no customer growth figures, unless a sentence above already said so for them.
     var said = [].concat.apply([], out.map(function (s) { return s.saidCg || []; }));
     var gaps = all.filter(function (id) { return said.indexOf(id) < 0 && TAP.measures.get('cg.arr')(id, {}).state === 'notProvided'; });
     if (gaps.length) out.push({ key: 'cgMissing', vars: { names: TAP.format.list(gaps.map(nameOf)) } });
-    var tier = null;
-    if (focus && !pair) tier = focusTier2(focus.regionIds[0], all.filter(function (id) { return id !== focus.regionIds[0]; }));
-    else if (!focus && all.length >= 2) {
-      var top = topTier2(all);
-      if (top) tier = { key: 'tier2', vars: { n: top.fig, regions: words(top.n), industry: top.industry.name } };
-    }
-    if (tier) out.push(tier);
+    var top = all.length >= 2 ? topTier2(all) : null;
+    if (top) out.push({ key: 'tier2', vars: { n: top.fig, regions: words(top.n), industry: top.industry.name } });
     return out;
   }
 
