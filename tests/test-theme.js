@@ -2,7 +2,7 @@
  * File: tests/test-theme.js
  * Purpose: Tests for the theme file: distinct region colours (also for colour-blind viewers), label contrast,
  *          CSS variables and the chart theme.
- * Provides: test cases TPV-TC-027, X-theme-*
+ * Provides: test cases TPV-TC-027, X-theme-*, X-d124-channel-colours (the channel palette)
  * Depends on: tests/harness.js, tests/cvd.js, js/theme.js
  * Used by: tests.html
  */
@@ -47,7 +47,23 @@
       });
     });
 
-    T.test('X-theme-css', 'The theme writes its values as CSS variables the stylesheets read', function (a) {
+    T.test('X-d124-channel-colours', 'The channel palette: four colours, colour-blind safe, each with a label at 4.5:1', function (a) {
+      var ids = ['direct', 'partner', 'allianceA', 'allianceB'], ch = TH.channels || {};
+      a.deepEqual(Object.keys(ch), ids, 'one colour per channel, in stacking order');
+      var fills = ids.map(function (id) { return (ch[id] || {}).bg; }).filter(Boolean);
+      a.equal(fills.length, 4, 'four fills');
+      var r = TCVD.report(fills, 10);   // the same bar as the region palette (D45)
+      Object.keys(r.types).forEach(function (t) {
+        a.ok(r.types[t].pass, t + ': closest pair ' + r.types[t].pair.join(' / ') + ' at ' + r.types[t].min.toFixed(1));
+      });
+      ids.forEach(function (id) {
+        var c = ch[id] || {};
+        a.ok(c.bg && c.fg && contrast(c.bg, c.fg) >= 4.5, id + ': label on fill ' + (c.bg ? contrast(c.bg, c.fg).toFixed(2) : '-'));
+        a.ok(c.bg && TCVD.deltaE(c.bg, TH.accent) >= 12, id + ': clear of the highlight red');
+      });
+    });
+
+    T.test('X-theme-css','The theme writes its values as CSS variables the stylesheets read', function (a) {
       var css = getComputedStyle(document.documentElement);
       a.equal(css.getPropertyValue('--tap-ground').trim(), TH.ground);
       a.equal(css.getPropertyValue('--tap-r1').trim(), TH.regions[0]);

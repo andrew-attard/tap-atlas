@@ -431,7 +431,7 @@
       var total = res.option.series.filter(function (s) { return s.tapRole === 'total'; })[0];
       a.match(total.label.formatter({ dataIndex: 1 }), /^€2\.6M\s+difference €295k \(10%\)$/, 'the books bar ends with the difference in money and %');
       a.match(total.label.formatter({ dataIndex: 0 }), /^€2\.8M/, 'the customer value bar ends with its total');
-      a.ok(res.legend.some(function (l) { return l.label === 'Alliance A' && l.role === 'part'; }), 'the channels are named in the key');
+      a.ok(res.legend.some(function (l) { return l.label === 'Alliance A' && l.role === 'channel'; }), 'the channels are named in the key, in their colours (D124)');
       a.ok(res.notes.some(function (n) { return /software perpetual and hardware/i.test(n); }), 'a note says what the difference leaves out');
     });
 
