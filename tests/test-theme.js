@@ -2,7 +2,8 @@
  * File: tests/test-theme.js
  * Purpose: Tests for the theme file: distinct region colours (also for colour-blind viewers), label contrast,
  *          CSS variables and the chart theme.
- * Provides: test cases TPV-TC-027, X-theme-*, X-d124-channel-colours (the channel palette)
+ * Provides: test cases TPV-TC-027, X-theme-*, X-d124-channel-colours (the channel palette), X-d131-segment-colours (segment
+ *           and risk palettes)
  * Depends on: tests/harness.js, tests/cvd.js, js/theme.js
  * Used by: tests.html
  */
@@ -61,6 +62,37 @@
         a.ok(c.bg && c.fg && contrast(c.bg, c.fg) >= 4.5, id + ': label on fill ' + (c.bg ? contrast(c.bg, c.fg).toFixed(2) : '-'));
         a.ok(c.bg && TCVD.deltaE(c.bg, TH.accent) >= 12, id + ': clear of the highlight red');
       });
+    });
+
+    // D131: one palette for the segments and one for the risk levels, checked as the channel palette is
+    function paletteChecks(a, name, pal, ids) {
+      a.deepEqual(Object.keys(pal || {}), ids, name + ': one colour each, in order');
+      var fills = ids.map(function (id) { return ((pal || {})[id] || {}).bg; }).filter(Boolean);
+      a.equal(fills.length, ids.length, name + ': a fill each');
+      var r = TCVD.report(fills, 10);   // the same bar as the region palette (D45)
+      Object.keys(r.types).forEach(function (t) {
+        a.ok(r.types[t].pass, name + ' ' + t + ': closest pair ' + r.types[t].pair.join(' / ') + ' at ' + r.types[t].min.toFixed(1));
+      });
+      ids.forEach(function (id) {
+        var c = (pal || {})[id] || {};
+        a.ok(c.bg && c.fg && contrast(c.bg, c.fg) >= 4.5, name + ' ' + id + ': label on fill ' + (c.bg ? contrast(c.bg, c.fg).toFixed(2) : '-'));
+        a.ok(c.bg && TCVD.deltaE(c.bg, TH.accent) >= 12, name + ' ' + id + ': clear of the highlight red');
+      });
+    }
+
+    T.test('X-d131-segment-colours', 'The segment palette: four colours, colour-blind safe, each with a label at 4.5:1', function (a) {
+      paletteChecks(a, 'segments', TH.segments, ['strategic', 'growth', 'core', 'scaled']);
+      var css = getComputedStyle(document.documentElement);
+      a.equal(css.getPropertyValue('--tap-seg-core').trim(), (TH.segments || { core: {} }).core.bg, 'written as a CSS variable');
+    });
+
+    T.test('X-d131-segment-colours', 'The risk palette: four ordered levels, high darkest, colour-blind safe, labels at 4.5:1', function (a) {
+      var ids = ['high', 'medium', 'low', 'none'];
+      paletteChecks(a, 'risk', TH.risk, ids);
+      var light = ids.map(function (id) { return TCVD.hexToLab(((TH.risk || {})[id] || {}).bg || '#000000')[0]; });
+      ids.slice(1).forEach(function (id, i) { a.ok(light[i + 1] > light[i] + 8, id + ' is lighter than ' + ids[i] + ': ' + light.map(Math.round).join(' < ')); });
+      var css = getComputedStyle(document.documentElement);
+      a.equal(css.getPropertyValue('--tap-risk-high').trim(), ((TH.risk || {}).high || {}).bg, 'written as a CSS variable');
     });
 
     T.test('X-theme-css','The theme writes its values as CSS variables the stylesheets read', function (a) {
