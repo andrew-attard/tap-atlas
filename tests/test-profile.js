@@ -270,7 +270,9 @@
         banned.forEach(function (w) { a.ok(!new RegExp('\\b' + w + '\\b', 'i').test(r.text), '"' + r.text + '" avoids "' + w + '"'); });
         a.ok(!/\b(good|bad|better|worse)\b/i.test(r.text), 'no judgement in "' + r.text + '"');
       });
-      a.equal(TAP.content.text('profile.glance.above'), 'above the average of the rest', 'the agreed wording');
+      a.equal(TAP.content.text('profile.glance.above'), 'Above average', 'the agreed wording (D108)');
+      a.equal(TAP.content.text('profile.glance.below'), 'Below average', 'the agreed wording (D108)');
+      a.equal(TAP.content.text('profile.glance.same'), 'Same as average', 'the agreed wording (D108)');
       a.equal(parts().compare({ v: null, state: 'notProvided' }, cell(3)).key, null, 'no comparison with a value not provided');
     });
 
