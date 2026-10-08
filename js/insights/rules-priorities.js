@@ -1,8 +1,10 @@
 /*
  * File: js/insights/rules-priorities.js
  * Purpose: Insight rules on where regions agree and disagree about industry priorities (US-1.7.4): consensus,
- *          split, and group priorities that a region's own ratings place in the less able or less attractive half.
- * Provides: insight rules for the 'priorities' family (via TAP.insights.defineRule): consensus, split, groupPriority
+ *          split, group priorities that a region's own ratings place in the less able or less attractive half, and
+ *          priorities with little of the new business plan behind them (D112).
+ * Provides: insight rules for the 'priorities' family (via TAP.insights.defineRule): consensus, split, groupPriority,
+ *           priorityVsPlan
  * Depends on: js/insights/engine.js (ctx.util), config/insight-rules.js, the measure catalogue, js/engine/scores.js
  *             (quadrant), js/core/data.js
  * Used by: js/insights/engine.js
@@ -95,6 +97,29 @@
           figures: list.map(function (x) { return u.fig('ind.' + which, u.name(x.r), x.c); }),
           strength: 0.5 * n / Math.max(provided, 1) + 0.5 * depth, money: arrShare(u, id, ids) });
       });
+    });
+    return out;
+  });
+
+  // A priority (Tier 1 or 2 in at least the consensus share, or a group priority) against the three-year new business
+  // ARR plan of the regions that place it there (D112), both combined as the charts combine them.
+  TAP.insights.defineRule('priorityVsPlan', function (ctx) {
+    var u = ctx.util, p = ctx.params, out = [];
+    var share = ((window.TAP_RULES.rules.filter(function (x) { return x.id === 'consensus'; })[0] || {}).params || {}).share || 5 / 7;
+    var sum = function (m, ids, c) { return TAP.measures.combined(m, { kind: 'combined', regionIds: ids, how: 'total' }, Object.assign({ year: null }, c)); };
+    u.rated().forEach(function (id) {
+      var t = tiers(u, id), n = t.provided.length, hi = inOrder(u, t[1].concat(t[2])), group = !!TAP.data.industry(id).groupPriority;
+      if (!n || (!group && hi.length < Math.ceil(share * n - 1e-9))) return;
+      var used = hi.filter(function (r) { return u.value(u.m('nb.arr', r)) !== null; });
+      if (!used.length) return;
+      var amount = sum('ind.nb.arr', used, { industryId: id }), plan = sum('nb.arr', used, {});
+      if (u.value(amount) === null || !(u.value(plan) > 0)) return;
+      var part = amount.v / plan.v, where = u.list(used.map(u.name));
+      if (part >= p.maxShare - 1e-9) return;
+      out.push({ key: id, regionIds: used, industryIds: [id], provided: n, variant: group ? 'group' : null, measureId: p.measure || null,
+        vars: { industry: u.industry(id), n: hi.length, total: n, share: u.pct(part), amount: u.money(amount.v), plan: u.money(plan.v) },
+        figures: t.cells.concat([u.fig('ind.nb.arr', u.industry(id) + ', ' + where, amount), u.fig('nb.arr', where, plan)]),
+        strength: 0.5 * hi.length / n + 0.5 * u.clamp(1 - part / p.maxShare), money: arrShare(u, id, used) });
     });
     return out;
   });

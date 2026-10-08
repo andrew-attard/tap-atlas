@@ -55,6 +55,12 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       attractivenessOne: '{industry} is a group priority, but {region} sees it as less attractive.' },
     attach: GRID.concat(RATED), highlight: 'industryRow', why: 'Group strategy counts on this industry; a low ability rating means references or skills are needed before the plan can rely on it.' });
 
+  rule({ id: 'priorityVsPlan', family: 'priorities',
+    description: 'An industry that is Tier 1 or 2 in at least 5 of every 7 regions that gave it a tier (the consensus share), or a group priority, holding less than 5% of those regions’ three-year new business ARR plan.',
+    reads: ['marketCoverage.tier', 'newBusiness.arrPotential'], params: { maxShare: 0.05, measure: 'ind.nb.arr' }, compare: true,
+    scoring: 'Strength: half the share of regions placing it in Tier 1 or 2, half how far its plan share sits below the threshold. Money: its pipeline or current ARR in those regions (the larger share of the organization’s).',
+    template: '{industry} is Tier 1 or 2 in {n} of {total} regions but holds {share} of their new business plan ({amount} of {plan}).', templates: { group: '{industry} is a group priority but holds {share} of the regions’ new business plan ({amount} of {plan}).' },
+    attach: ['ind-tiers', 'nb-industries'], highlight: 'industryRow', why: 'A priority with little plan money behind it is a priority in name; worth asking whether the tier or the plan should move.' });
   /* ---------- judgement (US-1.7.5) ---------- */
   rule({ id: 'strongRating', context: true, family: 'judgement',
     description: 'References, expertise or product fit rated 3 (the favourable end) where the industry’s current ARR and pipeline are both at or below the threshold (zero by default).',
@@ -75,13 +81,6 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     scoring: 'Strength: the pipeline share against twice the threshold. Money: its pipeline as a share of the organization’s.',
     template: '{region} placed {industry} in Tier 3, but it holds {share} of the region’s pipeline ({amount}). Worth discussing what keeps it in Tier 3.',
     attach: GRID, highlight: 'cell', why: 'Demand is showing up in an industry the plan does not prioritize; worth asking whether the tier or the pursuit should change.' });
-  rule({ id: 'priorityNoPipeline', family: 'judgement',
-    description: 'A Tier 1 or Tier 2 industry with no pipeline at all.',
-    reads: ['marketCoverage.tier', 'marketCoverage.pipelineTotal'], params: {},
-    scoring: 'Strength: fixed (higher for Tier 1). Money: any new business planned there.',
-    template: '{region} placed {industry} in Tier {tier}, with no pipeline there yet. Worth discussing how that pipeline will be built.',
-    attach: GRID, highlight: 'cell', why: 'A goal or priority with no pipeline yet depends on deals not yet found; worth asking how that pipeline will be built.' });
-
   /* ---------- assumptions (US-1.7.6) ---------- */
   rule({ id: 'outlier', family: 'assumptions',
     description: 'A planning assumption at least twice, or at most half, the average of the other regions (weighted as on the charts), or outside every other region’s range by at least 15% of that average. For growth by year, only the year that stands out most is raised.',
@@ -108,12 +107,14 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{region}’s year-1 new business ambition ({nb}) is {ratio} the pipeline it created in the last 12 months ({pipeline}).',
     templates: { none: '{region} plans {nb} of year-1 new business, with no pipeline created in the last 12 months.' },
     attach: ['ov-ambition'], highlight: 'bar', why: 'A year-1 goal far above recent pipeline creation depends on pipeline not yet built; worth asking how and by when.' });
-  rule({ id: 'noPipeline', family: 'realism',
-    description: 'New business planned in an industry where the region has no pipeline at all.',
-    reads: ['newBusiness.arrPotential', 'marketCoverage.pipelineTotal'], params: { measure: 'ind.nb.arr' },
-    scoring: 'Strength: grows with the industry’s share of the region’s new business. Money: the new business planned there.',
-    template: '{region} plans new business in {industry} ({nb} over three years), where it has no pipeline yet.',
-    attach: ['nb-industries'], highlight: 'cell', why: 'A goal or priority with no pipeline yet depends on deals not yet found; worth asking how that pipeline will be built.' });
+  rule({ id: 'industryCover', family: 'realism',
+    description: 'A Tier 1 or 2 industry whose year-1 new business ARR goal (at least €25k) is above the industry’s whole pipeline, no pipeline at all included, or at least 5 times the pipeline created there in the last 12 months.',
+    reads: ['newBusiness.arrPotential', 'marketCoverage.pipelineTotal'], params: { minGoal: 25, ratio: 5, measure: 'ind.nb.arr' },
+    scoring: 'Strength: 1 with no pipeline; above the whole pipeline, from 0.6 rising to 1 at twice the pipeline; otherwise how far the ratio to the pipeline created in 12 months is past 1, against twice the threshold’s distance. Money: the year-1 goal.',
+    template: '{region}’s year-1 goal in {industry} ({goal}) is {ratio} the pipeline it created there in the last 12 months ({pipeline}).',
+    templates: { none: '{region}’s year-1 goal in {industry} ({goal}) has no pipeline behind it yet.',
+      above: '{region}’s year-1 goal in {industry} ({goal}) is above its whole pipeline there ({pipeline}).' },
+    attach: ['ind-tiers', 'ind-quad', 'nb-industries'], highlight: 'cell', why: 'A year-1 industry goal well above its pipeline depends on deals not yet found; worth asking how that pipeline will be built.' });
   rule({ id: 'winsVsPeers', family: 'realism',
     description: 'Implied new customer wins (target accounts × hit rate) at least twice the simple average of the other regions.',
     reads: ['newBusiness.targetAccounts', 'newBusiness.hitRate'], params: { ratio: 2, measure: 'nb.wins' }, compare: true,
@@ -171,7 +172,12 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     template: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average elsewhere.',
     templates: { gaps: '{share} of {region}’s ARR ambition comes from new business, against {avg} on average in the other regions that give both parts.' },
     attach: ['ov-ambition'], highlight: 'bar', why: 'New customers cost more and take longer than growth from existing ones; a mix far from peers changes capacity needs.' });
-
+  rule({ id: 'servicesDelivery', family: 'plan', optional: true,
+    description: 'A region whose services order intake (the recap, both motions) grows by at least 50% from year 1 to year 3, while the services its partners deliver themselves cover less than 20% of year 3. Regions without partner delivery figures are left out.',
+    reads: ['partners.servicesFromPartners', 'recap.value'], params: { growth: 0.5, partnerShare: 0.2 },
+    scoring: 'Strength: half the growth against twice the threshold, half how far the partner share sits below its threshold. Money: the year-3 services the partners do not deliver.',
+    template: '{region} plans {y3} of services in year 3, {growth} more than in year 1 ({y1}); its partners deliver {delivered} of it ({share}), so the rest relies on the region’s own consultants.',
+    attach: ['pt-reliance', 'pt-books'], highlight: 'bar', why: 'Services sold must be delivered; growth beyond partner delivery needs consultant capacity the template does not record.' });
   /* ---------- shared (US-2.5.3, US-2.5.4) ---------- */
   rule({ id: 'sharedSubIndustry', context: true, family: 'shared',
     description: 'A sub-industry named in the New Business rows of at least 2 regions (the same text, ignoring case and extra spaces), so references and assets could be shared.',
@@ -191,7 +197,12 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
     scoring: 'Strength: how far the multiple is past 1, against twice the threshold’s distance. Money: the partner’s planned three-year ARR.',
     template: '{partner} ({region}) is planned at {amount} per person, {multiple} the average across partners ({avg}).',
     attach: ['pt-capacity'], highlight: 'points', why: 'One partner planned far above its peers per person is a dependency; worth asking what happens at the average.' });
-
+  rule({ id: 'partnerLoad', family: 'shared',
+    description: 'A region whose year-1 order intake through partners and alliances (the recap) per partner salesperson (partners’ sales staff, full-time equivalent) is at least twice the other regions’ figure together.',
+    reads: ['partners.fteSales', 'recap.value'], params: { ratio: 2 }, compare: true,
+    scoring: 'Strength: how far the ratio is past 1, against twice the threshold’s distance. Money: the region’s year-1 order intake through partners.',
+    template: '{region} plans {oi} of year-1 order intake through partners with {fte} partner sales staff, {perPerson} per person, {ratio} the other regions together ({avg}).',
+    attach: ['pt-capacity', 'pt-reliance'], highlight: 'points', why: 'A partner-heavy plan carried by few partner sellers is a capacity risk; worth asking whether partners can staff this volume.' });
   /* ---------- themes (US-2.5.1) ---------- */
   rule({ id: 'recurringTheme', context: true, family: 'themes',
     description: 'A theme from the keyword lists in config/comment-themes.js that comes up (whole words, any case) in the success factors or commentary of at least 3 regions (TAP_COMMENT_THEMES.minRegions). Counted by this app, not tagged in the workbooks.',
@@ -280,6 +291,7 @@ window.TAP_RULES = window.TAP_RULES || { rules: [], wording: { banned: [], guide
       bannedWhy: 'its line on why it matters used the word "{word}", which the wording guide avoids.',
       badFinding: 'one of its findings was incomplete (it needs a key, a list of regions and a list of figures).',
       noProvided: 'it compares regions but did not say how many provide the value.',
+      cover: { year3: 'year 3', delivered: 'Services partners deliver themselves, year 3, {where}', partnerOi: 'Year-1 order intake through partners and alliances, {where}', others: 'the other {n} regions together' },
       outlook: { below: 'below', above: 'above', together: 'the {n} regions with a strategic plan together', year1: 'Plan year 1 (books value), {where}', left: 'Order intake still to win, {where}',
         share: 'Share of new business order intake, {solution}, {where}' }
     }
