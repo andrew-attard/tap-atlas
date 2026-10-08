@@ -1,6 +1,7 @@
 /*
  * File: js/panel/panel.js
- * Purpose: The report panel every chart sits in: title, takeaway, chart or table, legend, source line, controls.
+ * Purpose: The report panel every chart sits in: title, chart or table, legend, source line, controls. Its insights
+ *          sit behind the Insights button, never under the title (D120).
  *          It builds the report for the current comparison and redraws on store changes. It keeps the chart
  *          type and measure for the session (the type is also remembered in the browser), and a few choices
  *          (builder options, the selected insight) only until the shared comparison changes. List reports and
@@ -114,7 +115,6 @@
     p.root.className = 'tap-panel' + (big ? ' tap-panel--expanded' : '');
 
     var bodyBox = el('div', { class: 'tap-panel__body' });
-    var takeaway = el('p', { class: 'tap-panel__takeaway', 'aria-live': 'polite', 'data-tour': 'takeaway' });
     TAP.dom.append(p.root, [
       big ? X().strip(p, s) : null,
       el('header', { class: 'tap-panel__head' }, [
@@ -122,7 +122,6 @@
           p.drill.crumbs(),
           el('h2', { class: 'tap-panel__title', tabindex: '-1', html: TAP.content.mark(b.title, p.seen) }),
           b.errors.length || tabled(p, b) ? null : p.drill.hint(b.def),   // a table doesn't drill
-          I.takeaway(takeaway, ok ? info.top : null, p.seen, I.handlers(p).onHide),
           p.st.custom ? TAP.panelMenus.customBadge(p, p.st.custom) : null
         ]),
         TAP.panelMenus.tools(p, b, info)

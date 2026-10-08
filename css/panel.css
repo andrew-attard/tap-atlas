@@ -13,21 +13,13 @@
   background: var(--tap-ground); border: var(--tap-rule-w) solid var(--tap-ink); color: var(--tap-ink);
 }
 
-/* Title and takeaway on the left, the toolbar on the right; the toolbar wraps below in a narrow panel */
+/* Title on the left, the toolbar on the right; the toolbar wraps below in a narrow panel */
 .tap-panel__head {
   display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--tap-sp-3) var(--tap-sp-6);
   padding: 20px var(--tap-sp-6) var(--tap-sp-4);
 }
 .tap-panel__titles { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: var(--tap-sp-2); }
 .tap-panel__title { margin: 0; font-size: var(--tap-fs-h2); line-height: 1.2; font-weight: 800; letter-spacing: -0.01em; }
-.tap-panel__takeaway {
-  margin: 0; min-height: 1.45em; max-width: 76ch;
-  font-size: var(--tap-fs-lead); line-height: 1.45; font-weight: 600;
-}
-.tap-panel__takeaway:empty { min-height: 0; }
-/* Why it matters (D111): plain text on its own line under the sentence, muted but at body size */
-.tap-panel__why { display: block; margin: var(--tap-sp-1) 0 0; font-size: var(--tap-fs-body); font-weight: 400; line-height: 1.4; color: var(--tap-muted); }
-.tap-panel__insight .tap-panel__why { margin: 0; }
 .tap-panel__hide { min-height: 32px; padding: 0 var(--tap-sp-2); font-weight: 600; vertical-align: middle; }
 
 /* The panel takes focus on a click (for the drill keys), and the title after a drill step: neither draws a ring,
@@ -101,6 +93,10 @@ button.tap-panel__crumb {
 .tap-panel__insight-text { margin: 0; font-size: var(--tap-fs-body); line-height: 1.4; font-weight: 600; }
 .tap-panel__figures { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--tap-sp-4); margin: 0; font-size: var(--tap-fs-body); }
 .tap-panel__figures dd { margin: 0; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+/* D121: figures one line per region; D111: why it matters, plain text under the sentence, muted but at body size */
+.tap-panel__figures--lines { display: flex; flex-direction: column; gap: 2px; }
+.tap-panel__figline { margin: 0; font-variant-numeric: tabular-nums; }
+.tap-panel__why { margin: 0; font-size: var(--tap-fs-body); line-height: 1.4; color: var(--tap-muted); }
 .tap-panel__rule { margin: 0; font-size: var(--tap-fs-label); color: var(--tap-muted); }
 .tap-panel__insight-actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); }
 .tap-panel__insight-actions .tap-btn { font-size: var(--tap-fs-body); }
@@ -286,7 +282,6 @@ html.tap-noscroll, html.tap-noscroll body { overflow: hidden; }
 .tap-panel--expanded .tap-panel__body, .tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes,
 .tap-panel--expanded .tap-panel__source { padding-left: 0; padding-right: 0; }
 .tap-panel--expanded .tap-panel__title { font-size: var(--tap-fs-h1); }
-.tap-panel--expanded .tap-panel__takeaway { font-size: var(--tap-fs-h3); }
 .tap-panel--expanded .tap-panel__legend, .tap-panel--expanded .tap-panel__notes { font-size: var(--tap-fs-lead); }
 .tap-panel--expanded .tap-panel__chart { height: max(340px, calc(100vh - 340px)); }
 .tap-panel--expanded .tap-panel__tablewrap { max-height: max(340px, calc(100vh - 380px)); }

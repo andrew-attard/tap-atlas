@@ -3,12 +3,13 @@
  * Purpose: The Insights view: every insight in the comparison, ranked, grouped by family, filterable by region
  *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
  *          session" with an "N hidden · Show hidden" note (US-1.7.11). Each shows its line on why it matters; context
- *          insights (background facts) follow the ranked groups in one closed group (D111).
+ *          insights (background facts) follow the ranked groups in one closed group (D111). Figures naming several
+ *          regions read one line per region (D121).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
  *             js/core/sources.js, js/ui/source-tip.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
  *             js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails),
- *             config/settings.js (family weights)
+ *             config/settings.js (family weights), js/panel/panel-insights.js (figureLines, at call time)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {
@@ -162,16 +163,20 @@
 
     // Each figure carries the data icon for where it comes from (D100); a source no figure shows stays listed:
     // by region with its icon, or in words when this app worked it out.
+    function figVal(f) { var c = f.cell || {}; return el('span', { class: 'tap-ins__fig' }, [figureValue(f), TAP.sourceTip.icon(c.src, c.kind, { label: f.label })]); }
+    function figRows(figs) {
+      return el('dl', { class: 'tap-ins__figs' }, figs.map(function (f) { return [el('dt', null, f.label), el('dd', null, figVal(f))]; })
+        .reduce(function (a, b) { return a.concat(b); }, []));
+    }
+    // Figures naming several regions read one line per region (D121); otherwise one row per figure.
+    function figBlock(figs) { return TAP.panelInsights.figureBlock(figs, 'tap-ins__figline', figVal, figRows) || [figRows(figs)]; }
+
     function details(x) {
       var figs = x.figures || [], keys = figs.map(function (f) { return JSON.stringify((f.cell || {}).src || null); });
       var rest = (x.sources || []).filter(function (s) { return s && keys.indexOf(JSON.stringify(s)) < 0; });
       return el('div', { class: 'tap-ins__details', id: 'tap-ins-d-' + x.id.replace(/[^\w-]/g, '_') }, [
-        el('h4', { class: 'tap-ins__dh' }, t('figures')),
-        el('dl', { class: 'tap-ins__figs' }, figs.map(function (f) {
-          var c = f.cell || {};
-          return [el('dt', null, f.label), el('dd', null, el('span', { class: 'tap-ins__fig' },
-            [figureValue(f), TAP.sourceTip.icon(c.src, c.kind, { label: f.label })]))];
-        }).reduce(function (a, b) { return a.concat(b); }, [])),
+        el('h4', { class: 'tap-ins__dh' }, t('figures'))
+      ].concat(figBlock(figs), [
         el('h4', { class: 'tap-ins__dh' }, t('rule')),
         el('p', { class: 'tap-ins__rule' }, x.description || ''),
         rest.length ? el('h4', { class: 'tap-ins__dh' }, t('sources')) : null,
@@ -179,7 +184,7 @@
           var tip = TAP.sourceTip.icon(s, s.kind), reg = s.regionId && TAP.data.region(s.regionId);
           return el('li', null, tip ? [reg ? TAP.content.regionName(reg) : '', tip] : [s.kind ? TAP.format.kind(s.kind).text + ' · ' : '', addressOf(s)]);
         })) : null
-      ]);
+      ]));
     }
 
     function itemEl(x) {

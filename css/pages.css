@@ -136,6 +136,7 @@
 }
 .tap-ins__dh { margin: var(--tap-sp-1) 0 0; font-size: var(--tap-fs-body); font-weight: 800; }
 .tap-ins__figs { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--tap-sp-1) var(--tap-sp-6); margin: 0; }
+.tap-ins__figline { margin: 0; font-variant-numeric: tabular-nums; }   /* D121: one line per region */
 .tap-ins__figs dd { margin: 0; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
 .tap-ins__rule { margin: 0; }
 .tap-ins__srcs { margin: 0; padding-left: var(--tap-sp-4); }
