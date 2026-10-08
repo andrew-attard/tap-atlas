@@ -139,6 +139,16 @@
       a.ok(linked('planning', 'outlook').length >= 1, 'a planning section explains the Outlook figures and links to the view');
     });
 
+    T.test('X-guide-market-coverage', 'The Guide has a Market coverage section, with the view link and both parts named', function (a) {
+      var mc = howTo('viewIndustry');
+      a.ok(!!mc, 'section viewIndustry exists');
+      if (!mc) return;
+      a.equal(mc.link && mc.link.view, 'industry', 'opens the Market coverage view');
+      var text = mc.paragraphs.join(' ');
+      a.ok(/All industries/.test(text) && /One industry/.test(text), 'names the two parts: ' + text);
+      a.ok(/tier/i.test(text) && /ratings/.test(text), 'mentions the tier grid and the ratings');
+    });
+
     T.test('TPV-TC-745', 'The Guide describes the new reports on the New business and Partners views', function (a) {
       var nb = howTo('viewNewBusiness'), pt = howTo('viewPartners');
       var nbText = nb ? nb.paragraphs.join(' ') : '', ptText = pt ? pt.paragraphs.join(' ') : '';
