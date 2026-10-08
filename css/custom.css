@@ -17,7 +17,29 @@
 }
 .tap-custom__field { display: flex; flex-direction: column; gap: var(--tap-sp-1); }
 .tap-custom__label { font-size: var(--tap-fs-body); font-weight: 600; }
-.tap-custom .tap-custom__select { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); max-width: 100%; min-width: 22em; }
+
+/* The measure picker (D122): search, topics, then the topic's measures as radios in up to two columns, on its own row */
+.tap-custom__measure { flex: 1 1 100%; min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--tap-sp-3); }
+.tap-custom__measure > legend { padding: 0; margin-bottom: var(--tap-sp-2); }
+.tap-custom__findrow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3); }
+.tap-custom__findlabel { font-size: var(--tap-fs-body); }
+.tap-custom .tap-custom__find { font-size: var(--tap-fs-body); border-width: var(--tap-rule-w); width: 22em; max-width: 100%; }
+.tap-custom__found { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }
+.tap-custom__topics { align-self: flex-start; max-width: 100%; }
+.tap-custom__choices { display: flex; flex-direction: column; align-items: flex-start; gap: var(--tap-sp-3); }
+.tap-custom__group { align-self: stretch; display: flex; flex-direction: column; gap: var(--tap-sp-1); }
+.tap-custom__topic { margin: 0; font-size: var(--tap-fs-body); font-weight: 700; }
+.tap-custom__radios {
+  align-self: stretch; list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 26em), 1fr)); gap: var(--tap-sp-1) var(--tap-sp-6);
+}
+.tap-custom__opt { display: flex; align-items: baseline; gap: var(--tap-sp-2); font-size: var(--tap-fs-body); cursor: pointer; padding: 2px 0; }
+.tap-custom__radio { flex: 0 0 auto; width: 1.1em; height: 1.1em; margin: 0; align-self: center; accent-color: var(--tap-ink); }
+.tap-custom__name { min-width: 0; }
+.tap-custom__kind { flex: 0 0 auto; color: var(--tap-muted); white-space: nowrap; }   /* small beside the name, in words too */
+.tap-custom__glyph { display: inline-block; min-width: 1em; text-align: center; font-weight: 700; }
+.tap-custom__opt:has(.tap-custom__radio:checked) .tap-custom__name { font-weight: 700; }
+.tap-custom__more, .tap-custom__none { font-size: var(--tap-fs-body); margin: 0; }
 
 /* The panel takes the view's width, as a single panel does on the other views */
 .tap-custom__panel { min-width: 0; }

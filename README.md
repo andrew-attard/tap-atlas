@@ -158,6 +158,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/keys.js` | Presenting shortcuts and the Esc order |
 | `js/ui/present*.js` | Presentation mode: plays a presentation full screen, one step at a time, and records one from the screen ("Add to presentation") |
 | `js/ui/custom-builder.js` | The builder of the Build a chart view: pickers for measure, dimension and chart type, the custom chart and the session list |
+| `js/ui/custom-measure-picker.js` | The Build a chart measure picker (D122): a search box, topics named after the menu, each topic's key measures, and "Show all" for the rest |
 | `js/views/overview.js` | The Overview: headline, top insights for the organization as a whole (D119), region cards, ambition chart |
 | `js/views/overview-cards.js` | The region cards: 3-year ambition, the new business and customer growth split with a swatch and share per part, Open profile |
 | `js/views/overview-land.js` | The card's "will it land?" parts (D117): the plan against the strategic plan, and pipeline cover in year 1, new customers needed and growth in the top 3 accounts, each against the other regions, with a "discuss" marker where an insight exists |
@@ -192,6 +193,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, why it matters (or context), on/off switch, where it attaches |
 | `config/insight-wording.js` | The wording guide every insight follows, the words it avoids, and the phrases the rules use |
 | `config/running-order.js` | The presentation file: the set list of charts that **Present** plays, in order, each with its own comparison and highlight (D97) |
+| `config/custom-topics.js` | The Build a chart topics: which measures each topic holds (by id prefix) and its short list of key measures (D122) |
 
 ### `content/` and `css/`
 
@@ -303,7 +305,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | A data file error | `docs/DATA-CONTRACT.md`, `js/core/check.js`, `content/text-data.js`, the import's files, and the copied problem list (prompt 6) | `index.html` opens; read the data sources panel |
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
 | The presentation for a meeting | the presentation file (`config/running-order.js`), `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | **Present** in `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
-| Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or "Build a chart" in the menu |
+| Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/custom-topics.js` (its topic and key measures), `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or "Build a chart" in the menu |
 | The full template's parts in the import | `docs/IMPORT-BRIEF.md` (section 4), `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-p4.js`, `js/core/check-p4.js`, `content/text-data.js`, the import's files (prompt 16) | The data sources panel in `index.html`, then the full template checks in `docs/REAL-DATA-CHECKLIST.md` |
 | Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, the import's files (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |
 | A general wording change | The `content/text-*.js` file or `content/ui-text.js` that holds the phrase | The screen that shows it |

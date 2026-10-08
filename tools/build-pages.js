@@ -31,7 +31,7 @@ const APP = [
   'js/engine/shapes.js', 'js/engine/prepare.js',
   'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js', 'js/engine/custom.js',
   'config/reports.js', 'config/reports-overview.js', 'config/reports-industry.js', 'config/reports-newbusiness.js',
-  'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/reports-outlook.js', 'config/views.js', 'config/profile.js', 'config/running-order.js',
+  'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/reports-outlook.js', 'config/views.js', 'config/profile.js', 'config/running-order.js', 'config/custom-topics.js',
   'config/comment-themes.js', 'config/insight-rules.js', 'config/insight-wording.js',
   'js/reports/tier-stats.js', 'js/reports/tier-grid.js', 'js/reports/quadrant-labels.js', 'js/reports/quadrant.js', 'js/reports/ratings-grid.js', 'js/reports/details.js',
   'js/reports/details-rows.js', 'js/reports/cg-builders.js', 'js/reports/nb-grid.js', 'js/reports/nb-levers.js', 'js/reports/row-bubble.js', 'js/reports/themes.js', 'js/reports/stack-draw.js', 'js/reports/dim-stack.js', 'js/reports/pt-books.js',
@@ -45,7 +45,7 @@ const APP = [
   'js/ui/glossary.js', 'js/ui/source-tip.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present.js',
   'js/views/overview-cards.js', 'js/views/overview-land.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
-  'js/views/customers.js', 'js/views/partners.js', 'js/views/outlook.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/ui/custom-builder.js', 'js/views/build.js', 'js/views/guide.js',
+  'js/views/customers.js', 'js/views/partners.js', 'js/views/outlook.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights.js', 'js/ui/custom-measure-picker.js', 'js/ui/custom-builder.js', 'js/views/build.js', 'js/views/guide.js',
   'js/ui/app.js'
 ];
 
