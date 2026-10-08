@@ -118,13 +118,13 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/reports/nb-grid.js` | New business by region and industry, with each region's tier in the cell |
 | `js/reports/nb-levers.js` | The new business levers: bars and dots per lever, plus the bubble of targets against hit rate |
 | `js/reports/cg-builders.js` | Small additions to the generic builders for the Customer growth charts (segment and risk colours, notes, reference lines) |
-| `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled; each region's top accounts with several regions, one region by risk level (D133) |
+| `js/reports/row-bubble.js` | A bubble per row (account or partner) in its region's colour, the largest labelled; each region's top accounts or partners with several regions, one region by risk level or channel (D133, D137) |
 | `js/reports/themes.js` | Finds recurring themes in commentary and success factors, and draws the themes report |
-| `js/reports/dim-stack.js` | A figure split by one dimension (solution, route, category, maturity): stacked bars, a heatmap grid and a table |
+| `js/reports/dim-stack.js` | A figure split by one dimension (solution, route, category, maturity): stacked bars, with the routes and maturity levels in their own colours, a heatmap grid and a table |
 | `js/reports/outlook-side.js` | Figures side by side per region (the strategic plan and the plan, the base year and plan year 1, order intake and revenue) with a closing variance, growth or share |
 | `js/reports/outlook-side-draw.js` | Draws the side-by-side chart: named bars per row and the closing line of text |
 | `js/reports/outlook-coverage.js` | Pipeline coverage: the compare chart with the line at 1, the ratio's parts in the table, the note on worked-out ratios |
-| `js/reports/stack-draw.js` | Draws those stacked bars, with each part numbered and keyed, and the heatmap grid |
+| `js/reports/stack-draw.js` | Draws those stacked bars, each part in its palette colour and named in the key or else numbered, and the heatmap grid |
 | `js/reports/pt-books.js` | Customer value next to books value: two bars per region by channel or product category, with the difference |
 | `js/insights/engine.js` | Runs the rules, applies the guardrails, ranks results, keeps the hidden list |
 | `js/insights/util.js` | The helpers every rule gets as `ctx.util`: names, catalogue figures, the other regions' combined figure, phrases, strength and money at stake |
