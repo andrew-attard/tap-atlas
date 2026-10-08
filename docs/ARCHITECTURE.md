@@ -403,6 +403,8 @@ Every rule also carries one of two fields (D111):
 - `why`: one sentence on why the finding matters (the decision it moves), shown under the insight's sentence wherever it is shown. The banned-word check applies to it as to sentences: a `why` with a banned word sets the rule aside with a failure.
 - `context: true`: the finding is a true background fact that moves no decision. Its insights stay out of panel lists, view headlines and the region profile, and the Insights page lists them in one closed "Context" group after the ranked groups.
 
+A rule may also carry `broad: true` (D119): it is built on the combined total of all regions (spTotal), so its findings count as organization-wide on the Overview whatever regions they name.
+
 **Rule code:** `TAP.insights.defineRule(id, fn)`, where `fn(ctx)` returns findings. `ctx` is `{params, data, measures, agg, scores, settings}`. A finding is:
 
 ```js
@@ -416,8 +418,9 @@ Every rule also carries one of two fields (D111):
 ```
 
 **Engine:** `TAP.insights.all()` is computed once against all regions. The functions built on it are:
-- `ranked(cmp, {reportId, family, regionId, context})`: insights in scope: figure-based insights first, then the `themes` family (D80); within each group the focus region's insights first, then by significance. Context insights (D111) are left out unless `context` is `true`. `all()` uses the same order and keeps every insight;
-- `top(cmp, reportId, n)`;
+- `ranked(cmp, {reportId, family, regionId, context, broadOnly})`: insights in scope: figure-based insights first, then the `themes` family (D80); within each group the focus region's insights first, then by significance. Context insights (D111) are left out unless `context` is `true`. `broadOnly` keeps only insights for the organization as a whole (D119, `isBroad`). `all()` uses the same order and keeps every insight;
+- `top(cmp, reportId, n, opts)`: the first `n` of `ranked`, with `opts` passed on (`{broadOnly}`);
+- `isBroad(insight)`: true when the insight names at least `TAP_SETTINGS.insights.overviewMinRegions` regions (3) or its rule is `broad`. The Overview shows only these: its top insights block, its chart panel's list (panel `opts.broadOnly`) and any view headline for it (`TAP_VIEWS.overview.broadOnly`);
 - `hide(id)` / `unhide(id)` / `hidden()`, held in session state only;
 - `failures()`: rules that threw, which are shown in the data sources panel.
 
@@ -429,7 +432,7 @@ The engine drops any finding built from a not-provided value. It skips compariso
 
 Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'text'`), and `field` when the unit is `'rating'`, so pages format it with `TAP.format.cell(cell, {unit, field, exact: true})` without guessing. Add `measureId` when the figure comes from a catalogue measure.
 
-**Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, why (null for context), context (boolean), figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, attach, highlight, fallback, label: 'Observation to discuss'}`. `attach` lists the attached reports that exist (a rule may name reports still being built); panel lists filter on it, and `reportId` is its first. When there is no Phase 1 report, `reportId` is null and `fallback` is `'details'`: "Show me" then calls `TAP.layers.openDetails(highlight)`.
+**Insight object:** `{id: ruleId + ':' + key, ruleId, family, sentence, why (null for context), context (boolean), broad (the rule's `broad`, boolean), figures, description, regionIds, industryIds, accountIds, significance, sources, reportId, attach, highlight, fallback, label: 'Observation to discuss'}`. `attach` lists the attached reports that exist (a rule may name reports still being built); panel lists filter on it, and `reportId` is its first. When there is no Phase 1 report, `reportId` is null and `fallback` is `'details'`: "Show me" then calls `TAP.layers.openDetails(highlight)`.
 
 ## 13. Content (`content/*`, `js/core/content.js`, `js/ui/glossary.js`)
 

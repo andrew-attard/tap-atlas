@@ -1,6 +1,7 @@
 /*
  * File: content/text-overview.js
- * Purpose: Wording for the Overview: card lines and headline sentence templates, and the card's one glossary term.
+ * Purpose: Wording for the Overview: card lines, headline sentence templates, the top insights block (D119), and the
+ *          card's one glossary term.
  * Provides: adds to window.TAP_CONTENT.text and window.TAP_CONTENT.glossary (pipelineCoverY1)
  * Depends on: content/ui-text.js
  * Used by: js/views/overview*.js
@@ -85,6 +86,13 @@ Object.assign(window.TAP_CONTENT.text, {
       sources: 'Sources',
       sourcesLabel: 'Where the figures in this sentence come from',
       sourcesTitle: 'Where the headline figures come from'
+    },
+    // Top insights for the organization as a whole (US-1.5.3, D119): insights naming 3 or more regions, or from a broad rule
+    insights: {
+      title: 'Top insights',
+      intro: 'Findings that span the organization; region findings are on each view.',
+      showMe: 'Show me',
+      hide: 'Hide for this session'
     },
     // The side panel a figure opens
     source: {

@@ -3,7 +3,8 @@
  * Purpose: Runs the insight rules, applies the guardrails (no blanks, enough regions, neutral words), scores and
  *          ranks what they find, and keeps the session's hidden list (US-1.7.1, 1.7.2, 1.7.10, 1.7.11). Each insight
  *          carries its rule's line on why it matters, or is marked as context and left out of ranked lists (D111).
- * Provides: TAP.insights (defineRule, all, ranked, top, hide, unhide, hidden, failures, reset, significance); the
+ *          opts.broadOnly keeps the insights that apply broadly, for the Overview (D119).
+ * Provides: TAP.insights (defineRule, all, ranked, top, hide, unhide, hidden, failures, reset, significance, isBroad); the
  *           helpers rule files get as ctx.util are in js/insights/util.js
  * Depends on: config/insight-rules.js, config/settings.js, js/core/store.js, js/core/data.js, js/core/content.js,
  *             js/core/format.js, js/engine/aggregate.js, scope.js, measures.js, scores.js, registry.js (at call time)
@@ -167,7 +168,7 @@
     var breadth = clamp(typeof f.breadth === 'number' ? f.breadth : n ? regionIds.length / n : 0);
     return {
       id: rule.id + ':' + f.key, ruleId: rule.id, family: rule.family, sentence: sentence, figures: f.figures,
-      why: rule.context ? null : rule.why || null, context: rule.context === true,
+      why: rule.context ? null : rule.why || null, context: rule.context === true, broad: rule.broad === true,
       description: rule.description, regionIds: regionIds, industryIds: f.industryIds || [], accountIds: f.accountIds || [],
       significance: significance(rule.family, strength, money, breadth),
       strength: strength, money: money, breadth: breadth,
@@ -200,7 +201,7 @@
 
   // Worked out once per data file; a reload (a new plan object) or a change to the rules or weights recomputes it.
   function key() {
-    return JSON.stringify([rules().map(function (r) { return [r.id, r.enabled, r.params, r.why, r.context]; }), settings(), Object.keys(code)]);
+    return JSON.stringify([rules().map(function (r) { return [r.id, r.enabled, r.params, r.why, r.context, r.broad]; }), settings(), Object.keys(code)]);
   }
   function state() {
     var plan = TAP.data.plan(), k = key();
@@ -225,8 +226,13 @@
     if (h.indexOf(id) >= 0) TAP.store.set({ hiddenInsights: h.filter(function (x) { return x !== id; }) });
   }
 
+  // An insight for the organization as a whole (D119): it names at least overviewMinRegions regions, or its rule is
+  // built on the combined total of all regions (broad: true).
+  function isBroad(x) { return !!x && (x.broad === true || (x.regionIds || []).length >= (settings().overviewMinRegions || 3)); }
+
   // Insights in scope, hidden ones left out: figure-based, then themes, the focus region's first in each group.
   // Context insights (D111) are background facts: left out unless opts.context is true, so charts and headlines skip them.
+  // opts.broadOnly: only insights for the organization as a whole (the Overview, D119).
   function ranked(cmp, opts) {
     cmp = cmp || TAP.store.get().cmp;
     opts = opts || {};
@@ -237,19 +243,21 @@
       if (!x.regionIds.some(function (r) { return scope.indexOf(r) >= 0; })) return false;
       if (opts.reportId && x.attach.indexOf(opts.reportId) < 0) return false;
       if (opts.family && x.family !== opts.family) return false;
+      if (opts.broadOnly && !isBroad(x)) return false;
       return !opts.regionId || x.regionIds.indexOf(opts.regionId) >= 0;
     });
     var rank = function (x) { return 2 * late(x) + (focus && x.regionIds.indexOf(focus) < 0 ? 1 : 0); };
     return [0, 1, 2, 3].reduce(function (out, k) { return out.concat(list.filter(function (x) { return rank(x) === k; })); }, []);
   }
 
-  function top(cmp, reportId, n) {
+  // opts: further ranked() options ({broadOnly}).
+  function top(cmp, reportId, n, opts) {
     var max = n != null ? n : settings().panelMax || 3;
-    return ranked(cmp, { reportId: reportId }).slice(0, max);
+    return ranked(cmp, Object.assign({}, opts || {}, { reportId: reportId })).slice(0, max);
   }
 
   function reset() { cache = null; }
 
   TAP.insights = { defineRule: defineRule, all: all, ranked: ranked, top: top, hide: hide, unhide: unhide, hidden: hidden,
-    failures: failures, reset: reset, significance: significance };
+    failures: failures, reset: reset, significance: significance, isBroad: isBroad };
 })(window.TAP);
