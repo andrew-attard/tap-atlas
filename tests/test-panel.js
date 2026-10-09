@@ -2,7 +2,7 @@
  * File: tests/test-panel.js
  * Purpose: Tests for the report panel and its controls.
  * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
- *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), X-d132-* and X-d136-* (D142), X-d142-*,
+ *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), 767 to 769 (D142),
  *           X-d136-* (D136)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
@@ -1417,7 +1417,7 @@
 
     // The owner's path (D142): a flagged breakdown chosen with one region, then the selection widened through the
     // comparison bar on the page itself, not a sandbox panel. The rule still holds for industry.
-    T.test('X-d142-widen-on-page', 'On the New business page, widening the selection through the bar drops an industry breakdown and says so', function (a) {
+    T.test('TPV-TC-769', 'On the New business page, widening the selection through the bar drops an industry breakdown and says so', function (a) {
       var root = T.dom.mount(), plan = JSON.parse(JSON.stringify(window.PLAN_DATA));
       TAP.app.start({ root: root, plan: plan });
       try {
@@ -1442,7 +1442,7 @@
 
     /* D142: partner type (three values) is offered with any number of regions; D136 reversed */
 
-    T.test('X-d136-type-one-region', 'With all seven regions, the maturity chart offers partner type and draws a bar per region and type', onSample(function (a, s) {
+    T.test('TPV-TC-767', 'With all seven regions, the maturity chart offers partner type and draws a bar per region and type', onSample(function (a, s) {
       a.ok(!TAP.reports.oneRegion('partnerType'), 'partnerType carries no one-region flag');
       var p = s.panel('pt-maturity'), b = opt(p, 'partnerType');
       a.ok(b, 'partner type is offered');
@@ -1462,7 +1462,7 @@
 
     /* D142: risk (three levels) is offered with any number of regions; D132 reversed */
 
-    T.test('X-d132-risk-one-region', 'With all seven regions, the segments chart offers risk level and draws more bars than regions', onSample(function (a, s) {
+    T.test('TPV-TC-768', 'With all seven regions, the segments chart offers risk level and draws more bars than regions', onSample(function (a, s) {
       a.ok(!TAP.reports.oneRegion('risk'), 'risk carries no one-region flag');
       var p = s.panel('cg-segments'), b = opt(p, 'risk');
       a.ok(b, 'risk level is offered');
