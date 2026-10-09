@@ -2,7 +2,7 @@
  * File: tests/test-panel.js
  * Purpose: Tests for the report panel and its controls.
  * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
- *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), X-d132-* (D132),
+ *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), X-d132-* and X-d136-* (D142), X-d142-*,
  *           X-d136-* (D136)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
@@ -1337,7 +1337,7 @@
     }));
   });
 
-  /* ---------- D125: busy breakdowns need one region ---------- */
+  /* ---------- D125: busy breakdowns need one region (industry and solution only since D142) ---------- */
 
   T.suite('panel-one-region', function () {
     var ONE = 'One region only';
@@ -1404,60 +1404,77 @@
       a.ok(txt(p.el).indexOf(ONE) < 0, 'no one-region note');
     }));
 
-    T.test('X-d125-one-region-breakdowns', 'Industry, solution, risk and partner type carry the one-region flag (D125, D132, D136)', function (a) {
-      a.deepEqual(TAP.reports.BREAKDOWNS.filter(TAP.reports.oneRegion), ['industry', 'risk', 'solution', 'partnerType']);
+    T.test('X-d125-one-region-breakdowns', 'Only industry and solution carry the one-region flag (D125; D142 reverses D132 and D136)', function (a) {
+      a.deepEqual(TAP.reports.BREAKDOWNS.filter(TAP.reports.oneRegion), ['industry', 'solution']);
     });
 
-    /* D136: the maturity chart's partner type breakdown follows the same rule */
+    // The number of bars a panel's chart draws along its category axis.
+    function categories(p) {
+      var c = chartOf(p), o = c ? c.getOption() : {};
+      var ax = [].concat(o.xAxis || [], o.yAxis || []).filter(function (x) { return x.type === 'category'; })[0];
+      return ax ? ax.data.length : -1;
+    }
 
-    T.test('X-d136-type-one-region', 'With several regions, the maturity chart greys the partner type breakdown with "One region only"', onSample(function (a, s) {
-      a.equal(TAP.reports.BREAKDOWN_META.partnerType && TAP.reports.BREAKDOWN_META.partnerType.oneRegion, true, 'partnerType is flagged');
-      var p = s.panel('pt-maturity'), b = opt(p, 'partnerType');
-      a.ok(b, 'partner type stays visible');
-      a.equal(b && b.getAttribute('aria-disabled'), 'true', 'disabled (aria-disabled)');
-      a.ok(b && /needs one region selected/.test(b.getAttribute('aria-label') || ''), 'the accessible name says why');
-      a.ok(txt(control(p)).indexOf(ONE) >= 0, 'the visible note "' + ONE + '"');
-      click(b);
-      a.equal(pressedBd(p), 'none', 'a click changes nothing');
-    }));
+    // The owner's path (D142): a flagged breakdown chosen with one region, then the selection widened through the
+    // comparison bar on the page itself, not a sandbox panel. The rule still holds for industry.
+    T.test('X-d142-widen-on-page', 'On the New business page, widening the selection through the bar drops an industry breakdown and says so', function (a) {
+      var root = T.dom.mount(), plan = JSON.parse(JSON.stringify(window.PLAN_DATA));
+      TAP.app.start({ root: root, plan: plan });
+      try {
+        TAP.store.set({ view: 'newBusiness', cmp: { mode: 'set', set: ['na'] } });
+        var p = { el: qs('[data-report="nb-levers"]', root) };
+        a.ok(p.el, 'the levers chart is on the page');
+        click(opt(p, 'industry'));
+        a.equal(pressedBd(p), 'industry', 'broken down by industry with one region');
+        click(qs('.tap-cmp__setbtn', root));
+        click(qs('[data-picker="set"] [data-region="seu"]', root));
+        a.deepEqual(TAP.store.get().cmp.set, ['na', 'seu'], 'two regions selected through the bar');
+        p.el = qs('[data-report="nb-levers"]', root);   // the page may have drawn the panel again
+        a.equal(pressedBd(p), 'none', 'back to no breakdown');
+        a.equal(noteLine(p), DROPPED, 'the one line says why');
+        a.equal(opt(p, 'industry').getAttribute('aria-disabled'), 'true', 'industry is greyed again');
+      } finally {
+        try { TAP.layers.close(); } catch (e) { /* none open */ }
+        TAP.app.stop();
+        TAP.data.load(T_FIXTURE('mini'));
+      }
+    });
 
-    T.test('X-d136-type-one-region', 'With one region, the partner type breakdown is enabled and draws a bar per type', onSample(function (a, s) {
-      TAP.store.set({ cmp: { mode: 'set', set: ['apac'] } });
+    /* D142: partner type (three values) is offered with any number of regions; D136 reversed */
+
+    T.test('X-d136-type-one-region', 'With all seven regions, the maturity chart offers partner type and draws a bar per region and type', onSample(function (a, s) {
+      a.ok(!TAP.reports.oneRegion('partnerType'), 'partnerType carries no one-region flag');
       var p = s.panel('pt-maturity'), b = opt(p, 'partnerType');
-      a.equal(b && b.getAttribute('aria-disabled'), null, 'enabled');
-      a.ok(txt(control(p)).indexOf(ONE) < 0, 'no note');
+      a.ok(b, 'partner type is offered');
+      a.equal(b && b.getAttribute('aria-disabled'), null, 'enabled with every region');
+      a.ok(txt(control(p)).indexOf(ONE) < 0, 'no "' + ONE + '" note');
       click(b);
       a.equal(pressedBd(p), 'partnerType', 'chosen');
       a.ok(!qs('.tap-panel__error', p.el), 'with no error');
+      // The sample names three partner types (value-added reseller, system integrator, referral) across seven regions:
+      // at least 21 bars, one per region and type, plus any "not provided" group, always a whole set per region.
+      var n = categories(p);
+      a.ok(n >= 21 && n % 7 === 0, '7 regions times the types: ' + n + ' bars');
       TAP.store.set({ cmp: { mode: 'set', set: ['apac', 'na'] } });
-      a.equal(pressedBd(p), 'none', 'a wider comparison falls back to no breakdown');
-      a.equal(txt(qs('.tap-panel__bd-note', p.el)), 'Breakdown by partner type needs one region; showing no breakdown.', 'and says so');
+      a.equal(pressedBd(p), 'partnerType', 'a different comparison keeps the breakdown');
+      a.equal(noteLine(p), '', 'and no line says otherwise');
     }));
 
-    /* D132: the segments chart's risk breakdown follows the same rule */
+    /* D142: risk (three levels) is offered with any number of regions; D132 reversed */
 
-    T.test('X-d132-risk-one-region', 'With several regions, the segments chart greys the risk breakdown with "One region only"', onSample(function (a, s) {
-      a.equal(TAP.reports.BREAKDOWN_META.risk && TAP.reports.BREAKDOWN_META.risk.oneRegion, true, 'risk is flagged');
+    T.test('X-d132-risk-one-region', 'With all seven regions, the segments chart offers risk level and draws more bars than regions', onSample(function (a, s) {
+      a.ok(!TAP.reports.oneRegion('risk'), 'risk carries no one-region flag');
       var p = s.panel('cg-segments'), b = opt(p, 'risk');
-      a.ok(b, 'risk stays visible');
-      a.equal(b && b.getAttribute('aria-disabled'), 'true', 'disabled (aria-disabled)');
-      a.ok(b && /needs one region selected/.test(b.getAttribute('aria-label') || ''), 'the accessible name says why');
-      a.ok(txt(control(p)).indexOf(ONE) >= 0, 'the visible note "' + ONE + '"');
-      click(b);
-      a.equal(pressedBd(p), 'none', 'a click changes nothing');
-    }));
-
-    T.test('X-d132-risk-one-region', 'With one region, the risk breakdown is enabled and draws', onSample(function (a, s) {
-      TAP.store.set({ cmp: { mode: 'set', set: ['mea'] } });
-      var p = s.panel('cg-segments'), b = opt(p, 'risk');
-      a.equal(b && b.getAttribute('aria-disabled'), null, 'enabled');
-      a.ok(txt(control(p)).indexOf(ONE) < 0, 'no note');
+      a.ok(b, 'risk level is offered');
+      a.equal(b && b.getAttribute('aria-disabled'), null, 'enabled with every region');
+      a.ok(txt(control(p)).indexOf(ONE) < 0, 'no "' + ONE + '" note');
       click(b);
       a.equal(pressedBd(p), 'risk', 'chosen');
       a.ok(!qs('.tap-panel__error', p.el), 'with no error');
+      a.ok(categories(p) > 7, 'a bar per region and risk level: ' + categories(p) + ' bars for 7 regions');
       TAP.store.set({ cmp: { mode: 'set', set: ['mea', 'na'] } });
-      a.equal(pressedBd(p), 'none', 'a wider comparison falls back to no breakdown');
-      a.equal(txt(qs('.tap-panel__bd-note', p.el)), 'Breakdown by risk level needs one region; showing no breakdown.', 'and says so');
+      a.equal(pressedBd(p), 'risk', 'a different comparison keeps the breakdown');
+      a.equal(noteLine(p), '', 'and no line says otherwise');
     }));
   });
 })(window.TAP);
