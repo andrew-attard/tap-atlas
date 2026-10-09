@@ -20,7 +20,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How is each region’s customer base segmented?',
     explain: {
       shows: 'Each region’s accounts split into the four segments, Strategic, Growth, Core and Scaled, counted as accounts, current ARR or three-year order intake.',
-      read: 'One bar per region, each segment in its own colour, the same in every bar and named in the legend; Amount or Share of total switches between the figures and each segment’s share. Segments come from the workbook, and each region sets its own thresholds: click a bar to see them. With one region, break it down by risk level to see how much of each segment is flagged.',
+      read: 'One bar per region, each segment in its own colour, the same in every bar and named in the legend; Amount or Share of total switches between the figures and each segment’s share. Segments come from the workbook, and each region sets its own thresholds: click a bar to see them. Break it down by risk level to see how much of each segment is flagged.',
       lookFor: 'Regions whose base leans on one segment, and segments whose share of order intake is far from their share of accounts.'
     },
     shape: 'parts',
