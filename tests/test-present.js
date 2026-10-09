@@ -2,7 +2,8 @@
  * File: tests/test-present.js
  * Purpose: Tests for presentation mode and the running order.
  * Provides: test cases for the PRESENT stream: TPV-TC-516 to 520 (US-3.1.1), 518 and 524 to 536 (US-3.1.2), 548 and 550 (US-3.1.4), 539 to 546 (US-3.1.3),
- *           X-d125-one-region-breakdowns (a step asking for a one-region breakdown)
+ *           X-d125-one-region-breakdowns (a step asking for a one-region breakdown). Presenting the screen (D141) is in
+ *           tests/test-present-screen.js; here the file plays from the Guide and the button and P present the page.
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js,
  *             config/running-order.js
  * Used by: tests.html
@@ -205,7 +206,7 @@
       });
     });
 
-    T.test('TPV-TC-524', 'P starts presentation mode at step 1, but not while typing in a field', function (a) {
+    T.test('TPV-TC-524', 'P presents the charts on the page from the first, but not while typing in a field (D141)', function (a) {
       withApp(function (root) {
         var field = root.appendChild(document.createElement('input'));
         field.focus();
@@ -215,7 +216,12 @@
         press('p');
         a.ok(TAP.present.active(), 'P starts presentation mode');
         a.equal(n(), 1, 'at step 1');
-        a.equal(TAP.present.current().reportId, window.TAP_RUNNING_ORDER.steps[0].report, 'the first step of the file');
+        a.equal(TAP.present.current().reportId, 'ov-ambition', 'on the Overview: its chart');
+        press('Escape');
+        TAP.store.set({ view: 'customers' });
+        press('p');
+        a.ok(TAP.present.active() && n() === 1, 'P on Customer growth starts at its first chart');
+        a.equal(TAP.present.current().reportId, 'cg-segments', 'the first chart on the page, not the file');
       });
     });
 
@@ -320,29 +326,40 @@
       });
     });
 
-    T.test('TPV-TC-536', 'An empty or fully invalid running order does not start and the button says why', function (a) {
+    // The Guide's "Present the saved presentation" button and its status line (the file plays from the Guide, D141)
+    function guideFile(root) {
+      TAP.store.set({ view: 'guide' });
+      var sec = root.querySelector('.tap-view [data-guide="runningOrder"]');
+      return { btn: sec && sec.querySelector('[data-ro="present"]'), status: sec && sec.querySelector('.tap-ro__status') };
+    }
+
+    T.test('TPV-TC-536', 'An empty or fully invalid running order does not start and the Guide button says why', function (a) {
       withApp(function (root) {
-        var btn = root.querySelector('.tap-topbar__actions .tap-present__button');
-        a.ok(btn, 'a Present button in the top bar');
+        var g = guideFile(root);
+        a.ok(g.btn, 'a "Present the saved presentation" button in the Guide');
         window.TAP_RUNNING_ORDER.steps = [];
-        if (btn) btn.click();
+        click(g.btn);
         a.ok(!TAP.present.active(), 'empty: does not start');
-        var msg = root.querySelector('.tap-present__msg');
-        a.equal(msg && msg.textContent, TAP.content.text('present.empty'), 'empty: the button says so');
+        a.equal(text(g.status), TAP.content.text('present.empty'), 'empty: the status line says so');
         window.TAP_RUNNING_ORDER.steps = [{ report: 'no-such-report' }, { insight: 'noSuchRule:x' }];
-        if (btn) btn.click();
+        click(g.btn);
         a.ok(!TAP.present.active(), 'fully invalid: does not start');
-        a.equal(msg && msg.textContent, TAP.content.text('present.noneValid', { n: 2 }), 'fully invalid: the button says so');
+        a.equal(text(g.status), TAP.content.text('present.noneValid', { n: 2 }), 'fully invalid: the status line says so');
       });
     });
 
-    T.test('X-present-button', 'The Present button starts the file order at step 1', function (a) {
+    T.test('X-present-button', 'The Present button presents the charts on the page from the first (D141)', function (a) {
       withApp(function (root) {
         var btn = root.querySelector('.tap-topbar__actions .tap-present__button');
         a.ok(btn && btn.textContent.indexOf(TAP.content.text('present.button')) >= 0, 'labelled Present');
         if (btn) btn.click();
         a.ok(TAP.present.active() && n() === 1, 'presentation mode at step 1');
+        a.equal(TAP.present.current().reportId, 'ov-ambition', 'the chart on the Overview');
         a.ok(shown() && shown().classList.contains('tap-panel--expanded'), 'the report fills the expanded panel');
+        TAP.present.stop();
+        TAP.store.set({ view: 'customers' });
+        if (btn) btn.click();
+        a.equal(TAP.present.current() && TAP.present.current().reportId, 'cg-segments', 'on Customer growth: its first chart');
       });
     });
 
@@ -797,12 +814,12 @@
       });
     });
 
-    T.test('X-d97-presentation-words', 'With an empty presentation file, the Present button says so in the new words', function (a) {
+    T.test('X-d97-presentation-words', 'With an empty presentation file, the Guide button says so in the new words', function (a) {
       withApp(function (root) {
         window.TAP_RUNNING_ORDER.steps = [];
-        click(root.querySelector('.tap-present__button'));
-        var msg = root.querySelector('.tap-present__msg');
-        a.match(msg ? msg.textContent : '', /the presentation file config\/running-order\.js has no steps yet/, 'the message');
+        var g = guideFile(root);
+        click(g.btn);
+        a.match(text(g.status), /the presentation file config\/running-order\.js has no steps yet/, 'the message');
       });
     });
 
