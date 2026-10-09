@@ -14,6 +14,9 @@ Object.assign(window.TAP_CONTENT.text, {
 
     // Presenting (US-3.1.2)
     button: 'Present',
+    nothingOnPage: 'Nothing to present on this page: it has no charts. Open a view with charts, or play the saved presentation from the Guide.',
+    nextPage: 'Next: {name}',
+    markerHint: 'Space or Right continues to it. Esc leaves and stays on this page.',
     empty: 'Nothing to present: the presentation file config/running-order.js has no steps yet.',
     noneValid: 'Nothing to present: none of the {n} steps in the presentation can be shown with this data. The data sources panel lists why.',
     noneValidOne: 'Nothing to present: the one step in the presentation can’t be shown with this data. The data sources panel lists why.',
@@ -35,11 +38,11 @@ Object.assign(window.TAP_CONTENT.text, {
       title: 'Your presentation',
       // The explanation the section opens with: what, who, how to play, how to make your own (D97)
       whatLabel: 'What it is',
-      what: 'Presentation mode shows a set list of charts full screen, one step at a time. Each step has its own comparison and highlight, so you can talk instead of clicking.',
+      what: 'Presentation mode shows charts full screen, one step at a time: the charts on the page as they are on screen, or a saved set list. Each step has its own comparison and highlight, so you can talk instead of clicking.',
       whoLabel: 'Who it is for',
       who: 'Whoever shares the screen in a meeting.',
       playLabel: 'To play it',
-      play: '"Present", beside the data date, or the P key plays the saved presentation: the file config/running-order.js. Space or Right goes on, Left goes back, and Esc leaves and puts the screen back as it was.',
+      play: '"Present", beside the data date, or the P key presents the charts on the page as they are on screen, from the expanded chart or the first. After the last one, Space or Right continues to the next view in the menu, or to the next region on a region profile; Esc leaves and stays on the page reached. The saved presentation, the file config/running-order.js, plays from "Present the saved presentation" below. Space or Right goes on, Left goes back, and Esc leaves.',
       makeLabel: 'To make your own',
       make: 'Choose "Add to presentation" in a chart’s More menu, for each chart in order. The steps are listed below and kept in this browser only. "Try this presentation" plays them. "Copy as file text" gives the text to paste over config/running-order.js, or to hand to whoever keeps the app folder, so "Present" plays it for everyone.',
       stepsLabel: 'Your steps',

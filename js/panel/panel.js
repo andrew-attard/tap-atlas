@@ -8,7 +8,7 @@
  *          builder option clicks: ARCHITECTURE 17.4. A page may fix a panel's comparison with opts.cmp (#216) and
  *          take its comparison menu away with opts.noCompare (D118); opts.local keeps a panel apart from the shared
  *          highlight (presentation steps, D74); opts.broadOnly lists only insights for the organization as a whole
- *          (the Overview, D119).
+ *          (the Overview, D119). The panel keeps its last build as p.built for presenting the screen (D141).
  * Provides: TAP.panel (create)
  * Depends on: js/panel/panel-build.js, panel-expand.js, js/panel/panel-*.js, js/engine/registry.js, scope.js, js/core/store.js, storage.js, content.js, format.js,
  *             sources.js, dom.js, icons.js, data.js, js/ui/layers.js, shell.js (label), js/theme.js (all at call time)
@@ -114,6 +114,7 @@
     var opener = a0 && a0.closest && p.root.contains(a0) && a0.closest('.tap-panel__pop') ? POP_BUTTON[p.shownPop] : null;
     p.seen = {};   // glossary terms are marked once per panel
     var b = build(p, s), one = TAP.panelBuild.oneIndustry(b.def) && !p.drill.depth();   // a one-industry chart: its industry's insights only
+    p.built = b;   // the last build, read when the screen is presented (js/ui/present-screen.js, D141)
     var info = I.get(cmpOf(p, s), p.drill.current(), one ? b.industryId : null, { broadOnly: !!p.opts.broadOnly }), ok = !b.errors.length && b.res && !b.res.empty;
     p.drewHl = !!(b.ctx && b.ctx.highlight);
     var big = s.expanded === p.id;

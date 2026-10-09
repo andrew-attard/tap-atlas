@@ -101,7 +101,7 @@ window.TAP_CONTENT.guide = {
         'The Insights page lists them all, ranked and grouped by family, and counts the insights to discuss apart from background facts, which point to no decision, such as several regions naming the same partner, and sit in a closed Context group at the end. The Regions and Families dropdowns at the top narrow the list, each choice showing how many insights it would list, then its background facts. Any insight can be hidden for the rest of the session.'
       ] },
       { id: 'keys', title: 'Keyboard shortcuts', shortcuts: true, paragraphs: [
-        'When presenting, a number key opens the view at that place in the menu, as listed below: 1 to 9 for the first nine, and 0 for the tenth. P plays the saved presentation: a set list of charts, full screen, one step at a time. The Guide section "Your presentation" explains it and how to make your own.',
+        'When presenting, a number key opens the view at that place in the menu, as listed below: 1 to 9 for the first nine, and 0 for the tenth. P presents the charts on the page, full screen, one step at a time; after the last one, Space or Right continues to the next view. The Guide section "Your presentation" explains it, the saved presentation and how to make your own.',
         'Esc closes one thing at a time: an open list or definition first, then a side panel, then an expanded chart. In an expanded chart the arrow keys move between the charts, and Backspace goes up a level after a drill-down.'
       ] }
     ]

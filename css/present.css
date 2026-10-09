@@ -1,7 +1,8 @@
 /*
  * File: css/present.css
  * Purpose: Styles for presentation mode: the Present button and its message, the full-window presentation layer
- *          with the step's expanded panel, the thin progress row (US-3.1.2), and the Guide's recorded steps (US-3.1.3).
+ *          with the step's expanded panel, the marker step between pages (D141), the thin progress row (US-3.1.2),
+ *          and the Guide's recorded steps (US-3.1.3).
  * Provides: styles for this area only
  * Depends on: css/base.css, css/panel.css (the expanded panel) and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
@@ -31,6 +32,14 @@
 .tap-present .tap-panel--expanded .tap-panel__tablewrap { max-height: max(300px, calc(100vh - 440px)); }
 /* "Chart 2 of 6" counts the view's charts behind the layer, which aren't part of the presentation */
 .tap-present .tap-panel__expand-row .tap-muted { display: none; }
+
+/* The marker step after a page's last chart: the page it leads to, and how to go on, centred on the stage (D141) */
+.tap-present__marker {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--tap-sp-4);
+  min-height: 100%; padding: var(--tap-sp-6) clamp(var(--tap-gutter), 6vw, 96px); text-align: center;
+}
+.tap-present__marker-title { margin: 0; font-size: var(--tap-fs-h1); font-weight: 800; line-height: 1.2; color: var(--tap-ink); }
+.tap-present__marker-hint { margin: 0; font-size: var(--tap-fs-body); color: var(--tap-muted); }
 
 /* Glossary popovers (z-index 60) open over the layer while presenting */
 body:has(.tap-present) .tap-popover { z-index: 66; }
