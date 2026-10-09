@@ -121,7 +121,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'How established are the partners carrying each plan?',
     explain: {
       shows: 'Each region’s named partners by maturity level, from Recruit to Strategic as the template orders them: how many partners sit at each level, and the three-year order intake (ARR plus services) they are planned to bring. Partners with no level are counted under “Maturity not provided”.',
-      read: 'One bar per region, the levels as parts in one colour from light to dark, Recruit lightest, named in the legend. Switch between the number of partners and their planned order intake, and between Amount and Share of total, which compares the mix whatever the size of the partner base. With one region, break down by partner type to see a bar per type.',
+      read: 'One bar per region, the levels as parts in one colour from light to dark, Recruit lightest, named in the legend. Switch between the number of partners and their planned order intake, and between Amount and Share of total, which compares the mix whatever the size of the partner base. Break down by partner type to see a bar per region and type.',
       lookFor: 'Plans whose order intake rests on partners still being recruited or onboarded, regions with no strategic partner, and partners named without a level or type.'
     },
     shape: 'parts',
