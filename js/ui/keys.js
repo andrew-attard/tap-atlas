@@ -1,8 +1,8 @@
 /*
  * File: js/ui/keys.js
  * Purpose: Keyboard shortcuts for presenting: 1 to 9 open the views in menu order and 0 the tenth (D90), from
- *          TAP.views.order(), so a new view needs no change here (the Guide lists the keys from the same order); P starts
- *          presentation mode (US-3.1.2); and one Esc order across popovers, side panels and expanded charts.
+ *          TAP.views.order(), so a new view needs no change here (the Guide lists the keys from the same order); P presents
+ *          the charts on the page (US-3.1.2, D141); and one Esc order across popovers, side panels and expanded charts.
  * Provides: TAP.keys (bind, unbind, viewFor)
  * Depends on: js/core/store.js, js/engine/registry.js (TAP.views), js/ui/layers.js, js/ui/present.js,
  *             js/panel/panel-drill.js (TAP.panelKeys.typing), js/panel/panel-expand.js (collapse) (all read at call time)
@@ -44,7 +44,7 @@
     }
     if ((e.key === 'p' || e.key === 'P') && !typing(e.target) && !tourOn()) {
       e.preventDefault();
-      TAP.present.start();   // the file's running order; if there is nothing to show, the Present button says why
+      TAP.present.startScreen();   // the charts on the page; if there is nothing to show, the Present button says why
       return;
     }
     var id = viewFor(e.key);

@@ -1,10 +1,10 @@
 /*
  * File: js/panel/panel-expand.js
  * Purpose: Expanded and full-screen charts: the slim strip, arrow-key stepping and scroll lock.
- * Provides: TAP.panelExpand (add, remove, steps, syncScroll, collapse, fullscreen, strip, keys)
+ * Provides: TAP.panelExpand (add, remove, steps, panels, syncScroll, collapse, fullscreen, strip, keys)
  * Depends on: js/core/store.js, js/core/dom.js, js/core/content.js, js/core/format.js, js/engine/scope.js,
  *             js/core/sources.js, js/ui/shell.js, js/ui/layers.js, js/core/icons.js
- * Used by: js/panel/panel.js
+ * Used by: js/panel/panel.js; js/ui/present-screen.js reads panels() to present the charts on the page (D141)
  */
 (function (TAP) {
   'use strict';
@@ -14,7 +14,9 @@
 
   var live = [];   // panels on the page, in the order made: the charts the arrow keys step through
 
-  function steps() { return live.filter(function (q) { return q.live && q.root.isConnected; }).map(function (q) { return q.id; }); }
+  // The live panel objects on the page, in the order made; steps() gives their ids.
+  function panels() { return live.filter(function (q) { return q.live && q.root.isConnected; }); }
+  function steps() { return panels().map(function (q) { return q.id; }); }
 
   // Page scrolling is locked while any panel on the page is expanded.
   function syncScroll() {
@@ -71,6 +73,6 @@
   function add(p) { live.push(p); }
   function remove(p) { live = live.filter(function (q) { return q !== p; }); syncScroll(); }
 
-  TAP.panelExpand = { add: add, remove: remove, steps: steps, syncScroll: syncScroll, collapse: collapse,
+  TAP.panelExpand = { add: add, remove: remove, steps: steps, panels: panels, syncScroll: syncScroll, collapse: collapse,
     fullscreen: fullscreen, strip: strip, keys: keys };
 })(window.TAP);
