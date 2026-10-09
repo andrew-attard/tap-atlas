@@ -255,7 +255,7 @@ Phase 3 added presentation mode, which plays a meeting's presentation full scree
 
 ## 14. Set the presentation for a meeting
 
-Use before a meeting, to fix the steps "Present" plays: which report, measure, chart type, comparison and highlight each step shows, in order.
+Use before a meeting, to fix the steps of the saved presentation, which the Guide's "Present the saved presentation" plays: which report, measure, chart type, comparison and highlight each step shows, in order. (**Present** and the P key present the charts on the page as they are on screen, so a saved list is needed only for a set running order.)
 
 **Attach:** `config/running-order.js` (the current presentation), `docs/ARCHITECTURE.md` (section 18.2 explains every field of a step), `config/views.js` and the definitions files of the reports you want (for example `config/reports-newbusiness.js`). If you made a presentation from the screen with "Add to presentation", paste the text that "Copy as file text" in the Guide gives you into the chat.
 
@@ -271,7 +271,7 @@ Use only report ids from the attached definitions files and measure ids those re
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** one file to save over `config/running-order.js`. Check: open `index-sample.html` (or `index.html`) and start presentation mode with **Present** or the P key: the progress row shows "Step 1 of n" and the first title, and the arrow keys step through. A step that can't be shown is skipped and listed in the data sources panel with the reason; fix it and try again. Esc returns to the view you were on, with your comparison as it was.
+**Expect:** one file to save over `config/running-order.js`. Check: open `index-sample.html` (or `index.html`), open the Guide and choose "Present the saved presentation" under "Your presentation": the progress row shows "Step 1 of n" and the first title, and the arrow keys step through. A step that can't be shown is skipped and listed in the data sources panel with the reason; fix it and try again. Esc returns to the view you were on, with your comparison as it was.
 
 ## 15. Keep a custom chart as a report, or offer a measure in "Build a chart"
 

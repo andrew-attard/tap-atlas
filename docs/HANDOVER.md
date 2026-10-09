@@ -13,7 +13,7 @@ TAP Atlas shows every region's territory account plan side by side. Each regiona
 - **Every figure traces to its source:** the data icon beside a figure shows its kind and file › sheet › cell (D100), in the details panel, lists, tables and leaders' words; the data sources panel lists each file and its import notes. Every chart has a table view.
 - **Drill-down:** selecting a block on the New business industries or solutions chart opens the rows behind it in the same panel. A band says the panel is drilled in, a line names what was selected and what is shown, and "Back to ..." returns to the chart; the page does not move (D123).
 - **Insights:** rules in configuration flag observations worth discussing, worded neutrally and ranked, each with one line on why it matters. Descriptive background facts stay off the charts and sit in a closed Context group on the Insights page (D111), which counts them apart from the insights to discuss and filters through two dropdowns, Regions and Families (D126). The Overview's "Top insights" lists the three most significant findings that span at least three regions or the total of all regions (D119); each region profile opens with its own Top insights, the three most significant findings about that region (D128), and the first of them ends that region's Overview card as one line to discuss (D130).
-- **For presenting:** large type, no hover-only details, no animation, presentation mode, which plays a set list of charts full screen, one step at a time, from the presentation file (`config/running-order.js`), and "Build a chart" in the menu, with Insights and the Guide in the tools group at its right end, for charts made in the meeting: start from the question (compare the regions, break one region down, or see the plan years, D140), then pick the measure by topic from a short list, or find it by name (D122).
+- **For presenting:** large type, no hover-only details, no animation, presentation mode, which shows the charts on the page full screen, one at a time, as they are on screen, then continues page by page (**Present** or the P key, D141), or plays a set list from the presentation file (`config/running-order.js`) through the Guide, and "Build a chart" in the menu, with Insights and the Guide in the tools group at its right end, for charts made in the meeting: start from the question (compare the regions, break one region down, or see the plan years, D140), then pick the measure by topic from a short list, or find it by name (D122).
 - **No server:** plain HTML, CSS and JavaScript opened from the folder by double-click, in Chrome or Edge. Nothing loads from the web.
 
 ## The two editions
@@ -93,7 +93,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | A report on the region profile | `config/profile.js` | 9 |
 | A column on a list | the list's `config/reports-*.js` file, `js/engine/rows.js` | 10 |
 | Another template section | `docs/EXTENDING-TEMPLATE.md` | 11 to 13 |
-| The presentation for a meeting | the presentation file | 14 |
+| The presentation for a meeting (the saved set list the Guide plays) | the presentation file | 14 |
 | Keeping a chart built in the meeting, or offering a measure in "Build a chart" | `js/engine/custom.js`, the view's `config/reports-*.js` file, and `config/custom-topics.js` for its topic and key measures | 15 |
 | Wording | the `content/text-*.js` file that holds the phrase | none needed |
 

@@ -157,8 +157,8 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `js/ui/multi-select.js` | A dropdown multi-select: a button naming the choice and a checklist with "All" and "Clear" (D126), also as a list report's filter (D134) |
 | `js/ui/tour.js` | The optional welcome tour |
 | `js/ui/showme.js` | "Show me": opens the right view and chart and highlights the data |
-| `js/ui/keys.js` | Presenting shortcuts and the Esc order |
-| `js/ui/present*.js` | Presentation mode: plays a presentation full screen, one step at a time, and records one from the screen ("Add to presentation") |
+| `js/ui/keys.js` | Presenting shortcuts (number keys for the views, P to present the page) and the Esc order |
+| `js/ui/present*.js` | Presentation mode: **Present** and P present the charts on the page as they are on screen, then continue page by page (D141); the Guide plays the saved presentation; "Add to presentation" records one from the screen |
 | `js/ui/custom-builder.js` | The builder of the Build a chart view (D140): the kept charts as chips at the top, the controls on the left and the custom chart beside them, redrawn at every change |
 | `js/ui/custom-controls.js` | The Build a chart controls (D140): the question (Compare regions, Break one region down, See the plan years), the Region dropdown and By choice of one region, the measure picker narrowed to the question, and Show as (Bar or Table) |
 | `js/ui/custom-measure-picker.js` | The Build a chart measure picker (D122): a search box, topics named after the menu, each topic's key measures, and "Show all" for the rest |
@@ -196,7 +196,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `config/comment-themes.js` | Keyword lists for the recurring themes in commentary and success factors |
 | `config/insight-rules.js` | Every insight rule: thresholds, wording, why it matters (or context), on/off switch, where it attaches |
 | `config/insight-wording.js` | The wording guide every insight follows, the words it avoids, and the phrases the rules use |
-| `config/running-order.js` | The presentation file: the set list of charts that **Present** plays, in order, each with its own comparison and highlight (D97) |
+| `config/running-order.js` | The presentation file: the set list of charts that the Guide's "Present the saved presentation" plays, in order, each with its own comparison and highlight (D97) |
 | `config/custom-topics.js` | The Build a chart topics: which measures each topic holds (by id prefix) and its short list of key measures (D122) |
 
 ### `content/` and `css/`
@@ -308,7 +308,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | Organization wording | `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and the `content/text-*.js` file that holds the phrase (prompt 3) | The data sources panel in `index.html` shows no organization message |
 | A data file error | `docs/DATA-CONTRACT.md`, `js/core/check.js`, `content/text-data.js`, the import's files, and the copied problem list (prompt 6) | `index.html` opens; read the data sources panel |
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
-| The presentation for a meeting | the presentation file (`config/running-order.js`), `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | **Present** in `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
+| The presentation for a meeting | the presentation file (`config/running-order.js`), `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | "Present the saved presentation" in the Guide of `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
 | Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/custom-topics.js` (its topic and key measures), `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or "Build a chart" in the menu |
 | The full template's parts in the import | `docs/IMPORT-BRIEF.md` (section 4), `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-p4.js`, `js/core/check-p4.js`, `content/text-data.js`, the import's files (prompt 16) | The data sources panel in `index.html`, then the full template checks in `docs/REAL-DATA-CHECKLIST.md` |
 | Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, the import's files (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |
