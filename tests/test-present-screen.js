@@ -2,7 +2,7 @@
  * File: tests/test-present-screen.js
  * Purpose: Tests for presenting the screen (D141, #570): Present and P show the charts on the page as they are, in
  *          screen order, then a marker step continues to the next page in menu order, or the next region on a profile.
- * Provides: test cases X-screen-* for the PRESENT stream
+ * Provides: test cases TPV-TC-770 to 781 for the PRESENT stream
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures, data/sample-plan-data.js,
  *             config/running-order.js
  * Used by: tests.html
@@ -56,7 +56,7 @@
 
   T.suite('present-screen', function () {
 
-    T.test('X-screen-order', 'Present shows the charts of Customer growth in screen order, then a marker for Partners', function (a) {
+    T.test('TPV-TC-770', 'Present shows the charts of Customer growth in screen order, then a marker for Partners', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'customers' });
         var pg = TAP.presentScreen.page();
@@ -81,7 +81,7 @@
       });
     });
 
-    T.test('X-screen-settings', 'A chart presents with the measure, chart type, breakdown and own comparison chosen on the panel behind', function (a) {
+    T.test('TPV-TC-771', 'A chart presents with the measure, chart type, breakdown and own comparison chosen on the panel behind', function (a) {
       withApp(function (root) {
         TAP.store.set({ view: 'customers' });
         var ex = viewPanel(root, 'cg-exposure'), gr = viewPanel(root, 'cg-growth');
@@ -112,7 +112,7 @@
       });
     });
 
-    T.test('X-screen-start-expanded', 'Present starts at the expanded chart; leaving without a move puts the page back', function (a) {
+    T.test('TPV-TC-772', 'Present starts at the expanded chart; leaving without a move puts the page back', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'customers' });
         TAP.store.set({ expanded: 'cg-exposure' });
@@ -129,7 +129,7 @@
       });
     });
 
-    T.test('X-screen-continue', 'The marker continues to Partners with a one-region selection kept; Leave then stays there', function (a) {
+    T.test('TPV-TC-773', 'The marker continues to Partners with a one-region selection kept; Leave then stays there', function (a) {
       withApp(function () {
         var one = Object.assign(TAP.store.defaults().cmp, { mode: 'set', set: ['na'] });
         TAP.store.set({ view: 'customers', cmp: one });
@@ -154,7 +154,7 @@
       });
     });
 
-    T.test('X-screen-profile', 'A region profile presents every chart one against the rest, then continues to the next region', function (a) {
+    T.test('TPV-TC-774', 'A region profile presents every chart one against the rest, then continues to the next region', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'regions', region: 'na' });
         var pg = TAP.presentScreen.page();
@@ -183,7 +183,7 @@
       });
     });
 
-    T.test('X-screen-nothing', 'Insights, the Guide and the Regions picker have nothing to present: the button says so, no layer', function (a) {
+    T.test('TPV-TC-775', 'Insights, the Guide and the Regions picker have nothing to present: the button says so, no layer', function (a) {
       withApp(function (root) {
         [{ view: 'insights' }, { view: 'guide' }, { view: 'regions', region: null }].forEach(function (state) {
           TAP.store.set(state);
@@ -200,7 +200,7 @@
       });
     });
 
-    T.test('X-screen-overview', 'The Overview presents its chart, then continues to Market coverage with the ratings on the current industry', function (a) {
+    T.test('TPV-TC-776', 'The Overview presents its chart, then continues to Market coverage with the ratings on the current industry', function (a) {
       withApp(function () {
         TAP.store.set({ industry: 'finance' });
         a.equal(TAP.store.get().view, 'overview', 'on the Overview');
@@ -220,7 +220,7 @@
       });
     });
 
-    T.test('X-screen-build', 'Build a chart gives one custom step and no marker', function (a) {
+    T.test('TPV-TC-777', 'Build a chart gives one custom step and no marker', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'build' });
         var pg = TAP.presentScreen.page();
@@ -235,7 +235,7 @@
       });
     });
 
-    T.test('X-screen-other-last', 'Outlook is the last page; with extra data, Other sections comes after it and is the last', function (a) {
+    T.test('TPV-TC-778', 'Outlook is the last page; with extra data, Other sections comes after it and is the last', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'outlook' });
         a.equal(TAP.presentScreen.nextOf(TAP.store.get()), null, 'no extra data: nothing after Outlook');
@@ -254,7 +254,7 @@
       }, window.T_WITH_EXTRA());
     });
 
-    T.test('X-screen-external-move', 'A view change from outside, after a continuation, leaves presentation on the new view', function (a) {
+    T.test('TPV-TC-779', 'A view change from outside, after a continuation, leaves presentation on the new view', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'customers' });
         TAP.present.startScreen();
@@ -269,7 +269,7 @@
       });
     });
 
-    T.test('X-screen-back-home', 'Back from the marker returns to the last chart; Home goes to step 1 of the current page', function (a) {
+    T.test('TPV-TC-780', 'Back from the marker returns to the last chart; Home goes to step 1 of the current page', function (a) {
       withApp(function () {
         TAP.store.set({ view: 'customers' });
         TAP.present.startScreen();
@@ -287,7 +287,7 @@
       });
     });
 
-    T.test('X-screen-guide-plays-file', 'The Guide still plays the saved presentation and the recorded list', function (a) {
+    T.test('TPV-TC-781', 'The Guide still plays the saved presentation and the recorded list', function (a) {
       withApp(function () {
         TAP.present.clearRecorded();
         try {
