@@ -1,6 +1,6 @@
 # Case study: TAP Atlas
 
-How a small browser app for comparing regional plans was planned and built in three phases over four days, with user stories, a traced test plan, numbered decisions and parallel build agents.
+How a small browser app for comparing regional plans was planned and built in four phases, a review pass and a polish release over ten days, with user stories, a traced test plan, numbered decisions and parallel build agents.
 
 Generic and fictional throughout: no organization, person or customer is named, and every figure and screenshot comes from the invented sample data.
 
@@ -21,7 +21,7 @@ The job: one place that plays each region's plan back, compares regions on the s
 
 ## Key decisions
 
-74 decisions were logged, each with the date, the reasons and the alternatives. The ones that shaped the app most:
+145 decisions were logged, each with the date, the reasons and the alternatives. The ones that shaped the app most:
 
 | Decision | What was decided | Why |
 |---|---|---|
@@ -56,8 +56,11 @@ The job: one place that plays each region's plan back, compares regions on the s
 | 1, `v0.1.0` | The app shell and the comparison bar, the report panel and engine, sample data with planted cases, the Overview and Market coverage views, insights in six rule families, the Guide, glossary and tour, the contract check, and the handover documents for the import | 58 (49 Must, 9 Should) | 270 | 635 automated checks pass in Chrome and Edge; the QA smoke run of 281 steps with no exceptions |
 | 2, `v0.2.0` | The New business, Customer growth and Partners views, the region profile, list reports, drill-down, a dot plot and breakdowns, three more insight families, and reading tips | 37 (22 Must, 13 Should, 2 Could) | 245 | 969 automated checks pass in Chrome and Edge; the QA smoke run of 724 steps per browser with no exceptions |
 | 3, `v0.3.0` | Presentation mode with a presentation file, custom charts, extra template sections, the handover pack, and this portfolio edition | 18 (10 Must, 7 Should, 1 Could) | 118 | 1,079 automated checks pass in Chrome and Edge; QA scripts on every view: no console errors, nothing below 13 px, no web requests; smoke test with no failures |
+| Review, `v0.3.1` | A review of every area: code review by area, and the smoke test run on six imperfect copies of the sample data. 47 findings fixed, no new features | 0 | 0 | 1,184 automated checks pass in Chrome and Edge; QA scripts on every view and the imperfect-data runs clean in both browsers |
+| 4, `v0.4.0` | The full template: an Outlook view (the plans against the strategic plan and the base year, pipeline coverage, the revenue outlook, product categories), new business by solution, customer value against value through the organization's books, route to market, partner maturity, and a new insight family | 20 (12 Must, 7 Should, 1 Could) | 133 | 1,381 automated checks pass in Chrome and Edge; QA scripts on every view (now ten) and the imperfect-data runs clean in both browsers |
+| Polish, `v0.4.1` | A polish release on the full template: a leaner Overview, a one-row comparison bar, charts coloured by what they compare, insights with a "why it matters" line, Present mode showing the page on screen, Build a chart starting from the question, and the internal handover template with branding through the organization layer | 0 (amendments only) | 17 | CI's Chrome run on every pull request (1,590 automated checks); `verify.sh --release --browser none`; the owner's own look in Edge (D106) |
 
-In total: 113 stories, 633 test cases and 74 decisions, built in four days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2 and about 25 in Phase 3.
+In total: 133 stories, 783 test cases and 145 decisions, built over ten days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2, about 25 in Phase 3, about 50 in the review pass, about 25 in Phase 4 and about 40 in the polish release.
 
 ![New business on the sample data: the question the view answers, the observation worth discussing first, and the industry chart](screenshots/new-business.png)
 
