@@ -6,7 +6,7 @@ TAP Atlas is a small app that runs in the browser. Each regional leader fills in
 
 **Start here: [the handover guide](docs/HANDOVER.md)** (`docs/HANDOVER.md`). It says what the app is, how to refresh the data, which checks to run, which document to read for each job, and the known limits and open questions.
 
-This README is for the maintainer working with a chat assistant such as Microsoft 365 Copilot. It says what every file does, and which files to share for each kind of change. Detail lives in `docs/`.
+This README is for the maintainer working with a chat assistant such as Microsoft 365 Copilot. It says what every file does, and which files to share for each kind of change. Detail lives in `docs/`. When an organization takes the app into use, its approved AI tool follows `docs/INTERNAL-HANDOVER.md`: a generic template for customizing an internal copy (real data, logo, terms, leadership context) without feature changes, with everything from then on kept internal (D144, D145).
 
 > **Status:** Phase 1 is released as `v0.1.0` and Phase 2 (the New business, Customer growth and Partners views, region profiles, list reports, drill-down and more insights) as `v0.2.0`. Phase 3 adds presentation mode, custom charts, extra template sections, the handover pack and the portfolio edition, for `v0.3.0`. The sample edition runs end to end. The internal edition needs the real data file from the import.
 
@@ -228,6 +228,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `docs/EXTENDING-TEMPLATE.md` | How to bring another template section into the app: an extra section, a measure and report, or a new view |
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
+| `docs/INTERNAL-HANDOVER.md` | The template an organization's approved AI tool follows to customize an internal copy: the internal-only rules, what may change, where each input goes, the order of work, the checks, refreshing from a later build |
 | `docs/PLANTED-CASES.md` | The deliberate cases in the sample data that each insight rule must find |
 | `docs/CASE-STUDY.md` | The case study: the brief, the constraints, the key decisions, the delivery method and what each phase delivered |
 | `docs/case-study.html` | The case study as a web page, generated from `docs/CASE-STUDY.md` by `tools/build-case-study.js`: never edit by hand |
@@ -327,7 +328,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 - `docs/DATA-CONTRACT.md` is the only interface between the data and the views.
 - Never put real data or organization names into files that go to the public repository. `data/plan-data.js`, `content/organization.js` and the `assets/` folder are gitignored; a palette-changed `js/theme.js` stays in the internal copy.
 
-More detail: `docs/ARCHITECTURE.md` (contracts), `docs/DATA-CONTRACT.md` (data), `CONTRIBUTING.md` (branches, commits, pull requests).
+More detail: `docs/ARCHITECTURE.md` (contracts), `docs/DATA-CONTRACT.md` (data), `CONTRIBUTING.md` (branches, commits, pull requests; the public repository only). An internal copy follows `docs/INTERNAL-HANDOVER.md` instead: it is never a git folder and nothing from it is pushed or published.
 
 ## Built with
 

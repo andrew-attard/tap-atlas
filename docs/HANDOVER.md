@@ -73,13 +73,14 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 | Refresh the data, or build or fix the import | `docs/IMPORT-BRIEF.md`, then `docs/REAL-DATA-CHECKLIST.md` |
 | Check what the data file must look like | `docs/DATA-CONTRACT.md` |
 | Ask Copilot for a change | `docs/COPILOT-PROMPTS.md`: a ready prompt per task, with the files to attach |
+| Take the app into use in an organization: the internal copy, its storage, what the approved AI tool may change, the order of work | `docs/INTERNAL-HANDOVER.md` |
 | Bring another section of the template into the app | `docs/EXTENDING-TEMPLATE.md` (prompts 11 to 13) |
 | Understand how the parts fit, or a module's contract | `docs/ARCHITECTURE.md` |
 | Tune or check an insight rule against the sample data | `docs/PLANTED-CASES.md` |
-| Put the sample edition on the web | `docs/PUBLISHING.md` |
+| Put the sample edition on the web (public repository only) | `docs/PUBLISHING.md` |
 | Explain how the app was planned and built | `docs/CASE-STUDY.md`, and the landing page `docs/index.html` |
-| Branches, commits and pull requests | `CONTRIBUTING.md` |
-| How the build was organized (background only) | `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md`, `docs/build-plan-phase3.md` |
+| Branches, commits and pull requests (public repository only; the internal copy is never a git folder) | `CONTRIBUTING.md` |
+| How the build was organized (background only, public repository) | `docs/AGENT-BRIEF.md`, `docs/build-plan.md`, `docs/build-plan-phase2.md`, `docs/build-plan-phase3.md` |
 
 ## Where to start for each kind of change
 

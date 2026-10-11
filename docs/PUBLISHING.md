@@ -2,6 +2,8 @@
 
 How to put the portfolio edition on the web with GitHub Pages, and what to check afterwards.
 
+> **Public repository only.** Only the sample edition is ever published. An internal copy with real data is never published anywhere; see `docs/INTERNAL-HANDOVER.md`.
+
 > **GitHub Pages is not switched on (D59).** The portfolio edition is built and ready, but publishing it is the project owner's decision. Nothing in this repository switches it on. These are the steps for when that decision is made.
 
 ## What gets published
