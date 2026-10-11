@@ -494,6 +494,44 @@
         });
       } finally { TAP_THEME.logo = saved; }
     });
+
+    // D143: the organization layer's brand setting wins over the theme's logo slot
+    T.test('X-brand-layer', 'The organization layer’s logo shows in the top bar, over the theme’s, with its alt text', function (a) {
+      var saved = TAP_THEME.logo, org = window.TAP_ORG;
+      try {
+        withApp(function () {
+          TAP_THEME.logo = PIXEL;
+          window.TAP_ORG = { settings: { brand: { logo: 'assets/logo.png', logoAlt: 'Example organization' } } };
+          var root = startApp();
+          var img = qs('.tap-topbar__logo', root);
+          a.ok(img, 'a logo is drawn');
+          a.equal(img && img.getAttribute('src'), 'assets/logo.png', 'the layer’s logo, not the theme’s');
+          a.equal(img && img.getAttribute('alt'), 'Example organization', 'with the layer’s alt text');
+          a.equal(TAP.content.orgError(), null, 'the layer is valid');
+          window.TAP_ORG = undefined;
+          TAP.shell.mount(root, { warnings: [] });
+          img = qs('.tap-topbar__logo', root);
+          a.equal(img && img.getAttribute('src'), PIXEL, 'without the layer the theme logo is back');
+          a.equal(img && img.getAttribute('alt'), '', 'and its alt text is empty');
+        });
+      } finally { TAP_THEME.logo = saved; window.TAP_ORG = org; }
+    });
+
+    T.test('X-brand-title', 'The browser tab shows the app name, with the sample note on sample data, from the organization layer when set', function (a) {
+      var org = window.TAP_ORG, title = document.title;
+      try {
+        withApp(function () {
+          startApp();
+          a.equal(TAP.shell.title(), 'TAP Atlas (sample data)', 'sample data says so in the tab');
+          window.TAP_ORG = { text: { app: { name: 'Example Plans' } } };
+          var root = startApp(realPlan());
+          a.equal(TAP.shell.title(), 'Example Plans', 'real data with the layer: the organization’s name alone');
+          a.equal(txt(qs('.tap-topbar__name', root)), 'Example Plans', 'the same name in the top bar');
+          document.title = TAP.shell.title();
+          a.equal(document.title, 'Example Plans', 'document.title takes it');
+        });
+      } finally { window.TAP_ORG = org; document.title = title; }
+    });
   });
 
   /* ---------- US-1.1.3: set the comparison once for every chart (#4) ---------- */

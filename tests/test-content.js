@@ -452,7 +452,12 @@
         [{ regions: { north: 42 } }, /"north"/],
         [{ guide: { planning: { sections: {} } } }, /guide\.planning\.sections/],
         [{ guide: { planning: { sections: [{ title: 'No id' }] } } }, /guide\.planning\.sections/],
-        [{ glosary: {} }, /"glosary"/]
+        [{ glosary: {} }, /"glosary"/],
+        [{ settings: { brand: 'x' } }, /settings\.brand/],
+        [{ settings: { brand: { logo: '../logo.png' } } }, /settings\.brand/],
+        [{ settings: { brand: { logo: 'https:' + '//example.test/logo.png' } } }, /settings\.brand/],
+        [{ settings: { brand: { logo: '/assets/logo.png' } } }, /settings\.brand/],
+        [{ settings: { brand: { logo: 'assets/logo.png', logoAlt: 7 } } }, /settings\.brand\.logoAlt/]
       ];
       cases.forEach(function (c, i) {
         withOrg(c[0], function () {
@@ -475,6 +480,11 @@
         a.equal(TAP.content.text('banner.sample'), 'Sample data: all figures are fictional', 'keys not overridden stay general');
         a.equal(TAP.content.setting('internalLabel').text, 'Organization only');
         a.equal(TAP.content.setting('internalLabel.show'), true);
+      });
+      withOrg({ settings: { brand: { logo: 'assets/logo.png', logoAlt: 'Logo' } } }, function () {
+        a.equal(TAP.content.orgError(), null, 'a brand setting with a relative logo path is valid (D143)');
+        a.equal(TAP.content.setting('brand.logo'), 'assets/logo.png');
+        a.equal(TAP.content.setting('brand').logoAlt, 'Logo');
       });
     });
 
@@ -507,7 +517,7 @@
     });
 
     T.test('X-content-org-messages', 'Organization messages live in the content files', function (a) {
-      ['org.error', 'org.script', 'org.notObject', 'org.badPart', 'org.badList', 'org.badTerm', 'org.badRegion', 'org.unknownPart'].forEach(function (k) {
+      ['org.error', 'org.script', 'org.notObject', 'org.badPart', 'org.badList', 'org.badTerm', 'org.badRegion', 'org.unknownPart', 'org.badLogo', 'org.badText'].forEach(function (k) {
         a.ok(TAP.content.text(k).charAt(0) !== '[', k + ' is in content');
       });
     });
