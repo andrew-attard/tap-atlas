@@ -496,7 +496,7 @@
     });
 
     // D143: the organization layer's brand setting wins over the theme's logo slot
-    T.test('X-brand-layer', 'The organization layer’s logo shows in the top bar, over the theme’s, with its alt text', function (a) {
+    T.test('TPV-TC-782', 'The organization layer’s logo shows in the top bar, over the theme’s, with its alt text', function (a) {
       var saved = TAP_THEME.logo, org = window.TAP_ORG;
       try {
         withApp(function () {
@@ -517,7 +517,7 @@
       } finally { TAP_THEME.logo = saved; window.TAP_ORG = org; }
     });
 
-    T.test('X-brand-title', 'The browser tab shows the app name, with the sample note on sample data, from the organization layer when set', function (a) {
+    T.test('TPV-TC-783', 'The browser tab shows the app name, with the sample note on sample data, from the organization layer when set', function (a) {
       var org = window.TAP_ORG, title = document.title;
       try {
         withApp(function () {
