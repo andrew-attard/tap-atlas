@@ -2,6 +2,8 @@
 
 How work is done in this repository. Short on purpose.
 
+> **Public repository only.** This guide is for the public build on fictional data. An organization's internal copy is never a git folder and nothing from it is committed, pushed or published; it follows `docs/INTERNAL-HANDOVER.md` instead.
+
 ## Work is tracked as issues
 
 Every epic and user story is a GitHub issue. Stories are sub-issues of their epic, carry their acceptance criteria and the IDs of the test cases that verify them, and belong to a phase milestone. Progress is visible on the project board.

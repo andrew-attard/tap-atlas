@@ -34,7 +34,7 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages, present, custom, extra) |
 | Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours: wording, terms, region names, the label, the logo and app name; internal copy only, never committed), `assets/` (the logo file, internal copy only) |
 | Tests | `tests.html`, `tests/test-*.js`, `tests/fixtures/mini-data.js` (a small valid data file) |
-| Handover | `docs/HANDOVER.md` (start here), `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/EXTENDING-TEMPLATE.md` (adding more of the template) |
+| Handover | `docs/HANDOVER.md` (start here), `docs/INTERNAL-HANDOVER.md` (the template for taking the app into use), `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/EXTENDING-TEMPLATE.md` (adding more of the template) |
 
 ## 1. Orientation
 
