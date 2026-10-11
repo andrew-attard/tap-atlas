@@ -13,8 +13,8 @@
   'use strict';
 
   var T = {
-    appName: 'TAP Atlas',            // name in the top bar and browser tab
-    logo: null,                       // e.g. 'assets/logo.svg'. Shown 28 px tall left of the app name; no gap when null
+    // The app name is the wording key app.name (content/ui-text.js); the organization layer sets it and the logo (D143).
+    logo: null,                       // fallback logo, e.g. 'assets/logo.svg'. Shown 28 px tall left of the app name; no gap when null
     font: '"Archivo", "Segoe UI", system-ui, sans-serif',   // every text; Archivo is stored in vendor/fonts
 
     /* Page colours (the Modernist palette) */

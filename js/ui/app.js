@@ -109,6 +109,7 @@
 
     try {
       TAP.shell.mount(root, { warnings: res.warnings });
+      if (!opts.root) document.title = TAP.shell.title();   // the real page only: the tab shows the app name (D143)
     } catch (e) {
       TAP.dom.clear(root);
       root.appendChild(TAP.dom.el('p', { class: 'tap-stub' }, e.message));

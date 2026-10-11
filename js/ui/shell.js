@@ -4,9 +4,9 @@
  *          area and the view area.
  *          Page-wide actions (Present, Tour) sit at the end of the comparison bar's row, after the Data button, so
  *          the menu keeps one line at 1280 px (D72, D116).
- * Provides: TAP.shell (mount, unmount, viewEl, actionsEl, label)
+ * Provides: TAP.shell (mount, unmount, viewEl, actionsEl, label, title)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js (meta),
- *             js/engine/registry.js (TAP.views), config/views.js (groups), js/ui/compare-bar.js, js/ui/layers.js, js/ui/present.js (button), js/theme.js (logo)
+ *             js/engine/registry.js (TAP.views), config/views.js (groups), js/ui/compare-bar.js, js/ui/layers.js, js/ui/present.js (button), js/theme.js (logo fallback)
  * Used by: js/ui/app.js; js/panel/panel.js and panel export read label() for saved images and copied tables;
  *          js/ui/tour.js (actionsEl); js/ui/present.js draws the Present button in the actions slot (US-3.1.2)
  */
@@ -44,13 +44,26 @@
     ]));
   }
 
-  // Logo (only when the theme names one, so there is no gap without it) and the app name.
+  // Logo and its alt text: the organization layer's brand setting first (D143), then the theme's logo slot.
+  function brandInfo() {
+    var b = TAP.content.setting('brand', {}) || {}, th = window.TAP_THEME || {};
+    return { logo: b.logo || th.logo || null, alt: b.logoAlt || '' };
+  }
+
+  // Logo (only when one is named, so there is no gap without it) and the app name.
   function brand() {
-    var logo = window.TAP_THEME && window.TAP_THEME.logo;
+    var b = brandInfo();
     return el('div', { class: 'tap-topbar__brand', 'data-tour': 'brand' }, [
-      logo ? el('img', { class: 'tap-topbar__logo', src: logo, alt: '', onload: function () { balance(); } }) : null,
+      b.logo ? el('img', { class: 'tap-topbar__logo', src: b.logo, alt: b.alt, onload: function () { balance(); } }) : null,
       el('span', { class: 'tap-topbar__name' }, TAP.content.text('app.name'))
     ]);
+  }
+
+  // The browser tab: the app name (the organization layer can set it, D143), with the sample note on sample data.
+  function title() {
+    var name = TAP.content.text('app.name'), meta = {};
+    try { meta = TAP.data.meta() || {}; } catch (e) { /* no data loaded */ }
+    return meta.isSample ? TAP.content.text('app.tabSample', { name: name }) : name;
   }
 
   // The menu in three groups, left to right (D115): start points, the plan's data views, then tools (the right-hand
@@ -160,5 +173,5 @@
   // Drops the frame's store and bus listeners and the comparison bar's (TAP.app.stop); the elements stay where they are.
   function unmount() { teardown(); }
 
-  TAP.shell = { mount: mount, unmount: unmount, viewEl: viewEl, actionsEl: actionsEl, label: label };
+  TAP.shell = { mount: mount, unmount: unmount, viewEl: viewEl, actionsEl: actionsEl, label: label, title: title };
 })(window.TAP);

@@ -55,7 +55,7 @@ denylist_scan() {
 
 ignored_guard() {
   local bad
-  bad="$(git ls-files | grep -E '\.(xlsx|xlsm|xls|csv|tsv)$|^data/plan-data\.js$|^content/organization\.js$')"
+  bad="$(git ls-files | grep -E '\.(xlsx|xlsm|xls|csv|tsv)$|^data/plan-data\.js$|^content/organization\.js$|^assets/')"
   if [ -n "$bad" ]; then
     echo "Tracked files that must never be committed:"
     printf '%s\n' "$bad"

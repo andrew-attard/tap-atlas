@@ -4,13 +4,13 @@ Step by step, for the data owner taking the app onto real data the day before th
 
 Generic on purpose: this copy names no organization, region, file or person. The run log, real file names and anything organization-specific live in the internal project folder, outside this repository (D2).
 
-**Have ready:** the real regional workbooks, the internal copy of the app folder (a copy taken from the public repository's main branch, kept on approved storage outside any git clone), the import built with Copilot (`docs/IMPORT-BRIEF.md`, prompt 2 in `docs/COPILOT-PROMPTS.md`), `content/organization.js` (prompt 3), and, if the organization's branding is wanted, a `js/theme.js` edited in the internal copy (prompt 4).
+**Have ready:** the real regional workbooks, the internal copy of the app folder (a copy taken from the public repository's main branch, kept on approved storage outside any git clone), the import built with Copilot (`docs/IMPORT-BRIEF.md`, prompt 2 in `docs/COPILOT-PROMPTS.md`), `content/organization.js` with the logo file under `assets/` (prompt 3), and, if the organization's colours are wanted, a `js/theme.js` edited in the internal copy (prompt 4).
 
 ## 1. The run
 
 - [ ] **1. Move company-specific material into the internal project folder.**
   Real workbooks, the import's mapping and code if it names anything organization-specific, the region list and short names, organization terms, brand assets, decisions taken with Copilot, and this run's log.
-  *Good:* the public repository holds none of it. If you work from a git clone, `scripts/verify.sh` passes its denylist scan and `git status` shows no data or organization file. The internal copy of the app folder has `data/plan-data.js`, `content/organization.js` and any branded `js/theme.js` only there.
+  *Good:* the public repository holds none of it. If you work from a git clone, `scripts/verify.sh` passes its denylist scan and `git status` shows no data or organization file. The internal copy of the app folder has `data/plan-data.js`, `content/organization.js`, the `assets/` folder and any palette-changed `js/theme.js` only there.
 
 - [ ] **2. Produce the data file with Copilot's import.**
   Run the import on every regional workbook and save the result as `data/plan-data.js` in the internal copy of the folder.
@@ -49,7 +49,7 @@ Generic on purpose: this copy names no organization, region, file or person. The
   *Good:* every insight is accurate (its figures match the charts) and fair to the region it names, in words you would be comfortable saying to that regional leader. Anything awkward on the day: use "Hide for this session" (it comes back on reload). Anything wrong every time: tune it with prompt 5 and record the change.
 
 - [ ] **8. Confirm the internal label shows and the sample banner doesn't.**
-  *Good:* the internal confidentiality label from `content/organization.js` appears on every screen and on a chart saved as an image, and can't be dismissed. "Sample data: all figures are fictional" appears nowhere.
+  *Good:* the internal confidentiality label from `content/organization.js` appears on every screen and on a chart saved as an image, and can't be dismissed; the organization's logo and name show in the top bar and the browser tab. "Sample data: all figures are fictional" appears nowhere.
 
 - [ ] **9. Test a Teams screen share.**
   Share the browser window in a Teams call and view it on a second device at 1080p.

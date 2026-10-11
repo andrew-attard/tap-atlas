@@ -39,13 +39,13 @@ The three pages load the same app scripts in the same order (lint checks this). 
 | Global | Set by | Contents |
 |---|---|---|
 | `PLAN_DATA` | data file | The plan data (Data Contract v0.2, `docs/DATA-CONTRACT.md`) |
-| `TAP_THEME` | `js/theme.js` | Colours, fonts, sizes, logo, ECharts theme |
+| `TAP_THEME` | `js/theme.js` | Colours, fonts, sizes, the logo fallback, ECharts theme |
 | `TAP_SETTINGS` | `config/settings.js` | Tunable numbers: weights, thresholds, limits |
 | `TAP_VIEWS` | `config/views.js` | Menu groups and the view order made from them, titles and report lists |
 | `TAP_REPORTS` | `config/reports-*.js` | Report definitions by id (schema in `config/reports.js`) |
 | `TAP_RULES` | `config/insight-rules.js` (`rules`), `config/insight-wording.js` (`wording`) | Insight rule definitions; the wording guide, banned words and phrases |
 | `TAP_CONTENT` | `content/*.js` | Glossary, guide and all on-screen wording |
-| `TAP_ORG` | `content/organization.js` (internal edition only) | Organization terms, wording and settings, layered over the general ones |
+| `TAP_ORG` | `content/organization.js` (internal edition only) | Organization terms, wording and settings (the label, the logo), layered over the general ones |
 
 **Code** lives only under `window.TAP.<module>`, each module in an IIFE. A module reads other modules **at call time**, never at load time, so script order matters only for globals and registration.
 
@@ -70,7 +70,7 @@ The three pages load the same app scripts in the same order (lint checks this). 
    - a schema version mismatch shows the "version" screen;
    - errors that would break views show the error list with a copy button (US-1.8.2);
    - warnings go to the data sources panel.
-4. Theme variables are applied, the shell is drawn, and the first view mounts: **Overview, All regions, no focus** (US-1.1.3).
+4. Theme variables are applied, the shell is drawn (the tab title follows `app.name`, D143), and the first view mounts: **Overview, All regions, no focus** (US-1.1.3).
 
 **Screenshot mode.** With `?screenshot=1`, the query values `view`, `region` (Regions view), `mode`, `focus`, `second`, `set` (comma list) and `rest` (`average|total`) set the opening state. An old `mode=pair` (with `focus` and `second`) opens as `set` with those regions (D99). This is used only by `scripts/screenshot.sh`. Without `screenshot=1` the query is ignored.
 
@@ -448,7 +448,7 @@ Every figure carries `unit` (`'money'|'pct'|'rating'|'score'|'count'|'tier'|'tex
 - `TAP_CONTENT.glossary[id] = {term, aliases: [], short, why, related: [ids]}`. `TAP.content.terms()` adds `id` and `layer` (`'general'` or `'organization'`).
 - `TAP_CONTENT.guide` holds the Guide page sections.
 - `TAP_CONTENT.text` holds every on-screen phrase, split by owner: `content/ui-text.js` (CONTENT: app, the term popover, organization file problems) and one `content/text-<area>.js` per stream (`shell`, `engine`, `data`, `panel`, `overview`, `industry`, `pages`), each adding its own top-level keys. It covers: tour steps, headline templates, family lines, combined-figure explanations, system messages, banners, empty and missing states.
-- `TAP_ORG` uses the same shape and overrides or adds keys. It also carries `settings` such as `internalLabel {show, text}`.
+- `TAP_ORG` uses the same shape and overrides or adds keys. It also carries `settings`: `internalLabel {show, text}` and `brand {logo, logoAlt}` (D143; `logo` is a relative path inside the folder, checked by `js/core/content.js`, and wins over `TAP_THEME.logo`).
 - `TAP.content.text(key, vars)` fills `{name}` placeholders. A missing key returns the key in brackets, so gaps are visible in testing.
 - `TAP.content.term(idOrWord)` returns the merged glossary entry.
 - `TAP.content.regionName(region)` returns the organization layer's short name (`TAP_ORG.regions[id]`) or the data's name. **Every label that names a region uses it.**

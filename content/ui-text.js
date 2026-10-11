@@ -11,7 +11,7 @@
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = Object.assign(window.TAP_CONTENT.text || {}, {
-  app: { name: 'TAP Atlas' },
+  app: { name: 'TAP Atlas', tabSample: '{name} (sample data)' },   // the browser tab adds the sample note
 
   // The term popover (US-1.6.4). There is no A to Z glossary list (D98)
   glossary: {
@@ -29,6 +29,8 @@ window.TAP_CONTENT.text = Object.assign(window.TAP_CONTENT.text || {}, {
     badList: '"{part}" must be a list in square brackets [ ], and every item needs an id.',
     badTerm: 'The glossary entry "{id}" needs a term and a short definition.',
     badRegion: 'The short name for region "{id}" must be text in quotes.',
-    unknownPart: '"{part}" is not a part the app knows. The parts are text, glossary, guide, regions and settings.'
+    unknownPart: '"{part}" is not a part the app knows. The parts are text, glossary, guide, regions and settings.',
+    badLogo: 'The logo in settings.brand must be a file inside the app folder, written as a relative path such as assets/logo.png, with no ".." and no web address.',
+    badText: '"{part}" must be text in quotes.'
   }
 });

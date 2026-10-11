@@ -7,6 +7,9 @@ data/*.real.js
 # Organization-specific wording, branding and terms (only the example file is committed)
 content/organization.js
 
+# The organization's logo and other brand files (settings.brand in the organization layer names them)
+assets/
+
 # Spreadsheets and exports of any kind
 *.xlsx
 *.xlsm

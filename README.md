@@ -43,6 +43,7 @@ js/ui/            the page frame, comparison bar, side panels, start-up screens,
 js/views/         the views: Overview, Market coverage, New business, Customer growth, Partners, Outlook, Other sections, Regions, Insights, Build a chart, Guide
 config/           settings, views, report definitions, insight rules, the presentation (no code, only values)
 content/          every word on screen: glossary, Guide text, wording files, organization starter
+assets/           the organization's logo (internal copy only, gitignored)
 css/              one base stylesheet and one per area
 data/             the data files
 docs/             contract, architecture and handover documents
@@ -61,7 +62,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `index.html` | Internal edition: real data plus the organization layer |
 | `index-sample.html` | Public edition: fictional sample data |
 | `tests.html` | The test page: runs every automated test and shows a summary |
-| `js/theme.js` | The theme: every colour (regions, the four channel colours of D124, the segment and risk colours of D131, tiers), font, size and the logo slot. Writes the CSS variables and the chart theme |
+| `js/theme.js` | The theme: every colour (regions, the four channel colours of D124, the segment and risk colours of D131, tiers), font, size and the logo fallback (the organization layer names the real logo, D143). Writes the CSS variables and the chart theme |
 
 ### `js/core/`
 
@@ -209,6 +210,7 @@ vendor/           ECharts, the Archivo fonts and their licences
 | `content/glossary-p4.js` | The glossary terms for the full template's parts: strategic plan, base year, revenue outlook, books value, solutions, partner maturity |
 | `content/guide.js` | The Guide page text |
 | `content/organization.example.js` | Starter for the organization layer; copy it to `content/organization.js` |
+| `content/organization.js` | Your organization layer: wording, terms, Guide sections, region short names, the confidentiality label, the logo and app name (D143). Internal copy only, gitignored |
 | `css/base.css` | Fonts, reset, typography and shared building blocks |
 | `css/*.css` | One stylesheet per area: shell, layers, source-tip, panel, overview, industry, pages, guide, glossary, newbusiness, customers, profile, themes, present, custom, outlook |
 | `css/view-head.css` | The shared header and two-panel layout of the newer views |
@@ -304,7 +306,8 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | A recurring theme keyword | `config/comment-themes.js`, `docs/PLANTED-CASES.md` (prompt 8) | `tests.html`, then the themes report on New business |
 | A new insight rule | `config/insight-rules.js`, the family's file in `js/insights/` (e.g. `js/insights/rules-realism.js`), `js/insights/engine.js`, `js/engine/measures.js`, `docs/PLANTED-CASES.md` | `tests.html`, then the Insights page |
 | Tuning insights | `config/settings.js`, `config/insight-rules.js`, `docs/PLANTED-CASES.md` (prompt 5) | `tests.html`, then the Insights page |
-| Branding | `js/theme.js` (prompt 4); edit it in the internal copy only | `tests.html?suite=theme`, then `index.html` |
+| Logo and app name | `content/organization.example.js` (`settings.brand`, `text.app.name`) and the logo file under `assets/` in the internal copy (prompt 3) | `index.html`: the top bar and the tab title; the data sources panel shows no organization message |
+| Colours and font | `js/theme.js` (prompt 4); edit it in the internal copy only | `tests.html?suite=theme`, then `index.html` |
 | Organization wording | `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and the `content/text-*.js` file that holds the phrase (prompt 3) | The data sources panel in `index.html` shows no organization message |
 | A data file error | `docs/DATA-CONTRACT.md`, `js/core/check.js`, `content/text-data.js`, the import's files, and the copied problem list (prompt 6) | `index.html` opens; read the data sources panel |
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
@@ -322,7 +325,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 - Keep files small (under about 300 lines), each with its header: Purpose, Provides, Depends on, Used by.
 - Colours and font sizes only in `js/theme.js`; words only in `content/`; numbers to tune only in `config/settings.js`.
 - `docs/DATA-CONTRACT.md` is the only interface between the data and the views.
-- Never put real data or organization names into files that go to the public repository. `data/plan-data.js` and `content/organization.js` are gitignored; a branded `js/theme.js` stays in the internal copy.
+- Never put real data or organization names into files that go to the public repository. `data/plan-data.js`, `content/organization.js` and the `assets/` folder are gitignored; a palette-changed `js/theme.js` stays in the internal copy.
 
 More detail: `docs/ARCHITECTURE.md` (contracts), `docs/DATA-CONTRACT.md` (data), `CONTRIBUTING.md` (branches, commits, pull requests).
 

@@ -9,7 +9,7 @@ Generic on purpose: these prompts use generic terms. Organization-specific detai
 - Copilot is a chat assistant. It sees only what you attach or paste, so attach every file listed, by its path in the app folder.
 - Start a new chat per task. Paste the prompt from its box, fill in anything in `<angle brackets>`, then attach the files.
 - Copilot cannot run the app. You save its files into the folder, open the page, and paste back anything that went wrong.
-- Real data stays on your laptop and in Copilot. Files that hold real data or organization details (`data/plan-data.js`, `content/organization.js`, a branded `js/theme.js`) live only in the internal copy of the folder and never go to the public repository.
+- Real data stays on your laptop and in Copilot. Files that hold real data or organization details (`data/plan-data.js`, `content/organization.js`, the `assets/` folder, a palette-changed `js/theme.js`) live only in the internal copy of the folder and never go to the public repository.
 - Every prompt repeats the same constraints paragraph, so Copilot keeps to the build's rules even when a chat starts cold.
 
 ## Where things live
@@ -21,7 +21,7 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Pages | `index.html` (internal edition: real data and organization layer), `index-sample.html` (sample data), `tests.html` (test page) |
 | Data | `data/plan-data.js` (real, from the import; internal copy only), `data/sample-plan-data.js` (fictional, made by `tools/generate-sample-data.js`) |
 | Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` and `js/core/check-p4.js` (the contract check), `content/text-data.js` (its messages), `js/core/sources.js` (file › sheet › cell) |
-| Look | `js/theme.js` (every colour, font, size and the logo), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/guide.css`, `css/glossary.css`, `css/view-head.css`, `css/newbusiness.css`, `css/customers.css`, `css/profile.css`, `css/themes.css`, `css/outlook.css`) |
+| Look | `js/theme.js` (every colour, font, size and the logo fallback), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/guide.css`, `css/glossary.css`, `css/view-head.css`, `css/newbusiness.css`, `css/customers.css`, `css/profile.css`, `css/themes.css`, `css/outlook.css`) |
 | Settings | `config/settings.js` (weights, thresholds, limits) |
 | Reports | `config/reports.js` (the schema), one definitions file per view (`config/reports-overview.js`, `config/reports-industry.js`, `config/reports-newbusiness.js`, `config/reports-customers.js`, `config/reports-partners.js`, `config/reports-themes.js`, `config/reports-outlook.js`), `config/views.js`, `config/profile.js` (the reports on a region profile) |
 | Measures | `js/engine/measures.js`, `js/engine/measures-p2.js` (the Phase 2 measures), `js/engine/measures-p4.js` (the full template's measures), `js/engine/scores.js` (per-industry measures and the two scores), `js/engine/rows.js` (figures for single rows on lists) |
@@ -32,7 +32,7 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Custom charts | `js/engine/custom.js` (which measures and dimensions can be combined), `js/ui/custom-builder.js` and `js/views/build.js` ("Build a chart" in the menu) |
 | Extra sections | `js/core/extra.js` (reading and checking them), `js/views/other.js` (the Other sections view), `docs/EXTENDING-TEMPLATE.md` (how to add one) |
 | Wording | `content/ui-text.js`, `content/glossary.js`, `content/guide.js`, and one file per area, `content/text-<area>.js` (shell, engine, engine2, data, panel, overview, industry, newbusiness, customers, profile, themes, pages, present, custom, extra) |
-| Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours, internal copy only, never committed) |
+| Organization layer | `content/organization.example.js` (starter), `content/organization.js` (yours: wording, terms, region names, the label, the logo and app name; internal copy only, never committed), `assets/` (the logo file, internal copy only) |
 | Tests | `tests.html`, `tests/test-*.js`, `tests/fixtures/mini-data.js` (a small valid data file) |
 | Handover | `docs/HANDOVER.md` (start here), `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/EXTENDING-TEMPLATE.md` (adding more of the template) |
 
@@ -75,37 +75,38 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 ## 3. Fill the organization layer
 
-Use to add organization terms, short region names, tour wording and the internal confidentiality label.
+Use to add organization terms, short region names, tour wording, the internal confidentiality label, the logo and the app name (D143).
 
-**Attach:** `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and `content/text-pages.js` if you replace tour wording. In the chat, type the terms, region short names and label wording you want.
+**Attach:** `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and `content/text-pages.js` if you replace tour wording. In the chat, type the terms, region short names, label wording, the app name and the logo file name you want.
 
 ```
 Create content/organization.js for this app from the attached starter file, content/organization.example.js. Follow its format exactly, using its commented examples. Fill in:
 - these organization terms and acronyms: <list, each with a one-line definition>;
 - short display names for each region, keyed by the region ids in our data file: <id: short name, ...>;
 - the internal confidentiality label: <wording>, shown on every screen;
+- the app name shown in the top bar and the browser tab: <name> (text.app.name), and the logo: settings.brand with logo 'assets/<file name>' and a short logoAlt;
 - any tour or planning-explainer wording to replace: <optional>.
 Where a term already exists in glossary.js, write the organization version so it replaces the general one. Each term's definition shows when someone clicks the term on screen. Return the whole file.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** one complete `content/organization.js` in the starter's format. Save it next to the starter (it is gitignored and loaded only by `index.html`). Check: open `index.html`; the internal label shows on every screen; region labels use the short names; a marked term shows the organization definition. If the file is broken, the data sources panel says so and the app falls back to the general wording.
+**Expect:** one complete `content/organization.js` in the starter's format. Save it next to the starter (it is gitignored and loaded only by `index.html`), and the logo file under `assets/` in the internal copy. Check: open `index.html`; the internal label shows on every screen; the top bar and the tab show the name and the logo; region labels use the short names; a marked term shows the organization definition. If the file is broken, the data sources panel says so and the app falls back to the general wording.
 
-## 4. Apply branding through the theme file
+## 4. Change the colour palette through the theme file
 
-Use to apply the organization's colours, font and logo.
+Use to apply the organization's colours and font. The logo and the app name go through the organization layer (prompt 3), not this file.
 
-**Attach:** `js/theme.js`. In the chat, give the brand colours, font name and logo file name.
+**Attach:** `js/theme.js`. In the chat, give the brand colours and font name.
 
 ```
-Rebrand this app by changing only the attached theme file, js/theme.js. Brand colours: <list with their use>. Font: <name>, falling back to the current fonts. Logo: <file name>, stored in the folder at assets/<file name>.
+Rebrand this app by changing only the attached theme file, js/theme.js. Brand colours: <list with their use>. Font: <name>, falling back to the current fonts. Leave the logo slot as it is: the logo comes from the organization layer.
 Keep every existing key and comment; change values only. Keep body text contrast at 4.5:1 or better on its background. Keep the region colours distinct for colour-blind viewers, never red (red means highlight) and never grey (grey means the rest). Keep the accent for interface elements only. Return the whole file and a short table of what changed.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** a full replacement `js/theme.js` with the same keys, plus a change table. Save it in the internal copy of the folder only, with the logo under `assets/`. Check: open `tests.html?suite=theme` (all pass, including the colour-blind check), then `index.html` (charts and page pick up the new look). A brand font that isn't stored in the folder falls back to the next font in the list.
+**Expect:** a full replacement `js/theme.js` with the same keys, plus a change table. Save it in the internal copy of the folder only. Check: open `tests.html?suite=theme` (all pass, including the colour-blind check), then `index.html` (charts and page pick up the new look). A brand font that isn't stored in the folder falls back to the next font in the list.
 
 ## 5. Tune insight thresholds and weights
 
