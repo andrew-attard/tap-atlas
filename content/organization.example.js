@@ -1,7 +1,7 @@
 /*
  * File: content/organization.example.js
  * Purpose: Starter file for the organization layer: the organization's own terms, wording, Guide paragraphs,
- *          internal label and short region names, laid over the general wording (US-1.6.6, US-1.8.5).
+ *          internal label, logo and short region names, laid over the general wording (US-1.6.6, US-1.8.5, D143).
  * Provides: window.TAP_ORG (only once copied to content/organization.js)
  * Depends on: nothing
  * Used by: js/core/content.js, in the internal edition (index.html) only. No page loads this example file.
@@ -21,10 +21,11 @@
  *   - Keep words short and plain, as in content/glossary.js and content/guide.js.
  *   - The five parts are text, glossary, guide, regions and settings. Any other part is reported as a problem.
  *
- * BRANDING (colours, font, logo)
- *   Branding lives in the theme file, not here. In the internal copy of the app folder (never a git clone),
- *   change the values in js/theme.js: every setting is explained in its comments. The public repository keeps
- *   the neutral theme, so never commit a branded js/theme.js.
+ * BRANDING (logo, name, colours)
+ *   The logo and the app name live here (D143): settings.brand names the logo file, text.app.name the name shown
+ *   in the top bar and the browser tab. Put the logo file in an assets folder next to this file's folder, in the
+ *   internal copy only (assets/ is ignored by git). Colours and font stay in js/theme.js, changed only for a full
+ *   palette change; the public repository keeps the neutral theme.
  */
 window.TAP_ORG = {
 
@@ -32,6 +33,7 @@ window.TAP_ORG = {
      The keys are in content/ui-text.js and content/text-*.js. {placeholders} in braces must be kept.
      Tour steps are under "tour", with the same step keys as content/text-pages.js. */
   text: {
+    // app: { name: 'Example Plans' },   // the name in the top bar and the browser tab
     // scope: {
     //   all: 'Showing the whole company across all {n} regions'
     // },
@@ -92,8 +94,11 @@ window.TAP_ORG = {
 
   /* SETTINGS: organization settings.
      internalLabel is the confidentiality label shown on every screen when real data is loaded (US-1.1.8):
-     show turns it on or off, text is the wording. */
+     show turns it on or off, text is the wording.
+     brand names the logo (D143): logo is the file's path inside the app folder, written relative to it, such as
+     assets/logo.png (never a web address or a path outside the folder); logoAlt is the text read out for it. */
   settings: {
-    // internalLabel: { show: true, text: 'Internal: regional plan data, do not forward' }
+    // internalLabel: { show: true, text: 'Internal: regional plan data, do not forward' },
+    // brand: { logo: 'assets/logo.png', logoAlt: 'Example organization' }
   }
 };

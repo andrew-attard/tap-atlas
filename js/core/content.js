@@ -33,6 +33,22 @@
     return ok ? null : baseText('org.badList', { part: path });
   }
 
+  // A file inside the app folder, written as a relative path: no leading slash, no scheme, no "..", no spaces (D143).
+  function safePath(p) {
+    return typeof p === 'string' && p.length > 0 && p.length <= 200 && !/^[\\/]/.test(p) &&
+      !/^[a-z][a-z0-9+.-]*:/i.test(p) && !/(^|[\\/])\.\.([\\/]|$)/.test(p) && !/\s/.test(p);
+  }
+
+  // settings.brand (D143): logo a relative path inside the folder, logoAlt plain text; both optional.
+  function badBrand(s) {
+    if (!isObj(s) || s.brand == null) return [];
+    if (!isObj(s.brand)) return [baseText('org.badPart', { part: 'settings.brand' })];
+    var out = [];
+    if (s.brand.logo != null && !safePath(s.brand.logo)) out.push(baseText('org.badLogo'));
+    if (s.brand.logoAlt != null && typeof s.brand.logoAlt !== 'string') out.push(baseText('org.badText', { part: 'settings.brand.logoAlt' }));
+    return out;
+  }
+
   // Everything wrong with an organization layer, as plain sentences. Empty when it can be used.
   function problems(o, scriptErrors) {
     var out = scriptErrors.map(function (d) { return baseText('org.script', { detail: d }); });
@@ -54,7 +70,7 @@
       });
     }
     if (isObj(o.guide)) ['howTo', 'planning'].forEach(function (part) { var p = badSections(o.guide, part); if (p) out.push(p); });
-    return out;
+    return out.concat(badBrand(o.settings));
   }
 
   // The organization layer, or an empty one if it's missing or broken (US-1.6.6). A file with any problem is not
@@ -139,7 +155,7 @@
     return out;
   }
 
-  // An organization setting such as 'internalLabel'. Returns the fallback when not set.
+  // An organization setting such as 'internalLabel' or 'brand.logo'. Returns the fallback when not set.
   function setting(key, fallback) {
     var v = pick(org().settings || {}, key);
     return v == null ? fallback : v;

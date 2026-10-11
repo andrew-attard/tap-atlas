@@ -15,8 +15,8 @@ set -u
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root" || exit 2
 dist="${TAP_DIST_DIR:-$root/dist}"
-# What a presenter needs; the data and organization files are copied when this copy of the folder has them.
-ITEMS=(index.html index-sample.html README.md LICENSE js css config content vendor data docs)
+# What a presenter needs; the data and organization files, and the assets folder (the logo), are copied when this copy has them.
+ITEMS=(index.html index-sample.html README.md LICENSE js css config content vendor data docs assets)
 
 version="$(sed -n "s/.*TAP\.version = '\([^']*\)'.*/\1/p" js/core/namespace.js | head -n 1)"
 if [ -z "$version" ]; then

@@ -97,7 +97,7 @@ function checkShotNames(root) {
 
 /* ---------- US-3.3.4: the known-good copy (TPV-TC-606, 607, 609, 610, 611) ---------- */
 
-const PACKAGED = ['index.html', 'index-sample.html', 'js', 'css', 'config', 'content', 'vendor', 'data', 'docs'];
+const PACKAGED = ['index.html', 'index-sample.html', 'js', 'css', 'config', 'content', 'vendor', 'data', 'docs', 'assets'];
 const NOT_PACKAGED = ['tests', 'tools', 'scripts', 'tests.html', '.git', '.github', '.githooks'];
 
 // Runs scripts/package.sh into a scratch folder, with a stand-in for verify.sh so the check stays fast.
