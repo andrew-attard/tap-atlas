@@ -9,7 +9,8 @@ Generic on purpose: these prompts use generic terms. Organization-specific detai
 - Copilot is a chat assistant. It sees only what you attach or paste, so attach every file listed, by its path in the app folder.
 - Start a new chat per task. Paste the prompt from its box, fill in anything in `<angle brackets>`, then attach the files.
 - Copilot cannot run the app. You save its files into the folder, open the page, and paste back anything that went wrong.
-- Real data stays on your laptop and in Copilot. Files that hold real data or organization details (`data/plan-data.js`, `content/organization.js`, the `assets/` folder, a palette-changed `js/theme.js`) live only in the internal copy of the folder and never go to the public repository.
+- Real data stays on your laptop and in Copilot. Files that hold real data or organization details (`data/plan-data.js`, the real mapping `config/import-map.js`, `content/organization.js`, the `assets/` folder, a palette-changed `js/theme.js`) live only in the internal copy of the folder and never go to the public repository.
+- The import is part of the app (D147). Copilot fills the mapping that tells it where every field sits in the workbooks (prompts 2, 16 and 6); you run the import from the **Import** button and paste the panel's report back. Copilot writes no import code and never writes the data file.
 - Every prompt repeats the same constraints paragraph, so Copilot keeps to the build's rules even when a chat starts cold.
 
 ## Where things live
@@ -19,7 +20,8 @@ The main files by area. `README.md` has a short table for every file, and a "whi
 | Area | Files |
 |---|---|
 | Pages | `index.html` (internal edition: real data and organization layer), `index-sample.html` (sample data), `tests.html` (test page) |
-| Data | `data/plan-data.js` (real, from the import; internal copy only), `data/sample-plan-data.js` (fictional, made by `tools/generate-sample-data.js`) |
+| Data | `data/plan-data.js` (real, saved from the Import panel; internal copy only), `data/sample-plan-data.js` (fictional, made by `tools/generate-sample-data.js`) |
+| Import | `config/import-map.js` (the mapping: where every field sits in the workbooks, the region list, the lookups; the shipped copy describes the sample, the real one lives in the internal copy only), `js/import/*.js` (the importer, which reads the workbooks through the mapping), `js/ui/import-panel.js` and `js/ui/import-report.js` (the Import panel and its report), `content/text-import.js` (its wording) |
 | Data rules | `docs/DATA-CONTRACT.md` (the contract), `js/core/check.js` and `js/core/check-p4.js` (the contract check), `content/text-data.js` (its messages), `js/core/sources.js` (file › sheet › cell) |
 | Look | `js/theme.js` (every colour, font, size and the logo fallback), `css/base.css` and one stylesheet per area (`css/shell.css`, `css/layers.css`, `css/panel.css`, `css/overview.css`, `css/industry.css`, `css/pages.css`, `css/guide.css`, `css/glossary.css`, `css/view-head.css`, `css/newbusiness.css`, `css/customers.css`, `css/profile.css`, `css/themes.css`, `css/outlook.css`) |
 | Settings | `config/settings.js` (weights, thresholds, limits) |
@@ -56,22 +58,22 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 **Expect:** a short summary that gets these right: a static app opened by double-clicking `index.html`; the data file `data/plan-data.js` sets `window.PLAN_DATA`; the app checks it against the contract on load and lists problems with a copy button; `js/theme.js` holds the look, `config/` the settings, reports and insight rules, `content/` the wording; the organization layer is a separate file. Compare it with the README. If anything is wrong, correct Copilot before moving on.
 
-## 2. Build the import from the brief
+## 2. Fill `config/import-map.js` for the real template
 
-Use to design and build the import that turns the regional workbooks into the data file.
+Use to fill the mapping that tells the app's importer where every field sits in the real planning workbooks. The import itself is built into the app (D147): nothing is coded here.
 
-**Attach:** `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-data.js` (a small, valid example of the file's shape), `js/core/check.js` and `content/text-data.js` (what the app's check rejects, and its messages). This is the early pack in `docs/IMPORT-BRIEF.md`. In Copilot only: one real workbook, or screenshots of each sheet's header rows.
+**Attach:** `config/import-map.js` (the sample mapping: the shape to fill), `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, `docs/ARCHITECTURE.md` (section 20: the mapping's shape, what the cells may hold, the importer's checks), `tests/fixtures/import-maps.js` (a second example: the test fixtures' mappings). This is the pack in `docs/IMPORT-BRIEF.md`. In Copilot only: one real workbook, or screenshots of each sheet's header rows.
 
 ```
-I need an import that turns our regional planning workbooks into the one data file this app reads. The attached brief sets the requirements; the data contract sets the exact output shape; mini-data.js is a small valid example of that shape (it sets window.TEST_FIXTURES.mini; our file must set window.PLAN_DATA, with meta.isSample false); check.js is the check the app runs on our file when it opens. I have also attached one real workbook.
-Step 1: Compare the real workbook with section 3 of the brief. List every difference: extra or missing sheets, sections, columns or rows, and header wording.
-Step 2: For each open choice in section 6 of the brief, give your recommendation with its pros and cons for our workbooks. Do not decide for me: wait for my answers.
-Step 3, after I answer: build the import in small files, each with a header comment. It must meet requirements R1 to R9, apply the validation rules in section 5, write import notes with sheet and cell, fill meta.sourceMap and sourceRow, keep blanks as null, and leave out personal names. Tell me exactly how to run it and where to save data/plan-data.js.
+The app's importer reads our regional planning workbooks through a mapping file, config/import-map.js, which sets window.IMPORT_MAP. The attached copy describes a fictional sample's layout; I need the same file for our real template. Section 20.1 of the attached ARCHITECTURE.md gives the mapping's exact shape and 20.2 what each cell may hold; import-maps.js is a second example. The brief sets the rules (R1 to R9) and section 3 describes the template; the data contract sets the field names and the lookups. I have also attached one real workbook.
+Step 1: Compare the real workbook with the sample mapping and section 3 of the brief. List every difference: sheet names, extra or missing sections, columns or rows, header wording, and where the merged two-row headers sit.
+Step 2: List the open points per section and wait for my answers: which row is the first data row of each section, and whether a last row is needed; which column each field of the data contract is in, with one column per plan year for by-year fields; which of the order intake sheet's two forecasts is the later one; the recap sheet's region filter cell; the hidden lists sheets that hold the dropdown values; the cell where a workbook names its region; and the file name or pattern of each region's workbook.
+Step 3, after I answer: write the whole config/import-map.js, no code, keeping the file's header comment: meta with isSample false and our template version; the region list in display order with stable ids; the lookups with our real names and stable ids; aliases for every other spelling the workbooks use; and every section with its sheet, header row and header texts, first row, column letters, fixed cells and, for the grid blocks, their axes or enumerated cells. Leave out personal names and account ids: the importer gives accounts their ids. Then tell me to save the file over config/import-map.js in the internal copy, press Import in the app, pick the workbooks and paste the report back to you.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** first a list of layout differences and a recommendation per open choice, then a pause for your decisions. After that: the import's files, a template mapping for this template version, a validation report per region, and run instructions. Record your decisions in the internal project folder. Then check the output with prompt 6 and `docs/REAL-DATA-CHECKLIST.md`.
+**Expect:** first a list of layout differences and the open points, then a pause for your answers. After that: one complete `config/import-map.js` and no code. Save it over the mapping in the internal copy only, then press **Import** in `index.html` (the button is on every page and on the no-data screen), pick every workbook and read the report; **Copy report** gives the text to paste back. Fix the mapping with prompt 6 until no region has an error, then **Use these plans now** and **Save data/plan-data.js**. Record your answers in the internal project folder, and work through `docs/REAL-DATA-CHECKLIST.md`.
 
 ## 3. Fill the organization layer
 
@@ -123,21 +125,21 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 **Expect:** a change table and the changed entries only, in configuration files. Check: open `tests.html`. If an insight test fails, the new value no longer finds a planted case in the sample data; decide with Copilot whether the change is still right and record the decision. Then open `index.html` and reread the Insights page.
 
-## 6. Fix data file errors from the contract check
+## 6. Fix the mapping, never the data file
 
-Use when `index.html` stops with "The data file has problems that stop the app from opening", or when the data sources panel lists warnings.
+Use when the Import panel's report shows errors, or notes you want explained; also when `index.html` stops with "The data file has problems that stop the app from opening", or when the data sources panel lists warnings.
 
-**Attach:** `docs/DATA-CONTRACT.md`, `js/core/check.js` and `content/text-data.js` (the check and its messages), and the import's files. Paste the list copied with **Copy the list** (or the data sources panel notes).
+**Attach:** `config/import-map.js` (the mapping in use), `docs/DATA-CONTRACT.md`, `docs/ARCHITECTURE.md` (section 20) and `docs/IMPORT-BRIEF.md` (section 5, the rules). Paste the report copied with **Copy report** in the Import panel (or the list copied with **Copy the list**, or the data sources panel's notes).
 
 ```
-The app checked our data file against the attached data contract and reported the problems below. Each line names the field, the region, the item and what was expected.
-<paste the copied list>
-Group the problems by cause. For each cause, say whether it is a bug in the import (show the fix in the import's code) or a problem in a workbook (say which file, sheet and cell to check, and how the import should record it as a note). Fix the import, never the data file by hand, so the fix repeats on the next run.
+The app imported our planning workbooks through the attached mapping, config/import-map.js, and reported the problems below. A region's errors and notes name the sheet and cell; the contract check's lines name the field, the region, the item and what was expected.
+<paste the copied report>
+Group the problems by cause. For each cause, say whether it is a mapping problem (show the changed entries of config/import-map.js: a sheet name, a row or column, a lookup name or an alias) or a problem in a workbook (say which file, sheet and cell to check, and whether the note can be accepted as it is). Write no code: the importer is part of the app. Never edit data/plan-data.js by hand. The fix goes in the mapping or in the workbook, so it repeats on the next import.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** problems grouped by cause, with import fixes and a list of workbook cells to check. Re-run the import, save `data/plan-data.js` and reopen `index.html`. Repeat until the app opens and the data sources panel holds only notes you have read and accepted.
+**Expect:** problems grouped by cause, with changed mapping entries and a list of workbook cells to check. Save the mapping, import again from the **Import** button and read the report. Repeat until no region has an error; then **Use these plans now**, **Save data/plan-data.js**, move the file into `data/` and reopen `index.html`. The data sources panel should hold only notes you have read and accepted.
 
 ## 7. Add a report
 
@@ -207,17 +209,17 @@ Prompts 11 to 13 follow the three levels in `docs/EXTENDING-TEMPLATE.md`: an ext
 
 Use when a sheet of the template should be visible, region by region, without its own chart.
 
-**Attach:** `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js` (how the app reads and checks extra sections), `content/text-extra.js` (the wording of its warnings), and the import's files. In Copilot only: one real workbook, or a screenshot of the sheet's header rows.
+**Attach:** `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js` (how the app reads and checks extra sections), `content/text-extra.js` (the wording of its warnings), `config/import-map.js` (the mapping; its `extra` list describes extra sections) and `docs/ARCHITECTURE.md` (section 20.1). In Copilot only: one real workbook, or a screenshot of the sheet's header rows.
 
 ```
-Our planning template has a sheet the app doesn't show yet: "<sheet name>". Following level 1 of the attached EXTENDING-TEMPLATE.md and the "Extra sections" part of the data contract, extend our import so it writes this sheet as an extra section.
-Step 1: From the workbook, list the sheet's columns and propose for each: a key, a heading, a unit (money, pct, count or text), a kind (IN leader input, PRE system figure, DER calculated in the workbook) and the column letter. Propose the section's id, title (the sheet name) and a one-sentence intro. Wait for my answers.
-Step 2, after I answer: change the import so it writes the meta.extraSections entry and, for every region, extra.<section id> with one row per filled worksheet row: its sourceRow, one field per column, null for a blank cell, money in thousands. Leave out empty spare rows and personal names. Change nothing else in the data file. Tell me how to re-run the import.
+Our planning template has a sheet the app doesn't show yet: "<sheet name>". Following level 1 of the attached EXTENDING-TEMPLATE.md, the "Extra sections" part of the data contract and the extra list in section 20.1 of ARCHITECTURE.md, extend our mapping, config/import-map.js, so the app's importer writes this sheet as an extra section.
+Step 1: From the workbook, list the sheet's columns and propose for each: a key, a heading, a unit (money, pct, count or text), a kind (IN leader input, PRE system figure, DER calculated in the workbook) and the column letter. Propose the section's id, title (the sheet name), a one-sentence intro, the first data row and the key column whose blank cell marks a spare row. Wait for my answers.
+Step 2, after I answer: add the entry to the mapping's extra list, no code. The importer then writes the meta.extraSections entry and, for every region, extra.<section id> with one row per filled worksheet row: its sourceRow, one field per column, null for a blank cell, money in thousands, spare rows and personal names left out. Change nothing else in the mapping. Tell me to save it, import again from the Import button and paste the report back.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** a column table to confirm, then changes to the import only. Check: re-run the import, open `index.html`, and read the data sources panel: problems in an extra section are warnings naming the section and the field, and never stop the app. Open **Other sections**, check one row per region against the workbook through its details (file › sheet › cell), then run `tests.html`.
+**Expect:** a column table to confirm, then one entry for the mapping's `extra` list and no code. Check: save the mapping, import again from the **Import** button and read the report, then **Use these plans now** and read the data sources panel: problems in an extra section are warnings naming the section and the field, and never stop the app. Open **Other sections**, check one row per region against the workbook through its details (file › sheet › cell), then run `tests.html`.
 
 ## 12. Chart a figure from an extra section
 
@@ -293,21 +295,21 @@ Constraints: The app is opened from a file (file://), with no server and no buil
 
 ## The full template
 
-Prompt 16 brings the parts of the full template into an import that already covers the four sections: the recap blocks, the order intake sheet for the year before the plan, and the new columns. Section 4 of `docs/IMPORT-BRIEF.md` says where each new field comes from.
+Prompt 16 brings the parts of the full template into a mapping that already covers the four sections: the recap blocks, the order intake sheet for the year before the plan, and the new columns. Section 4 of `docs/IMPORT-BRIEF.md` says where each new field comes from; the importer reads them once the mapping names the blocks.
 
-## 16. Extend the import to the full template
+## 16. Extend the mapping to the full template
 
-Use once the import covers the four sections and the workbooks are the full template: the recap on its own sheet, the order intake sheet for the year before the plan, and the new columns on New Business and Partner.
+Use once the mapping covers the four sections and the workbooks are the full template: the recap on its own sheet, the order intake sheet for the year before the plan, and the new columns on New Business and Partner.
 
-**Attach:** `docs/IMPORT-BRIEF.md` (section 4 maps every new field to its sheet and block), `docs/DATA-CONTRACT.md` (the "Full template" part), `tests/fixtures/mini-p4.js` (a small valid example of the new parts), `js/core/check-p4.js` and `content/text-data.js` (what the app's check rejects or warns about), and the import's files. In Copilot only: one real workbook of the full template.
+**Attach:** `config/import-map.js` (the mapping so far), `docs/IMPORT-BRIEF.md` (section 4 maps every new field to its sheet and block), `docs/DATA-CONTRACT.md` (the "Full template" part), `docs/ARCHITECTURE.md` (section 20.1: the grid blocks' axes and the `baseYear` section), `tests/fixtures/import-maps.js` (its `miniP4` mapping has every full-template block). In Copilot only: one real workbook of the full template.
 
 ```
-Our workbooks are now the full planning template. Following section 4 of the attached IMPORT-BRIEF.md and the "Full template" part of the data contract, extend our import so it also writes the new parts. mini-p4.js is a small valid example of them; check-p4.js is the check the app runs on them.
-Step 1: From the workbook, list where each field in the brief's section 4.1 table sits: sheet, block, row labels and the cells or columns for each plan year, channel, motion, type, product category and route. List the dropdown values of the hidden lists sheet for solutions and partner maturity, and the partner types the Partner sheet uses, and propose a stable id for each. Say which of the base year's forecasts the sheet treats as current. Wait for my answers.
-Step 2, after I answer: change the import so it writes the five new lookups and, for every region, revenue, booksValue, strategicPlan, baseYear, routes and outsourcingPct, the solution of each New Business row, and type, maturity, supportPct, distribution and servicesFromPartners for each partner, with a sourceCell or sourceRow on every item and a meta.sourceMap entry for each part. Read the recap with its region filter set to the workbook's own region. Keep blanks as null; leave a part out when a workbook has none of it. Change nothing in the four existing sections except the recap's sheet name in meta.sourceMap.
-Step 3: Run these checks on every region and list each mismatch with its sheet and cell: the strategic plan variance equals the plan (the books value of that year and category) minus the strategic plan; revenue is never above the order intake (recap, customer value) of the same year, channel and motion; books value is never above customer value for Partner, Alliance A and Alliance B over ARR and services; the coverage ratio is within 5% of pipeline over forecast minus actuals; every solution, partner type, maturity and route names an entry of its lookup. Write each mismatch as an import note, not as a change to the figures. Tell me how to re-run the import.
+Our workbooks are now the full planning template. Following section 4 of the attached IMPORT-BRIEF.md, the "Full template" part of the data contract and section 20.1 of ARCHITECTURE.md, extend our mapping, config/import-map.js, so the app's importer also reads the new parts. The miniP4 mapping in import-maps.js is a small example of them.
+Step 1: From the workbook, list where each field in the brief's section 4.1 table sits. For the recap sheet: its region filter cell, and for each grid block (order intake at customer value, revenue outlook, books value, the strategic plan with its variance cells, route to market) the first row and column and the order of its axes by plan year, channel, motion, type, product category and route, or the enumerated cells where a block is irregular. For the order intake sheet: the first row, the column of each field, which of its two forecasts is the later one, and the cells of the year and the last month of actuals. On New Business: the solution column. On Partner: the type, maturity, support %, distribution and services columns per plan year, and the outsourcing % cell. List the dropdown values of the hidden lists sheet for solutions, partner types and partner maturity, and propose a stable id for each. Wait for my answers.
+Step 2, after I answer: write the whole config/import-map.js, no code: the five new lookups (productCategories, solutions, partnerTypes, partnerMaturity, routes) with the real names and the ids we agreed; aliases for other spellings; the grid blocks revenue, booksValue, strategicPlan (with its variance columns) and routes, each with the filter cell; the baseYear section with the later forecast column; the new columns on newBusiness and partners; and the outsourcingPct cell. Change nothing in the four existing sections except the recap block's sheet and filter cell. Tell me to save it over the mapping in the internal copy, import again from the Import button and paste the report back.
+Step 3: The importer's report already runs these checks on every region and writes each mismatch as a note with its sheet and cell: the strategic plan variance equals the plan (the books value of that year and category) minus the strategic plan; revenue is never above the order intake (recap, customer value) of the same year, channel and motion; books value is never above customer value for Partner, Alliance A and Alliance B over ARR and services; the coverage ratio is within 5% of pipeline over forecast minus actuals; every solution, partner type, maturity and route names an entry of its lookup. Read the notes I paste back, group them by cause, and say for each whether it is a mapping problem, a workbook saved without recalculating, or a figure to accept as it is. Never change a figure.
 
 Constraints: The app is opened from a file (file://), with no server and no build step. Classic <script> tags only: no modules, import/export, fetch or eval. No web libraries, CDN links or web fonts; anything needed is stored in the folder. Keep each file small (under about 300 lines) with its header comment. docs/DATA-CONTRACT.md is the only interface between the data and the views. Never put real data or organization names into files that go to the public repository.
 ```
 
-**Expect:** a location table and the lookup values to confirm, then changes to the import only, then a list of mismatches per region (an empty list is possible). Check: re-run the import, open `index.html` and read the data sources panel: the app's own check repeats the same comparisons as warnings. Then open **Outlook**, the new charts on **New business** and **Partners**, and one region profile, and work through the full template part of `docs/REAL-DATA-CHECKLIST.md`.
+**Expect:** a location table and the lookup values to confirm, then one complete mapping and no code, then the report's notes grouped by cause (an empty list is possible). Check: import from the **Import** button and read the report: the full template's blocks list as read for the regions that have them, and every note carries its sheet and cell. Then **Use these plans now**; open **Outlook**, the new charts on **New business** and **Partners**, and one region profile; **Save data/plan-data.js** and move it into `data/`; and work through the full template part of `docs/REAL-DATA-CHECKLIST.md`. The app's own check repeats the same comparisons as warnings in the data sources panel.

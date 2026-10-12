@@ -1,34 +1,35 @@
-# Import brief for Copilot
+# Import brief
 
-What the import must do, so it can be built in Microsoft 365 Copilot with the real workbooks in view. The import turns the regional planning workbooks into the one data file the app reads.
+What the import does and the rules it keeps. The import turns the regional planning workbooks into the one data file the app reads, and it runs inside the app (D147): the data owner presses **Import**, picks the workbooks, reads the report and saves the file. Nothing is built for it in the real-data phase. What the organization's approved AI tool (for example Microsoft 365 Copilot) produces is the **mapping**, `config/import-map.js`: data that says where every field sits in the real template. It writes no code and never writes the data file.
 
-This brief sets the requirements and lists the open choices. It does not decide how the import is built: that is decided in the Copilot phase, once the real workbooks and their differences can be seen (decision D27).
+This brief sets the requirements the importer meets (sections 2 to 5), records the choices that were open before the importer was built and how each was settled (section 6), describes the mapping file (6.4), and says how to check a run (section 8).
 
-## Copilot early pack
+## The pack for filling the mapping
 
-Give Copilot these first, in one new chat, before any real workbook. They are enough to start designing the import a day early.
+Give the approved tool these first, in one new chat, before any real workbook. They are enough to fill the mapping from the real template.
 
 | Give | Why |
 |---|---|
+| `config/import-map.js` | The sample mapping: the exact shape to fill, describing the fictional sample's layout. The real one replaces it in the internal copy |
+| `docs/ARCHITECTURE.md`, section 20 | The mapping's shape field by field (20.1), what the cells may hold (20.2) and the checks the importer runs (20.3) |
+| `docs/IMPORT-BRIEF.md` (this file) | The rules the importer keeps, the template's sections, and how to test the mapping |
 | `docs/DATA-CONTRACT.md` | The exact shape of the data file. It wins wherever another document differs |
-| `docs/IMPORT-BRIEF.md` (this file) | What the import must do, and the choices still open |
 | Prompt 2 in `docs/COPILOT-PROMPTS.md` | The ready-made prompt that starts the work |
-| `tests/fixtures/mini-data.js` | A small valid example of the shape: four regions, every section, a full `meta.sourceMap`. It sets `window.TEST_FIXTURES.mini` and has `isSample: true`; the real file sets `window.PLAN_DATA` and has `isSample: false` |
-| `js/core/check.js` and `content/text-data.js` | The app's contract check and the wording of its messages, so Copilot knows what the app will reject and how each problem is reported |
+| `tests/fixtures/import-maps.js` | A second example: the mappings of the small test fixtures, including one with the full template's blocks |
 
-Then add one real workbook, or screenshots of each sheet's header rows, inside Copilot only. For the full template's parts, prompt 16 in `docs/COPILOT-PROMPTS.md` extends an import that already covers the four sections, and `tests/fixtures/mini-p4.js` is a small valid example of those parts.
+Then add one real workbook, or screenshots of each sheet's header rows, inside the approved tool only. For the full template's parts, prompt 16 in `docs/COPILOT-PROMPTS.md` extends a mapping that already covers the four sections.
 
-**Read with:** `docs/DATA-CONTRACT.md` (the exact shape of the data file; it wins wherever this brief and the contract differ) and `docs/ARCHITECTURE.md` (how the app uses the file).
+**Read with:** `docs/DATA-CONTRACT.md` (the exact shape of the data file; it wins wherever this brief and the contract differ) and `docs/ARCHITECTURE.md` (section 20 for the importer and the mapping, the rest for how the app uses the file).
 
 **Generic on purpose.** This copy uses generic terms: the organization, regional leader, planning template, Product line 1 to 3, Alliance A and B. It holds no real sheet names, region names, cell addresses or figures. Organization-specific details (the real template's sheet names and layout, the region list, short names) go in the internal project folder, outside this repository (D2). Never add them here.
 
 ## 1. The job in one paragraph
 
-About seven regional leaders each fill in the same planning template, one workbook per region. The import reads those workbooks, checks them, and writes one JavaScript file, `data/plan-data.js`, that sets `window.PLAN_DATA`. The app loads that file with a plain `<script>` tag when `index.html` is opened from the folder. Viewers never need the workbooks. When a workbook changes, the import is run again and the file is replaced.
+About seven regional leaders each fill in the same planning template, one workbook per region. The import runs inside the app: the data owner presses **Import**, picks the workbooks, and the app reads them in the browser through the mapping in `config/import-map.js`, checks every region, shows a report, and then offers two things: **Use these plans now**, which shows the imported plans at once, and **Save data/plan-data.js**, which downloads one JavaScript file that sets `window.PLAN_DATA`. Moved into `data/`, that file is what the app loads with a plain `<script>` tag when `index.html` is opened from the folder. Nothing is kept in the browser and nothing leaves the laptop. Viewers never need the workbooks. When a workbook changes, the import is run again and the file is replaced.
 
 ## 2. Requirements (fixed)
 
-These carry over from decisions D11, D26, D27 and D1. However the import is built, it must meet all of them.
+These carry over from decisions D11, D26, D27 and D1. The app's importer meets all of them; a mapping must keep them too (R7 and R8 in particular).
 
 | # | Requirement | What it means in practice |
 |---|---|---|
@@ -39,13 +40,13 @@ These carry over from decisions D11, D26, D27 and D1. However the import is buil
 | R5 | **Three missing-value states** | A number, including `0`, means the leader entered it. `null` means the cell was blank ("not provided"); never turn a blank into `0` or `""`. Not applicable is not stored: it follows from the template's rules (unrated rows, Tier 3 industries with no New Business rows). |
 | R6 | **Import notes with sheet and cell** | Anything worth checking that doesn't stop the import goes into the region's `source.notes` as `{ message, sheet, cell }`. The app shows these only in the data sources panel. |
 | R7 | **No personal names** | Account managers and any other personal names are left out. Account names stay in one field, `accounts[].name`, so they can later be swapped for anonymous labels (D14, provisional). Free-text fields (commentary, success factors) are copied as written, so they are reviewed by eye during the real-data run. |
-| R8 | **Real data stays in approved tooling** | Workbooks and the data file stay on the data owner's laptop and in Copilot. They never go into the public repository (the data file is gitignored) or into any other assistant. |
+| R8 | **Real data stays in approved tooling** | Workbooks, the data file and the real mapping stay on the data owner's laptop and in the approved tool. They never go into the public repository (the data file is gitignored; the real mapping lives in the internal copy only) or into any other assistant. |
 | R9 | **Finished values, not formulas** | Read the stored results the template already calculated (D5). Do not recreate the template's formulas, except the simple cross-checks in section 5. |
 
 **Also useful:**
 - Keep regions in the same order on every run: file order sets each region's colour.
 - Record a source per region: `fileName`, `fileModified` (the workbook's last-saved date), `importedAt`.
-- Fill `meta.templateVersion` with the template mapping used, so a later template revision gets its own mapping.
+- Fill `meta.templateVersion` with the template mapping used, so a later template revision gets its own mapping. The importer copies it from the mapping's `meta.templateVersion`.
 
 ## 3. The planning template
 
@@ -87,7 +88,7 @@ The copy reviewed first had the four sections above. The full template has more:
 
 ### 4.1 Where each new field comes from
 
-Generic block names: the real sheet names, row labels and cells go in the import's mapping, in the internal project folder.
+Generic block names: the real sheet names, row labels and cells go in the mapping, `config/import-map.js`, in the internal copy (section 6.4).
 
 | Contract field | Sheet | Block in the template | Tag | What to write |
 |---|---|---|---|---|
@@ -121,7 +122,7 @@ New columns on the known sheets go in those sheets' `meta.sourceMap` entries: `n
 
 Sections the contract does not name one by one (for example a sheet added to the template later) still come in without a contract change:
 
-- **Write a new section as an extra section.** The contract has an optional, additive place for the sections it doesn't name one by one: `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows (the "Extra sections" part of `docs/DATA-CONTRACT.md`). The app shows every extra section as a list on the **Other sections** view, which appears only when there are any, with file › sheet › cell for each value. Problems in an extra section are warnings, never errors. Level 1 of `docs/EXTENDING-TEMPLATE.md` gives the steps, and prompt 11 in `docs/COPILOT-PROMPTS.md` asks Copilot to extend the import.
+- **Write a new section as an extra section.** The contract has an optional, additive place for the sections it doesn't name one by one: `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows (the "Extra sections" part of `docs/DATA-CONTRACT.md`). The app shows every extra section as a list on the **Other sections** view, which appears only when there are any, with file › sheet › cell for each value. Problems in an extra section are warnings, never errors. The mapping's `extra` list describes the sheet and its columns (section 20.1 of `docs/ARCHITECTURE.md`), and the importer writes the rows. Level 1 of `docs/EXTENDING-TEMPLATE.md` gives the steps, and prompt 11 in `docs/COPILOT-PROMPTS.md` asks the approved tool for the entry.
 - **To chart a figure from it,** follow level 2 of `docs/EXTENDING-TEMPLATE.md` (prompt 12); for a whole new view, level 3 (prompt 13). Only a section that needs fields of its own, outside the extra-section shape, extends the contract itself: field, type, tag and notes in `docs/DATA-CONTRACT.md`, the contract check (`js/core/check.js`), `meta.sourceMap`, and the measure or report that shows it.
 - Anything else the import writes that the contract doesn't name is ignored by the contract check: neither an error nor a warning (D47), and not shown on screen.
 - **The version rule.** Adding a field or section never changes `meta.schemaVersion`. Raise it only when an existing field changes meaning or shape, and change `TAP.schemaVersion` in `js/core/namespace.js` to match at the same time. A mismatch stops the app with a version message.
@@ -129,7 +130,7 @@ Sections the contract does not name one by one (for example a sheet added to the
 
 ## 5. Validation rules
 
-From the contract. The import applies them to every workbook before writing the file.
+From the contract. The import applies them to every workbook before the plans are used or the file is written.
 
 | Rule | Error (stops this region) or note |
 |---|---|
@@ -148,15 +149,19 @@ From the contract. The import applies them to every workbook before writing the 
 
 The **segment rule**, checked in this order: current ARR above the strategic threshold is Strategic; below the scaled threshold is Scaled; 3-year order intake above the growth threshold and ARR above the growth ARR threshold is Growth; otherwise Core.
 
-Errors stop the import **for that region only**. Everything worth a look goes into `source.notes` with its sheet and cell. Which problems count as errors and which as notes beyond this table is for the import's design to settle.
+Errors stop the import **for that region only**. Everything worth a look goes into `source.notes` with its sheet and cell.
 
-**A second check in the app.** When the app opens, it checks the data file against the contract again (US-1.8.2). Problems that would break views stop it loading, with a precise list; smaller ones load and appear in the data sources panel. See section 8.
+**The app's importer applies these rules** (`TAP.importChecks`, `js/import/import-checks.js`) and shows the result in the Import panel's report, region by region. The table in section 20.3 of `docs/ARCHITECTURE.md` is the exact list: the errors are a rated industry with no Market Coverage row, a required section missing, two workbooks for one region, and the recap filter set to another region; everything else in the table above is a note with its sheet and cell, as is a value of the wrong kind or an error cell (imported as `null`) and a required block with no values (the recap becomes an empty list). An optional part whose sheet is missing is left out of the region. The report then adds the app's contract check (`TAP.check.run`) on the plan as a whole.
 
-## 6. Open choices (not decided)
+**A second check in the app.** When the app opens from the saved file, it checks it against the contract again (US-1.8.2). Problems that would break views stop it loading, with a precise list; smaller ones load and appear in the data sources panel. See section 8.
 
-Each depends on the real workbooks, so each is left for the Copilot phase. The pros and cons are a starting point, not a recommendation.
+## 6. The choices, and how they were settled
+
+These three choices were open while the import was still to be built. They were settled when the importer moved into the app (D147, D157); the tables stay as the record of the trade-offs, and 6.4 describes the mapping file the choices led to.
 
 ### 6.1 Fixed cell addresses vs finding headers
+
+**Settled (D157): fixed addresses, with an optional header check.** The mapping gives each section its sheet, first row and column letters, and each grid block its axes or enumerated cells; where it also gives a `headerRow` and `headers`, the importer checks that the expected text sits there before reading a row, and the report names the cell when it does not. A workbook whose layout differs needs a mapping change, not a code change.
 
 | | Fixed cell addresses (a mapping per template version) | Finding headers (search for the header text, then read below it) |
 |---|---|---|
@@ -169,6 +174,8 @@ A middle path is possible: fixed addresses plus a check that the expected header
 
 ### 6.2 Region names: from the workbook vs a short-name list
 
+**Settled (D157): a region list in the mapping, with a fallback.** The mapping's `regions` list gives each region a stable `id`, `name`, the workbook's file name or a pattern with `*`, and the `filterName` the recap sheet's filter uses. The list's order sets the colours. A workbook that matches no entry is still read: its name comes from the mapping's `nameCell`, else from the file name without its extension, its id from that name, and the report says so in a note.
+
 | | From the workbook | A short-name list |
 |---|---|---|
 | How | Read the region name from a cell or the file name | A small list maps each workbook to a fixed id and display name |
@@ -179,17 +186,36 @@ Note: the organization layer can already give short display names on screen (`TA
 
 ### 6.3 An import page in the browser vs another approach
 
-| | Import page in the app folder | Another approach Copilot recommends (for example an Excel script or macro, or Power Query, producing the data file) |
+**Settled (D147): the import page is in the app.** An Import button on every page and on the no-data and invalid screens opens the Import panel. The workbooks are read in the browser with a spreadsheet library stored in the folder (`vendor/xlsx.mini.min.js`, D148), so nothing loads from the web and nothing leaves the laptop. The browser cannot save over a file, so the panel offers the data file as a download that the owner moves into `data/`.
+
+| | Import page in the app folder | Another approach the approved tool recommends (for example an Excel script or macro, or Power Query, producing the data file) |
 |---|---|---|
 | How | The owner opens a local page, picks the workbooks, sees the validation report, and saves the data file | Runs inside Excel or another approved tool and writes the same file |
 | Pros | Same platform as the app (opened from a file, no install). Runs entirely on the laptop. Can show the validation report on screen | May read workbook values more reliably. May fit the organization's approved tools better. No spreadsheet library to store |
 | Cons | Needs a spreadsheet-reading library stored in the folder (nothing from the web). Browsers can't save over a file directly, so the owner saves a download into `data/` | Might need permissions or tools not available on every laptop. A second platform to maintain. Must still produce exactly the contract's file |
 
-Whatever is chosen: it runs on the data owner's laptop, keeps R1 to R9, and lives outside the public repository unless it is fully generic.
+The importer is generic, so it lives in the public repository; what is organization-specific is the mapping, which does not (6.4).
+
+### 6.4 The mapping file
+
+`config/import-map.js` sets `window.IMPORT_MAP`: one object that describes the template's layout. It is data, not code. The exact shape is in section 20.1 of `docs/ARCHITECTURE.md`; in short, it holds:
+
+- `meta`: the template version, the currency, the plan years, `isSample` (`false` for the real template) and, when needed, how text numbers are written;
+- `regions`: the region list in display order, each with its id, name, workbook file name or pattern, and the name the recap filter uses; and `nameCell`, the cell where a workbook names its region, for a workbook that matches no entry;
+- `lookups`: the data file's lookups, as they will be written, with the real names of industries, product lines, channels, solutions, partner types, maturity levels and routes, and stable ids for each;
+- `aliases`: other spellings found in the workbooks, mapped to the id, score or value they mean;
+- `sections`: for each row section, the sheet, the header row and first row, the column letter of every field (one per plan year for by-year fields) and the fixed cells; for each grid block, the sheet, the filter cell, and its row and column axes, regular or enumerated;
+- `extra`: any extra sections (section 4.2), with their columns.
+
+**How the approved tool fills it from the real template** (prompt 2 in `docs/COPILOT-PROMPTS.md`, then prompt 16 for the full template): it starts from the sample mapping and changes the values, section by section. The sheet names as the real template spells them. The header row and the first data row of each section. The column letter of each field, and the two forecast columns of the order intake sheet, saying which is the later one. The fixed cells (the thresholds, the outsourcing %, the base year's year and last actuals month). For each grid block, the first row and column and the order of the axes, or the enumerated cells when a block is irregular; the recap filter cell. The region list with the real file names. The lookups with the real names, and aliases for any other spelling the workbooks use. The shipped copy describes the fictional sample and is generated by `tools/build-import-map.js`, so the real mapping is a new file written over it, never a hand edit of the generated one.
+
+**How to test it:** the Import button's report. Import every workbook and read the report: a region that reads cleanly lists its parts as read; a wrong sheet name, row or column shows as an error or as notes with the sheet and cell, and a mismatch between the lookups and the workbook's names shows as notes on the cells that did not match. Fix the mapping and import again. The round trip the test page runs (write workbooks from the sample data, import them, compare) is for the sample mapping only: it is not available on real data, so spot-checks against the workbook (section 8) take its place.
+
+**Where it lives:** the real mapping is organization-specific (sheet names, region names, file names, product names), so it stays in the internal copy of the folder, with the data file and the organization layer, and never comes back to the public repository.
 
 ## 7. Output checklist
 
-Before calling the import done, the data file should have:
+Before calling a mapping done, the data file the panel saves should have:
 
 - [ ] `window.PLAN_DATA = { meta, lookups, regions }` (extra sections are allowed, D47)
 - [ ] `meta.schemaVersion` as in `docs/DATA-CONTRACT.md`, `meta.isSample` set to `false`, `meta.currency`, `meta.years`, `meta.generatedAt`, `meta.templateVersion`
@@ -203,11 +229,12 @@ Before calling the import done, the data file should have:
 
 ## 8. How to check the result
 
-1. Save the file as `data/plan-data.js` in the app folder.
-2. Open `index.html` by double-clicking it (Chrome, or Edge).
-3. If the app stops with "The data file has problems that stop the app from opening", press **Copy the list**. Each line names the field, region, item and what was expected, for example `regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found 'Tier 2'`.
-4. Paste the list into Copilot with the import code and `docs/DATA-CONTRACT.md` (prompt 6 in `docs/COPILOT-PROMPTS.md`). Fix the import, not the data file, so the fix repeats on the next run.
-5. Repeat until the app opens. Then open the data sources panel (click the "Data:" date on the comparison bar) and read every region's import notes and dates.
-6. Spot-check at least one figure per section per region: select the data icon beside it (in its details or the table view), read its file › sheet › cell, and confirm it in the workbook.
+1. Open `index.html` by double-clicking it (Chrome, or Edge). Without a data file it shows the "No plan data found" screen, which has the Import button too; the sample edition, `index-sample.html`, works the same way for a trial run.
+2. Press **Import** and pick every regional workbook. The panel says which file it is reading, then shows the report.
+3. Read the report: the summary (regions imported, left out, missing from the mapping's list, mapping problems), then per region its file, saved date and the parts read, its errors, its notes with sheet › cell, and at the end the contract check on the whole plan. A contract error reads like `regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found 'Tier 2'`.
+4. Fix the **mapping**, never the data file: press **Copy report** and paste it into the approved tool with `config/import-map.js` and `docs/DATA-CONTRACT.md` (prompt 6 in `docs/COPILOT-PROMPTS.md`). A problem in a workbook is fixed in the workbook, or accepted as a note. Import again.
+5. When no region has an error, press **Use these plans now**: the app shows the imported plans at once. Open the data sources panel (click the "Data:" date on the comparison bar) and read every region's import notes and dates.
+6. Press **Save data/plan-data.js**, move the download into `data/` in the internal copy, replacing the old file, and reopen `index.html`: it now opens on the new data without the import.
+7. Spot-check at least one figure per section per region: select the data icon beside it (in its details or the table view), read its file › sheet › cell, and confirm it in the workbook.
 
 The full run, step by step, is in `docs/REAL-DATA-CHECKLIST.md`.
