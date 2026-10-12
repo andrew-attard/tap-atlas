@@ -13,6 +13,8 @@
  *   (A3 has none), and Region B gets a second partner, B2.
  * - Blanks on purpose: Region A's revenue for new business ARR, alliance B, 2027 (it would be 0); Region D's
  *   strategic plan for services in 2029, its base-year pipeline for services, and its last route figure for 2029.
+ * - Layout for the import mapping (tests/fixtures/import-maps.js): revenue at row 30, books value at row 60, strategic
+ *   plan rows 90 to 93, routes one row per route, type and solution from row 100, base year rows 7 and on.
  * - Books value holds software perpetual and hardware, which the customer value recap does not.
  */
 window.TEST_FIXTURES = window.TEST_FIXTURES || {};
@@ -38,10 +40,12 @@ window.TEST_FIXTURES = window.TEST_FIXTURES || {};
 
   var map = p.meta.sourceMap;
   ['revenue', 'booksValue', 'strategicPlan', 'routes'].forEach(function (s) { map[s] = { sheet: '5. Recap' }; });
-  map.baseYear = { sheet: '6. Order Intake', columns: { category: 'B', budget: 'C', forecast: 'D', actuals: 'E', pipeline: 'F', coverage: 'G' } };
+  map.baseYear = { sheet: '6. Order Intake', columns: { category: 'B', budget: 'C', forecast: 'D', actuals: 'E', pipeline: 'F', coverage: 'G' },
+    cells: { year: 'C4', actualsThrough: 'C5' } };
   map.newBusiness.columns.solution = 'V';
   Object.assign(map.partners.columns, { type: 'P', supportPct: ['Q', 'R', 'S'], distribution: ['T', 'U', 'V'],
     servicesFromPartners: ['W', 'X', 'Y'] });
+  map.partners.cells = { outsourcingPct: 'I3' };
 
   // Grids as in mini-p2.js: per motion and type, one line per plan year (2027, 2028, 2029), one figure per channel
   // in the order direct, partner, allianceA, allianceB. A motion or type left out has no items at all.
@@ -110,6 +114,12 @@ window.TEST_FIXTURES = window.TEST_FIXTURES || {};
     delta: [['ownSales', 'arr', null, [200, 300, 400]], ['allianceBReseller', 'arr', 'sol2', [50, 75, 100]],
       ['otherResellers', 'arr', 'sol2', [100, 150, 200]], ['partnerExisting', 'services', null, [30, 30, null]]]
   };
+  // One worksheet row per (route, type, solution) from row 100, in the order the triples first appear (Region A's five,
+  // then Region B's two new ones, then Region D's three), so one import mapping describes every region's routes.
+  var ROUTE_ROWS = [];
+  Object.keys(ROUTES).forEach(function (id) {
+    ROUTES[id].forEach(function (x) { if (ROUTE_ROWS.indexOf(x.slice(0, 3).join('|')) < 0) ROUTE_ROWS.push(x.slice(0, 3).join('|')); });
+  });
   // The solution each new business row names, by source row (Region B's row 21 names none)
   var SOLUTIONS = { alpha: { 20: 'sol1', 21: 'sol2' }, bravo: { 20: 'sol1', 21: null }, delta: { 20: 'sol3' } };
   // Partner additions by name: type, maturity, distribution at customer value per plan year
@@ -156,8 +166,8 @@ window.TEST_FIXTURES = window.TEST_FIXTURES || {};
       return { category: b[0], budget: b[1], forecast: b[2], actuals: b[3], pipeline: b[4], coverage: b[5], sourceRow: 7 + i };
     }) };
     r.routes = [];
-    ROUTES[r.id].forEach(function (x, i) {
-      r.routes = r.routes.concat(byYear(x[3], 100 + i, { route: x[0], type: x[1], solution: x[2] }));
+    ROUTES[r.id].forEach(function (x) {
+      r.routes = r.routes.concat(byYear(x[3], 100 + ROUTE_ROWS.indexOf(x.slice(0, 3).join('|')), { route: x[0], type: x[1], solution: x[2] }));
     });
     r.outsourcingPct = r.id === 'alpha' ? 0.2 : r.id === 'bravo' ? 0.1 : null;
     r.newBusiness.forEach(function (row) { row.solution = SOLUTIONS[r.id][row.sourceRow]; });
