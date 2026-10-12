@@ -313,9 +313,9 @@
       var out = TAP.importWrite.report(res);
       a.match(out, /^Region A: imported\n  file Region A plan\.xlsx, saved 2026-09-28T10:00:00Z, parts: Market Coverage read\n/);
       a.match(out, /\nRegion C: left out\n/);
-      a.match(out, /\n  ERROR 4\. Partner › C2: The filter is set to another region\.\n/);
-      a.match(out, /\n  note 4\. Partner › B10: The Partner section is empty\.\n/);
-      a.match(out, /\n  note 1\. Market Coverage: A whole-sheet note\.\n/);
+      a.match(out, /\n  Error 4\. Partner › C2: The filter is set to another region\.\n/);
+      a.match(out, /\n  Note 4\. Partner › B10: The Partner section is empty\.\n/);
+      a.match(out, /\n  Note 1\. Market Coverage: A whole-sheet note\.\n/);
       a.match(out, /\nMissing workbook: Region B \(bravo\)\n/);
       a.match(out, /\nMapping: The mapping names no years\.\n/);
       a.match(out, /\nContract check: 0 errors\n/);
