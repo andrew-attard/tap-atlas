@@ -17,7 +17,7 @@ Object.assign(window.TAP_CONTENT.text, {
     buttonLabel: 'Import workbooks',
 
     // The intro: which mapping the import reads with, and where the data stays
-    intro: 'Reads the planning workbooks with the mapping {version}. Everything happens in this browser: nothing leaves this PC and nothing is kept in the browser.',
+    intro: 'Reads the planning workbooks with the mapping {version}. Everything happens in this browser: nothing leaves this computer and nothing is kept in the browser.',
     sampleBadge: 'Fictional sample mapping',
     mapMissing: 'The import mapping (config/import-map.js) is missing, so no workbook can be read.',
     mapProblems: 'The import mapping (config/import-map.js) has problems, so no workbook can be read:',
