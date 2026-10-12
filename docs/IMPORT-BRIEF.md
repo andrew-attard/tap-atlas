@@ -151,7 +151,7 @@ The **segment rule**, checked in this order: current ARR above the strategic thr
 
 Errors stop the import **for that region only**. Everything worth a look goes into `source.notes` with its sheet and cell.
 
-**The app's importer applies these rules** (`TAP.importChecks`, `js/import/import-checks.js`) and shows the result in the Import panel's report, region by region. The table in section 20.3 of `docs/ARCHITECTURE.md` is the exact list: the errors are a rated industry with no Market Coverage row, a required section missing, two workbooks for one region, and the recap filter set to another region; everything else in the table above is a note with its sheet and cell, as is a value of the wrong kind or an error cell (imported as `null`) and a required block with no values (the recap becomes an empty list). An optional part whose sheet is missing is left out of the region. The report then adds the app's contract check (`TAP.check.run`) on the plan as a whole.
+**The app's importer applies these rules** (`TAP.importChecks`, `js/import/import-checks.js`) and shows the result in the Import panel's report, region by region. The table in section 20.3 of `docs/ARCHITECTURE.md` is the exact list: the errors are a rated industry with no Market Coverage row, a required section missing, a header that is not where the mapping says, two workbooks for one region, and the recap filter set to another region; everything else in the table above is a note with its sheet and cell, as is a value of the wrong kind or an error cell (imported as `null`) and a required block with no values (the recap becomes an empty list). An optional part whose sheet is missing is left out of the region. The report then adds the app's contract check (`TAP.check.run`) on the plan as a whole.
 
 **A second check in the app.** When the app opens from the saved file, it checks it against the contract again (US-1.8.2). Problems that would break views stop it loading, with a precise list; smaller ones load and appear in the data sources panel. See section 8.
 
@@ -161,7 +161,7 @@ These three choices were open while the import was still to be built. They were 
 
 ### 6.1 Fixed cell addresses vs finding headers
 
-**Settled (D157): fixed addresses, with an optional header check.** The mapping gives each section its sheet, first row and column letters, and each grid block its axes or enumerated cells; where it also gives a `headerRow` and `headers`, the importer checks that the expected text sits there before reading a row, and the report names the cell when it does not. A workbook whose layout differs needs a mapping change, not a code change.
+**Settled (D157): fixed addresses, with an optional header check.** The mapping gives each section its sheet, first row and column letters, and each grid block its axes or enumerated cells; where it also gives a `headerRow` and `headers`, the importer checks that the expected text sits there before reading a row, and when it does not the region is stopped with an error naming the cell. A workbook whose layout differs needs a mapping change, not a code change.
 
 | | Fixed cell addresses (a mapping per template version) | Finding headers (search for the header text, then read below it) |
 |---|---|---|
