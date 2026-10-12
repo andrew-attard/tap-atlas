@@ -4,14 +4,82 @@
  * Provides: adds TAP_CONTENT.text.importPanel
  * Depends on: nothing
  * Used by: js/ui/import-panel.js, js/ui/import-report.js, js/import/*.js
- * Owner: UI stream (#587); the READ and PLAN streams add their message keys here
+ * Owner: UI stream (#587); the READ and PLAN streams add their message keys here under importPanel.read and importPanel.check
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
 
 Object.assign(window.TAP_CONTENT.text, {
   importPanel: {
-    title: 'Import workbooks'
+    title: 'Import workbooks',
+    // The button on the comparison bar (D116 style): the short word shows, the full name is its label
+    button: 'Import',
+    buttonLabel: 'Import workbooks',
+
+    // The intro: which mapping the import reads with, and where the data stays
+    intro: 'Reads the planning workbooks with the mapping {version}. Everything happens in this browser: nothing leaves this PC and nothing is kept in the browser.',
+    sampleBadge: 'Fictional sample mapping',
+    mapMissing: 'The import mapping (config/import-map.js) is missing, so no workbook can be read.',
+    mapProblems: 'The import mapping (config/import-map.js) has problems, so no workbook can be read:',
+
+    pick: 'Choose the workbooks',
+    statusIdle: 'Pick one workbook per region.',
+    statusReading: 'Reading {i} of {n}: {name}',
+    statusDone: '{k} of {n} workbooks imported.',
+    statusFailed: 'The import stopped: {message}',
+
+    // The three actions and why they are disabled
+    use: 'Use these plans now',
+    useSome: 'Use these {k} of {n} plans',
+    save: 'Save data/plan-data.js',
+    copy: 'Copy report',
+    whyNoResult: 'Pick the workbooks first.',
+    whyErrors: 'Fix the errors above first: {n} problems.',
+    whyNone: 'No plan could be built from these workbooks.',
+    saved: 'The browser saved plan-data.js to its Downloads folder. Move it into the app folder\'s data folder, replacing the old file, then reopen index.html. Delete the copy in Downloads.',
+    copied: 'Report copied.',
+    copyManual: 'This browser blocked copying. The report is selected below: press Ctrl+C to copy it.',
+    textLabel: 'The report as text',
+
+    // The report (js/ui/import-report.js)
+    report: {
+      summary: '{k} of {n} workbooks imported',
+      leftOut: 'left out',
+      leftOutOne: '1 left out',
+      leftOutMany: '{m} left out',
+      missingOne: '1 mapped region without a workbook',
+      missingMany: '{p} mapped regions without a workbook',
+      missingList: 'Without a workbook: {names}.',
+      mapProblems: 'Mapping problems',
+      file: 'File',
+      saved: 'Saved',
+      parts: 'Imported parts',
+      partsNone: 'none',
+      notes: 'Notes',
+      errorsTitle: 'Why it was left out',
+      notesTitle: 'Notes',
+      checkErrors: 'What the app would refuse',
+      checkWarnings: 'What the app will also warn about',
+      colNumber: '#',
+      colRegion: 'Region',
+      colWhere: 'Where in the data file',
+      colExpected: 'Expected',
+      colFound: 'Found'
+    },
+    // The parts of a workbook, as the report lists them
+    parts: {
+      marketCoverage: 'Market coverage',
+      newBusiness: 'New business',
+      customerGrowth: 'Customer growth',
+      partners: 'Partners',
+      recap: 'Recap',
+      baseYear: 'Order intake',
+      revenue: 'Revenue',
+      booksValue: 'Books value',
+      strategicPlan: 'Strategic plan',
+      routes: 'Routes to market',
+      extra: 'Other sections'
+    }
   }
 });
 

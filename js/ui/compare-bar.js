@@ -3,14 +3,15 @@
  * Purpose: The comparison bar: three modes (D99, D114), only the pickers a mode needs and an explanation of combined
  *          figures. It writes only state.cmp.
  *          One row (D116): "Compare", the modes and pickers on the left; the page buttons (Data with the data date,
- *          Present, Tour) at the end. The plain sentence is for screen readers only, in a visually hidden live region.
+ *          Present, Tour, Import) at the end. The plain sentence is for screen readers only, in a visually hidden live region.
  *          Where nothing follows the comparison (the Guide) or the view shows every region (the Overview, D118), the
  *          row holds only the buttons.
  * Provides: TAP.compareBar (mount: returns a function that removes the bar's listeners; pageButtons: the compact
- *           Data, Present and Tour buttons, shared with the region profile)
+ *           Data, Present, Tour and Import buttons, shared with the region profile)
  * Depends on: js/core/dom.js, js/core/icons.js, js/core/store.js, js/core/content.js, js/core/data.js,
  *             js/core/format.js, js/core/sources.js (dataDate), js/engine/scope.js (sentence, colorOf),
- *             js/ui/layers.js (opens the data sources panel), js/ui/present.js and js/ui/tour.js (their buttons)
+ *             js/ui/layers.js (opens the data sources panel), js/ui/present.js, js/ui/tour.js and js/ui/import-panel.js
+ *             (their buttons, at run time)
  * Used by: js/ui/shell.js, js/views/regions.js (pageButtons)
  */
 (function (TAP) {
@@ -167,6 +168,7 @@
     var slot = actions || el('div', { class: 'tap-topbar__actions' });
     try { if (!TAP.present.__stub) TAP.present.button(slot); } catch (e) { /* presentation mode is optional */ }
     if (TAP.tour && TAP.tour.button) TAP.tour.button(slot);
+    if (TAP.importPanel && TAP.importPanel.button) TAP.importPanel.button(slot);   // Import, after Tour (D147)
     var iso = TAP.sources.dataDate(), label = t('compare.dataLabel', { date: TAP.format.date(iso) });
     var data = el('button', { type: 'button', class: 'tap-btn tap-cmp__date', 'data-tour': 'datadate', 'data-action': 'sources',
       'aria-label': label, title: label, onclick: openSources },

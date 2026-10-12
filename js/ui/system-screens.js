@@ -2,8 +2,10 @@
  * File: js/ui/system-screens.js
  * Purpose: Full-page messages when the app can't start: no data, wrong version, data errors (with copy).
  *          They replace the views; the menu and comparison bar are not drawn, so nothing can show a wrong figure.
+ *          The no-data and invalid screens offer Import workbooks, which draws the Import panel under the text (D147).
  * Provides: TAP.screens (show)
- * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/namespace.js (schemaVersion)
+ * Depends on: js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/namespace.js (schemaVersion),
+ *             js/ui/import-panel.js (render, at click time)
  * Used by: js/ui/app.js
  */
 (function (TAP) {
@@ -69,13 +71,30 @@
     navigator.clipboard.writeText(area.value).then(once(function () { TAP.dom.text(status, t('screens.copied')); }), fallback);
   }
 
+  // Import workbooks (D147): draws the Import panel under the screen's text, once, and moves focus to its first control.
+  // The screens render before the shell exists, so the panel runs inline (no layer).
+  function importButton() {
+    if (!TAP.importPanel || !TAP.importPanel.render) return null;
+    var host = null;
+    return el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-screen__import', 'data-action': 'import', onclick: function (e) {
+      if (!host) {
+        host = el('div', { class: 'tap-imp__inline' });
+        e.currentTarget.closest('.tap-screen').appendChild(host);
+        TAP.importPanel.render(host, { inline: true });
+      }
+      var first = host.querySelector('input, button');
+      if (first && first.focus) first.focus();
+    } }, [TAP.icons.svg('upload', { size: 18 }), t('screens.importButton')]);
+  }
+
   function body(res) {
     var errors = res.errors || [];
     if (res.reason === 'missing') {
       return [el('h1', null, t('screens.missingTitle')), el('p', { class: 'tap-screen__lead' }, t('screens.missingBody')),
         el('p', { class: 'tap-muted' }, t('screens.missingLooked')),
-        // A visitor on the published site lands here first (D67): one click to the fictional edition
-        el('p', null, el('a', { class: 'tap-btn tap-btn--primary', href: 'index-sample.html', 'data-action': 'open-sample' }, t('screens.openSample')))];
+        // Import here (D147), or, for a visitor on the published site (D67), one click to the fictional edition
+        el('p', { class: 'tap-screen__btns' }, [importButton(),
+          el('a', { class: 'tap-btn', href: 'index-sample.html', 'data-action': 'open-sample' }, t('screens.openSample'))])];
     }
     if (res.reason === 'version') {
       var e = errors[0] || {};
@@ -90,8 +109,11 @@
       el('p', { class: 'tap-screen__lead' }, t('screens.invalidBody')),
       el('p', { class: 'tap-screen__count' }, t('screens.count', { n: errors.length })),
       table(errors),
-      el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-screen__copy', onclick: function () { copy(area, status); } },
-        [TAP.icons.svg('copy', { size: 18 }), t('screens.copy')]),
+      el('p', { class: 'tap-screen__btns' }, [
+        el('button', { type: 'button', class: 'tap-btn tap-btn--primary tap-screen__copy', onclick: function () { copy(area, status); } },
+          [TAP.icons.svg('copy', { size: 18 }), t('screens.copy')]),
+        importButton()
+      ]),
       status,
       area
     ];
