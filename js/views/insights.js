@@ -1,17 +1,17 @@
 /*
  * File: js/views/insights.js
- * Purpose: The Insights view: every insight in the comparison, ranked, grouped by family, filterable by region
- *          and family, each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
+ * Purpose: The Insights view: every insight in the comparison, ranked, grouped by family, filterable by family
+ *          (the regions are the comparison bar's, D146), each with its figures, rule and sources, "Show me" and "Copy" (US-1.7.3), and "Hide for this
  *          session" with an "N hidden · Show hidden" note (US-1.7.11). Each shows its line on why it matters; context
  *          insights (background facts) follow the ranked groups in one closed group (D111). Figures naming several
- *          regions read one line per region (D121). Insights and background facts are counted apart, and the region
- *          and family filters are two dropdowns (D126, js/views/insights-filters.js).
+ *          regions read one line per region (D121). Insights and background facts are counted apart, and the family
+ *          filter is a dropdown (D126, js/views/insights-filters.js).
  * Provides: view 'insights' (registered with TAP.views; the spec also carries copyText(insight) for tests)
  * Depends on: js/engine/registry.js, js/ui/view-head.js (tip), js/core/dom.js, js/core/icons.js, js/core/content.js, js/core/format.js,
  *             js/core/sources.js, js/ui/source-tip.js, js/core/store.js, js/core/data.js, js/engine/scope.js, js/engine/measures.js,
  *             js/insights/engine.js (ranked, all, hide, unhide, hidden), js/ui/layers.js (openDetails),
  *             config/settings.js (family weights), js/panel/panel-insights.js (figureLines, at call time),
- *             js/views/insights-filters.js and js/ui/multi-select.js (the counts and the two dropdowns)
+ *             js/views/insights-filters.js and js/ui/multi-select.js (the counts and the family dropdown)
  * Used by: js/ui/app.js, js/ui/shell.js (menu)
  */
 (function (TAP) {
@@ -86,7 +86,7 @@
   /* ---------- the page ---------- */
 
   function mount(root) {
-    var ui = { regions: [], families: [], menu: null, open: {}, status: '', showHidden: false, contextOpen: false };
+    var ui = { families: [], menu: null, open: {}, status: '', showHidden: false, contextOpen: false };
     var page = el('div', { class: 'tap-ins' });
     TAP.dom.clear(root);
     root.appendChild(page);
@@ -104,13 +104,12 @@
         return has(hid, x.id) && x.regionIds.some(function (r) { return has(scope, r); });
       }).sort(function (p, q) { return q.significance - p.significance; }));
     }
-    function byRegion(x) { return !ui.regions.length || x.regionIds.some(function (r) { return has(ui.regions, r); }); }
     function byFamily(x) { return !ui.families.length || has(ui.families, x.family); }
 
     // A filter narrows only while some but not every option is ticked ("All" ticks every one, D126).
     function narrows(sel, all) { return sel.length > 0 && all.some(function (x) { return !has(sel, x); }); }
     function summary(shown, list, families) {
-      var any = narrows(ui.regions, TAP.scope.regionIds(cmp())) || narrows(ui.families, families);
+      var any = narrows(ui.families, families);
       return el('div', { class: 'tap-ins__summary' }, [
         el('span', { class: 'tap-ins__shown' }, TAP.insightsFilters.shown(shown, list, any)),
         any ? el('button', { type: 'button', class: 'tap-ins__clear', 'data-key': 'clear', onclick: clear }, t('clear')) : null,
@@ -130,7 +129,7 @@
       ]);
     }
 
-    function clear() { ui.regions = []; ui.families = []; draw(); }
+    function clear() { ui.families = []; draw(); }
 
     function showMe(x) {
       if (x.reportId) TAP.bus.emit('showme', { insightId: x.id, target: x.highlight });
@@ -223,16 +222,13 @@
     function draw() {
       var a = document.activeElement, focusKey = a && page.contains(a) ? a.getAttribute('data-key') : null;
       TAP.dom.clear(page);
-      // Regions that left the comparison stop filtering before anything is worked out (their chips go too)
-      var inScope = TAP.scope.regionIds(cmp());
-      ui.regions = ui.regions.filter(function (r) { return has(inScope, r); });
       var list;
       try { list = visible(); } catch (e) {
         if (!/Not built yet/.test(e.message)) throw e;
         page.appendChild(el('p', { class: 'tap-stub' }, e.message));
         return;
       }
-      var families = familyOrder(list), shown = list.filter(function (x) { return byRegion(x) && byFamily(x); });
+      var families = familyOrder(list), shown = list.filter(byFamily);
       page.appendChild(el('header', { class: 'tap-ins__head' }, [
         el('p', { class: 'tap-ins__kicker' }, t('kicker')),
         el('h1', { class: 'tap-ins__h1', tabindex: '-1' }, t('heading')),
@@ -240,8 +236,7 @@
         el('p', { class: 'tap-ins__scope' }, t('scope', { sentence: TAP.scope.sentence(cmp()) })),
         TAP.viewHead.tip('insights')
       ]));
-      page.appendChild(TAP.insightsFilters.bar({ list: list, families: families, inScope: inScope, ui: ui,
-        byRegion: byRegion, byFamily: byFamily, redraw: draw }));
+      page.appendChild(TAP.insightsFilters.bar({ list: list, families: families, ui: ui, redraw: draw }));
       page.appendChild(summary(shown, list, families));
       families.forEach(function (f) {
         var inF = shown.filter(function (x) { return x.family === f && !x.context; });

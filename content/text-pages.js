@@ -112,7 +112,7 @@ Object.assign(window.TAP_CONTENT.text, {
     }
   },
 
-  // The dropdown multi-select (js/ui/multi-select.js, D126): "Regions: All", "Regions: 2 selected"
+  // The dropdown multi-select (js/ui/multi-select.js, D126): "Families: All", "Families: 2 selected"
   multiSelect: { button: '{label}:', all: 'All', clear: 'Clear', selected: '{n} selected' },
 
   // The Insights page (US-1.7.3). Every insight is an observation to discuss, never a verdict (D20).
@@ -124,7 +124,6 @@ Object.assign(window.TAP_CONTENT.text, {
     intro: '{insights} to discuss, plus {facts}, found by fixed rules in the plans and ranked by significance. Each one points to a difference worth a conversation; none of them grades a plan.',
     introNoFacts: '{insights} to discuss, found by fixed rules in the plans and ranked by significance. Each one points to a difference worth a conversation; none of them grades a plan.',
     scope: 'This list follows the comparison bar. {sentence}.',
-    regionsLabel: 'Regions',
     familiesLabel: 'Families',
     filterHint: 'Each choice shows how many insights it would list, then its background facts.',
     shownBoth: 'Showing {insights} and {facts}',

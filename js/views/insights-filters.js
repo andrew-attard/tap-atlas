@@ -1,10 +1,11 @@
 /*
  * File: js/views/insights-filters.js
- * Purpose: The Insights page's counts and filters (D126): insights to discuss counted apart from background facts
- *          (D111) in the intro, the shown line and every filter option, and the region and family filters as two
- *          dropdown multi-selects on one line.
+ * Purpose: The Insights page's counts and filter (D126): insights to discuss counted apart from background facts
+ *          (D111) in the intro, the shown line and every filter option, and the family filter as a dropdown
+ *          multi-select. The regions are chosen in the comparison bar alone (D146: the page's own Regions
+ *          dropdown repeated that choice and was dropped).
  * Provides: TAP.insightsFilters (intro, shown, bar)
- * Depends on: js/ui/multi-select.js, js/core/dom.js, js/core/content.js, js/core/data.js, js/engine/scope.js
+ * Depends on: js/ui/multi-select.js, js/core/dom.js, js/core/content.js
  * Used by: js/views/insights.js
  */
 (function (TAP) {
@@ -47,27 +48,21 @@
   }
 
   /*
-   * The two dropdowns on one line. s: {list, families, inScope, ui: {regions, families, menu}, byRegion, byFamily,
-   * redraw}. Each option counts what choosing it would list, within the other filter, as the buttons did.
+   * The family dropdown and its hint on one line. s: {list, families, ui: {families, menu}, redraw}. Each option
+   * counts what choosing it would list: every insight of that family within the comparison, as the buttons did.
    */
   function bar(s) {
     var ui = s.ui;
-    function menu(id, label, options, key) {
-      return TAP.multiSelect.render({ id: id, label: label, options: options, selected: ui[key], open: ui.menu === id,
-        onOpen: function (open) { ui.menu = open ? id : null; s.redraw(); },
-        onChange: function (sel) { ui[key] = sel; s.redraw(); } });
-    }
-    var regions = s.inScope.map(function (id) {
-      return { value: id, label: TAP.content.regionName(TAP.data.region(id)), color: TAP.scope.colorOf(id),
-        count: countEl(s.list.filter(function (x) { return s.byFamily(x) && x.regionIds.indexOf(id) >= 0; })) };
-    });
     var families = s.families.map(function (f) {
       return { value: f, label: t('families.' + f + '.name'),
-        count: countEl(s.list.filter(function (x) { return s.byRegion(x) && x.family === f; })) };
+        count: countEl(s.list.filter(function (x) { return x.family === f; })) };
     });
+    var menu = TAP.multiSelect.render({ id: 'families', label: t('familiesLabel'), options: families, selected: ui.families,
+      open: ui.menu === 'families',
+      onOpen: function (open) { ui.menu = open ? 'families' : null; s.redraw(); },
+      onChange: function (sel) { ui.families = sel; s.redraw(); } });
     return el('div', { class: 'tap-ins__filters' }, el('div', { class: 'tap-ins__menus' }, [
-      menu('regions', t('regionsLabel'), regions, 'regions'),
-      menu('families', t('familiesLabel'), families, 'families'),
+      menu,
       el('p', { class: 'tap-ins__hint' }, t('filterHint'))
     ]));
   }
