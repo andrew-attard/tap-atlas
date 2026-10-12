@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, FIXTURES stream (docs/ARCHITECTURE.md section 20): the workbook writer honours
  *          the mappings (every value at its mapped cell, names not ids, blanks as no cell, a sheet only for the parts a
  *          region carries), the fixture mappings describe the fixtures' layouts, and files() gives File objects.
- * Provides: test cases X-import-fixtures-*
+ * Provides: test cases TPV-TC-784 to TPV-TC-797
  * Depends on: tests/harness.js, tests/test-setup.js, vendor/xlsx.mini.min.js, tests/fixtures/workbook-write.js,
  *             tests/fixtures/import-maps.js, tests/fixtures/mini-data.js, mini-p4.js, sample-expected.js,
  *             data/sample-plan-data.js, config/import-map.js
@@ -123,7 +123,7 @@
   }
 
   T.suite('import-fixtures', function () {
-    T.test('X-import-fixtures-map-mini', 'the mini mapping describes the mini fixture: regions, lookups, meta, rows and the recap grid', function (a) {
+    T.test('TPV-TC-784', 'the mini mapping describes the mini fixture: regions, lookups, meta, rows and the recap grid', function (a) {
       var f = T_FIXTURE('mini'), m = MAPS.mini;
       a.deepEqual(m.regions.map(function (r) { return r.id; }), ['alpha', 'bravo', 'charlie', 'delta']);
       a.deepEqual(m.regions[0], { id: 'alpha', name: 'Region A', file: 'Region A plan.xlsx', filterName: 'Region A' });
@@ -146,7 +146,7 @@
       a.equal(m.sections.marketCoverage.headerRow, undefined);
     });
 
-    T.test('X-import-fixtures-map-minip4', 'the miniP4 mapping adds the Phase 4 blocks at the fixture\'s rows, one header pair and the name cell', function (a) {
+    T.test('TPV-TC-785', 'the miniP4 mapping adds the Phase 4 blocks at the fixture\'s rows, one header pair and the name cell', function (a) {
       var f = T_FIXTURE('miniP4'), m = MAPS.miniP4;
       a.deepEqual(m.lookups, f.lookups);
       a.equal(m.sections.newBusiness.columns.solution, 'V');
@@ -176,7 +176,7 @@
       a.deepEqual(Object.assign({}, MAPS.mini.sections.recap, { blank: 'null' }), m.sections.recap, 'the recap grid is unchanged but for the blank rule: miniP2 plants a blank in a full grid');
     });
 
-    T.test('X-import-fixtures-mini-cells', 'mini: every value of every region sits at its mapped cell, the file name, title and date match', function (a) {
+    T.test('TPV-TC-786', 'mini: every value of every region sits at its mapped cell, the file name, title and date match', function (a) {
       var plan = T_FIXTURE('mini'), total = 0;
       plan.regions.forEach(function (r) { total += checkRegion(a, plan, MAPS.mini, r.id).n; });
       a.ok(total > 400, 'compared ' + total + ' cells');
@@ -184,7 +184,7 @@
       a.deepEqual(all.map(function (o) { return o.fileName; }), ['Region A plan.xlsx', 'Region B plan.xlsx', 'Region C plan.xlsx', 'Region D plan.xlsx']);
     });
 
-    T.test('X-import-fixtures-mini-blanks', 'mini: a null value leaves no cell, an empty recap leaves the grid empty, the sheet still exists', function (a) {
+    T.test('TPV-TC-787', 'mini: a null value leaves no cell, an empty recap leaves the grid empty, the sheet still exists', function (a) {
       var plan = T_FIXTURE('mini'), c = roundTrip(plan, MAPS.mini, 'charlie'), al = roundTrip(plan, MAPS.mini, 'alpha');
       a.equal(cell(c.wb, '1. Market Coverage', 'J10'), undefined, 'ind1 references is blank');
       a.equal(cell(c.wb, '1. Market Coverage', 'M11'), undefined, 'ind2 tier is blank');
@@ -210,7 +210,7 @@
       a.deepEqual(c.wb.SheetNames.slice().sort(), ['1. Market Coverage', '2. New Business', '3. Customer Growth', '4. Partner']);
     });
 
-    T.test('X-import-fixtures-names', 'cells hold lookup names and scale labels, not ids and scores', function (a) {
+    T.test('TPV-TC-788', 'cells hold lookup names and scale labels, not ids and scores', function (a) {
       var plan = T_FIXTURE('miniP4'), t = roundTrip(plan, MAPS.miniP4, 'alpha');
       a.equal(cell(t.wb, '1. Market Coverage', 'B10'), 'Healthcare');
       a.equal(cell(t.wb, '1. Market Coverage', 'D10'), 'Strong dynamics, business to take');
@@ -234,7 +234,7 @@
       a.equal(cell(mini.wb, '4. Partner', 'D10'), 'Developing', 'without a maturity lookup the text is written as it is');
     });
 
-    T.test('X-import-fixtures-no-tier', 'the New Business tier is never written, even through a mapped tier column', function (a) {
+    T.test('TPV-TC-789', 'the New Business tier is never written, even through a mapped tier column', function (a) {
       var map = copy(MAPS.mini);
       map.sections.newBusiness.columns.tier = 'W';
       var t = roundTrip(T_FIXTURE('mini'), map, 'alpha');
@@ -243,13 +243,13 @@
       a.equal(cell(t.wb, '2. New Business', 'B20'), 'Healthcare');
     });
 
-    T.test('X-import-fixtures-minip4-cells', 'miniP4: every value of Regions A, B and D sits at its mapped cell, the Phase 4 grids included', function (a) {
+    T.test('TPV-TC-790', 'miniP4: every value of Regions A, B and D sits at its mapped cell, the Phase 4 grids included', function (a) {
       var plan = T_FIXTURE('miniP4'), total = 0;
       ['alpha', 'bravo', 'delta'].forEach(function (id) { total += checkRegion(a, plan, MAPS.miniP4, id).n; });
       a.ok(total > 900, 'compared ' + total + ' cells');
     });
 
-    T.test('X-import-fixtures-minip4-blanks', 'miniP4: planted nulls leave no cell; the header pair, name cell and outsourcing cell are written', function (a) {
+    T.test('TPV-TC-791', 'miniP4: planted nulls leave no cell; the header pair, name cell and outsourcing cell are written', function (a) {
       var plan = T_FIXTURE('miniP4'), al = roundTrip(plan, MAPS.miniP4, 'alpha'), d = roundTrip(plan, MAPS.miniP4, 'delta');
       a.equal(cell(al.wb, '5. Recap', 'H30'), undefined, 'revenue new business ARR alliance B 2027 is null');
       a.equal(cell(al.wb, '5. Recap', 'E30'), 200);
@@ -280,14 +280,14 @@
       });
     });
 
-    T.test('X-import-fixtures-minip4-no-part', 'miniP4: Region C has no Phase 4 part, so no Phase 4 sheet', function (a) {
+    T.test('TPV-TC-792', 'miniP4: Region C has no Phase 4 part, so no Phase 4 sheet', function (a) {
       var t = roundTrip(T_FIXTURE('miniP4'), MAPS.miniP4, 'charlie');
       a.deepEqual(t.wb.SheetNames.slice().sort(), ['1. Market Coverage', '2. New Business', '3. Customer Growth', '4. Partner']);
       a.equal(cell(t.wb, '1. Market Coverage', 'C3'), 'Region C');
       a.equal(cell(t.wb, '4. Partner', 'I3'), undefined);
     });
 
-    T.test('X-import-fixtures-mismatch', 'a mapping that puts a value elsewhere than its sourceCell makes the writer throw', function (a) {
+    T.test('TPV-TC-793', 'a mapping that puts a value elsewhere than its sourceCell makes the writer throw', function (a) {
       var map = copy(MAPS.mini);
       map.sections.recap.rows.first = 6;
       a.throws(function () { W.workbooks(T_FIXTURE('mini'), map); });
@@ -296,7 +296,7 @@
       a.throws(function () { W.workbooks(T_FIXTURE('mini'), cols); });
     });
 
-    T.test('X-import-fixtures-sample-order', 'the sample gives seven workbooks in region order, named after the regions', function (a) {
+    T.test('TPV-TC-794', 'the sample gives seven workbooks in region order, named after the regions', function (a) {
       var out = W.workbooks(window.PLAN_DATA, window.IMPORT_MAP);
       a.deepEqual(out.map(function (o) { return o.regionId; }), ['na', 'latam', 'neu', 'seu', 'ceu', 'mea', 'apac']);
       a.deepEqual(out.map(function (o) { return o.fileName; }), window.PLAN_DATA.regions.map(function (r) { return r.source.fileName; }));
@@ -306,7 +306,7 @@
     });
 
     window.PLAN_DATA.regions.forEach(function (region) {
-      T.test('X-import-fixtures-sample-' + region.id, 'sample ' + region.name + ': every value sits at its mapped cell, headers, name, filter and date included', function (a) {
+      T.test('TPV-TC-795', 'sample ' + region.name + ': every value sits at its mapped cell, headers, name, filter and date included', function (a) {
         var res = checkRegion(a, window.PLAN_DATA, window.IMPORT_MAP, region.id);
         a.ok(res.n > 500, 'compared ' + res.n + ' cells');
         a.equal(cell(res.wb, '1. Market Coverage', 'B9'), 'Industry');
@@ -317,7 +317,7 @@
       });
     });
 
-    T.test('X-import-fixtures-extra', 'extra sections: one sheet per section with the rows at firstRow and on; none without rows', function (a) {
+    T.test('TPV-TC-796', 'extra sections: one sheet per section with the rows at firstRow and on; none without rows', function (a) {
       var plan = window.T_WITH_EXTRA(), f = window.SAMPLE_EXPECT.extra.fixture, map = copy(window.IMPORT_MAP);
       map.extra = [Object.assign({ sheet: '5. Events', firstRow: 8 }, copy(f.section))];
       plan.regions = plan.regions.filter(function (r) { return r.id === 'na' || r.id === 'ceu'; });
@@ -331,7 +331,7 @@
       a.equal(ceu.Sheets['5. Events'], undefined, 'Central Europe has no events');
     });
 
-    T.test('X-import-fixtures-files', 'files() gives File objects named after the regions with lastModified from the source, readable by the library', function (a) {
+    T.test('TPV-TC-797', 'files() gives File objects named after the regions with lastModified from the source, readable by the library', function (a) {
       var plan = one(T_FIXTURE('mini'), 'delta'), files = W.files(plan, MAPS.mini);
       a.equal(files.length, 1);
       a.ok(files[0] instanceof File, 'a File object');

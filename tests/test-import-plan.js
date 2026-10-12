@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, PLAN stream (docs/ARCHITECTURE.md section 20): the section 5 checks, the region
  *          order and duplicates of the plan build, the contract check, the data file text and the plain-text report, on
  *          hand-built regions and readings; and the round trips through the workbook writer on mini, miniP4 and the sample.
- * Provides: test cases X-import-plan-*
+ * Provides: test cases TPV-TC-827 to TPV-TC-851
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, tests/fixtures/mini-p4.js,
  *             tests/fixtures/workbook-write.js, tests/fixtures/import-maps.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
@@ -67,7 +67,7 @@
   function noKeys(a, list) { list.forEach(function (x) { a.ok(!/^\[importPanel/.test(x.message), 'wording found: ' + x.message); }); }
 
   T.suite('import-plan', function () {
-    T.test('X-import-plan-slug', 'slug makes a lower-case id with dashes and never rest or org', function (a) {
+    T.test('TPV-TC-827', 'slug makes a lower-case id with dashes and never rest or org', function (a) {
       a.equal(TAP.importRegion.slug('Middle East & Africa'), 'middle-east-africa');
       a.equal(TAP.importRegion.slug('  North America plan '), 'north-america-plan');
       a.equal(TAP.importRegion.slug('Rest'), 'rest-region');
@@ -75,7 +75,7 @@
       a.equal(TAP.importRegion.slug(''), 'region');
     });
 
-    T.test('X-import-plan-check-industries', 'A rated industry without a Market Coverage row is an error on the sheet naming the industry', function (a) {
+    T.test('TPV-TC-828', 'A rated industry without a Market Coverage row is an error on the sheet naming the industry', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha');
       a.deepEqual(checks(f, r, map).errors, [], 'a complete region has no error');
       r.marketCoverage = r.marketCoverage.filter(function (o) { return o.industryId !== 'ind3' && o.industryId !== 'other'; });
@@ -88,7 +88,7 @@
       noKeys(a, c.errors);
     });
 
-    T.test('X-import-plan-check-empty', 'A section present but empty gives a note naming the section, its sheet and first cell', function (a) {
+    T.test('TPV-TC-829', 'A section present but empty gives a note naming the section, its sheet and first cell', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), c = checks(f, region(f, 'charlie'), map);
       var empty = c.notes.filter(function (n) { return /is empty/.test(n.message); });
       a.deepEqual(empty.map(function (n) { return n.sheet + ' ' + n.cell; }).sort(), ['3. Customer Growth C10', '4. Partner B10', '4. Partner E5'].sort());
@@ -99,7 +99,7 @@
       a.equal(checks(f, region(f, 'alpha'), map).notes.filter(function (n) { return /is empty/.test(n.message); }).length, 0);
     });
 
-    T.test('X-import-plan-check-split', 'A channel split off 100% by more than a point is a note with the four cells', function (a) {
+    T.test('TPV-TC-830', 'A channel split off 100% by more than a point is a note with the four cells', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha');
       a.deepEqual(checks(f, r, map).notes, [], 'Region A is clean');
       r.newBusiness[0].channelSplit = { direct: 0.5, partner: 0.45, allianceA: 0, allianceB: 0 };
@@ -112,7 +112,7 @@
       a.equal(checks(f, r, map).notes.length, 0, 'half a point is within rounding');
     });
 
-    T.test('X-import-plan-check-arr', 'ARR potential year 1 off target accounts × hit rate × deal size is a note on the year 1 cell', function (a) {
+    T.test('TPV-TC-831', 'ARR potential year 1 off target accounts × hit rate × deal size is a note on the year 1 cell', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha');
       r.newBusiness[1].arrPotential[0] = 250;   // 10 × 0.1 × 200 = 200
       var c = checks(f, r, map);
@@ -125,7 +125,7 @@
       a.equal(checks(f, region(f, 'charlie'), map).notes.filter(function (n) { return /ARR potential/.test(n.message); }).length, 0, 'a blank hit rate is not checked');
     });
 
-    T.test('X-import-plan-check-segment', 'A segment that disagrees with the thresholds rule is a note on the segment cell', function (a) {
+    T.test('TPV-TC-832', 'A segment that disagrees with the thresholds rule is a note on the segment cell', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha');
       r.customerGrowth.accounts[1].segment = 'growth';   // a2: ARR 200, cumulative 110 under 150 gives core
       var c = checks(f, r, map);
@@ -138,7 +138,7 @@
       a.equal(checks(f, ch, map).notes.filter(function (n) { return /segment/.test(n.message); }).length, 0, 'blank thresholds: no check');
     });
 
-    T.test('X-import-plan-check-variance', 'A strategic plan variance off books minus plan is a note on the variance cell, when the mapping has one', function (a) {
+    T.test('TPV-TC-833', 'A strategic plan variance off books minus plan is a note on the variance cell, when the mapping has one', function (a) {
       var f = T_FIXTURE('miniP4'), map = testMap(f), r = region(f, 'alpha');
       // 2027 arr: books 400 + 150 + 100 + 40 = 690, plan 700, variance -10
       var item = r.strategicPlan.filter(function (o) { return o.type === 'arr' && o.year === 2027; })[0];
@@ -153,7 +153,7 @@
       a.equal(checks(f, r, map).notes.length, 0, 'no variance cells in the mapping: not checked');
     });
 
-    T.test('X-import-plan-check-revenue', 'Revenue above the order intake of the same year, channel, motion and type is a note on the revenue cell', function (a) {
+    T.test('TPV-TC-834', 'Revenue above the order intake of the same year, channel, motion and type is a note on the revenue cell', function (a) {
       var f = T_FIXTURE('miniP4'), map = testMap(f), r = region(f, 'alpha');
       var item = r.revenue.filter(function (o) { return o.sourceCell === 'E30'; })[0];   // 2027 direct new business arr: 200 of 400
       item.value = 400.4;
@@ -166,7 +166,7 @@
       a.match(c.notes[0].message, /400/);
     });
 
-    T.test('X-import-plan-check-books', 'Books value above the customer value for a reseller channel, over ARR and services, is a note with the cells', function (a) {
+    T.test('TPV-TC-835', 'Books value above the customer value for a reseller channel, over ARR and services, is a note with the cells', function (a) {
       var f = T_FIXTURE('miniP4'), map = testMap(f), r = region(f, 'alpha');
       // 2027 partner: books 150 + 20 + 40 + 5 = 215, customer 200 + 40 + 50 + 10 = 300
       var item = r.booksValue.filter(function (o) { return o.sourceCell === 'F60'; })[0];
@@ -182,7 +182,7 @@
       a.equal(checks(f, r, map).notes.length, 0);
     });
 
-    T.test('X-import-plan-check-coverage', 'A coverage ratio more than 5% from pipeline over forecast minus actuals is a note on the coverage cell', function (a) {
+    T.test('TPV-TC-836', 'A coverage ratio more than 5% from pipeline over forecast minus actuals is a note on the coverage cell', function (a) {
       var f = T_FIXTURE('miniP4'), map = testMap(f), r = region(f, 'alpha');
       a.equal(checks(f, r, map).notes.length, 0, 'recurring: 480 / (640 - 400) = 2, as the workbook says');
       r.baseYear.items[1].coverage = 2.2;
@@ -194,7 +194,7 @@
       a.equal(checks(f, r, map).notes.length, 0, 'within 5%');
     });
 
-    T.test('X-import-plan-build-order', 'build puts regions in mapping order, then unmatched workbooks in file order; missing lists the rest', function (a) {
+    T.test('TPV-TC-837', 'build puts regions in mapping order, then unmatched workbooks in file order; missing lists the rest', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f);
       var zulu = Object.assign(copy(region(f, 'alpha')), { id: 'zulu', name: 'Region Z' }), yankee = Object.assign(copy(region(f, 'alpha')), { id: 'yankee', name: 'Region Y' });
       var readings = [reading(zulu), reading(region(f, 'delta')), reading(yankee), reading(region(f, 'alpha'))];
@@ -206,7 +206,7 @@
       a.equal(withMap(function () { return TAP.importPlan.build([], map, NOW); }), null, 'no region: no plan');
     });
 
-    T.test('X-import-plan-duplicates', 'Two workbooks for one region error both and neither is used', function (a) {
+    T.test('TPV-TC-838', 'Two workbooks for one region error both and neither is used', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f);
       var again = reading(copy(region(f, 'alpha')));
       again.fileName = 'Region A plan (copy).xlsx';
@@ -221,7 +221,7 @@
       a.deepEqual(res.missing, [{ id: 'charlie', name: 'Region C' }, { id: 'delta', name: 'Region D' }], 'a region with a failed reading is not missing');
     });
 
-    T.test('X-import-plan-meta', 'meta carries the schema version, the time, the mapping\'s template, currency, years and sample flag, and lookups are a copy', function (a) {
+    T.test('TPV-TC-839', 'meta carries the schema version, the time, the mapping\'s template, currency, years and sample flag, and lookups are a copy', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f);
       var plan = withMap(function () { return TAP.importPlan.build([reading(region(f, 'alpha'))], map, NOW); });
       a.equal(plan.meta.schemaVersion, TAP.schemaVersion);
@@ -237,7 +237,7 @@
       a.deepEqual(Object.keys(plan), ['meta', 'lookups', 'regions']);
     });
 
-    T.test('X-import-plan-usable', 'A plan with a contract error (a tier of 4) checks as not usable; a clean plan is usable', function (a) {
+    T.test('TPV-TC-840', 'A plan with a contract error (a tier of 4) checks as not usable; a clean plan is usable', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f);
       var clean = withMap(function () { return TAP.importPlan.finish(f.regions.map(reading), map, NOW); });
       a.equal(clean.usable, true, TAP.importWrite.report(clean));
@@ -251,14 +251,14 @@
       a.match(res.check.errors[0].message, /regions\[0\]\.marketCoverage\[0\]\.tier/);
     });
 
-    T.test('X-import-plan-sheets', 'sheetsOf lists every sheet the mapping names once', function (a) {
+    T.test('TPV-TC-841', 'sheetsOf lists every sheet the mapping names once', function (a) {
       var map = testMap(T_FIXTURE('miniP4'));
       map.nameCell = { sheet: '1. Market Coverage', cell: 'C3' };
       a.deepEqual(TAP.importPlan.sheetsOf(map).sort(), ['1. Market Coverage', '2. New Business', '3. Customer Growth', '4. Partner', '5. Recap', '6. Order Intake']);
     });
 
     ['mini', 'miniP4'].forEach(function (name) {
-      T.test('X-import-plan-text-' + name.toLowerCase(), 'text() writes window.PLAN_DATA = {...}; that parses back to the ' + name + ' plan, one list item per line', function (a) {
+      T.test('TPV-TC-842', 'text() writes window.PLAN_DATA = {...}; that parses back to the ' + name + ' plan, one list item per line', function (a) {
         var plan = T_FIXTURE(name), s = TAP.importWrite.text(plan), lines = s.split('\n');
         a.match(s, /^\/\*\n \* File: data\/plan-data\.js\n/);
         a.match(s, /\nwindow\.PLAN_DATA = \{\n/);
@@ -276,7 +276,7 @@
       });
     });
 
-    T.test('X-import-plan-text-literals', 'text() writes JSON literals: a non-finite number becomes null, the key order of a region follows the sample', function (a) {
+    T.test('TPV-TC-843', 'text() writes JSON literals: a non-finite number becomes null, the key order of a region follows the sample', function (a) {
       var plan = T_FIXTURE('miniP4');
       plan.regions[0].marketCoverage[0].currentArr = Infinity;
       plan.regions[0].outsourcingPct = NaN;
@@ -289,7 +289,7 @@
       a.equal(TAP.importWrite.jsonPart('nothing here'), '');
     });
 
-    T.test('X-import-plan-download', 'download makes a blob URL and hands it to TAP.panelExport.download as plan-data.js', function (a) {
+    T.test('TPV-TC-844', 'download makes a blob URL and hands it to TAP.panelExport.download as plan-data.js', function (a) {
       var saved = TAP.panelExport.download, calls = [];
       TAP.panelExport.download = function (url, name) { calls.push({ url: url, name: name }); };
       try {
@@ -302,7 +302,7 @@
       a.match(calls[0].url, /^blob:/);
     });
 
-    T.test('X-import-plan-report', 'report names every region with its state, each note and error with sheet › cell, the missing regions and the contract check', function (a) {
+    T.test('TPV-TC-845', 'report names every region with its state, each note and error with sheet › cell, the missing regions and the contract check', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), readings = [reading(region(f, 'alpha')), reading(region(f, 'charlie'))];
       readings[1].ok = false; readings[1].region = null; readings[1].parts = { marketCoverage: 'read', recap: 'error' };
       readings[1].errors.push({ message: 'The filter is set to another region.', sheet: '4. Partner', cell: 'C2' });
@@ -389,12 +389,12 @@
       return sampleRun;
     }
 
-    rt('X-import-plan-roundtrip-mini', 'The mini fixture written as workbooks and imported again is the same plan', function (a) {
+    rt('TPV-TC-846', 'The mini fixture written as workbooks and imported again is the same plan', function (a) {
       var plan = T_FIXTURE('mini');
       return TAP.importPlan.run(inMemory(plan, MAPS.mini), MAPS.mini, { now: NOW }).then(function (res) { same(a, res, plan, 'mini'); });
     });
 
-    rt('X-import-plan-roundtrip-minip4', 'The miniP4 fixture round-trips; partner A2\'s maturity "Strategic" comes back as its id', function (a) {
+    rt('TPV-TC-847', 'The miniP4 fixture round-trips; partner A2\'s maturity "Strategic" comes back as its id', function (a) {
       return TAP.importPlan.run(inMemory(T_FIXTURE('miniP4'), MAPS.miniP4), MAPS.miniP4, { now: NOW }).then(function (res) {
         same(a, res, expectP4(), 'miniP4');
         var r = res.plan.regions[0];
@@ -402,11 +402,11 @@
       });
     });
 
-    rt('X-import-plan-roundtrip-sample', 'The sample data round-trips through its own mapping', function (a) {
+    rt('TPV-TC-848', 'The sample data round-trips through its own mapping', function (a) {
       return sample().then(function (res) { same(a, res, window.PLAN_DATA, 'sample'); });
     });
 
-    rt('X-import-plan-roundtrip-reverse', 'Reading the workbooks in reverse order gives the regions in mapping order all the same', function (a) {
+    rt('TPV-TC-849', 'Reading the workbooks in reverse order gives the regions in mapping order all the same', function (a) {
       var files = inMemory(T_FIXTURE('miniP4'), MAPS.miniP4).reverse();
       return TAP.importPlan.run(files, MAPS.miniP4, { now: NOW }).then(function (res) {
         a.deepEqual(res.plan.regions.map(function (r) { return r.id; }), T_FIXTURE('miniP4').regions.map(function (r) { return r.id; }));
@@ -414,7 +414,7 @@
       });
     });
 
-    rt('X-import-plan-roundtrip-filter', 'A recap sheet filtered to another region fails that region only; the plan holds the rest and is usable', function (a) {
+    rt('TPV-TC-850', 'A recap sheet filtered to another region fails that region only; the plan holds the rest and is usable', function (a) {
       var plan = T_FIXTURE('miniP4'), books = W.workbooks(plan, MAPS.miniP4), spec = MAPS.miniP4.sections.revenue;
       var files = books.map(function (b) {
         if (b.regionId === 'bravo') b.wb.Sheets[spec.sheet][spec.filterCell] = { t: 's', v: 'Region A' };
@@ -431,7 +431,7 @@
       });
     });
 
-    rt('X-import-plan-roundtrip-repeat', 'Running the import twice gives identical plans apart from the times', function (a) {
+    rt('TPV-TC-851', 'Running the import twice gives identical plans apart from the times', function (a) {
       var plan = T_FIXTURE('miniP4'), files = inMemory(plan, MAPS.miniP4);
       return TAP.importPlan.run(files, MAPS.miniP4, { now: NOW }).then(function (first) {
         return TAP.importPlan.run(files, MAPS.miniP4, { now: '2026-10-13T09:00:00Z' }).then(function (second) {

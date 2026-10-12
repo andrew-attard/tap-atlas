@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, READ stream (docs/ARCHITECTURE.md section 20): the workbook reader, the mapping,
  *          the value kinds, the field tables, the row sections and the grid blocks. Tiny workbooks are built here with
  *          SheetJS itself, so nothing depends on the workbook writer fixture.
- * Provides: test cases X-import-core-*
+ * Provides: test cases TPV-TC-798 to TPV-TC-826
  * Depends on: tests/harness.js, the app scripts, vendor/xlsx.mini.min.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
  * Owner: READ stream (#585)
@@ -80,7 +80,7 @@
   T.suite('import-core', function () {
     /* ---------- the workbook reader ---------- */
 
-    T.test('X-import-core-book-values', 'Stored values come back as they are; blanks, empty text and spaces are null', function (a) {
+    T.test('TPV-TC-798', 'Stored values come back as they are; blanks, empty text and spaces are null', function (a) {
       var book = open({ S1: [['Text', 5, '', '  ', true, null, 2.5], [null, 'x']] });
       a.ok(TAP.xlsxBook.available(), 'SheetJS is loaded');
       a.deepEqual(book.sheetNames, ['S1']);
@@ -102,14 +102,14 @@
       a.equal(s.cell('Z99'), null);
     });
 
-    T.test('X-import-core-book-errors', 'An error cell and a formula without a stored result are marked, not read', function (a) {
+    T.test('TPV-TC-799', 'An error cell and a formula without a stored result are marked, not read', function (a) {
       var s = open({ S1: { A1: ERR, B1: FORMULA, C1: 7 } }).sheet('S1');
       a.deepEqual(s.value('A1'), { error: true, found: '#REF!' });
       a.deepEqual(s.value('B1'), { error: true, formula: true });
       a.equal(s.value('C1'), 7);
     });
 
-    T.test('X-import-core-book-sheets', 'A sheet matches exactly, else loosely with a flag, else null; sheets can be restricted', function (a) {
+    T.test('TPV-TC-800', 'A sheet matches exactly, else loosely with a flag, else null; sheets can be restricted', function (a) {
       var book = open({ '1. Market Coverage': [['a']], '6. Recap': [['b']] });
       a.equal(book.sheet('1. Market Coverage').loose, false);
       var loose = book.sheet('  1. market  coverage ');
@@ -123,13 +123,13 @@
       a.equal(part.sheet('6. Recap').value('A1'), 'b', 'a loosely named restriction still loads the sheet');
     });
 
-    T.test('X-import-core-book-modified', 'The saved date is ISO at seconds precision, or null when the workbook has none', function (a) {
+    T.test('TPV-TC-801', 'The saved date is ISO at seconds precision, or null when the workbook has none', function (a) {
       var when = new Date(Date.UTC(2026, 9, 1, 12, 30, 15, 700));
       a.equal(open({ S1: [[1]] }, { modified: when }).modified, '2026-10-01T12:30:15Z');
       a.equal(open({ S1: [[1]] }).modified, null);
     });
 
-    T.test('X-import-core-book-columns', 'Column helpers, including two- and three-letter columns, serial dates and iso()', function (a) {
+    T.test('TPV-TC-802', 'Column helpers, including two- and three-letter columns, serial dates and iso()', function (a) {
       var X = TAP.xlsxBook;
       a.equal(X.colIndex('A'), 1);
       a.equal(X.colIndex('E'), 5);
@@ -156,7 +156,7 @@
 
     /* ---------- the mapping ---------- */
 
-    T.test('X-import-core-map-sample', 'The sample mapping has no problems and derives the sample data’s sourceMap and lookups exactly', function (a) {
+    T.test('TPV-TC-803', 'The sample mapping has no problems and derives the sample data’s sourceMap and lookups exactly', function (a) {
       var M = TAP.importMap;
       a.deepEqual(M.problems(window.IMPORT_MAP), []);
       a.deepEqual(M.sourceMap(window.IMPORT_MAP), window.PLAN_DATA.meta.sourceMap);
@@ -166,7 +166,7 @@
       a.deepEqual(M.REQUIRED, ['marketCoverage', 'newBusiness', 'customerGrowth', 'partners', 'recap']);
     });
 
-    T.test('X-import-core-map-problems', 'Every kind of mapping problem gives one plain sentence', function (a) {
+    T.test('TPV-TC-804', 'Every kind of mapping problem gives one plain sentence', function (a) {
       var M = TAP.importMap;
       function one(label, change) {
         var m = sampleMap();
@@ -230,7 +230,7 @@
       a.equal(M.problems(many).length, 3);
     });
 
-    T.test('X-import-core-map-normalize', 'normalize() copies the mapping and fills the defaults', function (a) {
+    T.test('TPV-TC-805', 'normalize() copies the mapping and fills the defaults', function (a) {
       var m = sampleMap();
       delete m.sections.recap.blank; delete m.sections.marketCoverage.key; delete m.sections.customerGrowth.idPattern;
       delete m.aliases; delete m.regions[0].filterName;
@@ -250,7 +250,7 @@
       a.equal(n.regions[5].filterName, 'Middle East & Africa');
     });
 
-    T.test('X-import-core-map-match', 'matchRegion finds a region by exact file name, by a pattern with *, in any case', function (a) {
+    T.test('TPV-TC-806', 'matchRegion finds a region by exact file name, by a pattern with *, in any case', function (a) {
       var M = TAP.importMap, m = sampleMap();
       var hit = M.matchRegion(m, 'North America plan.xlsx');
       a.ok(hit, 'exact');
@@ -272,7 +272,7 @@
       a.equal(M.glob('plan (1).xlsx', 'Plan (1).XLSX'), true, 'regex characters are literal');
     });
 
-    T.test('X-import-core-map-extra', 'extraSections() keeps the on-screen parts of each extra entry', function (a) {
+    T.test('TPV-TC-807', 'extraSections() keeps the on-screen parts of each extra entry', function (a) {
       var m = sampleMap();
       m.extra = [{ id: 'events', title: '5. Events', intro: 'Field events.', sheet: '5. Events', firstRow: 8, key: 'event',
         columns: [{ key: 'event', label: 'Event', unit: 'text', kind: 'IN', column: 'B' }, { key: 'budget', label: 'Budget', unit: 'money', kind: 'IN', column: 'F' }] }];
@@ -287,7 +287,7 @@
       return TAP.importValues.create(window.IMPORT_MAP.lookups, aliases || {}, numberFormat || window.IMPORT_MAP.meta.numberFormat);
     }
 
-    T.test('X-import-core-values-number', 'Numbers: text with separators and percent signs, a decimal comma, a scale; text and booleans are bad', function (a) {
+    T.test('TPV-TC-808', 'Numbers: text with separators and percent signs, a decimal comma, a scale; text and booleans are bad', function (a) {
       var V = values();
       a.equal(V.number(1250.5), 1250.5);
       a.equal(V.number(0), 0, 'zero is a value');
@@ -312,7 +312,7 @@
       a.ok(V.isBad(V.BAD) && !V.isBad(null) && !V.isBad(0) && !V.isBad(''), 'isBad');
     });
 
-    T.test('X-import-core-values-rating', 'Ratings: a score, its text, a level’s label in any case, an alias; anything else is bad', function (a) {
+    T.test('TPV-TC-809', 'Ratings: a score, its text, a level’s label in any case, an alias; anything else is bad', function (a) {
       var V = values({ scales: { growthPotential: { Strong: 3 } } });
       a.equal(V.rating(3, 'growthPotential'), 3);
       a.equal(V.rating('2', 'growthPotential'), 2);
@@ -328,7 +328,7 @@
       a.equal(V.read('rating:criticality', 'Core, business critical'), 3, 'read() splits the kind');
     });
 
-    T.test('X-import-core-values-tier', 'Tiers: 1 to 3, their text, a tier’s name, an alias; "Tier 2" is bad without one', function (a) {
+    T.test('TPV-TC-810', 'Tiers: 1 to 3, their text, a tier’s name, an alias; "Tier 2" is bad without one', function (a) {
       var V = values();
       a.equal(V.tier(2), 2);
       a.equal(V.tier('1'), 1);
@@ -342,7 +342,7 @@
       a.equal(values({ tiers: { 'Tier 2': 2 } }).tier('Tier 2'), 2, 'alias');
     });
 
-    T.test('X-import-core-values-id', 'Lookup ids: the id, the name in any case or spacing, an alias; maturity stays text without its lookup', function (a) {
+    T.test('TPV-TC-811', 'Lookup ids: the id, the name in any case or spacing, an alias; maturity stays text without its lookup', function (a) {
       var V = values({ industries: { 'Health care': 'healthcare' } });
       a.equal(V.id('healthcare', 'industries'), 'healthcare');
       a.equal(V.id('Healthcare', 'industries'), 'healthcare');
@@ -369,7 +369,7 @@
       a.ok(free.isBad(free.read('solution', 'Solution 1')), 'other lookups that are missing give bad');
     });
 
-    T.test('X-import-core-values-risk-month-year', 'Risk levels, months from a serial, a date or text, and years', function (a) {
+    T.test('TPV-TC-812', 'Risk levels, months from a serial, a date or text, and years', function (a) {
       var V = values({ riskLevel: { H: 'high' } });
       a.equal(V.risk('High'), 'high');
       a.equal(V.risk('LOW'), 'low');
@@ -390,7 +390,7 @@
       a.equal(V.year(null), null);
     });
 
-    T.test('X-import-core-values-read', 'read() dispatches by kind, keeps text as written, and carries an error marker as bad', function (a) {
+    T.test('TPV-TC-813', 'read() dispatches by kind, keeps text as written, and carries an error marker as bad', function (a) {
       var V = values();
       a.equal(V.read('money', null), null);
       a.equal(V.read('text', null), null);
@@ -415,7 +415,7 @@
 
     /* ---------- the field tables ---------- */
 
-    T.test('X-import-core-fields-sections', 'SECTIONS gives every row section its kinds, key, by-year fields and order', function (a) {
+    T.test('TPV-TC-814', 'SECTIONS gives every row section its kinds, key, by-year fields and order', function (a) {
       var S = TAP.importFields.SECTIONS;
       a.deepEqual(Object.keys(S).sort(), ['baseYear', 'customerGrowth', 'marketCoverage', 'newBusiness', 'partners']);
       Object.keys(S).forEach(function (k) {
@@ -473,7 +473,7 @@
 
     /* ---------- the row sections ---------- */
 
-    T.test('X-import-core-rows-market', 'Market Coverage rows: values by kind, a spare row skipped, a bad rating noted, an unknown industry left out', function (a) {
+    T.test('TPV-TC-815', 'Market Coverage rows: values by kind, a spare row skipped, a bad rating noted, an unknown industry left out', function (a) {
       var c = ctx(), book = open({ '1. Market Coverage': MC_SHEET });
       var res = TAP.importRows.section(book, c.map, 'marketCoverage', c);
       a.equal(res.present, true);
@@ -503,7 +503,7 @@
       a.deepEqual(TAP.importRows.section(book, c.map, 'partners', ctx()), { present: false, items: [] }, 'a missing sheet');
     });
 
-    T.test('X-import-core-rows-header', 'A heading not where the mapping says is an error naming the cell, and the sheet is not read', function (a) {
+    T.test('TPV-TC-816', 'A heading not where the mapping says is an error naming the cell, and the sheet is not read', function (a) {
       var c = ctx(), bad = copy(MC_SHEET);
       bad.B9 = 'Sector';
       var res = TAP.importRows.section(open({ '1. Market Coverage': bad }), c.map, 'marketCoverage', c);
@@ -539,7 +539,7 @@
       growth: { year2: 0.1, year3: 0.1 }, successFactors: 'Refs', arrPotential: [160, 176, 193.6], servicesPotential: [32, 35.2, 38.72],
       servicesRatio: 0.2, solution: 'sol1' };
 
-    T.test('X-import-core-rows-newbiz', 'New Business rows: dotted paths, by-year lists, the tier from Market Coverage and the cross-check note', function (a) {
+    T.test('TPV-TC-817', 'New Business rows: dotted paths, by-year lists, the tier from Market Coverage and the cross-check note', function (a) {
       var m = sampleMap();
       m.sections.newBusiness.columns.tier = 'W';
       var book = open({ '1. Market Coverage': MC_SHEET, '2. New Business': NB_SHEET }), c = ctx(m);
@@ -580,7 +580,7 @@
       Q12: 2, R12: 0, S12: 0, T12: 22, U12: 'core'
     };
 
-    T.test('X-import-core-rows-accounts', 'Customer Growth: thresholds from cells, accounts with ids from the pattern, a spare row skipped', function (a) {
+    T.test('TPV-TC-818', 'Customer Growth: thresholds from cells, accounts with ids from the pattern, a spare row skipped', function (a) {
       var c = ctx(), res = TAP.importRows.customerGrowth(open({ '3. Customer Growth': CG_SHEET }), c.map, c);
       a.equal(res.present, true);
       a.deepEqual(res.thresholds, { strategicArr: 750, scaledArr: 100, growthArr: 200, growthOrderIntake: 300 });
@@ -624,7 +624,7 @@
       B21: 'Fictional Partner 2', C21: 'Direct', D21: 'Unknown level', G21: 1, H21: ERR, J21: FORMULA, K21: 5, L21: 5
     };
 
-    T.test('X-import-core-rows-partners', 'Partners: lookup names to ids, bad values noted with their cells, fixed cells read by kind', function (a) {
+    T.test('TPV-TC-819', 'Partners: lookup names to ids, bad values noted with their cells, fixed cells read by kind', function (a) {
       var c = ctx(), book = open({ '4. Partner': PT_SHEET });
       var res = TAP.importRows.section(book, c.map, 'partners', c);
       a.deepEqual(res.items[0], { sourceRow: 20, name: 'Fictional Partner 1', channel: 'partner', maturity: 'enable', expertiseGeo: 'Home',
@@ -653,7 +653,7 @@
 
     var BY_SHEET = { C4: 2026, C5: '2026-08', B8: 'Recurring', C8: 520, D8: 500, E8: 300, F8: 500, G8: 2.5, B9: 'Services', C9: 100, D9: 90, E9: 50, F9: 100 };
 
-    T.test('X-import-core-rows-baseyear', 'The base year: header cells, one item per category, coverage only when mapped', function (a) {
+    T.test('TPV-TC-820', 'The base year: header cells, one item per category, coverage only when mapped', function (a) {
       var c = ctx(), res = TAP.importRows.baseYear(open({ '7. Order Intake': BY_SHEET }), c.map, c);
       a.equal(res.present, true);
       a.deepEqual(res.value, { year: 2026, actualsThrough: '2026-08', items: [
@@ -674,7 +674,7 @@
       a.deepEqual(c.notes, []);
     });
 
-    T.test('X-import-core-rows-extra', 'Extra sections: rows in the extra-section shape, units read as kinds, a missing sheet gives no entry', function (a) {
+    T.test('TPV-TC-821', 'Extra sections: rows in the extra-section shape, units read as kinds, a missing sheet gives no entry', function (a) {
       var m = sampleMap();
       m.extra = [{ id: 'events', title: '5. Events', intro: 'x', sheet: '5. Events', firstRow: 8, key: 'event', columns: [
         { key: 'event', label: 'Event', unit: 'text', kind: 'IN', column: 'B' }, { key: 'invited', label: 'Accounts invited', unit: 'count', kind: 'IN', column: 'E' },
@@ -694,7 +694,7 @@
 
     /* ---------- the grid blocks ---------- */
 
-    T.test('X-import-core-grid-expand-sample', 'The sample mapping’s axes expand to the sample’s cells: recap, strategic plan and routes', function (a) {
+    T.test('TPV-TC-822', 'The sample mapping’s axes expand to the sample’s cells: recap, strategic plan and routes', function (a) {
       var G = TAP.importGrid, S = window.IMPORT_MAP.sections;
       var rows = G.expand(S.recap.rows, 'rows');
       a.equal(rows.length, 12);
@@ -725,7 +725,7 @@
       a.deepEqual(cols[11], { at: 'P', fields: { year: 2029, type: 'hardware' } });
     });
 
-    T.test('X-import-core-grid-expand-mini', 'Explicit strides, the mini layouts, columns past Z and enumerated axes', function (a) {
+    T.test('TPV-TC-823', 'Explicit strides, the mini layouts, columns past Z and enumerated axes', function (a) {
       var G = TAP.importGrid, years = [2027, 2028, 2029];
       var tiny = { first: 5, axes: [{ field: 'motion', values: ['newBusiness', 'customerGrowth'] }, { field: 'type', values: ['arr', 'services'] }, { field: 'year', values: years }] };
       var rows = G.expand(tiny, 'rows');
@@ -749,7 +749,7 @@
     var RECAP_SHEET = { E5: 400, F5: 200, G5: 0, H5: 0, E6: 80, F6: '40', H6: ERR, E8: 100 };
     var RECAP_ORDER = ['year', 'sourceCell', 'channel', 'motion', 'type', 'value'];
 
-    T.test('X-import-core-grid-block', 'A grid block: items in the recap shape with sourceCell, blank cells skipped or null by the rule, an all-blank row adds nothing', function (a) {
+    T.test('TPV-TC-824', 'A grid block: items in the recap shape with sourceCell, blank cells skipped or null by the rule, an all-blank row adds nothing', function (a) {
       var c = ctx(), book = open({ '4. Partner': RECAP_SHEET });
       var res = TAP.importGrid.block(book, c.map, 'recap', c, 'North America');
       a.equal(res.present, true);
@@ -775,7 +775,7 @@
       a.deepEqual(empty, { present: true, items: [] }, 'a sheet with nothing in the grid');
     });
 
-    T.test('X-import-core-grid-filter', 'The recap sheet’s region filter must name the region, loosely; otherwise an error names the cell', function (a) {
+    T.test('TPV-TC-825', 'The recap sheet’s region filter must name the region, loosely; otherwise an error names the cell', function (a) {
       var c = ctx(), book = open({ '6. Recap': { C2: 'north  AMERICA', E5: 10 } });
       var ok = TAP.importGrid.block(book, c.map, 'revenue', c, 'North America');
       a.equal(ok.items.length, 1);
@@ -796,7 +796,7 @@
       a.deepEqual(TAP.importGrid.block(book, c.map, 'nothing', ctx(), 'North America'), { present: false, items: [] }, 'block not mapped');
     });
 
-    T.test('X-import-core-grid-variance', 'The strategic plan reads its variance cells beside the values; routes carry route, type and solution', function (a) {
+    T.test('TPV-TC-826', 'The strategic plan reads its variance cells beside the values; routes carry route, type and solution', function (a) {
       var c = ctx(), book = open({ '6. Recap': { C2: 'North America', E47: 600, F47: 650, I47: -20, K47: 5, E100: 400, F100: 400, G100: '500' } });
       var res = TAP.importGrid.block(book, c.map, 'strategicPlan', c, 'North America');
       a.deepEqual(res.items, [
