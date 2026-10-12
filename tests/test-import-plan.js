@@ -373,19 +373,29 @@
         a.equal(r.source.importedAt, NOW);
       });
     }
+    // The workbooks as the plain file objects the contract accepts ({ name, lastModified, arrayBuffer }), with the bytes
+    // already in hand. A real File is read through the browser's blob machinery, and under the headless runner's virtual
+    // time that wait lets the clock jump to the harness's limit timer, so these cases timed out in CI by scheduling,
+    // not by work (the whole sample import takes about 200 ms). The File path itself is covered by the UI tests.
+    function inMemory(plan, map) {
+      return W.workbooks(plan, map).map(function (out) {
+        var region = plan.regions.filter(function (r) { return r.id === out.regionId; })[0], buf = W.toArrayBuffer(out.wb);
+        return { name: out.fileName, lastModified: Date.parse(region.source.fileModified), arrayBuffer: function () { return Promise.resolve(buf); } };
+      });
+    }
     var sampleRun = null;
     function sample() {
-      if (!sampleRun) sampleRun = TAP.importPlan.run(W.files(window.PLAN_DATA, window.IMPORT_MAP), window.IMPORT_MAP, { now: NOW });
+      if (!sampleRun) sampleRun = TAP.importPlan.run(inMemory(window.PLAN_DATA, window.IMPORT_MAP), window.IMPORT_MAP, { now: NOW });
       return sampleRun;
     }
 
     rt('X-import-plan-roundtrip-mini', 'The mini fixture written as workbooks and imported again is the same plan', function (a) {
       var plan = T_FIXTURE('mini');
-      return TAP.importPlan.run(W.files(plan, MAPS.mini), MAPS.mini, { now: NOW }).then(function (res) { same(a, res, plan, 'mini'); });
+      return TAP.importPlan.run(inMemory(plan, MAPS.mini), MAPS.mini, { now: NOW }).then(function (res) { same(a, res, plan, 'mini'); });
     });
 
     rt('X-import-plan-roundtrip-minip4', 'The miniP4 fixture round-trips; partner A2\'s maturity "Strategic" comes back as its id', function (a) {
-      return TAP.importPlan.run(W.files(T_FIXTURE('miniP4'), MAPS.miniP4), MAPS.miniP4, { now: NOW }).then(function (res) {
+      return TAP.importPlan.run(inMemory(T_FIXTURE('miniP4'), MAPS.miniP4), MAPS.miniP4, { now: NOW }).then(function (res) {
         same(a, res, expectP4(), 'miniP4');
         var r = res.plan.regions[0];
         a.deepEqual(Object.keys(r).slice(0, 8), ['id', 'name', 'source', 'marketCoverage', 'newBusiness', 'partners', 'recap', 'customerGrowth'], 'the sample\'s key order');
@@ -397,7 +407,7 @@
     });
 
     rt('X-import-plan-roundtrip-reverse', 'Reading the workbooks in reverse order gives the regions in mapping order all the same', function (a) {
-      var files = W.files(T_FIXTURE('miniP4'), MAPS.miniP4).reverse();
+      var files = inMemory(T_FIXTURE('miniP4'), MAPS.miniP4).reverse();
       return TAP.importPlan.run(files, MAPS.miniP4, { now: NOW }).then(function (res) {
         a.deepEqual(res.plan.regions.map(function (r) { return r.id; }), T_FIXTURE('miniP4').regions.map(function (r) { return r.id; }));
         same(a, res, expectP4(), 'reversed');
@@ -408,7 +418,8 @@
       var plan = T_FIXTURE('miniP4'), books = W.workbooks(plan, MAPS.miniP4), spec = MAPS.miniP4.sections.revenue;
       var files = books.map(function (b) {
         if (b.regionId === 'bravo') b.wb.Sheets[spec.sheet][spec.filterCell] = { t: 's', v: 'Region A' };
-        return new File([W.toArrayBuffer(b.wb)], b.fileName, { lastModified: Date.parse('2026-09-28T10:00:00Z') });
+        var buf = W.toArrayBuffer(b.wb);
+        return { name: b.fileName, lastModified: Date.parse('2026-09-28T10:00:00Z'), arrayBuffer: function () { return Promise.resolve(buf); } };
       });
       return TAP.importPlan.run(files, MAPS.miniP4, { now: NOW }).then(function (res) {
         var bravo = res.regions.filter(function (r) { return r.id === 'bravo'; })[0];
@@ -421,7 +432,7 @@
     });
 
     rt('X-import-plan-roundtrip-repeat', 'Running the import twice gives identical plans apart from the times', function (a) {
-      var plan = T_FIXTURE('miniP4'), files = W.files(plan, MAPS.miniP4);
+      var plan = T_FIXTURE('miniP4'), files = inMemory(plan, MAPS.miniP4);
       return TAP.importPlan.run(files, MAPS.miniP4, { now: NOW }).then(function (first) {
         return TAP.importPlan.run(files, MAPS.miniP4, { now: '2026-10-13T09:00:00Z' }).then(function (second) {
           var t1 = TAP.importWrite.text(first.plan).split(NOW).join('T'), t2 = TAP.importWrite.text(second.plan).split('2026-10-13T09:00:00Z').join('T');
