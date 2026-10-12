@@ -38,6 +38,10 @@ jobs:
         run: |
           if [ -f tools/generate-sample-data.js ]; then node tools/generate-sample-data.js --check; fi
 
+      - name: Sample import mapping matches its generator
+        run: |
+          if [ -f tools/build-import-map.js ]; then node tools/build-import-map.js --check; fi
+
       - name: Denylist scan (skipped in CI)
         run: scripts/check-text.sh README.md
 
