@@ -172,7 +172,7 @@
       });
     });
 
-    T.test('X-shell-actions', 'The page-wide actions slot sits after the Data button, holding Present and Tour, for other streams to fill (D72, D116)', function (a) {
+    T.test('X-shell-actions', 'The page-wide actions slot sits after the Data button, holding Present, Tour and Import, for other streams to fill (D72, D116, D147)', function (a) {
       withApp(function () {
         var root = startApp();
         root.style.width = '1280px';
@@ -181,9 +181,10 @@
         a.ok(!qs('.tap-topbar', root).contains(slot), 'not in the top bar');
         a.ok(slot.classList.contains('tap-topbar__actions'), 'the actions slot');
         var others = Array.prototype.filter.call(slot.children, function (c) {
-          return !c.classList.contains('tap-present__start') && !c.classList.contains('tap-tour__button');
+          return !c.classList.contains('tap-present__start') && !c.classList.contains('tap-tour__button') && !c.classList.contains('tap-imp__button');
         });
-        a.equal(others.length, 0, 'only Present (US-3.1.2) and Tour until another stream adds to it');
+        a.equal(others.length, 0, 'only Present (US-3.1.2), Tour and Import (D147) until another stream adds to it');
+        a.ok(qs('.tap-tour__button', slot).nextElementSibling === qs('.tap-imp__button', slot), 'Import after Tour');
         a.equal(date && date.nextElementSibling, slot, 'right after the Data button');
         slot.appendChild(TAP.dom.el('button', { type: 'button', class: 'tap-btn' }, 'Example action'));
         a.ok(slot.getBoundingClientRect().left >= date.getBoundingClientRect().right - 1, 'right of the data date');

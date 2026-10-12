@@ -49,7 +49,7 @@
   function screen(root, w) { root.style.width = w + 'px'; root.style.setProperty('--tap-edge', Math.max(24, Math.min(48, w * 0.03)) + 'px'); }
   function onView(root, view) { TAP.store.set({ view: view }); return qs('.tap-cmp', root); }
   function pageButtons(scope) {
-    return { data: qs('.tap-cmp__date', scope), present: qs('.tap-present__button', scope), tour: qs('.tap-tour__button', scope) };
+    return { data: qs('.tap-cmp__date', scope), present: qs('.tap-present__button', scope), tour: qs('.tap-tour__button', scope), imp: qs('.tap-imp__button', scope) };
   }
   // The number of regions a panel's chart draws along its category axis.
   function chartCategories(root, reportId) {
@@ -367,12 +367,12 @@
       });
     });
 
-    T.test(D116, 'The region profile shows the same three buttons', function (a) {
+    T.test(D116, 'The region profile shows the same four buttons', function (a) {
       TAP.store.set({ view: 'regions', region: 'alpha' });
       var root = T.dom.mount(), v = TAP.views.get('regions').mount(root);
       try {
         var top = qs('.tap-pf__top', root), b = pageButtons(top);
-        a.equal([b.data, b.present, b.tour].map(txt).join(' | '), 'Data · 2 Oct | Present | Tour', 'the same labels');
+        a.equal([b.data, b.present, b.tour, b.imp].map(txt).join(' | '), 'Data · 2 Oct | Present | Tour | Import', 'the same labels');
         a.ok(!!qs('.tap-pagebtns', top) && qs('.tap-pagebtns', top).contains(b.tour), 'from the shared builder');
         a.ok(txt(qs('.tap-pf__head', root)).length > 0, 'the header text stays');
       } finally { v.destroy(); TAP.store.reset(); }
@@ -387,8 +387,8 @@
           var wide = qsa('*', bar).filter(function (n) { return visible(n) && rect(n).right > rect(bar).right + 1; });
           a.ok(bar.scrollWidth <= bar.clientWidth + 1, w + ' px: the bar does not scroll sideways');
           a.deepEqual(wide.map(function (n) { return n.className; }), [], w + ' px: nothing runs past the bar');
-          a.ok([b.data, b.present, b.tour].every(function (n) { return rect(n).right <= rect(bar).right + 1; }), w + ' px: every button inside the bar');
-          a.ok(sameRow(b.data, b.present) && sameRow(b.present, b.tour), w + ' px: the three stay together');
+          a.ok([b.data, b.present, b.tour, b.imp].every(function (n) { return rect(n).right <= rect(bar).right + 1; }), w + ' px: every button inside the bar');
+          a.ok(sameRow(b.data, b.present) && sameRow(b.present, b.tour) && sameRow(b.tour, b.imp), w + ' px: the four stay together');
           a.ok(sameRow(b.data, mode) || rect(b.data).top >= rect(mode).bottom - 1, w + ' px: beside the modes or below them');
         });
       });
@@ -398,7 +398,7 @@
       run(function () {
         var root = startApp(), bar = onView(root, 'guide'), b = pageButtons(bar);
         screen(root, 1280);
-        a.ok([b.data, b.present, b.tour].every(visible), 'the three buttons show');
+        a.ok([b.data, b.present, b.tour, b.imp].every(visible), 'the four buttons show');
         a.deepEqual(qsa('.tap-cmp__title, .tap-cmp__mode, [data-picker]', bar).filter(visible).map(txt), [], 'no Compare, modes or pickers');
         a.ok(rect(bar).height <= rect(b.data).height + 24, 'one slim row (' + Math.round(rect(bar).height) + ' px)');
       });
