@@ -4,21 +4,21 @@ Step by step, for the data owner taking the app onto real data the day before th
 
 Generic on purpose: this copy names no organization, region, file or person. The run log, real file names and anything organization-specific live in the internal project folder, outside this repository (D2).
 
-**Have ready:** the real regional workbooks, the internal copy of the app folder (a copy taken from the public repository's main branch, kept on approved storage outside any git clone), the import built with Copilot (`docs/IMPORT-BRIEF.md`, prompt 2 in `docs/COPILOT-PROMPTS.md`), `content/organization.js` with the logo file under `assets/` (prompt 3), and, if the organization's colours are wanted, a `js/theme.js` edited in the internal copy (prompt 4).
+**Have ready:** the real regional workbooks, the internal copy of the app folder (a copy taken from the public repository's main branch, kept on approved storage outside any git clone), the filled mapping `config/import-map.js` for the real template, written over the sample copy in the internal copy (`docs/IMPORT-BRIEF.md` section 6.4; prompt 2, then 16, in `docs/COPILOT-PROMPTS.md`), `content/organization.js` with the logo file under `assets/` (prompt 3), and, if the organization's colours are wanted, a `js/theme.js` edited in the internal copy (prompt 4). The import itself is in the app: the **Import** button.
 
 ## 1. The run
 
 - [ ] **1. Move company-specific material into the internal project folder.**
-  Real workbooks, the import's mapping and code if it names anything organization-specific, the region list and short names, organization terms, brand assets, decisions taken with Copilot, and this run's log.
-  *Good:* the public repository holds none of it. If you work from a git clone, `scripts/verify.sh` passes its denylist scan and `git status` shows no data or organization file. The internal copy of the app folder has `data/plan-data.js`, `content/organization.js`, the `assets/` folder and any palette-changed `js/theme.js` only there.
+  Real workbooks, the filled mapping `config/import-map.js` (it names the real sheets, regions, file names and product names), the region list and short names, organization terms, brand assets, decisions taken with Copilot, and this run's log.
+  *Good:* the public repository holds none of it. If you work from a git clone, `scripts/verify.sh` passes its denylist scan and `git status` shows no data, mapping or organization change. The internal copy of the app folder has `data/plan-data.js`, the real `config/import-map.js`, `content/organization.js`, the `assets/` folder and any palette-changed `js/theme.js` only there.
 
-- [ ] **2. Produce the data file with Copilot's import.**
-  Run the import on every regional workbook and save the result as `data/plan-data.js` in the internal copy of the folder.
-  *Good:* the import's own validation report shows no errors for any region (notes are fine, they are read in step 4). One region per workbook. `meta.isSample` is `false`. The file is well under 1 MB.
+- [ ] **2. Import the workbooks from the Import button.**
+  Open `index.html` (without a data file it shows the "No plan data found" screen, which has the button too), press **Import** and pick every regional workbook. Read the report: the summary, then per region its file, saved date, the parts read, its errors and its notes with sheet › cell, then the contract check on the whole plan. If any region has an error, press **Copy report**, paste it into Copilot with prompt 6, fix the mapping (never the data file by hand) and import again.
+  *Good:* the report shows no error for any region (notes are fine, they are read in step 4), no region missing from the mapping's list, no mapping problem, and a clean contract check. One region per workbook. **Use these plans now** is enabled.
 
-- [ ] **3. Open the app and clear contract-check errors.**
-  Double-click `index.html`. If it stops with "The data file has problems that stop the app from opening", press **Copy the list**, paste it into Copilot with prompt 6, fix the import (never the data file by hand), re-run and reopen.
-  *Good:* the Overview opens within about 2 seconds with All regions and no focus region. No error screen. No "No plan data found" or version message. The browser console (F12) shows no errors.
+- [ ] **3. Use the plans, save the data file and reopen.**
+  Press **Use these plans now**: the app shows the imported plans. Then press **Save data/plan-data.js**, move the download into `data/` in the internal copy of the folder, replacing the old file, and double-click `index.html` again.
+  *Good:* the Overview opens within about 2 seconds with All regions and no focus region, on the new data without the import. No error screen. No "No plan data found" or version message. `meta.isSample` is `false` in the saved file, which is well under 1 MB. The browser console (F12) shows no errors.
 
 - [ ] **4. Review the data sources panel and import notes.**
   Click the "Data:" date on the comparison bar.
@@ -64,7 +64,7 @@ Generic on purpose: this copy names no organization, region, file or person. The
 
 ## 1a. The full template: checks after the import
 
-Only when the workbooks are the full template (prompt 16 in `docs/COPILOT-PROMPTS.md`, section 4 of `docs/IMPORT-BRIEF.md`). Do these after step 4 and before step 6. Ask Copilot to run the first four on the data file (step 3 of prompt 16); the app's own check repeats them as warnings in the data sources panel.
+Only when the workbooks are the full template (prompt 16 in `docs/COPILOT-PROMPTS.md`, section 4 of `docs/IMPORT-BRIEF.md`). Do these after step 4 and before step 6. The Import panel's report already runs checks A to E on every region and shows each mismatch as a note with its sheet and cell (step 3 of prompt 16 reads those notes with you); the app's own check repeats them as warnings in the data sources panel.
 
 - [ ] **A. The variance equals the plan minus the strategic plan.**
   For each region, year and product category with a strategic plan figure, the workbook's variance is the books value of that year and category minus the strategic plan.

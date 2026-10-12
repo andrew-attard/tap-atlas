@@ -23,7 +23,7 @@ The build phase worked in a public repository on fictional data, with checks tha
 
 | Who | Does | Needs |
 |---|---|---|
-| `<the approved AI tool>` | Builds the import, fills the organization layer, tunes the thresholds the owner asks for, prepares the presentation file | The documents named in each step, one real workbook or its header rows inside the tool only |
+| `<the approved AI tool>` | Fills the mapping the app's importer reads, fills the organization layer, tunes the thresholds the owner asks for, prepares the presentation file | The documents named in each step, one real workbook or its header rows inside the tool only |
 | `<the data owner>` | Takes the public build onto approved storage, runs the import, places the files, works through the checklist, keeps the run log | The workbooks, the internal copy, this document filled in |
 | `<the presenter or manager>` | Opens `index.html` from the folder | Nothing else: no import, no install |
 
@@ -33,7 +33,8 @@ The build phase worked in a public repository on fictional data, with checks tha
 
 | File or folder | What goes there | Prompt |
 |---|---|---|
-| `data/plan-data.js` | The real data, written by the import; never edited by hand | 2, 16, 6 |
+| `config/import-map.js` | The mapping: where every field sits in the real template, the region list with the workbook file names, the lookups with the real names. The public copy describes the fictional sample; the real one is written over it here | 2, 16, 6 |
+| `data/plan-data.js` | The real data, written by the app's Import button (**Save data/plan-data.js**) and moved into `data/`; never written by hand, by the tool or by any script | none: the Import button |
 | `content/organization.js` | Wording, organization terms, Guide sections, region short names, the confidentiality label, the logo and app name | 3 |
 | `assets/` | The logo file named in the organization layer | 3 |
 | `config/settings.js` | Combining weights and the insight ranking weights, where the owner has confirmed values | 5 |
@@ -43,7 +44,7 @@ The build phase worked in a public repository on fictional data, with checks tha
 
 **May not change:** anything else under `js/` or `css/`, the report definitions and views under `config/reports*.js` and `config/views.js`, the glossary and Guide files under `content/` (the organization layer adds to them instead), the Data Contract (additions only, and only on the public side), the sample edition `index-sample.html` and its data, the tests. Prompts 7 to 13 of `docs/COPILOT-PROMPTS.md` (a new report, column, view or template section) are extensions, not customization: they need `<the owner>`'s approval first, and the result stays internal.
 
-A simple test for the tool: if a change would be the same for any organization, it belongs on the public side; if it is specific to this organization, it belongs in one of the seven places above.
+A simple test for the tool: if a change would be the same for any organization, it belongs on the public side; if it is specific to this organization, it belongs in one of the eight places above. The importer itself (`js/import/`) is the same for every organization and may not change; the mapping is where the template's particulars go.
 
 ## 4. Start from a tagged build
 
@@ -56,7 +57,8 @@ A simple test for the tool: if a change would be the same for any organization, 
 
 | Input | Who provides it | Where it goes in the app |
 |---|---|---|
-| The regional planning workbooks | `<the regional leaders, via the data owner>` | The import reads them and writes `data/plan-data.js` |
+| The regional planning workbooks | `<the regional leaders, via the data owner>` | The **Import** button in the app reads them through the mapping in `config/import-map.js` and saves `data/plan-data.js` |
+| The template's layout: sheet names, header and first rows, the column of each field, the fixed cells, the recap filter cell, the dropdown lists | `<the data owner>`, from one workbook inside the tool | `config/import-map.js`, filled by the tool |
 | The region list and short names | `<the data owner>` | `regions` in `content/organization.js` (ids as in the data file) |
 | Organization terms, acronyms, product and programme names | `<RevOps>` | `glossary` in the organization layer; general wording through `text` |
 | How the plans are filled in: the planning calendar, who owns each section, what each figure means in this organization, deadlines | `<the director of RevOps>` | Guide sections in the organization layer, part `planning` (new sections, or paragraphs added to existing ones); shown with the "Organization wording" badge |
@@ -73,8 +75,8 @@ Leadership context is text, not figures. It explains; it does not judge a region
 Each step names the prompt to use from `docs/COPILOT-PROMPTS.md` and the files to attach. Start a new chat per step and paste the prompt as it is; the constraints paragraph in every prompt keeps the tool to the rules.
 
 1. **Orientation** (prompt 1): `README.md`, `docs/ARCHITECTURE.md`, `docs/DATA-CONTRACT.md`. The tool learns the folder and the data shape before it sees a workbook.
-2. **Build the import** (prompt 2, then prompt 16 for the full template): `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, the fixtures and the check named in the brief, then one real workbook or screenshots of its header rows, inside the tool only. The brief's open choices (section 6 there: fixed cells or found headers, where region names come from, an import page or a script) are decided now, with the real workbooks in view, and written in the run log.
-3. **First real run** with `docs/REAL-DATA-CHECKLIST.md`: produce `data/plan-data.js`, open `index.html`, clear any contract-check errors with prompt 6 (fix the import, never the data file by hand), read every import note in the data sources panel.
+2. **Fill the mapping** (prompt 2, then prompt 16 for the full template): `config/import-map.js` (the sample mapping, the shape to fill), `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, section 20 of `docs/ARCHITECTURE.md` and the second example the brief names, then one real workbook or screenshots of its header rows, inside the tool only. The tool returns the mapping, never code. Save it over `config/import-map.js` in the internal copy, press **Import** in `index.html`, pick the workbooks and read the report; paste the report back to the tool until no region has an error (prompt 6). The answers given to the tool (first rows, columns, which forecast column, the ids) go in the run log.
+3. **First real run** with `docs/REAL-DATA-CHECKLIST.md`: **Use these plans now**, read every import note in the data sources panel, **Save data/plan-data.js** and move the file into `data/`, reopen `index.html`. A contract-check error is fixed in the mapping or the workbook with prompt 6, never in the data file by hand.
 4. **Fill the organization layer** (prompt 3): `content/organization.example.js` and the content files it names, plus the inputs of section 5. Save it as `content/organization.js` next to the starter; put the logo under `assets/`. Open `index.html`: the data sources panel shows no organization message, the label, logo and name show.
 5. **Colours and font**, only if wanted (prompt 4): `js/theme.js` in the internal copy. The theme tests in `tests.html?suite=theme` must still pass.
 6. **Thresholds and weights** (prompt 5): `config/settings.js`, `config/insight-rules.js`, with the values `<the CRO>` confirmed. Write every changed value and why in the run log; section 8 needs that list.
@@ -94,16 +96,16 @@ Each step names the prompt to use from `docs/COPILOT-PROMPTS.md` and the files t
 Public builds keep coming: fixes and features on fictional data. Taking one is a copy in one direction.
 
 1. Take the new release as in section 4, into a new folder beside the current internal copy.
-2. Lay the internal files back over it: `data/plan-data.js`, `content/organization.js`, the `assets/` folder, `config/running-order.js`, and the tuned values in `config/settings.js` and `config/insight-rules.js` (compare the release's copies with yours using the run log's list of changed values; the files themselves may have gained new entries, so carry the values over, not the whole file). A palette-changed `js/theme.js` is carried the same way, value by value.
+2. Lay the internal files back over it: `data/plan-data.js`, the real mapping `config/import-map.js` (over the release's sample copy), `content/organization.js`, the `assets/` folder, `config/running-order.js`, and the tuned values in `config/settings.js` and `config/insight-rules.js` (compare the release's copies with yours using the run log's list of changed values; the files themselves may have gained new entries, so carry the values over, not the whole file). A palette-changed `js/theme.js` is carried the same way, value by value.
 3. Open `index.html`, run section 7, then the checklist's regression. Only then does the new folder replace the old one; the old one becomes the dated known-good copy.
-4. Nothing flows back. If the new release needs a different data file shape, its release notes say so, and the import is extended first (prompt 16 or 6).
+4. Nothing flows back. If the new release needs a different data file shape or a new entry in the mapping, its release notes say so: extend the mapping first (prompt 16 or 6), import again from the button and save the new data file.
 
 ## 9. Record keeping
 
 Keep, in the internal project folder and nowhere else:
 
 - **The run log:** date, release version, workbooks used, import notes accepted, every changed configuration value and why, who checked what.
-- **Decisions taken with the tool:** the import's open choices, thresholds, wording choices. The public Decision Log stays generic and never receives these.
+- **Decisions taken with the tool:** the mapping's answers (first rows, columns, which forecast column, the ids given to solutions, partner types and routes), thresholds, wording choices. The public Decision Log stays generic and never receives these.
 - **The filled copy of this document.**
 
 ## 10. Placeholders checklist

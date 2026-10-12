@@ -15,7 +15,7 @@ This README is for the maintainer working with a chat assistant such as Microsof
 No server, no install, no internet. Everything, including the chart library and fonts, is in the folder.
 
 - **To look around:** double-click `index-sample.html`. It shows fictional sample data, with a "Sample data" banner on every screen.
-- **To present real plans:** double-click `index.html`, once `data/plan-data.js` exists (see [Replace the data file](#replace-the-data-file)).
+- **To present real plans:** double-click `index.html`, once `data/plan-data.js` exists, or press **Import** on its no-data screen and pick the planning workbooks (see [Replace the data file](#replace-the-data-file)).
 
 Chrome is the main browser; Edge also works. Both are tested. Opened without a data file, `index.html` shows a "No plan data found" screen.
 
@@ -24,10 +24,10 @@ Chrome is the main browser; Edge also works. Both are tested. Opened without a d
 | Page | Data file | Organization layer | In the public repository |
 |---|---|---|---|
 | `index-sample.html` | `data/sample-plan-data.js` (fictional, generated) | none | yes |
-| `index.html` | `data/plan-data.js` (real, from the import) | `content/organization.js` | the page only: both files it adds are gitignored |
+| `index.html` | `data/plan-data.js` (real, saved from the Import panel) | `content/organization.js` | the page only: both files it adds are gitignored |
 | `tests.html` | `tests/fixtures/mini-data.js` and the sample data | none | yes |
 
-All three pages load the same app scripts in the same order. Only the data and organization lines differ. Real data and organization wording live only in the **internal copy** of the folder, on approved storage, never in the public repository.
+All three pages load the same app scripts in the same order. Only the data and organization lines differ. Both editions carry the import (D147): the **Import** button reads the planning workbooks in the browser through the mapping in `config/import-map.js`; the public copy of that mapping describes the fictional sample, and the real template's mapping, filled by the organization's approved AI tool, replaces it in the internal copy. Real data, the real mapping and organization wording live only in the **internal copy** of the folder, on approved storage, never in the public repository.
 
 ## Folder layout
 
@@ -241,7 +241,7 @@ The in-app import (D147, `docs/ARCHITECTURE.md` section 20): the planning workbo
 | `docs/HANDOVER.md` | The handover guide: start here. What the app is, refreshing the data, the checks, which document for which job, known limits |
 | `docs/DATA-CONTRACT.md` | The exact shape of the data file. The only interface between data and views |
 | `docs/ARCHITECTURE.md` | How the parts fit and the contract each one codes against |
-| `docs/IMPORT-BRIEF.md` | What the import must do, for building it in Copilot |
+| `docs/IMPORT-BRIEF.md` | The import brief: the rules the in-app importer keeps, the template's sections, how the three open choices were settled, the mapping file and how to check a run |
 | `docs/EXTENDING-TEMPLATE.md` | How to bring another template section into the app: an extra section, a measure and report, or a new view |
 | `docs/COPILOT-PROMPTS.md` | Ready-made Copilot prompts, each with the files to attach |
 | `docs/REAL-DATA-CHECKLIST.md` | Step by step for the real-data run and before each demo |
@@ -301,10 +301,12 @@ So: **data** says what the plans hold, **config** says what to show and how to w
 
 ## Replace the data file
 
-1. Run the import (built in Copilot from `docs/IMPORT-BRIEF.md`) on the regional workbooks.
-2. Save its output as `data/plan-data.js` in the internal copy of the folder, replacing the old file.
-3. Double-click `index.html`. If it stops with "The data file has problems that stop the app from opening", press **Copy the list** and use prompt 6 in `docs/COPILOT-PROMPTS.md`. Fix the import, never the data file by hand.
-4. Click the "Data" button (with the data date) on the comparison bar to check every region's file, dates and import notes.
+The import runs inside the app (D147). It needs the mapping for the real template in `config/import-map.js`, filled once with prompts 2 and 16 in `docs/COPILOT-PROMPTS.md` (`docs/IMPORT-BRIEF.md` section 6.4 says what it holds).
+
+1. Open `index.html` and press **Import** (on the comparison bar, or on the "No plan data found" screen when there is no data file yet). Pick every regional workbook.
+2. Read the report: per region its file, saved date, the parts read, its errors and its notes with sheet › cell, then the contract check on the whole plan. If a region has an error, press **Copy report** and use prompt 6 in `docs/COPILOT-PROMPTS.md`: fix the mapping, never the data file by hand, and import again.
+3. Press **Use these plans now** to show the imported plans at once. Click the "Data" button (with the data date) on the comparison bar to check every region's file, dates and import notes.
+4. Press **Save data/plan-data.js** and move the download into `data/` in the internal copy of the folder, replacing the old file. The next time `index.html` opens, it loads that file without the import.
 
 The full run is in `docs/REAL-DATA-CHECKLIST.md`.
 
@@ -328,12 +330,13 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 | Logo and app name | `content/organization.example.js` (`settings.brand`, `text.app.name`) and the logo file under `assets/` in the internal copy (prompt 3) | `index.html`: the top bar and the tab title; the data sources panel shows no organization message |
 | Colours and font | `js/theme.js` (prompt 4); edit it in the internal copy only | `tests.html?suite=theme`, then `index.html` |
 | Organization wording | `content/organization.example.js`, `content/glossary.js`, `content/guide.js`, `content/ui-text.js`, and the `content/text-*.js` file that holds the phrase (prompt 3) | The data sources panel in `index.html` shows no organization message |
-| A data file error | `docs/DATA-CONTRACT.md`, `js/core/check.js`, `content/text-data.js`, the import's files, and the copied problem list (prompt 6) | `index.html` opens; read the data sources panel |
+| The mapping for the real template | `config/import-map.js` (the sample mapping, to fill), `docs/IMPORT-BRIEF.md`, `docs/DATA-CONTRACT.md`, `docs/ARCHITECTURE.md` (section 20), `tests/fixtures/import-maps.js` (prompt 2) | **Import** in `index.html`: the report shows no error for any region |
+| An import error or a data file error | `config/import-map.js`, `docs/DATA-CONTRACT.md`, `docs/ARCHITECTURE.md` (section 20), `docs/IMPORT-BRIEF.md`, and the report copied from the Import panel (prompt 6) | **Import** again; the report is clean, `index.html` opens; read the data sources panel |
 | Adding a measure | `js/engine/measures.js` (or `js/engine/scores.js` for per-industry figures), `content/text-engine.js` (its label), `docs/DATA-CONTRACT.md`, `config/settings.js` if it is a weighted rate | `tests.html`, then the report that uses it |
 | The presentation for a meeting | the presentation file (`config/running-order.js`), `docs/ARCHITECTURE.md` (section 18.2), the definitions files of the reports to show (prompt 14) | "Present the saved presentation" in the Guide of `index-sample.html` steps through every step; nothing listed as skipped in the data sources panel |
 | Keeping a custom chart, or offering a measure in "Build a chart" | `js/engine/custom.js`, `config/custom-topics.js` (its topic and key measures), `config/reports.js`, the view's `config/reports-*.js` file, `config/views.js`, the measure files (prompt 15) | `tests.html`, then the view or "Build a chart" in the menu |
-| The full template's parts in the import | `docs/IMPORT-BRIEF.md` (section 4), `docs/DATA-CONTRACT.md`, `tests/fixtures/mini-p4.js`, `js/core/check-p4.js`, `content/text-data.js`, the import's files (prompt 16) | The data sources panel in `index.html`, then the full template checks in `docs/REAL-DATA-CHECKLIST.md` |
-| Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, the import's files (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |
+| The full template's parts in the mapping | `config/import-map.js`, `docs/IMPORT-BRIEF.md` (section 4), `docs/DATA-CONTRACT.md`, `docs/ARCHITECTURE.md` (section 20.1), `tests/fixtures/import-maps.js` (prompt 16) | The Import panel's report, the data sources panel in `index.html`, then the full template checks in `docs/REAL-DATA-CHECKLIST.md` |
+| Another template section | `docs/EXTENDING-TEMPLATE.md`, `docs/DATA-CONTRACT.md`, `js/core/extra.js`, `config/import-map.js` (its `extra` list) (prompts 11 to 13) | The Other sections view in `index.html`, then `tests.html` |
 | A general wording change | The `content/text-*.js` file or `content/ui-text.js` that holds the phrase | The screen that shows it |
 
 **Adding a new code file** also means adding its `<script>` line to all three pages in the same place. Either add the file to the list in `tools/build-pages.js` and run `node tools/build-pages.js`, or add the same line by hand to each page. Prefer adding to an existing file when it stays under about 300 lines.
@@ -344,7 +347,7 @@ Copilot sees only what you attach. Attach these, plus `docs/ARCHITECTURE.md` if 
 - Keep files small (under about 300 lines), each with its header: Purpose, Provides, Depends on, Used by.
 - Colours and font sizes only in `js/theme.js`; words only in `content/`; numbers to tune only in `config/settings.js`.
 - `docs/DATA-CONTRACT.md` is the only interface between the data and the views.
-- Never put real data or organization names into files that go to the public repository. `data/plan-data.js`, `content/organization.js` and the `assets/` folder are gitignored; a palette-changed `js/theme.js` stays in the internal copy.
+- Never put real data or organization names into files that go to the public repository. `data/plan-data.js`, `content/organization.js` and the `assets/` folder are gitignored; a palette-changed `js/theme.js` and the real template's `config/import-map.js` stay in the internal copy: a real mapping never comes back to the repository, whose copy describes the fictional sample.
 
 More detail: `docs/ARCHITECTURE.md` (contracts), `docs/DATA-CONTRACT.md` (data), `CONTRIBUTING.md` (branches, commits, pull requests; the public repository only). An internal copy follows `docs/INTERNAL-HANDOVER.md` instead: it is never a git folder and nothing from it is pushed or published.
 
