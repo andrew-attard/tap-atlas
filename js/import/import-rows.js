@@ -138,6 +138,8 @@
     if (!sheet) return { present: false, thresholds: {}, accounts: [] };
     var fixed = cells(sheet, spec.cells, kinds.cells, ctx), pattern = spec.idPattern || '{region}-a{nn}';
     var accounts = read(sheet, spec, kinds, ctx).items.map(function (it, i) {
+      // The contract: growthPct is null when the 3-year multiplier was used instead (three blank growth cells)
+      if (Array.isArray(it.growthPct) && it.multiplier3y != null && it.growthPct.every(function (v) { return v === null; })) it.growthPct = null;
       return Object.assign({ sourceRow: it.sourceRow, id: accountId(pattern, ctx.regionId, i + 1) }, it);
     });
     return { present: true, thresholds: fixed.thresholds || {}, accounts: accounts };

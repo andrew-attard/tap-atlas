@@ -593,8 +593,13 @@
       a.equal(res.accounts[1].id, 'na-a02', 'numbered over the non-blank rows');
       a.equal(res.accounts[1].sourceRow, 12);
       a.equal(res.accounts[1].riskLevel, null);
-      a.deepEqual(res.accounts[1].growthPct, [null, null, null]);
+      a.equal(res.accounts[1].growthPct, null, 'the multiplier was used: growthPct is null, as the contract says');
       a.equal(res.accounts[1].multiplier3y, 1.5);
+      var noMult = copy(CG_SHEET);
+      delete noMult.L12;
+      var c5 = ctx(), both = TAP.importRows.customerGrowth(open({ '3. Customer Growth': noMult }), c5.map, c5);
+      a.deepEqual(both.accounts[1].growthPct, [null, null, null], 'neither given: three blanks');
+      a.equal(both.accounts[1].multiplier3y, null);
       a.equal(res.accounts[1].segment, 'core', 'an id as written');
       a.deepEqual(c.notes, []);
       a.deepEqual(c.errors, []);
