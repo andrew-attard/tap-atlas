@@ -44,14 +44,16 @@ window.TEST_FIXTURES = window.TEST_FIXTURES || {};
     }
   };
 
-  // Flattens the grid into Data Contract recap items, each with its own cell (column by channel, row by line).
+  // Flattens the grid into Data Contract recap items, each with its own cell: column by channel, one row per line at
+  // 5 + motion x 16 + type x 8 + year (rows 5 to 7, 13 to 15, 21 to 23 and 29 to 31), stepping over the partner rows 10
+  // to 12 on the same sheet so that no cell holds two values when the fixture is written as a workbook.
   function recap(grid) {
     var out = [];
     MOTIONS.forEach(function (m, mi) {
       TYPES.forEach(function (t, ti) {
         grid[m][t].forEach(function (line, yi) {
           line.forEach(function (v, ci) {
-            out.push({ year: p.meta.years[yi], sourceCell: COLS[ci] + (5 + mi * 6 + ti * 3 + yi), channel: CH[ci],
+            out.push({ year: p.meta.years[yi], sourceCell: COLS[ci] + (5 + mi * 16 + ti * 8 + yi), channel: CH[ci],
               motion: m, type: t, value: v });
           });
         });
