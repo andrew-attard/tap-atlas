@@ -89,8 +89,9 @@
     } catch (e) { done(); throw e; }
   }
   function items(root) { return qsa('.tap-ins__item', root).map(function (n) { return n.getAttribute('data-insight'); }); }
-  // The filters are two dropdowns (D126): 'data-region' reads the Regions one, 'data-family' the Families one.
-  function menuOf(attr) { return attr === 'data-region' ? 'regions' : 'families'; }
+  // The filter is the Families dropdown (D126); the regions are the comparison bar's (D146). The attr is kept so the
+  // shared helpers read as before.
+  function menuOf(attr) { return attr === 'data-family' ? 'families' : attr; }
   function ms(root, name) { return root.querySelector('.tap-ms[data-ms="' + name + '"]'); }
   function chip(root, attr, id) { return root.querySelector('.tap-ms[data-ms="' + menuOf(attr) + '"] input[data-value="' + id + '"]'); }
   // An option's counts: insights to discuss and background facts, or null when the option is not offered.
@@ -402,20 +403,22 @@
       });
     });
 
-    T.test('TPV-TC-139', 'The family and region filters leave only matching insights', function (a) {
+    T.test('TPV-TC-139', 'The family filter and the comparison bar leave only matching insights', function (a) {
       withInsights(function (root) {
         chip(root, 'data-family', 'judgement').click();
         a.deepEqual(items(root).sort(), ['strongRating:neu:pharma', 'tierVsPipeline:seu:retail'], 'judgement only');
         a.equal(chip(root, 'data-family', 'judgement').checked, true, 'its box is ticked');
         chip(root, 'data-family', 'judgement').click();
-        chip(root, 'data-region', 'latam').click();
+        a.ok(!ms(root, 'regions'), 'no Regions dropdown on the page: the comparison bar chooses the regions (D146)');
+        TAP.store.set({ cmp: { mode: 'set', set: ['latam'] } });
         a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability', 'pipelineCover:latam'], 'Latin America only');
         chip(root, 'data-family', 'priorities').click();
         a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability'], 'Latin America and priorities');
-        chip(root, 'data-region', 'apac').click();
-        a.equal(items(root).length, 2, 'two regions widen the region filter (either region): still both priorities insights');
+        TAP.store.set({ cmp: { mode: 'set', set: ['latam', 'apac'] } });
+        a.equal(items(root).length, 2, 'two regions in the comparison (either region): still both priorities insights');
+        a.equal(chip(root, 'data-family', 'priorities').checked, true, 'the family choice survives a comparison change');
         root.querySelector('.tap-ins__clear').click();
-        a.equal(items(root).length, 8, 'Clear filters shows everything again');
+        a.equal(items(root).length, 4, 'Clear shows every insight naming either region again');
       });
     });
 
@@ -423,26 +426,10 @@
       withInsights(function (root) {
         a.deepEqual(items(root).sort(), ['concentration:na', 'consensus:education', 'groupPriority:datacenters:ability',
           'notYetWinnable:fsm', 'pipelineCover:latam'], 'one against one: insights about either region');
-        a.deepEqual(qsa('.tap-ms[data-ms="regions"] input[data-value]', root).map(function (c) { return c.getAttribute('data-value'); }), ['na', 'latam'],
-          'region filter offers the regions in scope');
         TAP.store.set({ cmp: { mode: 'set', set: ['mea', 'apac'] } });
         a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability', 'notYetWinnable:fsm'],
           'redrawn for the new comparison');
       }, { mode: 'pair', focus: 'na', second: 'latam' });
-    });
-
-    // Review fix #375 (SV-7): a region filter whose region leaves the comparison no longer applies, not even once
-    T.test('X-review-SV-7', 'A region chip that leaves the comparison stops filtering at once', function (a) {
-      withInsights(function (root) {
-        chip(root, 'data-region', 'mea').click();
-        a.equal(chip(root, 'data-region', 'mea').checked, true, 'Middle East and Africa is ticked');
-        TAP.store.set({ cmp: { mode: 'pair', focus: 'na', second: 'latam' } });
-        a.ok(!chip(root, 'data-region', 'mea'), 'its option is gone with it');
-        a.equal(txt(ms(root, 'regions').querySelector('.tap-ms__btn')), 'Regions: All', 'the button names no choice');
-        a.deepEqual(items(root).sort(), ['concentration:na', 'consensus:education', 'groupPriority:datacenters:ability',
-          'notYetWinnable:fsm', 'pipelineCover:latam'], 'every insight about either region, unfiltered');
-        a.ok(!root.querySelector('.tap-ins__none'), 'no "nothing matches" message');
-      });
     });
 
     T.test('TPV-TC-140', 'An insight expands to show its figures, rule and sources', function (a) {
@@ -509,7 +496,7 @@
       });
     });
 
-    T.test('TPV-TC-143', 'Counts per family and per region match the hand count of the fixture', function (a) {
+    T.test('TPV-TC-143', 'Counts per family match the hand count of the fixture', function (a) {
       withInsights(function (root) {
         var fam = { priorities: 2, judgement: 2, assumptions: 1, realism: 1, exposure: 1, capability: 1 };
         Object.keys(fam).forEach(function (f) {
@@ -517,24 +504,21 @@
           a.equal(qsa('.tap-ins__item', root.querySelector('.tap-ins__group[data-family="' + f + '"]')).length, fam[f], f + ' group size');
         });
         a.equal(txt(root.querySelector('[data-family="priorities"] .tap-ins__gcount')), TAP.content.text('insightsPage.count', { n: 2 }), 'group header count');
-        var reg = { na: 3, latam: 3, neu: 3, seu: 3, ceu: 3, mea: 2, apac: 2 };
-        Object.keys(reg).forEach(function (r) { a.equal(chipCount(root, 'data-region', r), reg[r], r + ' region count'); });
         a.equal(txt(root.querySelector('.tap-ins__shown')), 'Showing 8 insights', 'shown line (no background facts in the fixture)');
         chip(root, 'data-family', 'judgement').click();
-        var after = { na: 0, latam: 0, neu: 1, seu: 1, ceu: 0, mea: 0, apac: 0 };
-        Object.keys(after).forEach(function (r) { a.equal(chipCount(root, 'data-region', r), after[r], r + ' count within judgement'); });
         a.equal(chipCount(root, 'data-family', 'judgement'), 2, 'family counts are not narrowed by their own filter');
+        a.equal(chipCount(root, 'data-family', 'priorities'), 2, 'nor are the other families');
       });
     });
 
-    T.test('X-pages-insights-none', 'Filters that match nothing say so, with a way back', function (a) {
+    T.test('X-pages-insights-none', 'A filter that matches nothing in the comparison says so, with a way back', function (a) {
       withInsights(function (root) {
-        chip(root, 'data-region', 'mea').click();
+        TAP.store.set({ cmp: { mode: 'set', set: ['mea'] } });
         chip(root, 'data-family', 'realism').click();
         a.equal(items(root).length, 0, 'nothing matches');
         a.equal(txt(root.querySelector('.tap-ins__none p')), TAP.content.text('insightsPage.none'), 'a plain message');
         root.querySelector('.tap-ins__none button').click();
-        a.equal(items(root).length, 8, 'clearing brings everything back');
+        a.equal(items(root).length, 2, 'clearing brings every insight naming the region back');
       });
     });
 
@@ -566,7 +550,6 @@
         a.deepEqual(items(root.querySelector('.tap-ins__group[data-family="priorities"]')), ['groupPriority:datacenters:ability'],
           'the next-ranked priorities insight now leads');
         a.equal(chipCount(root, 'data-family', 'priorities'), 1, 'family count drops');
-        a.equal(chipCount(root, 'data-region', 'mea'), 1, 'region count drops (Middle East & Africa: 2 to 1)');
         a.equal(txt(root.querySelector('.tap-ins__shown')), 'Showing 7 insights', 'shown line');
       });
     });
@@ -956,9 +939,8 @@
       node.dispatchEvent(e);
       return e;
     }
-    function naming(list, regions) {
-      return list.filter(function (x) { return x.regionIds.some(function (r) { return regions.indexOf(r) >= 0; }); })
-        .map(function (x) { return x.id; }).sort();
+    function inFamilies(list, families) {
+      return list.filter(function (x) { return families.indexOf(x.family) >= 0; }).map(function (x) { return x.id; }).sort();
     }
 
     T.test('X-d126-insights-page', 'Hand count: intro, shown line and each option give insights and background facts apart', function (a) {
@@ -969,30 +951,11 @@
         a.deepEqual(counts(root, 'data-family', 'priorities'), { ins: 1, bg: 1, text: '1 · +1 background' }, 'priorities: one of each');
         a.deepEqual(counts(root, 'data-family', 'realism'), { ins: 0, bg: 1, text: '+1 background' }, 'realism: background only');
         a.deepEqual(counts(root, 'data-family', 'judgement'), { ins: 2, bg: 0, text: '2' }, 'judgement: insights only');
-        a.deepEqual(counts(root, 'data-region', 'latam'), { ins: 1, bg: 2, text: '1 · +2 background' }, 'Latin America');
-        a.deepEqual(counts(root, 'data-region', 'na'), { ins: 2, bg: 1, text: '2 · +1 background' }, 'North America');
-        a.deepEqual(counts(root, 'data-region', 'apac'), { ins: 2, bg: 0, text: '2' }, 'Asia Pacific');
         a.equal(qsa('.tap-ins__item', root.querySelector('[data-part="context"]')).length, 2, 'the two background facts in the Context group');
-        chip(root, 'data-region', 'latam').click();
-        a.equal(txt(root.querySelector('.tap-ins__shown')), 'Showing 1 of 6 insights and 2 of 2 background facts', 'shown line, filtered');
-        a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability', 'pipelineCover:latam'], 'Latin America only');
+        chip(root, 'data-family', 'priorities').click();
+        a.equal(txt(root.querySelector('.tap-ins__shown')), 'Showing 1 of 6 insights and 1 of 2 background facts', 'shown line, filtered');
+        a.deepEqual(items(root).sort(), ['consensus:education', 'groupPriority:datacenters:ability'], 'priorities only');
       }, null, ['consensus:education', 'pipelineCover:latam']);
-    });
-
-    T.test('X-d126-insights-page', 'Hand count: two regions read "2 selected" and list what the region buttons listed', function (a) {
-      withInsights(function (root) {
-        chip(root, 'data-region', 'na').click();
-        a.equal(txt(ms(root, 'regions').querySelector('.tap-ms__btn')), 'Regions: ' + TAP.content.regionName(TAP.data.region('na')), 'one region is named');
-        chip(root, 'data-region', 'ceu').click();
-        a.equal(txt(ms(root, 'regions').querySelector('.tap-ms__btn')), 'Regions: 2 selected', 'two regions');
-        a.deepEqual(items(root).sort(), ['concentration:na', 'consensus:education', 'groupPriority:datacenters:ability',
-          'notYetWinnable:fsm', 'outlier:nb.hitRate:ceu'], 'insights about North America or Central Europe (hand count: 5)');
-        a.equal(chipCount(root, 'data-family', 'priorities'), 2, 'family counts follow the region choice');
-        a.equal(chipCount(root, 'data-family', 'judgement'), 0, 'judgement names neither region');
-        ms(root, 'regions').querySelector('.tap-ms__clear').click();
-        a.equal(txt(ms(root, 'regions').querySelector('.tap-ms__btn')), 'Regions: All', 'Clear: no choice');
-        a.equal(items(root).length, 8, 'Clear restores every insight');
-      });
     });
 
     T.test('X-d126-insights-page', 'Sample: intro and shown line add up to every insight not hidden', function (a) {
@@ -1011,7 +974,7 @@
       });
     });
 
-    T.test('X-d126-insights-page', 'Sample: each family and region option counts what the list holds', function (a) {
+    T.test('X-d126-insights-page', 'Sample: each family option counts what the list holds', function (a) {
       withSample(function (root) {
         var ctx = root.querySelector('[data-part="context"]'), sumIns = 0, sumBg = 0;
         qsa('.tap-ms[data-ms="families"] input[data-value]', root).forEach(function (box) {
@@ -1022,48 +985,43 @@
         });
         var rest = notHidden(), bgAll = rest.filter(function (x) { return x.context; }).length;
         a.deepEqual([sumIns, sumBg], [rest.length - bgAll, bgAll], 'the families together hold every insight once');
-        TAP.scope.regionIds(TAP.store.get().cmp).forEach(function (r) {
-          var about = rest.filter(function (x) { return x.regionIds.indexOf(r) >= 0; }), c = counts(root, 'data-region', r);
-          var bg = about.filter(function (x) { return x.context; }).length;
-          a.deepEqual([c.ins, c.bg], [about.length - bg, bg], r + ': counts');
-        });
         var bgNode = root.querySelector('.tap-ms .tap-ins__bg');
         a.ok(bgNode && parseFloat(getComputedStyle(bgNode).fontSize) >= 16, 'background counts are at least 16 px (D24)');
       });
     });
 
-    T.test('X-d126-insights-page', 'Sample: two dropdowns on one line, "All" at first, two regions filter as before, Clear and All', function (a) {
+    T.test('X-d126-insights-page', 'Sample: one dropdown, Families, "All" at first; choices filter as the buttons did; Clear and All', function (a) {
       withSample(function (root) {
         var row = root.querySelector('.tap-ins__menus');
-        a.ok(row && row.contains(ms(root, 'regions')) && row.contains(ms(root, 'families')), 'both dropdowns in one row');
+        a.ok(row && row.contains(ms(root, 'families')), 'the Families dropdown in the filter row');
+        a.ok(!ms(root, 'regions'), 'no Regions dropdown: the comparison bar chooses the regions (D146)');
+        a.equal(qsa('.tap-ms', root).length, 1, 'one dropdown on the page');
         a.ok(!root.querySelector('.tap-ins__chip'), 'no filter button rows');
-        a.equal(txt(btn(root, 'regions')), 'Regions: All', 'regions button');
         a.equal(txt(btn(root, 'families')), 'Families: All', 'families button');
-        a.equal(btn(root, 'regions').getAttribute('aria-expanded'), 'false', 'closed at first');
-        a.ok(panelOf(root, 'regions').hidden, 'its checklist is hidden');
-        btn(root, 'regions').click();
-        a.equal(btn(root, 'regions').getAttribute('aria-expanded'), 'true', 'open');
-        a.ok(!panelOf(root, 'regions').hidden, 'checklist shown');
-        a.ok(panelOf(root, 'regions').querySelector('.tap-ms__all') && panelOf(root, 'regions').querySelector('.tap-ms__clear'), '"All" and "Clear" at the top');
-        a.ok(qsa('.tap-ms__opt .tap-swatch', panelOf(root, 'regions')).length > 0, 'regions carry their colour swatch');
-        var scope = TAP.scope.regionIds(TAP.store.get().cmp), two = scope.slice(0, 2);
-        two.forEach(function (r) { chip(root, 'data-region', r).click(); });
-        a.equal(txt(btn(root, 'regions')), 'Regions: 2 selected', 'two regions chosen');
-        a.equal(btn(root, 'regions').getAttribute('aria-expanded'), 'true', 'stays open while choosing');
-        a.deepEqual(items(root).sort(), naming(notHidden(), two), 'the insights naming either region, as the region buttons listed');
-        panelOf(root, 'regions').querySelector('.tap-ms__clear').click();
-        a.equal(txt(btn(root, 'regions')), 'Regions: All', 'Clear: back to All');
+        a.equal(btn(root, 'families').getAttribute('aria-expanded'), 'false', 'closed at first');
+        a.ok(panelOf(root, 'families').hidden, 'its checklist is hidden');
+        btn(root, 'families').click();
+        a.equal(btn(root, 'families').getAttribute('aria-expanded'), 'true', 'open');
+        a.ok(!panelOf(root, 'families').hidden, 'checklist shown');
+        a.ok(panelOf(root, 'families').querySelector('.tap-ms__all') && panelOf(root, 'families').querySelector('.tap-ms__clear'), '"All" and "Clear" at the top');
+        var fams = qsa('input[data-value]', panelOf(root, 'families')).map(function (b) { return b.getAttribute('data-value'); }), two = fams.slice(0, 2);
+        a.ok(fams.length >= 3, 'the sample has at least three families');
+        chip(root, 'data-family', two[0]).click();
+        a.equal(txt(btn(root, 'families')), 'Families: ' + TAP.content.text('insightsPage.families.' + two[0] + '.name'), 'one family is named');
+        chip(root, 'data-family', two[1]).click();
+        a.equal(txt(btn(root, 'families')), 'Families: 2 selected', 'two families chosen');
+        a.equal(btn(root, 'families').getAttribute('aria-expanded'), 'true', 'stays open while choosing');
+        a.deepEqual(items(root).sort(), inFamilies(notHidden(), two), 'the insights of either family, as the family buttons listed');
+        panelOf(root, 'families').querySelector('.tap-ms__clear').click();
+        a.equal(txt(btn(root, 'families')), 'Families: All', 'Clear: back to All');
         a.equal(items(root).length, notHidden().length, 'Clear restores everything');
-        panelOf(root, 'regions').querySelector('.tap-ms__all').click();
-        a.ok(qsa('input[data-value]', panelOf(root, 'regions')).every(function (b) { return b.checked; }), '"All" ticks every region');
-        a.equal(txt(btn(root, 'regions')), 'Regions: All', 'every region reads All');
-        a.equal(items(root).length, notHidden().length, 'every region lists everything');
-        chip(root, 'data-region', scope[0]).click();
-        a.equal(txt(btn(root, 'regions')), 'Regions: ' + (scope.length - 1) + ' selected', 'one unticked from All');
-        a.deepEqual(items(root).sort(), naming(notHidden(), scope.slice(1)), 'every insight naming another region');
-        var fam = qsa('.tap-ms[data-ms="families"] input[data-value]', root)[0].getAttribute('data-value');
-        chip(root, 'data-family', fam).click();
-        a.equal(txt(btn(root, 'families')), 'Families: ' + TAP.content.text('insightsPage.families.' + fam + '.name'), 'one family is named');
+        panelOf(root, 'families').querySelector('.tap-ms__all').click();
+        a.ok(qsa('input[data-value]', panelOf(root, 'families')).every(function (b) { return b.checked; }), '"All" ticks every family');
+        a.equal(txt(btn(root, 'families')), 'Families: All', 'every family reads All');
+        a.equal(items(root).length, notHidden().length, 'every family lists everything');
+        chip(root, 'data-family', fams[0]).click();
+        a.equal(txt(btn(root, 'families')), 'Families: ' + (fams.length - 1) + ' selected', 'one unticked from All');
+        a.deepEqual(items(root).sort(), inFamilies(notHidden(), fams.slice(1)), 'every insight of another family');
       });
     });
 
@@ -1080,18 +1038,18 @@
         a.equal(document.activeElement, btn(root, 'families'), 'focus back on its button');
         press('Escape');
         a.equal(TAP.layers.top(), null, 'the next Esc closes the side panel');
-        btn(root, 'regions').click();
+        btn(root, 'families').click();
         document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-        a.equal(btn(root, 'regions').getAttribute('aria-expanded'), 'false', 'a click outside closes it');
+        a.equal(btn(root, 'families').getAttribute('aria-expanded'), 'false', 'a click outside closes it');
       });
     });
 
     T.test('X-d126-insights-page', 'Keyboard: arrows move through the open checklist', function (a) {
       withSample(function (root) {
-        btn(root, 'regions').focus();
-        btn(root, 'regions').click();
-        a.equal(document.activeElement, btn(root, 'regions'), 'focus stays on the button after opening');
-        var stops = qsa('button, input', panelOf(root, 'regions'));
+        btn(root, 'families').focus();
+        btn(root, 'families').click();
+        a.equal(document.activeElement, btn(root, 'families'), 'focus stays on the button after opening');
+        var stops = qsa('button, input', panelOf(root, 'families'));
         key(document.activeElement, 'ArrowDown');
         a.equal(document.activeElement, stops[0], 'ArrowDown from the button goes to the first item ("All")');
         key(document.activeElement, 'ArrowDown');
