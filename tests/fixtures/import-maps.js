@@ -42,8 +42,8 @@ window.TEST_IMPORT_MAPS = window.TEST_IMPORT_MAPS || {};
         customerGrowth: section(src.customerGrowth, 10, 'name', { idPattern: '{initial}{n}' }),   // rows 10 and on, ids a1.., b1.., d1..; thresholds N3 to N6
         partners: section(src.partners, 10, 'name'),                              // rows 10 and on
         // recap on the partner sheet: rows 5 + motion x 16 + type x 8 + year (rows 5 to 7, 13 to 15, 21 to 23, 29 to 31,
-        // stepping over the partner rows 10 to 12), columns E to H by channel; regions with recap: [] have no values, so a
-        // blank cell is no item
+        // stepping over the partner rows 10 to 12), columns E to H by channel; the mini recaps are a few cells of row 5, so
+        // a blank cell is no item (miniP4, with full grids and a planted blank, switches to 'null' below)
         recap: grid(src.recap.sheet, 5, TYPES.slice(0, 2), 'skip', null, { motion: 16, type: 8 })
       },
       extra: []
@@ -59,6 +59,9 @@ window.TEST_IMPORT_MAPS = window.TEST_IMPORT_MAPS || {};
   miniP4.nameCell = { sheet: src4.marketCoverage.sheet, cell: 'C3' };
   // The partner sheet's outsourcing cell and the base year's fixed cells (mini-p4.js carries the values).
   s4.partners.cells = { outsourcingPct: 'I3' };
+  // miniP2's recap grids are full, with one planted blank (Region A, new business ARR, alliance B, 2029: H7): a null
+  // item, so blank: 'null'; Region C's recap: [] has only all-blank rows, which add no item under either rule
+  s4.recap.blank = 'null';
   s4.baseYear = section(src4.baseYear, 7, 'category', { cells: { year: 'C4', actualsThrough: 'C5' } });   // rows 7 and on
   // Revenue at row 30 and books value at row 60: row = first + motion x 12 + type x 3 + year; blanks are planted null items.
   s4.revenue = grid(src4.revenue.sheet, 30, TYPES, 'null', 'C2');

@@ -173,7 +173,7 @@
       a.equal(withHeaders.length, 1, 'one section carries the header check fixture');
       a.ok(Object.keys(m.sections[withHeaders[0]].headers).length > 0);
       a.deepEqual(m.nameCell, { sheet: '1. Market Coverage', cell: 'C3' });
-      a.deepEqual(MAPS.mini.sections.recap, m.sections.recap, 'the recap grid is unchanged');
+      a.deepEqual(Object.assign({}, MAPS.mini.sections.recap, { blank: 'null' }), m.sections.recap, 'the recap grid is unchanged but for the blank rule: miniP2 plants a blank in a full grid');
     });
 
     T.test('X-import-fixtures-mini-cells', 'mini: every value of every region sits at its mapped cell, the file name, title and date match', function (a) {
