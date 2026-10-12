@@ -15,13 +15,13 @@ const ROOT = path.join(__dirname, '..');
 
 // The app scripts in load order. DATA marks where each page loads its own data (and organization) files.
 const APP = [
-  'vendor/echarts.min.js',
+  'vendor/echarts.min.js', 'vendor/xlsx.mini.min.js',
   'js/theme.js',
   'js/core/namespace.js', 'js/core/dom.js', 'js/core/icons.js', 'js/core/storage.js', 'js/core/store.js', 'js/core/format.js',
   'config/settings.js',
   'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-data.js', 'content/text-panel.js',
   'content/text-overview.js', 'content/text-industry.js', 'content/text-pages.js', 'content/text-engine2.js',
-  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/text-present.js', 'content/text-custom.js', 'content/text-extra.js', 'content/text-outlook.js', 'content/glossary.js', 'content/glossary-p4.js', 'content/guide.js',
+  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/text-present.js', 'content/text-custom.js', 'content/text-extra.js', 'content/text-outlook.js', 'content/text-import.js', 'content/glossary.js', 'content/glossary-p4.js', 'content/guide.js',
   'ORG',
   'js/core/content.js',
   'DATA',
@@ -32,7 +32,7 @@ const APP = [
   'js/engine/build-compare.js', 'js/engine/build-parts.js', 'js/engine/build-xy.js', 'js/engine/build-list.js', 'js/engine/custom.js', 'js/engine/build-custom-one.js',
   'config/reports.js', 'config/reports-overview.js', 'config/reports-industry.js', 'config/reports-newbusiness.js',
   'config/reports-customers.js', 'config/reports-partners.js', 'config/reports-themes.js', 'config/reports-outlook.js', 'config/views.js', 'config/profile.js', 'config/running-order.js', 'config/custom-topics.js',
-  'config/comment-themes.js', 'config/insight-rules.js', 'config/insight-wording.js',
+  'config/comment-themes.js', 'config/insight-rules.js', 'config/insight-wording.js', 'config/import-map.js',
   'js/reports/tier-stats.js', 'js/reports/tier-grid.js', 'js/reports/quadrant-labels.js', 'js/reports/quadrant.js', 'js/reports/ratings-grid.js', 'js/reports/details.js',
   'js/reports/details-rows.js', 'js/reports/cg-builders.js', 'js/reports/nb-grid.js', 'js/reports/nb-levers.js', 'js/reports/row-bubble.js', 'js/reports/themes.js', 'js/reports/stack-draw.js', 'js/reports/dim-stack.js', 'js/reports/pt-books.js',
   'js/reports/outlook-side.js', 'js/reports/outlook-side-draw.js', 'js/reports/outlook-coverage.js',
@@ -41,9 +41,11 @@ const APP = [
   'js/insights/rules-plan.js', 'js/insights/rules-shared.js', 'js/insights/rules-themes.js', 'js/insights/rules-outlook.js',
   'js/panel/panel-chart.js', 'js/panel/panel-table.js', 'js/panel/panel-menus.js', 'js/panel/panel-export.js',
   'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel-build.js', 'js/panel/panel.js',
+  'js/import/xlsx-book.js', 'js/import/import-map.js', 'js/import/import-values.js', 'js/import/import-fields.js', 'js/import/import-rows.js', 'js/import/import-grid.js',
+  'js/import/import-checks.js', 'js/import/import-region.js', 'js/import/import-plan.js', 'js/import/import-write.js',
   'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/source-tip.js', 'js/ui/explain.js', 'js/ui/tour.js',
-  'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/multi-select.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present-screen.js', 'js/ui/present.js',
+  'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/multi-select.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present-screen.js', 'js/ui/present.js', 'js/ui/import-report.js', 'js/ui/import-panel.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
   'js/views/customers.js', 'js/views/partners.js', 'js/views/outlook.js', 'js/views/other.js', 'js/views/regions-parts.js', 'js/views/regions.js', 'js/views/insights-filters.js', 'js/views/insights.js', 'js/ui/custom-measure-picker.js', 'js/ui/custom-controls.js', 'js/ui/custom-builder.js', 'js/views/build.js', 'js/views/guide-cards.js', 'js/views/guide.js',
   'js/ui/app.js'
@@ -51,7 +53,7 @@ const APP = [
 
 const CSS = ['css/base.css', 'css/shell.css', 'css/layers.css', 'css/glossary.css', 'css/source-tip.css', 'css/panel.css',
   'css/overview.css', 'css/industry.css', 'css/pages.css', 'css/guide.css', 'css/view-head.css', 'css/newbusiness.css', 'css/customers.css',
-  'css/profile.css', 'css/themes.css', 'css/present.css', 'css/custom.css', 'css/outlook.css'];
+  'css/profile.css', 'css/themes.css', 'css/present.css', 'css/custom.css', 'css/outlook.css', 'css/import.css'];
 
 // Test files, in run order. Each registers its cases with the harness.
 const TESTS = [
@@ -63,6 +65,7 @@ const TESTS = [
   'tests/test-measures-p2.js', 'tests/test-rows.js', 'tests/test-list.js', 'tests/test-newbusiness.js', 'tests/test-customers.js',
   'tests/test-partners.js', 'tests/test-insights-p2.js', 'tests/test-profile.js', 'tests/test-pages-p2.js', 'tests/test-present.js', 'tests/test-present-screen.js', 'tests/test-custom.js', 'tests/test-custom-picker.js', 'tests/test-custom-ask.js', 'tests/test-extra.js', 'tests/test-extra-view.js', 'tests/test-docs3.js',
   'tests/test-p4-data.js', 'tests/test-measures-p4.js', 'tests/test-outlook.js', 'tests/test-p4-reports.js', 'tests/test-insights-p4.js', 'tests/test-pages-p4.js', 'tests/test-guide.js',
+  'tests/test-import-fixtures.js', 'tests/test-import-core.js', 'tests/test-import-plan.js', 'tests/test-import-ui.js',
   'tests/test-meta.js'
 ];
 
@@ -79,7 +82,8 @@ const PAGES = {
     purpose: 'The automated test page: runs every automated test case and shows a pass or fail summary.',
     data: ['data/sample-plan-data.js', 'tests/fixtures/mini-data.js', 'tests/fixtures/mini-expected.js',
       'tests/fixtures/sample-expected.js', 'tests/fixtures/broken-cases.js', 'tests/fixtures/insights-fixture.js',
-      'tests/fixtures/mini-p2.js', 'tests/fixtures/mini-p2-expected.js', 'tests/fixtures/mini-p4.js', 'tests/fixtures/mini-p4-expected.js'], org: [],
+      'tests/fixtures/mini-p2.js', 'tests/fixtures/mini-p2-expected.js', 'tests/fixtures/mini-p4.js', 'tests/fixtures/mini-p4-expected.js',
+      'tests/fixtures/import-maps.js', 'tests/fixtures/workbook-write.js'], org: [],
     title: 'TAP Atlas tests', tests: true
   }
 };

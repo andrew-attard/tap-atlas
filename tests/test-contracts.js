@@ -55,7 +55,19 @@
     // Phase 3 (docs/ARCHITECTURE.md section 18)
     present: ['check', 'start', 'stop', 'next', 'prev', 'first', 'current', 'active', 'record', 'recorded', 'move', 'remove', 'clearRecorded', 'asFileText'],
     custom: ['options', 'definition', 'saved', 'save', 'remove'],
-    customBuilder: ['render']
+    customBuilder: ['render'],
+    // The in-app import (docs/ARCHITECTURE.md section 20)
+    xlsxBook: ['available', 'open', 'colIndex', 'colLetter', 'addr', 'split', 'serialToDate', 'iso'],
+    importMap: ['get', 'problems', 'normalize', 'sourceMap', 'extraSections', 'matchRegion', 'glob'],
+    importValues: ['create'],
+    importRows: ['read', 'section', 'customerGrowth', 'baseYear', 'cells', 'extra'],
+    importGrid: ['expand', 'block'],
+    importChecks: ['run'],
+    importRegion: ['read', 'slug'],
+    importPlan: ['run', 'build'],
+    importWrite: ['text', 'jsonPart', 'download', 'report'],
+    importReport: ['render'],
+    importPanel: ['open', 'render', 'button', 'show', 'state']
   };
 
   var GLOBALS = ['TAP_THEME', 'TAP_SETTINGS', 'TAP_VIEWS', 'TAP_REPORTS', 'TAP_RULES', 'TAP_CONTENT'];

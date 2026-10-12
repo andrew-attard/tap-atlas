@@ -460,21 +460,22 @@ The master list is `APP` in `tools/build-pages.js`, which writes every page's sc
 
 <!-- script-order:start (written by tools/build-pages.js) -->
 ```
-vendor/echarts.min.js
+vendor/echarts.min.js  xlsx.mini.min.js
 js/theme.js
 js/core/namespace.js  dom.js  icons.js  storage.js  store.js  format.js
 config/settings.js
-content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  text-engine2.js  text-newbusiness.js  text-customers.js  text-profile.js  text-themes.js  text-present.js  text-custom.js  text-extra.js  text-outlook.js  glossary.js  glossary-p4.js  guide.js
+content/ui-text.js  text-shell.js  text-engine.js  text-data.js  text-panel.js  text-overview.js  text-industry.js  text-pages.js  text-engine2.js  text-newbusiness.js  text-customers.js  text-profile.js  text-themes.js  text-present.js  text-custom.js  text-extra.js  text-outlook.js  text-import.js  glossary.js  glossary-p4.js  guide.js
    [index.html only: content/organization.js]
 js/core/content.js
    [data file: data/plan-data.js | data/sample-plan-data.js | tests/fixtures/mini-data.js]
 js/core/sources.js  check.js  check-rows.js  extra.js  check-p4.js  data.js
 js/engine/registry.js  aggregate.js  scope.js  measures.js  scores.js  measures-p2.js  measures-pt.js  measures-p4.js  measures-p4b.js  rows.js  shapes.js  prepare.js  build-compare.js  build-parts.js  build-xy.js  build-list.js  custom.js  build-custom-one.js
-config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  custom-topics.js  comment-themes.js  insight-rules.js  insight-wording.js
+config/reports.js  reports-overview.js  reports-industry.js  reports-newbusiness.js  reports-customers.js  reports-partners.js  reports-themes.js  reports-outlook.js  views.js  profile.js  running-order.js  custom-topics.js  comment-themes.js  insight-rules.js  insight-wording.js  import-map.js
 js/reports/tier-stats.js  tier-grid.js  quadrant-labels.js  quadrant.js  ratings-grid.js  details.js  details-rows.js  cg-builders.js  nb-grid.js  nb-levers.js  row-bubble.js  themes.js  stack-draw.js  dim-stack.js  pt-books.js  outlook-side.js  outlook-side-draw.js  outlook-coverage.js
 js/insights/engine.js  util.js  rules-priorities.js  rules-judgement.js  rules-assumptions.js  rules-realism.js  rules-exposure.js  rules-capability.js  rules-plan.js  rules-shared.js  rules-themes.js  rules-outlook.js
 js/panel/panel-chart.js  panel-table.js  panel-menus.js  panel-export.js  panel-insights.js  panel-expand.js  panel-drill.js  panel-build.js  panel.js
-js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  source-tip.js  explain.js  tour.js  showme.js  keys.js  view-head.js  multi-select.js  present-steps.js  present-record.js  present-screen.js  present.js
+js/import/xlsx-book.js  import-map.js  import-values.js  import-fields.js  import-rows.js  import-grid.js  import-checks.js  import-region.js  import-plan.js  import-write.js
+js/ui/shell.js  compare-bar.js  layers.js  sources-panel.js  system-screens.js  glossary.js  source-tip.js  explain.js  tour.js  showme.js  keys.js  view-head.js  multi-select.js  present-steps.js  present-record.js  present-screen.js  present.js  import-report.js  import-panel.js
 js/views/overview-cards.js  overview.js  industry.js  new-business.js  customers.js  partners.js  outlook.js  other.js  regions-parts.js  regions.js  insights-filters.js  insights.js
 js/ui/custom-measure-picker.js  custom-controls.js  custom-builder.js
 js/views/build.js  guide-cards.js  guide.js
@@ -827,3 +828,98 @@ New family `outlook` (weight in `TAP_SETTINGS.insights.familyWeights`, figure-ba
 | INSIGHTS4 (wave B) | `js/insights/rules-outlook.js` (new), `config/insight-rules.js`, `tests/test-insights-p4.js` |
 | PAGES4 (wave B) | `content/glossary.js`, `content/guide.js`, `js/ui/tour.js`, `js/views/regions-parts.js`, `config/profile.js`, `config/running-order.js`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/REAL-DATA-CHECKLIST.md`, `docs/HANDOVER.md`, `README.md`, `tests/test-pages-p4.js` |
 | lead | as before; Wave 0: this section, `config/views.js` (the `outlook` entry), the stubs, `config/settings.js` (family weight), the page lists |
+
+## 20. The in-app import (`js/import/*`, `js/ui/import-*.js`, `config/import-map.js`)
+
+The import runs in the app (D147): an **Import** button on every page and on the no-data and invalid screens lets the data owner pick the regional workbooks (`.xlsx`); the app reads them in the browser with the vendored SheetJS Community Edition (`vendor/xlsx.mini.min.js`, D148), validates them per region as `docs/IMPORT-BRIEF.md` section 5 says, shows a report, and when it passes switches to the imported plans at once and offers `data/plan-data.js` to save into the folder. Nothing is kept in browser storage, nothing leaves the PC. The template's layout is data in `config/import-map.js` (`window.IMPORT_MAP`): the public repository ships the fictional sample's mapping, generated by `tools/build-import-map.js` (D150); the organization's approved AI tool fills the real one inside the internal copy, where it overwrites the file. Decisions D147 to D157.
+
+### 20.1 The mapping (`config/import-map.js`)
+
+```js
+window.IMPORT_MAP = {
+  meta: { templateVersion: 'sample-template-1', currency: 'EUR', years: [2027, 2028, 2029], isSample: true,
+          numberFormat: { decimal: '.', thousands: ',' } },            // how text numbers are written; optional
+  regions: [{ id: 'na', name: 'North America', file: 'North America plan.xlsx', filterName: 'North America' }],
+                                                                        // order sets colours; file: exact name or a pattern with *
+  nameCell: { sheet: '1. Market Coverage', cell: 'C3' },                // optional: where a workbook names its region
+  lookups: { industries: [...], productLines: [...], channels: [...], tiers: [...], segments: [...], scales: {...},
+             productCategories: [...], solutions: [...], partnerTypes: [...], partnerMaturity: [...], routes: [...] },
+                                                                        // the data file's lookups, verbatim (the Phase 4 five are optional)
+  aliases: { industries: { 'Health care': 'healthcare' }, tiers: { 'Tier 2': 2 }, riskLevel: { 'H': 'high' },
+             scales: { growthPotential: { 'Strong': 3 } } },            // optional other spellings → id, score or value
+  sections: {
+    marketCoverage: { sheet: '1. Market Coverage', headerRow: 9, headers: { industryId: 'Industry' }, firstRow: 10, lastRow: null,
+      key: 'industryId', columns: { industryId: 'B', growthPotential: 'D', /* … */ tier: 'M', commentary: 'N' }, scale: { currentArr: 1 } },
+    newBusiness:    { sheet: '2. New Business', firstRow: 15, key: 'industryId', columns: { /* … */ solution: 'V' } },
+    customerGrowth: { sheet: '3. Customer Growth', firstRow: 10, key: 'name', idPattern: '{region}-a{nn}',
+      columns: { /* … */ }, cells: { 'thresholds.strategicArr': 'N3', /* … */ } },
+    partners:       { sheet: '4. Partner', firstRow: 20, key: 'name', columns: { /* … */ }, cells: { outsourcingPct: 'I3' } },
+    baseYear:       { sheet: '7. Order Intake', firstRow: 8, key: 'category',
+      columns: { category: 'B', budget: 'C', forecast: 'D', actuals: 'E', pipeline: 'F', coverage: 'G' }, cells: { year: 'C4', actualsThrough: 'C5' } },
+    recap:         { sheet: '4. Partner', blank: 'skip',
+      rows: { first: 5, axes: [{ field: 'year', values: [2027, 2028, 2029] }, { field: 'motion', values: ['newBusiness', 'customerGrowth'] },
+                               { field: 'type', values: ['arr', 'services'] }] },
+      cols: { first: 'E', axes: [{ field: 'channel', values: ['direct', 'partner', 'allianceA', 'allianceB'] }] } },
+    revenue:       { sheet: '6. Recap', filterCell: 'C2', blank: 'null', rows: { /* … */ }, cols: { /* … */ } },
+    booksValue:    { sheet: '6. Recap', filterCell: 'C2', rows: { /* … */ }, cols: { /* … */ } },
+    strategicPlan: { sheet: '6. Recap', filterCell: 'C2', rows: { first: 47, axes: [{ field: 'type', values: ['arr', 'services', 'swPerpetual', 'hardware'] }] },
+      cols: { first: 'E', axes: [{ field: 'year', values: [2027, 2028, 2029] }] },
+      variance: { cols: { first: 'I', axes: [{ field: 'year', values: [2027, 2028, 2029] }] } } },   // optional: the workbook's variance cells
+    routes:        { sheet: '6. Recap', filterCell: 'C2', blank: 'skip',
+      rows: { first: 55, axes: [{ field: 'route', values: ['ownSales', /* … */], stride: 8 }, { field: 'solution', values: [null, 'sol1', /* … */] }] },
+      cols: { first: 'E', axes: [{ field: 'year', values: [2027, 2028, 2029] }, { field: 'type', values: ['arr', 'services', 'swPerpetual', 'hardware'] }] } }
+  },
+  extra: [{ id: 'events', title: '5. Events', intro: '…', sheet: '5. Events', firstRow: 8, key: 'event',
+            columns: [{ key: 'event', label: 'Event', unit: 'text', kind: 'IN', column: 'B' }] }]   // optional extra sections (section 18)
+};
+```
+
+- **Row sections** (`marketCoverage`, `newBusiness`, `customerGrowth`, `partners`, `baseYear`): `sheet`; `firstRow`; optional `lastRow` (else the sheet's last row); `key`, the field whose blank cell marks a spare row (default: the section's first field); `columns` with the Data Contract's field names, dotted for nested fields, one column per plan year for by-year fields (this is also the section's `meta.sourceMap` entry, with `cells`); optional `headerRow` and `headers: { field: 'expected text' }`, checked before any row is read; optional `scale: { field: factor }`, a multiplication after reading; `customerGrowth.idPattern` (default `{region}-a{nn}`: `{region}` the region id, `{n}` the row's number among the non-blank rows, `{nn}` the same with two digits). `newBusiness.tier` is never read from a column: it comes from the region's Market Coverage row (D154); a mapped `tier` column is cross-checked and gives a note when it differs.
+- **Grid blocks** (`recap`, `revenue`, `booksValue`, `strategicPlan`, `routes`): `sheet`; optional `filterCell`, the cell holding the recap sheet's region filter (its text must match the region's `filterName`, else its `name`, loosely; otherwise the region errors); `rows` and `cols`, each **regular** (`{ first, axes: [{ field, values, stride? }] }`: the outermost axis first; an axis's stride defaults to the product of the inner axes' sizes; `first` is a row number or a column letter) or **enumerated** (`[{ row: 5, year: 2027, motion: 'newBusiness', type: 'arr' }, …]` or `[{ col: 'E', channel: 'direct' }, …]`); an item is the merge of its row fields and its column fields with `value` from the cell and `sourceCell` the column plus the row. `blank`: `'null'` (default; a blank cell gives an item with `value: null`) or `'skip'` (no item); in both modes a row whose cells are all blank gives no items, and a block with no items at all is left out of the region (the required `recap` becomes `[]` with a note). `strategicPlan.variance` (optional) is a second `cols` for the workbook's variance cells; without it no `variance` is written. Axis values are ids and must name entries of the lookups (`channel`, `type`, `route`, `solution`, `motion`, `year`), which `TAP.importMap.problems` checks.
+- **`meta.sourceMap`** is derived (`TAP.importMap.sourceMap(map)`): row sections copy `{ sheet, columns, cells? }`, grid blocks `{ sheet }`; the sample mapping derives the sample data's `sourceMap` exactly. `meta.extraSections` is `extra[]` without `sheet`, `firstRow`, `key` and the columns' `column`.
+
+### 20.2 What the cells hold
+
+The importer reads the workbook's stored results only (D5), through the field's **kind** (`TAP.importFields.SECTIONS[section].fields[field]`): `text`, `number`, `money` (a number; `scale` applies), `share` (a decimal: 0.25, or text with a percent sign which is divided by 100), `count`, `rating:<scale>` (a score 1 to 3, or a level's label of `lookups.scales[<scale>]`), `tier` (1 to 3, or a tier's name), `industry`, `productLine`, `channel`, `partnerChannel`, `segment`, `solution`, `partnerType`, `maturity`, `category` (the id, the name or an alias of the matching lookup; `maturity` keeps text that matches nothing when no `partnerMaturity` lookup exists, as the contract allows), `risk` (`high`, `medium`, `low`, by id, name or alias), `month` (`"YYYY-MM"` text, a date, or an Excel serial), `year` (a number). A blank cell, empty text or a text of spaces is `null`, never `0` or `""`. A value of the wrong kind (text where a number is expected, an unknown name, a score outside 1 to 3) is imported as `null` with a note naming the sheet and cell. An error cell (`#REF!`) and a formula with no stored result are `null` with a note. Names match case- and whitespace-insensitively, and through `aliases`.
+
+The **workbook writer** (`tests/fixtures/workbook-write.js`, D156) writes the same kinds the other way, so the round trip is exact: ids become lookup names (industries, product lines, channels, segments, partner types, solutions, product categories, maturity levels), ratings become the scale's label, tiers numbers, risk levels `High`, `Medium`, `Low`, `null` a blank cell, text and numbers as they are, `actualsThrough` text; account ids are not written (they come from `idPattern`); the New Business tier is not written; `headers` texts at `headerRow`; the region's name at `nameCell` and `filterCell`; `Props.ModifiedDate` from `source.fileModified`; a sheet only for the parts the region carries.
+
+### 20.3 Modules
+
+| Module | Provides |
+|---|---|
+| `TAP.xlsxBook` (`js/import/xlsx-book.js`) | `available()`; `open(arrayBuffer, fileName, sheets?) → book`, `book = { fileName, sheetNames, modified (ISO or null), sheet(name) }`; `sheet()` matches exactly, else case- and whitespace-insensitively with `sheet.loose = true`, else `null`; `sheet = { name, lastRow, cell(addr), value(addr) }` where `value` is `null` for a missing or blank cell or empty text, `{ error: true, found }` for an error cell, else the stored value; helpers `colIndex('E') → 5`, `colLetter(5) → 'E'`, `addr(col, row)`, `split('E5') → { col, row }`, `serialToDate(n)`, `iso(date)` (seconds precision, UTC) |
+| `TAP.importMap` (`js/import/import-map.js`) | `get()` (`window.IMPORT_MAP` or null); `problems(map) → [sentence]` (like `TAP.content.problems`: every problem one sentence, in `content/text-import.js`); `normalize(map)` (a copy with defaults: `blank`, `key`, `idPattern`, `scale`, `headers`, `aliases`, `filterName`); `sourceMap(map)`; `extraSections(map)`; `matchRegion(map, fileName) → { id, name, filterName, spec }` or null (case-insensitive, `*` matches any run of characters); `glob(pattern, name)`; `ROWS`, `GRIDS`, `REQUIRED` (`marketCoverage`, `newBusiness`, `customerGrowth`, `partners`, `recap`) |
+| `TAP.importValues` (`js/import/import-values.js`) | `create(lookups, aliases, numberFormat) → V`: `V.BAD` (a sentinel), `V.isBad(x)`, `V.norm(text)`, `V.text`, `V.number(raw, scale)`, `V.share`, `V.count`, `V.rating(raw, scaleKey)`, `V.tier`, `V.id(raw, listName)`, `V.risk`, `V.month`, `V.year`, `V.read(kind, raw, scale)` (dispatch by kind) |
+| `TAP.importFields` (`js/import/import-fields.js`) | `SECTIONS[section] = { fields: { field: kind }, key, byYear: [fields], order: [fields] }` for the five row sections, in the Data Contract's field order; `EXTRA_UNITS` (the extra-section units to kinds) |
+| `TAP.importRows` (`js/import/import-rows.js`) | `read(sheet, spec, kinds, ctx) → { items, skipped }` (the header check; rows `firstRow` to `lastRow`; a row whose key cell is blank is skipped and counted; by-year arrays; dotted paths; `scale`; bad values → note and null); `section(book, map, key, ctx) → { present, items }` for `marketCoverage`, `newBusiness` (tier derived, `solution`), `partners`; `customerGrowth(book, map, ctx) → { present, thresholds, accounts }`; `baseYear(book, map, ctx) → { present, value }`; `cells(sheet, cellsSpec, kinds, ctx) → object`; `extra(book, map, ctx) → { id: rows }` |
+| `TAP.importGrid` (`js/import/import-grid.js`) | `expand(spec, kind) → [{ at, fields }]` (`kind` `'rows'` or `'cols'`; `at` a row number or a column letter); `block(book, map, key, ctx, filterName) → { present, items }` |
+| `TAP.importChecks` (`js/import/import-checks.js`) | `run(region, lookups, map, ctx)`: every rated industry has a Market Coverage row (error); a section present but empty (note); channel splits off 100% by more than 1 point (note with the cells); `arrPotential` year 1 against accounts × hit rate × deal size (note); segment against the thresholds rule (note); a mapped New Business tier against Market Coverage (note); the Phase 4 cross-checks: variance against books minus strategic plan, revenue above order intake, books above customer value for `partner`, `allianceA`, `allianceB`, coverage more than 5% from pipeline over forecast minus actuals (notes on the cells) |
+| `TAP.importRegion` (`js/import/import-region.js`) | `read(book, map, match, opts) → reading`; `slug(name)`. `reading = { ok, id, name, fileName, region (null when !ok), errors: [{ message, sheet, cell }], notes: [{ message, sheet, cell }], parts: { section: 'read' \| 'empty' \| 'missing' \| 'error' } }`; `match` from `TAP.importMap.matchRegion` or null (then the name from `nameCell`, else the file name without its extension, the id its slug, and a note); `region.source = { fileName, fileModified (book.modified, else `iso(file.lastModified)`), importedAt: opts.now, notes }`; keys in the Data Contract's order; optional parts left out when their sheet is missing or their block is empty |
+| `TAP.importPlan` (`js/import/import-plan.js`) | `run(files, map, opts) → Promise<result>` (`files`: `File` objects or `{ name, lastModified, arrayBuffer() }`; read one after another, yielding between files; `opts.now` (ISO), `opts.onProgress(i, n, name)`); `build(readings, map, now) → plan` (sync); `result = { mapProblems: [sentence], regions: [reading], missing: [{ id, name }] (mapped regions with no workbook), plan (null when no region passed), check: { errors, warnings } (TAP.check.run on the plan) or null, usable: boolean }`. Regions in mapping order, then unmatched workbooks in file order; two workbooks for one region error both; `meta = { schemaVersion: TAP.schemaVersion, generatedAt: now, templateVersion, currency, years, isSample, sourceMap, extraSections? }`; `lookups` a deep copy of the mapping's |
+| `TAP.importWrite` (`js/import/import-write.js`) | `text(plan) → string` (a header comment, then `window.PLAN_DATA = {` … `};`, one list item per line as `tools/generate-sample-data.js` writes it, JSON-compatible literals, non-finite numbers as `null`); `jsonPart(text) → string` (the object literal, so a test can `JSON.parse` it); `download(plan, name)` (default `plan-data.js`: a Blob, `URL.createObjectURL`, `TAP.panelExport.download`, then revoke); `report(result) → string` (plain text: one line per region, then its errors and notes with sheet › cell, then the contract check) |
+| `TAP.importReport` (`js/ui/import-report.js`) | `render(host, result)`: the summary (regions imported, left out, missing, mapping problems), per region a `section.tap-imp__region[data-region]` with a `dl.tap-imp__facts` (file, saved date, parts read, notes), its errors, its notes with `sheet › cell`, then the contract check's errors as the invalid screen's table and its warnings as a list |
+| `TAP.importPanel` (`js/ui/import-panel.js`) | `open()` (the `import` layer, wide); `render(host, opts)` (draws the panel into any element, `opts.inline` for the system screens, `opts.onUse`); `button(slot)` (adds `button.tap-btn.tap-imp__button` once, the `upload` icon and "Import"); `show(result)` (draws a prepared result into the open panel; a test hook); `state() → { phase: 'idle' \| 'reading' \| 'done', result }`. The file input is `input[type=file][multiple][accept=".xlsx"]` inside a `label.tap-btn`; a `p[role=status][aria-live=polite]` says what is being read; **Use these plans now** closes the layer and calls `TAP.app.start({ plan: result.plan })`; **Save data/plan-data.js** calls `TAP.importWrite.download`; **Copy report** copies `TAP.importWrite.report(result)` with `TAP.panelTable.clipboard` and a textarea fallback; the three are disabled, with one sentence saying why, until `result.usable` |
+
+`ctx` (shared by the readers) is `{ regionId, years, V, map, note(message, sheet, cell), error(message, sheet, cell) }`; `note` and `error` append to the reading. Every message is wording from `content/text-import.js` (`importPanel.*`), never a literal.
+
+Script order: `vendor/xlsx.mini.min.js` after the chart library; `content/text-import.js` with the content files; `config/import-map.js` with the config files; the ten `js/import/*` files after `js/panel/panel.js`; `js/ui/import-report.js` and `js/ui/import-panel.js` after `js/ui/present.js`. `js/ui/compare-bar.js` and `js/ui/system-screens.js` call `TAP.importPanel` at run time only, guarded.
+
+### 20.4 Fixtures and tools
+
+- `tests/fixtures/workbook-write.js`: `window.WORKBOOK_WRITE = { workbooks(plan, map) → [{ fileName, regionId, wb }], toArrayBuffer(wb), files(plan, map) → [File] }`, a second interpreter of the mapping (its own axis expansion, never `TAP.importGrid`), with `if (typeof module !== 'undefined') module.exports = WORKBOOK_WRITE;` so `tools/build-sample-workbooks.js` can use it in Node.
+- `tests/fixtures/import-maps.js`: `window.TEST_IMPORT_MAPS = { mini, miniP4 }`, mappings matching the fixtures' layouts (`mini`: recap on `4. Partner` rows 5 + motion × 6 + type × 3 + year, columns E to H, `blank: 'skip'`, `idPattern: 'a{n}'`; `miniP4`: revenue at row 30 and books value at row 60 with motion stride 12 and type stride 3, strategic plan rows 90 to 93 by year in E to G, base year rows 7 and on, routes enumerated from row 100, `blank: 'null'`).
+- `tools/build-import-map.js`: writes `config/import-map.js` from `tools/generate-sample-data.js` (`makePlan`), `tools/sample-settings.js` and `tools/sample-planted-p4.js`; `--check` compares (run by `scripts/verify.sh` and CI).
+- `tools/build-sample-workbooks.js [--out dir]`: writes `dist/sample-workbooks/<source.fileName>` for every sample region (D149; `dist/` and `*.xlsx` are ignored).
+- Round trips (`tests/test-import-plan.js`): `TAP.importPlan.run(WORKBOOK_WRITE.files(plan, map), map)` on `mini`, `miniP4` and `window.PLAN_DATA` gives regions deep-equal to the source without `source`, meta equal without `generatedAt`, lookups equal, no contract errors; `source.fileName` and `source.fileModified` equal. The expected `miniP4` normalizes partner A2's maturity "Strategic" to its id, as the reader maps names.
+
+### 20.5 Ownership (import)
+
+| Stream | Owns |
+|---|---|
+| FIXTURES | `tests/fixtures/workbook-write.js`, `tests/fixtures/import-maps.js`, `tools/build-sample-workbooks.js`, their tests in `tests/test-import-fixtures.js` |
+| READ | `js/import/xlsx-book.js`, `import-map.js`, `import-values.js`, `import-fields.js`, `import-rows.js`, `import-grid.js`, `tests/test-import-core.js` |
+| PLAN | `js/import/import-checks.js`, `import-region.js`, `import-plan.js`, `import-write.js`, `tests/test-import-plan.js` |
+| UI | `js/ui/import-panel.js`, `js/ui/import-report.js`, `content/text-import.js`, `css/import.css`, the `upload` and `file` icons, the `import` entry in `js/ui/layers.js`, the button in `js/ui/compare-bar.js`, the screens' button in `js/ui/system-screens.js` and `content/text-shell.js`, `tests/test-import-ui.js`, the shell tests that pin the button row |
+| DOCS | `README.md`, `docs/IMPORT-BRIEF.md`, `docs/COPILOT-PROMPTS.md`, `docs/HANDOVER.md`, `docs/INTERNAL-HANDOVER.md`, `docs/REAL-DATA-CHECKLIST.md` |
+| lead | this section, the vendored library, `tools/build-import-map.js` and `config/import-map.js`, the page lists and stubs, `scripts/qa/url-scan.js`, `tests/test-contracts.js` |

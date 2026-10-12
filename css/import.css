@@ -1,0 +1,8 @@
+/*
+ * File: css/import.css
+ * Purpose: Styles of the Import panel and its report (tap-imp__*).
+ * Provides: .tap-imp__* classes
+ * Depends on: css/base.css, css/layers.css (theme variables)
+ * Used by: js/ui/import-panel.js, js/ui/import-report.js
+ * Owner: UI stream (#587). Colours and font sizes come from theme variables only.
+ */
