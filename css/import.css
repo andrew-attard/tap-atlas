@@ -1,8 +1,72 @@
 /*
  * File: css/import.css
- * Purpose: Styles of the Import panel and its report (tap-imp__*).
+ * Purpose: Styles of the Import panel and its report (tap-imp__*): in the wide layer and inline under the start-up screens.
+ *          Body text (16 px, D24) everywhere in the panel; the status line always visible; no animation.
  * Provides: .tap-imp__* classes
  * Depends on: css/base.css, css/layers.css (theme variables)
  * Used by: js/ui/import-panel.js, js/ui/import-report.js
  * Owner: UI stream (#587). Colours and font sizes come from theme variables only.
  */
+
+/* Everything in the panel reads at body size, including the shared buttons, fields, tables and muted lines */
+.tap-imp { font-size: var(--tap-fs-body); }
+.tap-imp p, .tap-imp li, .tap-imp dt, .tap-imp dd, .tap-imp .tap-muted, .tap-imp .tap-btn, .tap-imp .tap-field,
+.tap-imp .tap-table, .tap-imp .tap-table th { font-size: var(--tap-fs-body); }
+
+/* The intro: which mapping is read, or why nothing can be read */
+.tap-imp__intro { margin: var(--tap-sp-3) 0 var(--tap-sp-4); }
+.tap-imp__intro--problem {
+  padding: var(--tap-sp-3); background: var(--tap-surface); border-left: var(--tap-highlight-w) solid var(--tap-ink);
+}
+.tap-imp__intro--problem p { margin: 0 0 var(--tap-sp-2); font-weight: 600; }
+.tap-imp__intro--problem p:last-child { margin-bottom: 0; }
+.tap-imp__mapproblems { margin: 0; padding-left: var(--tap-sp-6); }
+
+/* The file picker: a button-like label around the visually hidden input, which keeps the keyboard focus */
+.tap-imp__pick { position: relative; }
+.tap-imp__pick:focus-within { outline: var(--tap-focus-w) solid var(--tap-accent); outline-offset: 2px; }
+.tap-imp__pick.is-disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* The live status line, always on screen */
+.tap-imp__status { margin: var(--tap-sp-3) 0; font-weight: 600; }
+
+/* The three actions and the one line saying why they wait */
+.tap-imp__actions { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); margin-top: var(--tap-sp-4); }
+.tap-imp__why { margin: var(--tap-sp-2) 0 0; color: var(--tap-muted); }
+.tap-imp__why:empty { display: none; }
+.tap-imp__text { width: 100%; margin-top: var(--tap-sp-3); }
+
+/* The report: a summary, then one block per region, then the contract check */
+.tap-imp__h { margin: var(--tap-sp-4) 0 var(--tap-sp-2); font-size: var(--tap-fs-h3); }
+.tap-imp__h:focus { outline: none; }
+.tap-imp__missing { margin: 0 0 var(--tap-sp-3); }
+.tap-imp__region, .tap-imp__check, .tap-imp__mapsection {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2);
+  padding: var(--tap-sp-4) 0; border-top: var(--tap-rule-w) solid var(--tap-ink);
+}
+.tap-imp__region h4, .tap-imp__check h4, .tap-imp__mapsection h4 {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); margin: 0; font-size: var(--tap-fs-lead);
+}
+.tap-imp__facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--tap-sp-4); margin: 0; }
+.tap-imp__facts dt { color: var(--tap-muted); }
+.tap-imp__facts dd { margin: 0; font-weight: 600; word-break: break-word; }
+
+/* Errors and notes: an icon, the message, and the sheet and cell on their own line under it */
+.tap-imp__errors, .tap-imp__notes, .tap-imp__check ul, .tap-imp__mapsection ul {
+  display: flex; flex-direction: column; gap: var(--tap-sp-2); margin: 0; padding: 0; list-style: none;
+}
+.tap-imp__errors li, .tap-imp__notes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--tap-sp-2); align-items: start; }
+.tap-imp__errors li .tap-icon, .tap-imp__notes li .tap-icon { margin-top: 3px; }
+.tap-imp__errors li .tap-muted, .tap-imp__notes li .tap-muted, .tap-imp__check li .tap-muted { grid-column: 2; display: block; }
+.tap-imp__errors { padding: var(--tap-sp-3); background: var(--tap-surface); border-left: var(--tap-highlight-w) solid var(--tap-ink); }
+
+/* The contract check's table: the layer scrolls as a whole, so the header need not stick */
+.tap-imp .tap-table th { position: static; }
+.tap-imp__path { word-break: break-word; }
+
+/* The start-up screens' button row (Import workbooks beside Copy the list or the sample link) */
+.tap-screen__btns { display: flex; flex-wrap: wrap; gap: var(--tap-sp-2); margin: 0; }
+
+/* Under a start-up screen: the panel takes the screen's width, under a rule */
+.tap-imp__inline { align-self: stretch; width: 100%; padding-top: var(--tap-sp-4); border-top: var(--tap-rule-w) solid var(--tap-ink); }
+.tap-imp__inline .tap-imp__result { max-width: 100%; }

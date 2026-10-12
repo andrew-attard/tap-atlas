@@ -80,9 +80,11 @@ Object.assign(window.TAP_CONTENT.text, {
   screens: {
     banner: 'No plan data is shown',
     missingTitle: 'No plan data found',
-    missingBody: 'The data file is missing or could not be read. Run the import to create data/plan-data.js, then reopen this page.',
+    missingBody: 'The data file is missing or could not be read. Select Import workbooks to read the planning workbooks here and save data/plan-data.js, then reopen this page.',
     missingLooked: 'Looked for: data/plan-data.js, next to index.html. To look around with fictional figures, open index-sample.html.',
     openSample: 'Open the sample data edition',
+    // The Import button of the no-data and invalid screens (D147)
+    importButton: 'Import workbooks',
     versionTitle: 'The data file doesn’t match this version of the app',
     versionBody: 'The data file says version {found}; this app reads version {expected}. Re-run the import, or use the matching app folder.',
     invalidTitle: 'The data file has problems that stop the app from opening',

@@ -5,10 +5,10 @@
  * Provides: TAP.layers (open, close, openDetails, top)
  * Depends on: js/core/store.js (state.layer), js/core/dom.js, js/core/icons.js, js/core/content.js,
  *             js/core/format.js, js/core/sources.js, js/ui/source-tip.js (D100), js/reports/details.js (TAP.details.build),
- *             js/ui/sources-panel.js
- * Used by: panels, cards, the comparison bar, the explanation panel
+ *             js/ui/sources-panel.js, js/ui/import-panel.js (the 'import' panel, D147)
+ * Used by: panels, cards, the comparison bar, the explanation panel, the Import button
  *
- * open(name, payload): built-in panels are 'sources' and 'details' ({target}). Any other
+ * open(name, payload): built-in panels are 'sources', 'details' ({target}) and 'import'. Any other
  * name draws payload.title and calls payload.render(bodyEl), so other streams can add panels without code here.
  */
 (function (TAP) {
@@ -59,7 +59,9 @@
 
   var PANELS = {
     sources: { wide: true, draw: function (body) { TAP.sourcesPanel.render(body); return t('sourcesPanel.title'); } },
-    details: { draw: drawDetails }
+    details: { draw: drawDetails },
+    // The in-app import (D147): the panel draws itself and keeps its own state
+    import: { wide: true, draw: function (body) { TAP.importPanel.render(body, {}); return t('importPanel.title'); } }
   };
 
   // Draws the body; a part that isn't built yet shows its own "Not built yet" message instead.
