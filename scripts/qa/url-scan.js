@@ -18,6 +18,9 @@ const SHIPPED = ['index.html', 'index-sample.html', 'css', 'js', 'config', 'cont
 // Namespace names identify XML vocabularies; browsers never request them. Licence links sit in comments.
 const ALLOW = [/^https?:\/\/www\.w3\.org\/(2000\/svg|1999\/xlink|2000\/xmlns\/?|XML\/1998\/namespace|1999\/xhtml)/,
   /^https:\/\/github\.com\/andrew-attard\/tap-atlas/];
+// The vendored spreadsheet library (vendor/xlsx.mini.min.js) names the Office, OpenDocument and Dublin Core XML
+// vocabularies of the files it reads and writes; namespace names, never requested (D148).
+const VENDOR_XLSX_ALLOW = [/^https?:\/\/(www\.w3\.org|schemas\.openxmlformats\.org|sheetjs\.openxmlformats\.org|schemas\.microsoft\.com|purl\.org|purl\.oclc\.org|docs\.oasis-open\.org|openoffice\.org|sheetjs\.com|macVmlSchemaUri)(\/|$)/];
 
 function files(rel, acc) {
   const abs = path.join(root, rel);
@@ -79,7 +82,8 @@ SHIPPED.forEach((top) => files(top, []).forEach((rel) => {
   const re = /https?:\/\/[^\s"'`)<>\\]*/g;
   let m;
   while ((m = re.exec(code))) {
-    if (ALLOW.some((a) => a.test(m[0]))) { allowed[m[0]] = (allowed[m[0]] || 0) + 1; continue; }
+    const allow = rel === 'vendor/xlsx.mini.min.js' ? ALLOW.concat(VENDOR_XLSX_ALLOW) : ALLOW;
+    if (allow.some((a) => a.test(m[0]))) { allowed[m[0]] = (allowed[m[0]] || 0) + 1; continue; }
     const line = code.slice(0, m.index).split('\n').length;
     hits.push(rel + ':' + line + '  ' + m[0]);
   }
