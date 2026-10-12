@@ -294,24 +294,25 @@
 
     /* ---------- D116: the comparison bar in one row; D118: the Overview has no comparison ---------- */
 
-    T.test(D116, 'One row: Compare, the modes and the Data, Present and Tour buttons with short visible labels', function (a) {
+    T.test(D116, 'One row: Compare, the modes and the Data, Present, Tour and Import buttons with short visible labels', function (a) {
       run(function () {
         var root = startApp(), bar = onView(root, 'industry'), b = pageButtons(bar), mode = qs('.tap-cmp__mode', bar);
         screen(root, 1280);
         a.equal(txt(b.data), 'Data · 2 Oct', 'Data with the short date (the mini data is from 2 Oct 2026)');
         a.equal(txt(b.present), 'Present', 'Present');
         a.equal(txt(b.tour), 'Tour', 'Tour');
-        var parts = [qs('.tap-cmp__title', bar), mode, b.data, b.present, b.tour];
+        a.equal(txt(b.imp), 'Import', 'Import (D147)');
+        var parts = [qs('.tap-cmp__title', bar), mode, b.data, b.present, b.tour, b.imp];
         a.ok(parts.every(visible), 'every part shown');
         a.ok(parts.every(function (n) { return sameRow(n, mode); }), 'all on one row at 1280 px');
-        [b.data, b.present, b.tour].forEach(function (n) {
+        [b.data, b.present, b.tour, b.imp].forEach(function (n) {
           a.ok(Math.abs(rect(n).height - rect(mode).height) <= 1, txt(n) + ': as high as the mode buttons');
           a.ok(parseFloat(getComputedStyle(n).fontSize) >= 16, txt(n) + ': text at least 16 px (D24)');
           a.ok(!!qs('svg', n), txt(n) + ': with its icon');
         });
         a.ok(rect(b.data).left > rect(qsa('.tap-cmp__mode', bar)[2]).right, 'the buttons come after the modes');
-        a.ok(rect(b.present).left > rect(b.data).right && rect(b.tour).left > rect(b.present).right, 'in the order Data, Present, Tour');
-        a.ok(rect(bar).right - rect(b.tour).right <= 50, 'pushed to the end of the row');
+        a.ok(rect(b.present).left > rect(b.data).right && rect(b.tour).left > rect(b.present).right && rect(b.imp).left > rect(b.tour).right, 'in the order Data, Present, Tour, Import');
+        a.ok(rect(bar).right - rect(b.imp).right <= 50, 'pushed to the end of the row');
         var h = Math.round(rect(bar).height);
         a.ok(h < TWO_ROWS_H, 'the bar is ' + h + ' px high at 1280 px, below the ' + TWO_ROWS_H + ' px of the two-row bar');
         clickMode(root, 'set');
