@@ -330,10 +330,32 @@
     function rt(id, title, fn) {
       if (READY) T.test(id, title, fn); else T.skip(id, title, 'waits for the READ (#585) and FIXTURES (#584) pull requests');
     }
-    function strip(plan) { var p = copy(plan); p.regions.forEach(function (r) { delete r.source; }); return p; }
+    // The grid lists are compared order-free: the reader walks rows then columns, while the fixtures and the sample
+    // generator list the same items in their own orders (the sample's strategic plan by year first, routes by route, year,
+    // solution, type). Sorted by sourceCell, which is unique within a block.
+    var GRID_LISTS = ['recap', 'revenue', 'booksValue', 'strategicPlan', 'routes'];
+    function byCell(x, y) { return x.sourceCell < y.sourceCell ? -1 : x.sourceCell > y.sourceCell ? 1 : 0; }
+    function strip(plan) {
+      var p = copy(plan);
+      p.regions.forEach(function (r) {
+        delete r.source;
+        GRID_LISTS.forEach(function (k) { if (Array.isArray(r[k])) r[k] = r[k].slice().sort(byCell); });
+      });
+      return p;
+    }
+    // The miniP4 fixture as the reader gives it back: names become ids, and an optional Phase 4 field the fixture leaves
+    // out reads as null (or three nulls) because its mapped cells are blank (R5: a blank is null, never left out)
+    var THREE = ['supportPct', 'distribution', 'servicesFromPartners'];
     function expectP4() {
       var p = T_FIXTURE('miniP4');
-      p.regions.forEach(function (r) { r.partners.forEach(function (pt) { if (pt.maturity === 'Strategic') pt.maturity = 'strategic'; }); });
+      p.regions.forEach(function (r) {
+        r.partners.forEach(function (pt) {
+          if (pt.maturity === 'Strategic') pt.maturity = 'strategic';
+          THREE.forEach(function (k) { if (pt[k] === undefined) pt[k] = [null, null, null]; });
+        });
+        r.newBusiness.forEach(function (row) { if (row.solution === undefined) row.solution = null; });
+        if (r.outsourcingPct === undefined) r.outsourcingPct = null;
+      });
       return p;
     }
     // The imported plan equals the source: regions without source, meta without generatedAt, lookups, and the source files
