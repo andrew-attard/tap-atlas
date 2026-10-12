@@ -85,6 +85,9 @@ step "docs paths" "$node_bin" tools/check-docs.js
 # Handover and portfolio file checks (Phase 3)
 step "handover and portfolio" "$node_bin" tools/check-docs3.js
 # The committed sample data must be exactly what the generator writes (US-1.3.3)
+if [ -f tools/build-import-map.js ]; then
+  step "sample import mapping reproducible" "$node_bin" tools/build-import-map.js --check
+fi
 if [ -f tools/generate-sample-data.js ]; then
   step "sample data reproducible" "$node_bin" tools/generate-sample-data.js --check
 fi
