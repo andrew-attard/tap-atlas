@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, UI stream (docs/ARCHITECTURE.md section 20): the Import panel as a layer and
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
- * Provides: test cases X-import-ui-*
+ * Provides: test cases TPV-TC-852 to TPV-TC-867
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
  * Owner: UI stream (#587)
@@ -111,7 +111,7 @@
   }
 
   T.suite('import-ui', function () {
-    T.test('X-import-ui-layer', 'Import opens as a wide layer: the title, the file input, the live status, the three buttons disabled with the reason, the sample badge', function (a) {
+    T.test('TPV-TC-852', 'Import opens as a wide layer: the title, the file input, the live status, the three buttons disabled with the reason, the sample badge', function (a) {
       withApp(function () {
         withFakes(mapFakes(), function () {
           startApp();
@@ -143,7 +143,7 @@
       });
     });
 
-    T.test('X-import-ui-map-missing', 'Without the mapping, the panel says so and the file input is disabled', function (a) {
+    T.test('TPV-TC-853', 'Without the mapping, the panel says so and the file input is disabled', function (a) {
       var saved = window.IMPORT_MAP;
       try {
         window.IMPORT_MAP = undefined;
@@ -155,7 +155,7 @@
       } finally { window.IMPORT_MAP = saved; }
     });
 
-    T.test('X-import-ui-map-problems', 'A mapping with problems lists them and the file input is disabled', function (a) {
+    T.test('TPV-TC-854', 'A mapping with problems lists them and the file input is disabled', function (a) {
       withFakes([[TAP.importMap, 'problems', function () { return ['The region list is empty.', 'Sheet 9 is not in the template.']; }]], function () {
         withFakes([[TAP.importMap, 'get', function () { return window.IMPORT_MAP; }]], function () {
           var host = T.dom.mount();
@@ -167,7 +167,7 @@
       });
     });
 
-    T.test('X-import-ui-show', 'A result draws the summary, a section per region with facts, errors and notes, the warnings, and enables the buttons', function (a) {
+    T.test('TPV-TC-855', 'A result draws the summary, a section per region with facts, errors and notes, the warnings, and enables the buttons', function (a) {
       panel(function (host) {
         var r = canned();
         TAP.importPanel.show(r);
@@ -207,7 +207,7 @@
       });
     });
 
-    T.test('X-import-ui-show-unusable', 'A result the contract check refuses keeps Use and Save disabled, says why, and tables the errors', function (a) {
+    T.test('TPV-TC-856', 'A result the contract check refuses keeps Use and Save disabled, says why, and tables the errors', function (a) {
       panel(function (host) {
         TAP.importPanel.show(unusable());
         var b = buttons(host);
@@ -223,7 +223,7 @@
       });
     });
 
-    T.test('X-import-ui-use', 'Use these plans now closes the layer and starts the app on the imported plan', function (a) {
+    T.test('TPV-TC-857', 'Use these plans now closes the layer and starts the app on the imported plan', function (a) {
       withApp(function () {
         withFakes(mapFakes(), function () {
           startApp();
@@ -242,7 +242,7 @@
       });
     });
 
-    T.test('X-import-ui-use-inline', 'Under a start-up screen, Use starts the app directly and tells the caller', function (a) {
+    T.test('TPV-TC-858', 'Under a start-up screen, Use starts the app directly and tells the caller', function (a) {
       var onUse = spy(), start = spy({ ok: true });
       withFakes(mapFakes().concat([[TAP.app, 'start', start]]), function () {
         var host = T.dom.mount();
@@ -257,7 +257,7 @@
       });
     });
 
-    T.test('X-import-ui-save', 'Save data/plan-data.js downloads the plan and says where the file went', function (a) {
+    T.test('TPV-TC-859', 'Save data/plan-data.js downloads the plan and says where the file went', function (a) {
       var download = spy();
       withFakes([[TAP.importWrite, 'download', download]], function () {
         panel(function (host) {
@@ -271,7 +271,7 @@
       });
     });
 
-    T.test('X-import-ui-copy', 'Copy report copies the plain-text report; when the clipboard refuses, the text is shown to copy by hand', function (a) {
+    T.test('TPV-TC-860', 'Copy report copies the plain-text report; when the clipboard refuses, the text is shown to copy by hand', function (a) {
       var clip = spy(function () { return Promise.resolve(true); });
       return withFakes([[TAP.importWrite, 'report', function () { return 'REPORT TEXT'; }], [TAP.panelTable, 'clipboard', clip]], function () {
         return panel(function (host) {
@@ -296,7 +296,7 @@
       });
     });
 
-    T.test('X-import-ui-pick', 'Picking workbooks runs the import with the mapping, shows progress, then the report', function (a) {
+    T.test('TPV-TC-861', 'Picking workbooks runs the import with the mapping, shows progress, then the report', function (a) {
       var calls = [];
       function run(files, map, opts) {
         calls.push({ files: files, map: map, opts: opts });
@@ -332,7 +332,7 @@
       return out.sort();
     }
 
-    T.test('X-import-ui-failed', 'An import that throws leaves a message in the status, not a broken panel', function (a) {
+    T.test('TPV-TC-862', 'An import that throws leaves a message in the status, not a broken panel', function (a) {
       return withFakes(mapFakes().concat([[TAP.importPlan, 'run', function () { return Promise.reject(new Error('The library did not load.')); }]]), function () {
         var host = T.dom.mount();
         TAP.importPanel.render(host, {});
@@ -348,7 +348,7 @@
       });
     });
 
-    T.test('X-import-ui-screens', 'The no-data and invalid screens carry an Import button that draws the panel under the text, once', function (a) {
+    T.test('TPV-TC-863', 'The no-data and invalid screens carry an Import button that draws the panel under the text, once', function (a) {
       withFakes(mapFakes(), function () {
         ['missing', 'invalid'].forEach(function (reason) {
           var root = T.dom.mount();
@@ -372,7 +372,7 @@
       });
     });
 
-    T.test('X-import-ui-button', 'button(slot) adds the Import button once, with the full name as its label', function (a) {
+    T.test('TPV-TC-864', 'button(slot) adds the Import button once, with the full name as its label', function (a) {
       var slot = T.dom.mount();
       TAP.importPanel.button(slot);
       TAP.importPanel.button(slot);
@@ -383,7 +383,7 @@
       a.ok(qs('.tap-icon svg', b[0]), 'with an icon');
     });
 
-    T.test('X-import-ui-bar', 'The comparison bar\'s buttons are Data, Present, Tour and Import, and Import opens the panel', function (a) {
+    T.test('TPV-TC-865', 'The comparison bar\'s buttons are Data, Present, Tour and Import, and Import opens the panel', function (a) {
       withApp(function () {
         withFakes(mapFakes(), function () {
           var root = startApp(), slot = TAP.shell.actionsEl();
@@ -397,7 +397,7 @@
       });
     });
 
-    T.test('X-import-ui-wording', 'Every word on the panel and its report is found in the wording file', function (a) {
+    T.test('TPV-TC-866', 'Every word on the panel and its report is found in the wording file', function (a) {
       panel(function (host) {
         TAP.importPanel.show(unusable());
         var s = txt(host);
@@ -407,7 +407,7 @@
       });
     });
 
-    T.test('X-import-ui-text-size', 'The status, the buttons, the facts and the sheet › cell lines are body text, 16 px and up (D24)', function (a) {
+    T.test('TPV-TC-867', 'The status, the buttons, the facts and the sheet › cell lines are body text, 16 px and up (D24)', function (a) {
       withApp(function () {
         withFakes(mapFakes(), function () {
           startApp();
