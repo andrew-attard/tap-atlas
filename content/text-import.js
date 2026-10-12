@@ -79,6 +79,50 @@ Object.assign(window.TAP_CONTENT.text, {
       strategicPlan: 'Strategic plan',
       routes: 'Routes to market',
       extra: 'Other sections'
+    },
+
+    // READ stream (#585): the mapping's problems, one sentence each, and the notes and errors of reading a workbook.
+    // A note's sheet and cell are shown next to the message, so the message itself names the field and the value.
+    read: {
+      map: {
+        notObject: 'The mapping is not an object.',
+        noMeta: 'The mapping has no meta object.',
+        years: 'The mapping’s meta.years must list three different plan years.',
+        regions: 'The mapping has no regions list.',
+        regionId: 'Region {n} in the mapping has no id.',
+        duplicateRegion: 'The region id {id} is used twice in the mapping.',
+        regionFile: 'Region {id} in the mapping has no file name.',
+        lookups: 'The mapping has no lookups object.',
+        lookupList: 'The mapping’s lookups have no {list}.',
+        sections: 'The mapping has no sections object.',
+        required: 'The mapping has no {section} section.',
+        badSection: 'The {section} section of the mapping is not an object.',
+        sheet: 'The {section} section of the mapping names no sheet.',
+        firstRow: 'The {section} section of the mapping has no first row.',
+        columns: 'The {section} section of the mapping has no columns.',
+        column: 'In the {section} section of the mapping, the column for {field} is not a column letter or a list of three letters.',
+        cells: 'In the {section} section of the mapping, cells must map each field to a cell address such as N3.',
+        filterCell: 'In the {section} section of the mapping, filterCell is not a cell address.',
+        axis: 'The {section} section of the mapping has no {part}.',
+        axisFirst: 'In the {section} section of the mapping, {part} needs a first row or column and a list of axes.',
+        axisField: 'In the {section} section of the mapping, the {part} axis field {field} is not known.',
+        axisValue: 'In the {section} section of the mapping, the {field} value {value} names no entry of the lookups.',
+        axisEntry: 'In the {section} section of the mapping, each listed {part} entry needs a {at}.',
+        blank: 'In the {section} section of the mapping, blank must be null or skip.',
+        extra: 'The mapping’s extra sections must be a list.',
+        extraEntry: 'Extra section {n} in the mapping needs an id, a title, a sheet, a first row and a list of columns.',
+        nameCell: 'The mapping’s nameCell needs a sheet and a cell.'
+      },
+      blankCell: 'a blank cell',
+      noResult: 'a formula with no saved result',
+      badValue: '{field}: the value {found} was not recognized and is left blank.',
+      errorCell: '{field}: the cell holds the error {found} and is left blank.',
+      formulaNoValue: '{field}: the cell holds a formula with no saved result and is left blank. Save the workbook after it has recalculated.',
+      headerMismatch: 'The heading {expected} was not found at {cell}, which holds {found}. The sheet is not read.',
+      filterMismatch: 'The region filter holds {found}, not {expected}. The block is not read.',
+      unknownIndustry: 'The industry {found} is not in the industry list; the row is left out.',
+      tierDiffers: 'The tier column holds {found}; the Market Coverage tier for this industry is {expected}, which is used.',
+      looseSheet: 'The sheet {found} was read for {expected}: the names differ in case or spacing.'
     }
   }
 });
