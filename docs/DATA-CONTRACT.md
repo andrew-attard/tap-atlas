@@ -27,7 +27,7 @@ window.PLAN_DATA = { meta: {...}, lookups: {...}, regions: [...] };
 - **Missing values, three states:**
   - a number (including `0`) means the leader entered it;
   - `null` means the cell was left blank ("not provided"), never converted to `0` or an empty string;
-  - not applicable is not stored as a value: it follows from the template's rules. Industries marked `rated: false` in `lookups.industries` have no ratings, and Tier 3 industries have no New Business rows.
+  - not applicable is not stored as a value: it follows from the template's rules. Industries marked `rated: false` in `lookups.industries` have no ratings, and a Tier 3 industry with no New Business rows is not applicable; a row for one is kept and warned about (D160).
 - **Extra fields and sections are allowed (D47).** The check ignores anything this contract doesn't name, so an import can add sections for the template's extra sheets before the contract is extended for them. To have the app show such a sheet, describe it as an [extra section](#extra-sections). `meta.schemaVersion` changes only when an existing field changes meaning or shape.
 
 ## Where each value comes from
@@ -181,7 +181,7 @@ The "Other" and "Unapplied industry" rows are kept for pipeline totals but have 
 |---|---|---|
 | `sourceRow` | number | IMP |
 | `industryId` | id from `lookups.industries`, with a Market Coverage row | IN |
-| `tier` | 1 or 2 | DER (looked up from Market Coverage; must match it) |
+| `tier` | 1, 2 or 3 | DER (looked up from Market Coverage; must match it). The template plans new business for Tier 1 and 2 industries; a row for a Tier 3 industry is kept and counted, with a warning (D160) |
 | `market` | text | IN |
 | `subVertical` | text | IN |
 | `channelSplit` | `{ direct, partner, allianceA, allianceB }`, decimals summing to 1 | IN |
@@ -232,7 +232,7 @@ Formulas: `arrPotential[0]` = targetAccounts × hitRate × avgDealSize; year 2 =
 |---|---|---|
 | `sourceRow` | number | IMP |
 | `name` | text | IN |
-| `channel` | `partner`, `allianceA` or `allianceB` | IN |
+| `channel` | `partner`, `allianceA` or `allianceB`, or `null` (not provided) | IN. A partner whose channel was never chosen loads with a warning and is shown under "Channel not provided"; it stays out of channel splits and channel-based checks (D159) |
 | `maturity` | id from `lookups.partnerMaturity`, or `null` | IN. A maturity's name ("Enable") is accepted too and read as its id. In a file without the lookup it is any text, shown as given |
 | `expertiseGeo`, `expertiseProduct` | text | IN |
 | `fteSales`, `fteConsultants` | number | IN |
@@ -426,7 +426,7 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 
 **Errors stop the app from opening** (the list can be copied in one click):
 - a required field or section is missing, or has the wrong type;
-- a value outside its allowed set: ratings and tiers 1 to 3, New Business tier 1 or 2, segment ids, channel ids, `riskLevel` (`high`, `medium` or `low`), recap `motion`, `type` and `year`;
+- a value outside its allowed set: ratings and tiers 1 to 3, New Business tier 1, 2 or 3, segment ids, channel ids (a partner's `channel` may also be `null`), `riskLevel` (`high`, `medium` or `low`), recap `motion`, `type` and `year`;
 - a broken reference between sections: an `industryId` or `productLine` not in `lookups`, a New Business row whose industry has no Market Coverage row or whose tier differs from it;
 - `meta.years` not exactly three different plan years, or a by-year list without three values (or with a value that is not a number);
 - a New Business `channelSplit` missing one of the four channels;
@@ -444,6 +444,8 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - a date (`meta.generatedAt`, `source.fileModified`, `source.importedAt`) that is not an ISO date such as `"2026-10-02T09:00:00Z"` or `"2026-10-02"`. The app never guesses at other forms (`"02/10/2026"` could be day first or month first), so such a date shows as not provided;
 - a share held as a decimal (`hitRate`, `servicesRatio`, `growth.year2` and `year3`, `growthPct`, `centralSupportPct`) above 1.5, which is most likely a whole-number percentage (25 for 25%); a negative `targetAccounts`, `fteSales` or `fteConsultants`; two recap items with the same `year`, `channel`, `motion` and `type`, which would both be added up;
 - a rating on an industry that is not rated;
+- a partner without a channel (`channel` is `null`): the partner loads and is shown under "Channel not provided" (D159);
+- a New Business row for an industry whose Market Coverage tier is 3: the row is kept and counted (D160). A tier that differs from Market Coverage is still an error;
 - in the full template's parts (Phase 4), values that are likely wrong:
   - revenue above the order intake of the same year, channel and motion (the `recap` figure it is released from);
   - a books value above the customer value of the same year for a reseller channel (`partner`, `allianceA`, `allianceB`), over ARR and services, the types both lists hold;
@@ -481,3 +483,4 @@ Each version of this contract and what it added. The version (`meta.schemaVersio
 | 0.2, unchanged | 2026-10-05 | Phase 2, `v0.2.0` | Nothing added to the file's shape. The New business, Customer growth and Partners views, the region profile and the lists read fields already in 0.2: `newBusiness[]`, `customerGrowth`, `partners[]` and `recap[]` |
 | 0.2, additions only | 2026-10-05 | Phase 3, `v0.3.0` | Optional extra sections (US-3.2.1, D66): `meta.extraSections` describes each section and its columns, and each region's `extra` holds its rows with `sourceRow`. Checked with warnings only; a file without them stays valid. See [Extra sections](#extra-sections) |
 | 0.2, additions only | 2026-10-05 | Phase 4, `v0.4.0` | The full template (US-4.1.1, D84, D87): optional lookups `productCategories`, `solutions`, `partnerTypes`, `partnerMaturity` and `routes`; per region the optional `revenue` and `booksValue` lists (the recap item's shape; `recap` keeps its meaning, customer value), `strategicPlan`, `baseYear`, `routes` and `outsourcingPct`; `solution` on New Business rows; `type`, `supportPct`, `distribution` and `servicesFromPartners` on partners, with `maturity` as an id from the lookup; and the risk level `low`. Checked on load: wrong types and unknown ids stop the app, likely-wrong values warn. A file without any of them stays valid. See [The full template](#the-full-template-phase-4) |
+| 0.2, additions only | 2026-10-13 | Real-data fixes, `v0.5.1` | Two values real workbooks hold are allowed and warned about instead of stopping the app: `partners[].channel` may be `null`, not provided (D159), and `newBusiness[].tier` may be 3 when the region's Market Coverage gives the industry Tier 3 (D160). The import mapping's optional `placeholders` list names the texts dropdown cells show until a choice is made, read as blanks (D158); the data file is unchanged by it |

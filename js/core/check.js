@@ -48,7 +48,7 @@
     years3: plain(function (v) { return Array.isArray(v) && v.length === 3; }, 'years3'),
     rating: oneOf([1, 2, 3]),
     tier: oneOf([1, 2, 3]),
-    nbTier: oneOf([1, 2]),
+    nbTier: oneOf([1, 2, 3]),
     risk: oneOf(['high', 'medium', 'low'], true),
     segment: oneOf(SEGMENTS, true),
     channelId: oneOf(CHANNELS, true),
@@ -85,7 +85,7 @@
     accounts: { id: 'str', name: 'str?', industryId: 'industry?', country: 'str?', productLine: 'productLine?', currentArr: 'num?',
       riskLevel: 'risk?', growthPct: 'years3?', multiplier3y: 'num?', servicesRatio: 'num?', incrementalArr: 'years3',
       servicesOrderIntake: 'years3', cumulativeOrderIntake: 'num?', segment: 'segment?' },
-    partners: { name: 'str', channel: 'partnerChannel', maturity: 'str?', expertiseGeo: 'str?', expertiseProduct: 'str?',
+    partners: { name: 'str', channel: 'partnerChannel?', maturity: 'str?', expertiseGeo: 'str?', expertiseProduct: 'str?',
       fteSales: 'num?', fteConsultants: 'num?', centralSupportPct: 'num?', arr: 'years3', services: 'years3' },
     recap: { year: 'year', channel: 'channel', motion: 'motion', type: 'recapType', value: 'num?' }
   };

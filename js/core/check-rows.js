@@ -110,8 +110,10 @@
     if (isObj(o.growth)) fields(o.growth, SPEC().growth, sub(c, 'growth'), env);
     if (!tiers) return arrFormula(o, c);
     if (has(tiers, o.industryId) || !has(env.industries, o.industryId)) {
-      var mc = tiers[o.industryId];
-      if ((o.tier === 1 || o.tier === 2) && TYPES().tier.ok(mc) && o.tier !== mc) err(c, 'tier', say('expect.mcTier', { tier: mc }), o.tier);
+      var mc = tiers[o.industryId], tierOk = TYPES().tier.ok;
+      if (tierOk(o.tier) && tierOk(mc) && o.tier !== mc) err(c, 'tier', say('expect.mcTier', { tier: mc }), o.tier);
+      // The template plans new business for Tier 1 and 2 industries; a row for a Tier 3 one is kept and counted (D160)
+      else if (o.tier === 3 && mc === 3) warn(c, 'tier', say('expect.tier3Row'), 3);
     } else {
       err(c, 'industryId', say('expect.mcRow'), o.industryId);
     }
@@ -149,8 +151,12 @@
     var tiers = Array.isArray(r.marketCoverage) ? map() : null;
     checkSection(r, 'marketCoverage', rctx, env, function (o, c) { checkMarketRow(o, c, env, tiers); });
     checkSection(r, 'newBusiness', rctx, env, function (o, c) { checkNewBusinessRow(o, c, env, tiers); });
-    // The optional partner type, maturity lookup and by-year fields (Phase 4)
-    checkSection(r, 'partners', rctx, env, function (o, c) { if (TAP.checkP4) TAP.checkP4.partner(o, c, env); });
+    // A partner whose channel was never chosen loads, shown under "Channel not provided" (D159); then the optional
+    // partner type, maturity lookup and by-year fields (Phase 4)
+    checkSection(r, 'partners', rctx, env, function (o, c) {
+      if (o.channel === null) warn(c, 'channel', say('expect.partnerChannel'), null);
+      if (TAP.checkP4) TAP.checkP4.partner(o, c, env);
+    });
     checkSection(r, 'recap', rctx, env);
     if (isObj(r.customerGrowth)) {
       var cg = r.customerGrowth;
