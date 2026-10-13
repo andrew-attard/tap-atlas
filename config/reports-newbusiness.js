@@ -18,7 +18,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'Which industries does each region’s new business rest on?',
     explain: {
       shows: 'Each region’s new business potential by industry, from the rows leaders filled in. Only industries with new business in at least one region are listed.',
-      read: 'Regions run across and industries down. Each cell shows the value, shaded stronger for larger values, and the region’s tier for that industry (T1 or T2). A dashed cell means rows were filled in without a usable figure.',
+      read: 'Regions run across and industries down. Each cell shows the value, shaded stronger for larger values, and the region’s tier for that industry (T1 or T2; a T3 is unusual, as the template plans new business in Tier 1 and Tier 2 industries, and worth asking the region about). A dashed cell means rows were filled in without a usable figure.',
       lookFor: 'Whether the money sits in the industries each region calls Tier 1, and industries that carry several regions’ plans.'
     },
     shape: 'grid',

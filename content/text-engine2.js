@@ -46,7 +46,7 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
   var nb = { oi: { label: 'New business order intake potential', short: 'New business order intake' } };
   Object.keys(TIER).forEach(function (t) {
     nb[t] = nb[t] || {};
-    [1, 2].forEach(function (n) { nb[t]['tier' + n] = { label: TIER[t] + ' in Tier ' + n + ' industries', short: 'Tier ' + n }; });
+    [1, 2, 3].forEach(function (n) { nb[t]['tier' + n] = { label: TIER[t] + ' in Tier ' + n + ' industries', short: 'Tier ' + n }; });   // tier 3: D160
   });
   var seg = {}, growth = { all: { label: 'Customer growth %', short: 'Growth %' } };
   Object.keys(SEGMENT).forEach(function (s) {
@@ -141,9 +141,11 @@ window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
       },
       amb: { nbShare: { label: 'Share of the 3-year ARR ambition from new business', short: 'New business share' } }
     },
-    // List reports (US-2.7.2): column headings per row source, the filter's first option and each row's source
+    // List reports (US-2.7.2): column headings per row source, the filter's first option, the option for rows with
+    // no value in the filtered column (D159) and each row's source
     rows: {
       all: 'All',
+      noValue: '{column} not provided',
       source: '{file}, row {row}',
       sourceHeading: 'Source',
       unknownColumn: 'The column "{key}" is not available for this list.',
