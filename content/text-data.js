@@ -59,6 +59,9 @@ Object.assign(window.TAP_CONTENT.text, {
       uniqueId: 'an id not already used in this list',
       mcTier: 'the Market Coverage tier for this industry ({tier})',
       mcRow: 'an industry with a row in Market Coverage',
+      // Real-data fixes (v0.5.1): both load with a warning
+      tier3Row: 'a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted)',
+      partnerChannel: 'a channel for this partner (left blank, so it is shown under "Channel not provided")',
       sourceRow: 'the worksheet row number',
       isoDate: 'a date written year first, such as "2026-10-02T09:00:00Z" or "2026-10-02"',
       share: 'a share written as a decimal, for example 0.25 for 25%',
