@@ -224,17 +224,21 @@
 
     /* D160: a New Business row in a Tier 3 industry (#601) */
 
-    // Region A gets a row in ind3, its Tier 3 industry: ARR 100 + 200 + 300 = 600, services 10 + 20 + 30 = 60. Until the
-    // CONTRACT PR lands the check refuses such a file, so the loaded plan is changed in place (load() restores it).
+    // miniP2 with a New Business row for Region A in ind3, its Tier 3 industry: ARR 100 + 200 + 300 = 600, services
+    // 10 + 20 + 30 = 60; installed through the check as any file is (the check warns, #602).
     function tier3Row() {
-      TAP.data.region('alpha').newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
-        channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 150,
+      var plan = window.T_FIXTURE('miniP2');
+      plan.regions[0].newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
+        channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 100,
         growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 });
+      var res = TAP.data.load(plan);
+      if (!res.ok) throw new Error('the fixture with a Tier 3 row did not load: ' + JSON.stringify(res.errors));
+      return res;
     }
 
     T.test('X-d160-tier3', 'nb.<t>.tier3 is the new business in the region’s Tier 3 industries: the row’s potential, also counted in the total', function (a) {
-      load();
-      tier3Row();
+      var loaded = tier3Row();
+      a.ok(loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the file loads with a warning that names Tier 3');
       expectCell(a, TAP.measures.get('nb.arr.tier3')('alpha', {}), 600, 'alpha nb.arr.tier3');
       expectCell(a, TAP.measures.get('nb.services.tier3')('alpha', {}), 60, 'alpha nb.services.tier3');
       expectCell(a, TAP.measures.get('nb.oi.tier3')('alpha', {}), 660, 'alpha nb.oi.tier3');

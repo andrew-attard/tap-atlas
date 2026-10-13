@@ -1117,15 +1117,18 @@
   });
   /* ---------- D160: a New Business row in a Tier 3 industry (#601) ---------- */
 
-  // Region A gets a row in ind3, its Tier 3 industry: ARR 100 + 200 + 300 = 600, services 10 + 20 + 30 = 60. Until the
-  // CONTRACT PR lands the check refuses such a file, so the loaded plan is changed in place (T_BEFORE_EACH restores it).
+  // Region A gets a row in ind3, its Tier 3 industry: ARR 100 + 200 + 300 = 600, services 10 + 20 + 30 = 60. The file is
+  // installed through the check as any file is (the check warns, #602); T_BEFORE_EACH loads the plain fixture again.
+  var T3_ROW = { sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
+    channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 100,
+    growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 };
   function tier3Row() {
-    TAP.data.region('alpha').newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
-      channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 150,
-      growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 });
+    var plan = window.T_FIXTURE('mini');
+    plan.regions[0].newBusiness.push(JSON.parse(JSON.stringify(T3_ROW)));
+    var res = TAP.data.load(plan);
+    if (!res.ok) throw new Error('the fixture with a Tier 3 row did not load: ' + JSON.stringify(res.errors));
+    return res;
   }
-  var CONTRACT_LANDED = false;   // flip once js/core/check.js warns, instead of refusing, on a Tier 3 New Business row
-  var whenContract = CONTRACT_LANDED ? T.test : function (id, title) { T.skip(id, title, 'waits for the CONTRACT PR: the check refuses a Tier 3 New Business row (#601)'); };
 
   T.suite('newbusiness-tier3', function () {
     function text(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
@@ -1192,14 +1195,10 @@
       a.ok(!/unrealistic|wrong|poor|inconsistent/i.test(read), 'neutral wording (D20)');
     });
 
-    whenContract('X-d160-tier3', 'A file with such a row loads with a warning, and the grid draws its T3 cell', function (a) {
-      var plan = window.T_FIXTURE('mini');
-      plan.regions[0].newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
-        channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 150,
-        growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 });
-      var loaded = TAP.data.load(plan);
-      a.ok(loaded.ok, 'loads: ' + JSON.stringify(loaded.errors));
-      a.ok(loaded.warnings.length > 0, 'with a warning');
+    T.test('X-d160-tier3', 'A file with such a row loads with a warning that names Tier 3, and the grid draws its T3 cell', function (a) {
+      var loaded = tier3Row();
+      a.ok(loaded.ok, 'loads');
+      a.ok(loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the warning names Tier 3: ' + JSON.stringify(loaded.warnings));
       var res = grid({ mode: 'all' });
       a.near(gcell(res, 'alpha', 'ind3').v, 600, 1e-9, 'the cell');
       a.ok(/tap-nbg__tier--t3/.test(res.html), 'the T3 chip');
