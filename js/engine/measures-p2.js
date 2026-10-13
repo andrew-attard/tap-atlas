@@ -131,9 +131,12 @@
     return out;
   }
   [1, 2, 3].forEach(function (tier) {
-    M.define('nb.arr.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.arr'); });
-    M.define('nb.services.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.services'); });
-    M.derive('nb.oi.tier' + tier, ['nb.arr.tier' + tier, 'nb.services.tier' + tier], k.amount('APP', ['year']));
+    // Tier 3 is a part most files lack, so Build a chart offers it only when a region has a value (meta.optional, as
+    // the Phase 4 parts), and no choice draws an empty chart
+    function meta(kind) { var m = k.amount(kind, ['year']); if (tier === 3) m.optional = true; return m; }
+    M.define('nb.arr.tier' + tier, meta('DER'), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.arr'); });
+    M.define('nb.services.tier' + tier, meta('DER'), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.services'); });
+    M.derive('nb.oi.tier' + tier, ['nb.arr.tier' + tier, 'nb.services.tier' + tier], meta('APP'));
   });
 
   // One industry (ctx.industryId), read exactly as nb.services, so the two can never disagree (D48).
