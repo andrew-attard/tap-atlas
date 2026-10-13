@@ -12,6 +12,7 @@
   'use strict';
 
   var NUMERIC = { money: true, pct: true, count: true, rating: true, score: true };
+  var NONE = 'none';   // the option of a filter with f.none: the rows whose cell is not provided (D159)
   function t(key, vars) { return TAP.content.text(key, vars); }
   function esc(s) { return TAP.dom.esc(s); }
 
@@ -77,11 +78,12 @@
     function cellOf(r, key) { return r.memo[key] || (r.memo[key] = TAP.rows.cell(source, key, r.entry)); }
 
     // A row passes a filter when its value is the one picked, or one of those ticked in a dropdown (D134); 'all' or
-    // nothing ticked passes every row
+    // nothing ticked passes every row. A row with no value passes only the "not provided" option (c.none, D159).
     function passes(r, c) {
       var want = c.value === 'all' ? [] : [].concat(c.value);
       if (!want.length) return true;
       var x = cellOf(r, c.field);
+      if (x.state === 'notProvided') return !!c.none && want.indexOf(NONE) >= 0;
       return x.state === 'value' && want.indexOf(String(x.v)) >= 0;
     }
     var controls = (def.filter || []).map(function (f) { return filterControl(source, f, rows, opts, cols, cellOf); });
@@ -89,7 +91,7 @@
     controls.forEach(function (c, i) {
       if (c.kind !== 'multi') return;
       var others = rows.filter(function (r) { return controls.every(function (o, j) { return j === i || passes(r, o); }); });
-      c.options.forEach(function (o) { o.count = others.filter(function (r) { return passes(r, { field: c.field, value: [o.value] }); }).length; });
+      c.options.forEach(function (o) { o.count = others.filter(function (r) { return passes(r, { field: c.field, none: c.none, value: [o.value] }); }).length; });
     });
     rows = rows.filter(function (r) { return controls.every(function (c) { return passes(r, c); }); });
 
@@ -120,17 +122,20 @@
 
   // One select per filter, "All" first, then the values found in scope, in alphabetical order. With f.multi, a dropdown
   // of checkboxes instead (kind 'multi', TAP.multiSelect, D134): its value is the values ticked, none meaning all.
+  // With f.none, a last option, "<Column> not provided", stands for the rows with no value, when there are any (D159).
   function filterControl(source, f, rows, opts, cols, cellOf) {
-    var unit = (TAP.rows.columns(source).filter(function (c) { return c.key === f.key; })[0] || {}).unit, seen = {};
+    var unit = (TAP.rows.columns(source).filter(function (c) { return c.key === f.key; })[0] || {}).unit, seen = {}, blank = false;
     rows.forEach(function (r) {
       var c = cellOf(r, f.key);
       if (c.state === 'value') seen[String(c.v)] = TAP.format.cell(c, { unit: unit });
+      else if (c.state === 'notProvided') blank = true;
     });
+    var col = cols.filter(function (c) { return c.key === f.key; })[0], colLabel = col ? col.label : t('rows.' + source + '.' + f.key);
     var options = Object.keys(seen).map(function (v) { return { value: v, label: seen[v] }; })
       .sort(function (a, b) { return a.label.localeCompare(b.label); });
+    if (f.none && blank) options.push({ value: NONE, label: t('rows.noValue', { column: colLabel }) });
     var want = opts['filter:' + f.key], has = function (v) { return options.some(function (o) { return o.value === v; }); };
-    var col = cols.filter(function (c) { return c.key === f.key; })[0];
-    var out = { key: 'filter:' + f.key, field: f.key, label: f.label || (col ? col.label : t('rows.' + source + '.' + f.key)), kind: 'select',
+    var out = { key: 'filter:' + f.key, field: f.key, label: f.label || colLabel, kind: 'select', none: !!f.none,
       value: has(want) ? want : 'all', options: [{ value: 'all', label: t('rows.all') }].concat(options) };
     // A single value kept from before the dropdown still counts as ticked
     if (f.multi) Object.assign(out, { kind: 'multi', value: [].concat(want == null ? [] : want).filter(has), options: options });

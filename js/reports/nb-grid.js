@@ -3,7 +3,8 @@
  * Purpose: The new business industry grid (US-2.1.2): the regions in scope (or combined figures) across, the
  *          industries with new business down, each cell the value written out and shaded by size, with the region's
  *          tier for that industry. With a year breakdown each industry gets a line per plan year. The stacked bar by
- *          tier is drawn by the parts builder from a derived definition (nb.<t> split into Tier 1 and Tier 2).
+ *          tier is drawn by the parts builder from a derived definition (nb.<t> split into Tier 1 and Tier 2, plus
+ *          Tier 3 when a compared region planned new business in a Tier 3 industry, D160).
  * Provides: builder 'nbGrid' (registered with TAP.builders)
  * Depends on: js/engine/shapes.js (drawing kit), js/engine/measures.js, js/engine/prepare.js, js/engine/scope.js,
  *             js/engine/build-parts.js, js/core/dom.js, js/core/format.js, js/core/content.js, js/core/data.js,
@@ -146,9 +147,13 @@
     return { columns: cols, rows: rows };
   }
 
-  function legend() {
+  // A cell carries its tier's chip when it has a value (cellHtml); Tier 3 is listed only when some cell carries one (D160).
+  function chipped(m, tier) {
+    return m.rows.some(function (r) { return r.tiers.some(function (c, ci) { return c.state === 'value' && c.v === tier && r.total[ci].state === 'value'; }); });
+  }
+  function legend(m) {
     var th = k().th();
-    return [{ label: t('legendShade'), color: null, role: 'note' }].concat([1, 2].map(function (x) {
+    return [{ label: t('legendShade'), color: null, role: 'note' }].concat([1, 2].concat(chipped(m, 3) ? [3] : []).map(function (x) {
       return { label: t('legendTier', { short: t('tierShort', { tier: x }), tier: th.tiers[x].label }), color: th.tiers[x].bg, role: 'tier' };
     })).concat([{ label: t('legendNp'), color: null, role: 'notProvided' }]);
   }
@@ -178,13 +183,15 @@
 
   /* ---------- stacked bar by tier ---------- */
 
-  // The parts builder draws it from a derived definition: the region's total, split into its Tier 1 and Tier 2 industries.
+  // The parts builder draws it from a derived definition: the region's total, split into its Tier 1 and Tier 2 industries,
+  // and its Tier 3 industries only when a compared region has a figure there (D160), so the bars always add up.
   function byTier(ctx) {
     var def = ctx.def, m = TAP.prepare.selected(def, ctx), total = totalOf(m), own = def.measures.filter(function (x) { return x.id === m; })[0];
-    var parts = [total + '.tier1', total + '.tier2'];
+    var parts = [total + '.tier1', total + '.tier2'], t3 = total + '.tier3';
     if (!parts.concat([total]).every(function (id) { return TAP.measures.meta(id); })) {
       return k().result(def, null, { error: t('noTierParts') });
     }
+    if (TAP.measures.meta(t3) && TAP.scope.regionIds(ctx.cmp).some(function (r) { return TAP.measures.get(t3)(r, {}).state === 'value'; })) parts.push(t3);
     var pdef = Object.assign({}, def, { shape: 'parts', builder: null, dimension: 'entity', parts: {},
       measures: [{ id: total, label: own ? own.label : TAP.measures.meta(total).label }].concat(parts.map(function (id, i) {
         return { id: id, label: t('tierPart', { tier: i + 1 }) };
@@ -198,7 +205,7 @@
     if (type === 'stackedBar') return byTier(ctx);
     var m = model(ctx), gap = missing(m);
     var res = k().result(ctx.def, null, { missing: gap.names, empty: gap.empty || !m.rows.length, target: targetFn(ctx.def, m.cols),
-      table: table(m), legend: legend() });
+      table: table(m), legend: legend(m) });
     if (m.cols.some(function (c) { return !c.region; })) res.notes = [t('combinedNoTier')];
     if (type !== 'table') res.html = html(m);
     return res;

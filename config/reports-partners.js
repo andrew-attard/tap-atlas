@@ -142,7 +142,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
     title: 'Which partners does each region name?',
     explain: {
       shows: 'Every partner the regions name, with its channel, type, maturity, expertise, people, central support, planned contribution and, where the template gives it, the distribution it carries at customer value.',
-      read: 'One row per partner, sorted by three-year ARR. Filter by channel, sort by any column and click a row for the partner’s details and source row. "Also named by" lists the other regions that name a partner with the same name, ignoring case and spacing.',
+      read: 'One row per partner, sorted by three-year ARR. Filter by channel (a partner whose channel was left blank is listed under “Channel not provided”), sort by any column and click a row for the partner’s details and source row. "Also named by" lists the other regions that name a partner with the same name, ignoring case and spacing.',
       lookFor: 'Partners several regions work with, and partners carrying a large plan with few people.'
     },
     shape: 'list',
@@ -155,7 +155,7 @@ window.TAP_REPORTS = window.TAP_REPORTS || {};
       { key: 'oiPerFte' }, { key: 'alsoNamed' }
     ],
     sort: { key: 'arr3', dir: 'desc' },
-    filter: [{ key: 'channel', label: 'Channels', multi: true }],   // D138: a dropdown with counts
+    filter: [{ key: 'channel', label: 'Channels', multi: true, none: true }],   // D138: a dropdown with counts; D159: a "not provided" option
     defaultType: 'list',
     types: ['list'],
     breakdowns: [],

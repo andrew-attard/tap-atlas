@@ -106,9 +106,10 @@
 
   M.derive('nb.oi', ['nb.arr', 'nb.services'], k.amount('APP', ['year', 'industry', 'solution']));   // solution: Phase 4 (19.2)
 
-  // New business in the region's Tier 1 or Tier 2 industries, as Market Coverage sets them: the sum of each
-  // industry's figure, read as nb.arr or nb.services for that industry, so a tier industry with no row is not
-  // provided (D48), never zero. No industry in the tier: not applicable.
+  // New business in the region's Tier 1, Tier 2 or Tier 3 industries, as Market Coverage sets them: the sum of each
+  // industry's figure, read as nb.arr or nb.services for that industry, so a Tier 1 or 2 industry with no row is not
+  // provided (D48), never zero. No industry in the tier: not applicable. A Tier 3 industry has a figure only when a
+  // region planned new business in it (D160, unusual); with no row it is not applicable, so tier 3 is usually so.
   function nbTier(r, ctx, tier, id) {
     var field = id === 'nb.arr' ? 'arrPotential' : 'servicesPotential';
     var cells = (region(r).marketCoverage || []).filter(function (row) { return row.tier === tier; }).map(function (row) {
@@ -129,7 +130,7 @@
     } else if (part) { out.partial = true; out.note = part.cell.note; }
     return out;
   }
-  [1, 2].forEach(function (tier) {
+  [1, 2, 3].forEach(function (tier) {
     M.define('nb.arr.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.arr'); });
     M.define('nb.services.tier' + tier, k.amount('DER', ['year']), function (r, ctx) { return nbTier(r, ctx || {}, tier, 'nb.services'); });
     M.derive('nb.oi.tier' + tier, ['nb.arr.tier' + tier, 'nb.services.tier' + tier], k.amount('APP', ['year']));
