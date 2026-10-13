@@ -2,7 +2,8 @@
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206) and for its Phase 4 parts (US-4.1.2).
  * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
- *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*
+ *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*; for the real-data
+ *           fixes (#599 to #601): X-check-real-data-warnings and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -160,8 +161,37 @@
       ['growthPotential', 'currentArr', 'tier', 'commentary'].forEach(function (k) { row[k] = null; });
       p.regions[0].newBusiness[0].hitRate = null;
       p.regions[0].newBusiness[0].arrPotential = [null, null, null];
+      p.regions[0].partners[0].channel = null;                 // a partner whose channel was never chosen (D159)
       var res = TAP.check.run(p);
       a.deepEqual(res.errors, [], errorList(res));
+    });
+
+    // Real-data fixes (v0.5.1): a partner without a channel and a New Business row for a Tier 3 industry load with a warning each
+    T.test('X-check-real-data-warnings', 'A partner without a channel and a Tier 3 New Business row are warnings; the file loads; a tier that differs from Market Coverage is still an error', function (a) {
+      var p = T_FIXTURE('mini');
+      p.regions[0].partners[0].channel = null;
+      p.regions[0].newBusiness[1].industryId = 'ind3';         // Retail: Tier 3 in Region A's Market Coverage
+      p.regions[0].newBusiness[1].tier = 3;
+      var res = TAP.check.run(p), paths = res.warnings.map(function (w) { return w.path; });
+      a.deepEqual(res.errors, [], errorList(res));
+      ['regions[0].partners[0].channel', 'regions[0].newBusiness[1].tier'].forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is warned about'); });
+      var r = TAP.data.load(p);
+      a.equal(r.ok, true, 'the data loads');
+      a.ok(r.warnings.some(function (w) { return w.path === 'regions[0].partners[0].channel'; }), 'and returns the warnings');
+      a.equal(p.regions[0].newBusiness[1].tier, 3, 'the row keeps its tier');
+      // Still an error: a tier of 3 on an industry Market Coverage puts in Tier 2, and an unknown channel text
+      var q = T_FIXTURE('mini');
+      q.regions[0].newBusiness[1].tier = 3;
+      q.regions[1].partners[0].channel = 'Select channel';
+      var bad = TAP.check.run(q).errors.map(function (e) { return e.path; });
+      a.deepEqual(bad, ['regions[0].newBusiness[1].tier', 'regions[1].partners[0].channel']);
+      a.equal(TAP.data.load(q).ok, false);
+      // A missing channel field is an error, not the blank's warning
+      var none = T_FIXTURE('mini');
+      delete none.regions[0].partners[0].channel;
+      var missing = TAP.check.run(none);
+      a.deepEqual(missing.errors.map(function (e) { return e.path; }), ['regions[0].partners[0].channel']);
+      a.ok(!missing.warnings.some(function (w) { return w.path === 'regions[0].partners[0].channel'; }), 'and not warned about too');
     });
 
     // Review DE-4: a worksheet row number used twice in a section was not reported.
