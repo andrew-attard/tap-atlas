@@ -111,7 +111,8 @@ Object.assign(window.TAP_CONTENT.text, {
         blank: 'In the {section} section of the mapping, blank must be null or skip.',
         extra: 'The mapping’s extra sections must be a list.',
         extraEntry: 'Extra section {n} in the mapping needs an id, a title, a sheet, a first row and a list of columns.',
-        nameCell: 'The mapping’s nameCell needs a sheet and a cell.'
+        nameCell: 'The mapping’s nameCell needs a sheet and a cell.',
+        placeholders: 'The mapping’s placeholders must be a list of texts, one per dropdown placeholder such as "Select channel".'
       },
       blankCell: 'a blank cell',
       noResult: 'a formula with no saved result',

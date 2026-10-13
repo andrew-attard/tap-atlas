@@ -153,6 +153,8 @@
     if (map.nameCell != null && !(isObj(map.nameCell) && filled(map.nameCell.sheet) && typeof map.nameCell.cell === 'string' && CELL.test(map.nameCell.cell))) {
       out.push(t('nameCell'));
     }
+    // The dropdown placeholder texts (D158): optional, a list of texts
+    if (map.placeholders != null && !(Array.isArray(map.placeholders) && map.placeholders.every(filled))) out.push(t('placeholders'));
     if (map.extra != null) {
       if (!Array.isArray(map.extra)) out.push(t('extra'));
       else map.extra.forEach(function (e, i) {
@@ -168,6 +170,7 @@
   function normalize(map) {
     var m = copy(isObj(map) ? map : {}), S = TAP.importFields.SECTIONS;
     m.aliases = isObj(m.aliases) ? m.aliases : {};
+    m.placeholders = Array.isArray(m.placeholders) ? m.placeholders : [];
     m.extra = Array.isArray(m.extra) ? m.extra : [];
     m.sections = isObj(m.sections) ? m.sections : {};
     (Array.isArray(m.regions) ? m.regions : []).forEach(function (r) {

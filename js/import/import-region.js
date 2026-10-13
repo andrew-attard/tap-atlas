@@ -112,7 +112,7 @@
     };
     var who = identify(book, map, match, ctx);
     ctx.regionId = who.id;
-    ctx.V = TAP.importValues.create(map.lookups, map.aliases, map.meta.numberFormat);
+    ctx.V = TAP.importValues.create(map.lookups, map.aliases, map.meta.numberFormat, map.placeholders);
     var region = { id: who.id, name: who.name,
       source: { fileName: book.fileName, fileModified: fileModified(book, opts), importedAt: opts.now || null, notes: notes } };
 
