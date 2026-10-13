@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, READ stream (docs/ARCHITECTURE.md section 20): the workbook reader, the mapping,
  *          the value kinds, the field tables, the row sections and the grid blocks. Tiny workbooks are built here with
  *          SheetJS itself, so nothing depends on the workbook writer fixture.
- * Provides: test cases TPV-TC-798 to TPV-TC-826, X-import-core-placeholders-* (D158) and X-import-core-tier3-derived (D160)
+ * Provides: test cases TPV-TC-798 to TPV-TC-826, TPV-TC-868 to 871 (D158, D160)
  * Depends on: tests/harness.js, the app scripts, vendor/xlsx.mini.min.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
  * Owner: READ stream (#585)
@@ -417,7 +417,7 @@
 
     var PH = ['Select channel', 'Choose…', 'Select industry', '(select)'];
 
-    T.test('X-import-core-placeholders-read', 'A dropdown placeholder reads as null for every kind, matched in any case or spacing', function (a) {
+    T.test('TPV-TC-868', 'A dropdown placeholder reads as null for every kind, matched in any case or spacing', function (a) {
       var V = TAP.importValues.create(window.IMPORT_MAP.lookups, {}, window.IMPORT_MAP.meta.numberFormat, PH);
       a.equal(V.read('number', 'Select channel'), null, 'a number');
       a.equal(V.read('money', '  select  CHANNEL ', 1000), null, 'in any case or spacing, with a scale');
@@ -441,7 +441,7 @@
       a.equal(none.placeholder('Select channel'), false);
     });
 
-    T.test('X-import-core-placeholders-rows', 'In a section a placeholder in a number, name, rating or channel cell is null with no note; in the key column it marks a spare row', function (a) {
+    T.test('TPV-TC-869', 'In a section a placeholder in a number, name, rating or channel cell is null with no note; in the key column it marks a spare row', function (a) {
       var m = sampleMap();
       m.placeholders = ['Select channel', 'Select level', 'Select partner', 'Enter a number', 'Select rating', 'Select industry'];
       var pt = { B19: 'Partner',
@@ -484,7 +484,7 @@
       a.equal(at(c3.notes, 'B11').length, 1, 'and the key placeholder as an unknown industry');
     });
 
-    T.test('X-import-core-placeholders-map', 'normalize() defaults placeholders to []; problems() refuses a list that is not of texts', function (a) {
+    T.test('TPV-TC-870', 'normalize() defaults placeholders to []; problems() refuses a list that is not of texts', function (a) {
       var M = TAP.importMap;
       a.deepEqual(M.normalize(sampleMap()).placeholders, []);
       a.equal(Object.prototype.hasOwnProperty.call(window.IMPORT_MAP, 'placeholders'), false, 'the sample mapping lists none');
@@ -665,7 +665,7 @@
       a.deepEqual(c2.notes, [], 'nothing to cross-check');
     });
 
-    T.test('X-import-core-tier3-derived', 'A New Business row for a Tier 3 industry takes tier 3 from Market Coverage, with no note (D160)', function (a) {
+    T.test('TPV-TC-871', 'A New Business row for a Tier 3 industry takes tier 3 from Market Coverage, with no note (D160)', function (a) {
       var mc = copy(MC_SHEET);
       mc.M11 = 'Opportunistic';                                   // Retail is Tier 3 in this region
       var book = open({ '1. Market Coverage': mc, '2. New Business': NB_SHEET }), c = ctx();

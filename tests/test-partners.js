@@ -2,7 +2,7 @@
  * File: tests/test-partners.js
  * Purpose: Tests for the Partners view: the view itself (US-2.3.1) and its reports.
  * Provides: test cases TPV-TC-411 to TPV-TC-433 (automated ones), X-pt-*, and X-d135-partner-colours, X-d137-capacity-top,
- *           X-d138-partner-filter (v0.4.1, D135, D137, D138), X-d159-partner-none (v0.5.1, D159)
+ *           X-d138-partner-filter (v0.4.1, D135, D137, D138), TPV-TC-873 (v0.5.1, D159)
  * Depends on: tests/harness.js, tests/test-setup.js, tests/test-customers.js (window.CGP_T), the app scripts and fixtures
  * Used by: tests.html
  * Owner: CGP stream
@@ -466,7 +466,7 @@
       return res;
     }
 
-    T.test('X-d159-partner-none', 'The Channels dropdown offers "Channel not provided" after the channels, with its count; the column stays not provided', function (a) {
+    T.test('TPV-TC-873', 'The Channels dropdown offers "Channel not provided" after the channels, with its count; the column stays not provided', function (a) {
       nullChannel();
       a.equal(TAP.reports.get('pt-list').filter[0].none, true, 'the filter opts in to the option');
       var res = H.build('pt-list', { mode: 'all' }), c = res.controls[0];
@@ -481,7 +481,7 @@
       a.deepEqual(res.table.rows.map(function (r) { return r.id; }), ['alpha:10', 'delta:10', 'bravo:10'], 'the sort is unchanged');
     });
 
-    T.test('X-d159-partner-none', 'Ticking "Channel not provided" keeps that partner; with a channel too, both; a channel alone leaves it out', function (a) {
+    T.test('TPV-TC-873', 'Ticking "Channel not provided" keeps that partner; with a channel too, both; a channel alone leaves it out', function (a) {
       nullChannel();
       var f = function (v) { return listIds(H.build('pt-list', { mode: 'all' }, { opts: { 'filter:channel': v } })); };
       a.deepEqual(f(['none']), ['alpha:10'], 'the option alone: A1');
@@ -493,7 +493,7 @@
       a.deepEqual(f(['nothing']), ['alpha:10', 'bravo:10', 'delta:10'], 'an unknown value is dropped, so every partner');
     });
 
-    T.test('X-d159-partner-none', 'With every partner on a channel there is no such option, on mini and on the sample', function (a) {
+    T.test('TPV-TC-873', 'With every partner on a channel there is no such option, on mini and on the sample', function (a) {
       var c = H.build('pt-list', { mode: 'all' }).controls[0];
       a.deepEqual(c.options.map(function (o) { return o.value; }), ['Alliance A', 'Partner'], 'mini unchanged: the channels only');
       H.sample();
@@ -502,7 +502,7 @@
       a.ok(!c.options.some(function (o) { return o.value === 'none'; }), 'sample: no "not provided" option');
     });
 
-    T.test('X-d159-partner-none', 'On screen: the option reads "Channel not provided" with its count, and ticking it keeps that partner only', function (a) {
+    T.test('TPV-TC-873', 'On screen: the option reads "Channel not provided" with its count, and ticking it keeps that partner only', function (a) {
       nullChannel();
       var root = T.dom.mount(), p = TAP.panel.create(root, 'pt-list', {});
       function rows() { return qsa('.tap-list tbody tr', root); }
@@ -536,7 +536,7 @@
       a.ok(!res.notes.some(function (n) { return /A1/.test(n); }), 'nothing left out: ' + res.notes.join(' | '));
     });
 
-    T.test('X-d159-partner-none', 'A file with a partner without a channel loads with a warning in the same words, and the list offers the option', function (a) {
+    T.test('TPV-TC-873', 'A file with a partner without a channel loads with a warning in the same words, and the list offers the option', function (a) {
       var res = nullChannel();
       a.ok(res.ok, 'loads');
       a.ok(res.warnings.some(function (w) { return /Channel not provided/.test(JSON.stringify(w)); }), 'the warning names where the partner shows: ' + JSON.stringify(res.warnings));

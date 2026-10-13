@@ -2,7 +2,7 @@
  * File: tests/test-measures-p2.js
  * Purpose: Tests for Phase 2 measures and breakdowns, checked against the hand calculations in
  *          tests/fixtures/mini-p2-expected.js (never against the measures' own output).
- * Provides: test cases TPV-TC-299 to 302, X-measures-p2-*, X-review-DE-9, X-d160-tier3 (v0.5.1, D160)
+ * Provides: test cases TPV-TC-299 to 302, X-measures-p2-*, X-review-DE-9, TPV-TC-874 (v0.5.1, D160)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: ENGINE2 stream
@@ -236,7 +236,7 @@
       return res;
     }
 
-    T.test('X-d160-tier3', 'nb.<t>.tier3 is the new business in the region’s Tier 3 industries: the row’s potential, also counted in the total', function (a) {
+    T.test('TPV-TC-874', 'nb.<t>.tier3 is the new business in the region’s Tier 3 industries: the row’s potential, also counted in the total', function (a) {
       var loaded = tier3Row();
       a.ok(loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the file loads with a warning that names Tier 3');
       expectCell(a, TAP.measures.get('nb.arr.tier3')('alpha', {}), 600, 'alpha nb.arr.tier3');
@@ -258,7 +258,7 @@
       a.deepEqual([TAP.measures.meta('nb.arr.tier3').short, TAP.measures.meta('nb.oi.tier3').label], ['Tier 3', 'New business order intake potential in Tier 3 industries'], 'named like the other tiers');
     });
 
-    T.test('X-d160-tier3', 'Without such a row, tier 3 is not applicable in every region of miniP2 and of the sample', function (a) {
+    T.test('TPV-TC-874', 'Without such a row, tier 3 is not applicable in every region of miniP2 and of the sample', function (a) {
       load();
       ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) {
         ['nb.arr.tier3', 'nb.services.tier3', 'nb.oi.tier3'].forEach(function (id) { expectCell(a, TAP.measures.get(id)(r, {}), 'na', r + ' ' + id); });

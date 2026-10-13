@@ -3,7 +3,7 @@
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206) and for its Phase 4 parts (US-4.1.2).
  * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
  *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*; for the real-data
- *           fixes (#599 to #601): X-check-real-data-warnings and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases
+ *           fixes (#599 to #601): TPV-TC-872 and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -167,7 +167,7 @@
     });
 
     // Real-data fixes (v0.5.1): a partner without a channel and a New Business row for a Tier 3 industry load with a warning each
-    T.test('X-check-real-data-warnings', 'A partner without a channel and a Tier 3 New Business row are warnings; the file loads; a tier that differs from Market Coverage is still an error', function (a) {
+    T.test('TPV-TC-872', 'A partner without a channel and a Tier 3 New Business row are warnings; the file loads; a tier that differs from Market Coverage is still an error', function (a) {
       var p = T_FIXTURE('mini');
       p.regions[0].partners[0].channel = null;
       p.regions[0].newBusiness[1].industryId = 'ind3';         // Retail: Tier 3 in Region A's Market Coverage
