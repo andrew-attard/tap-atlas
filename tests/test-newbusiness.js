@@ -1115,4 +1115,95 @@
       a.ok(!/shades of the region/i.test(all), 'no longer describes region shades');
     });
   });
+  /* ---------- D160: a New Business row in a Tier 3 industry (#601) ---------- */
+
+  // Region A gets a row in ind3, its Tier 3 industry: ARR 100 + 200 + 300 = 600, services 10 + 20 + 30 = 60. Until the
+  // CONTRACT PR lands the check refuses such a file, so the loaded plan is changed in place (T_BEFORE_EACH restores it).
+  function tier3Row() {
+    TAP.data.region('alpha').newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
+      channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 150,
+      growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 });
+  }
+  var CONTRACT_LANDED = false;   // flip once js/core/check.js warns, instead of refusing, on a Tier 3 New Business row
+  var whenContract = CONTRACT_LANDED ? T.test : function (id, title) { T.skip(id, title, 'waits for the CONTRACT PR: the check refuses a Tier 3 New Business row (#601)'); };
+
+  T.suite('newbusiness-tier3', function () {
+    function text(n) { return n ? n.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function tierKeys(res) { return res.legend.filter(function (l) { return l.role === 'tier'; }).map(function (l) { return [l.label, l.color]; }); }
+    function tierCols(res) { return res.table.columns.map(function (c) { return c.key; }).filter(function (k) { return /\.tier\d$/.test(k); }); }
+    function part(res, r, key) { return res.table.rows.filter(function (x) { return x.entityId === r; })[0].cells[key]; }
+
+    T.test('X-d160-tier3', 'Grid: the cell shows the figure with a T3 chip, the legend adds Tier 3, and the other regions’ Tier 3 cells stay not applicable', function (a) {
+      tier3Row();
+      var res = grid({ mode: 'all' });
+      a.equal(res.error, null, 'builds');
+      a.near(gcell(res, 'alpha', 'ind3').v, 600, 1e-9, 'row 22: 100 + 200 + 300');
+      a.equal(gcell(res, 'alpha', 'ind3', 'tier').v, 3, 'the region’s tier for the industry');
+      var cell = parse(res.html).querySelector('.tap-nbg__cell[data-tap-region="alpha"][data-tap-industry="ind3"]');
+      a.ok(cell, 'the cell is drawn');
+      a.equal(text(cell.querySelector('.tap-nbg__tier--t3')), 'T3', 'with a T3 chip');
+      a.deepEqual(tierKeys(res), [['T1 = Tier 1', TH.tiers[1].bg], ['T2 = Tier 2', TH.tiers[2].bg], ['T3 = Tier 3', TH.tiers[3].bg]], 'three tiers in the key');
+      a.equal(gcell(res, 'bravo', 'ind3').state, 'notApplicable', 'Region B: Tier 3 with no row, as before');
+      a.near(gcell(res, 'delta', 'ind3').v, 2850, 1e-9, 'Region D: its Tier 2 figure as before');
+    });
+
+    T.test('X-d160-tier3', 'Stacked bar by tier: a Tier 3 part appears and the three parts add up to the total; a scope without such a row keeps two', function (a) {
+      tier3Row();
+      var res = grid({ mode: 'all' }, { type: 'stackedBar' });
+      a.equal(res.error, null, 'builds');
+      a.ok(res.option, 'draws a chart');
+      a.deepEqual(tierCols(res), ['nb.arr.tier1', 'nb.arr.tier2', 'nb.arr.tier3'], 'three parts');
+      a.near(part(res, 'alpha', 'nb.arr.tier1').v, 1655, 1e-9, 'A Tier 1');
+      a.near(part(res, 'alpha', 'nb.arr.tier2').v, 600, 1e-9, 'A Tier 2');
+      a.near(part(res, 'alpha', 'nb.arr.tier3').v, 600, 1e-9, 'A Tier 3');
+      a.near(part(res, 'alpha', 'nb.arr').v, 2855, 1e-9, 'A total: 1655 + 600 + 600, the parts add up');
+      a.equal(part(res, 'bravo', 'nb.arr.tier3').state, 'notApplicable', 'B: no Tier 3 part, quietly');
+      a.near(part(res, 'bravo', 'nb.arr.tier1').v + part(res, 'bravo', 'nb.arr.tier2').v, part(res, 'bravo', 'nb.arr').v, 1e-9, 'B: two parts add up');
+      a.ok(res.legend.some(function (l) { return l.label === 'Tier 3 industries'; }), 'the key names Tier 3: ' + res.legend.map(function (l) { return l.label; }).join(' | '));
+      a.ok(!res.notes.some(function (n) { return /less than the total/.test(n); }), 'no bar falls short of its total: ' + (res.notes || []).join(' | '));
+      var set = grid({ mode: 'set', set: ['bravo', 'delta'] }, { type: 'stackedBar' });
+      a.deepEqual(tierCols(set), ['nb.arr.tier1', 'nb.arr.tier2'], 'B and D compared: two parts, as the Tier 3 row is Region A’s');
+      var oi = grid({ mode: 'all' }, { type: 'stackedBar', measureId: 'ind.nb.oi' });
+      a.deepEqual(tierCols(oi), ['nb.oi.tier1', 'nb.oi.tier2', 'nb.oi.tier3'], 'order intake: three parts too');
+      a.near(part(oi, 'alpha', 'nb.oi.tier3').v, 660, 1e-9, 'A Tier 3 order intake: 600 + 60');
+    });
+
+    T.test('X-d160-tier3', 'Unchanged mini and sample: two tier parts and two tier keys, as before', function (a) {
+      [function () {}, sample].forEach(function (prepare, i) {
+        prepare();
+        var what = i ? 'sample' : 'mini';
+        var res = grid({ mode: 'all' }, { type: 'stackedBar' });
+        a.deepEqual(tierCols(res), ['nb.arr.tier1', 'nb.arr.tier2'], what + ': two parts');
+        a.ok(!res.legend.some(function (l) { return /Tier 3/.test(l.label); }), what + ': no Tier 3 key');
+        a.deepEqual(tierKeys(grid({ mode: 'all' })), [['T1 = Tier 1', TH.tiers[1].bg], ['T2 = Tier 2', TH.tiers[2].bg]], what + ': the grid key lists two tiers');
+        a.ok(!/tap-nbg__tier--t3/.test(grid({ mode: 'all' }).html), what + ': no T3 chip');
+      });
+    });
+
+    T.test('X-d160-tier3', 'The sub-industry list shows "Tier 3" for the row, and the grid’s explanation says what a T3 means', function (a) {
+      tier3Row();
+      var res = build(ROWS, { mode: 'all' }), row = res.table.rows.filter(function (r) { return r.id === 'alpha:22'; })[0];
+      a.ok(row, 'the row is listed');
+      a.equal(TAP.format.cell(row.cells.tier, { unit: 'tier' }), 'Tier 3', 'its tier');
+      a.near(row.cells.arr3.v, 600, 1e-9, 'its three-year ARR');
+      a.ok(/Tier 3/.test(res.html), 'written in the table');
+      var read = TAP.reports.get(IND).explain.read;
+      a.match(read, /T3/, 'the explanation mentions a T3');
+      a.ok(!/unrealistic|wrong|poor|inconsistent/i.test(read), 'neutral wording (D20)');
+    });
+
+    whenContract('X-d160-tier3', 'A file with such a row loads with a warning, and the grid draws its T3 cell', function (a) {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[0].newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
+        channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 150,
+        growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 });
+      var loaded = TAP.data.load(plan);
+      a.ok(loaded.ok, 'loads: ' + JSON.stringify(loaded.errors));
+      a.ok(loaded.warnings.length > 0, 'with a warning');
+      var res = grid({ mode: 'all' });
+      a.near(gcell(res, 'alpha', 'ind3').v, 600, 1e-9, 'the cell');
+      a.ok(/tap-nbg__tier--t3/.test(res.html), 'the T3 chip');
+      TAP.data.load(window.T_FIXTURE('mini'));
+    });
+  });
 })(window.TAP);

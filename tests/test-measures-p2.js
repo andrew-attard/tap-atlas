@@ -2,7 +2,7 @@
  * File: tests/test-measures-p2.js
  * Purpose: Tests for Phase 2 measures and breakdowns, checked against the hand calculations in
  *          tests/fixtures/mini-p2-expected.js (never against the measures' own output).
- * Provides: test cases TPV-TC-299 to 302, X-measures-p2-*, X-review-DE-9
+ * Provides: test cases TPV-TC-299 to 302, X-measures-p2-*, X-review-DE-9, X-d160-tier3 (v0.5.1, D160)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: ENGINE2 stream
@@ -24,7 +24,7 @@
       });
     });
     CH.forEach(function (c) { ids.push('rc.share.' + c); });
-    ['arr', 'services', 'oi'].forEach(function (t) { ids.push('nb.' + t + '.tier1', 'nb.' + t + '.tier2'); });
+    ['arr', 'services', 'oi'].forEach(function (t) { ids.push('nb.' + t + '.tier1', 'nb.' + t + '.tier2', 'nb.' + t + '.tier3'); });   // tier3: D160
     ids.push('nb.oi', 'ind.nb.services', 'ind.nb.oi', 'cg.accounts', 'cg.currentArr', 'cg.oi3');
     SEGS.forEach(function (s) {
       ['accounts', 'arr', 'oi'].forEach(function (v) { ids.push('cg.seg.' + s + '.' + v); });
@@ -220,6 +220,48 @@
       TAP.data.load(p);
       a.equal(TAP.measures.get('nb.arr.tier2')('charlie', {}).state, 'notApplicable', 'no Tier 2 industry left');
       a.equal(TAP.measures.combined('nb.arr.tier2', org(), {}).src.notApplicable.indexOf('charlie') >= 0, true, 'left out quietly');
+    });
+
+    /* D160: a New Business row in a Tier 3 industry (#601) */
+
+    // Region A gets a row in ind3, its Tier 3 industry: ARR 100 + 200 + 300 = 600, services 10 + 20 + 30 = 60. Until the
+    // CONTRACT PR lands the check refuses such a file, so the loaded plan is changed in place (load() restores it).
+    function tier3Row() {
+      TAP.data.region('alpha').newBusiness.push({ sourceRow: 22, industryId: 'ind3', tier: 3, market: 'North', subVertical: 'Boutiques',
+        channelSplit: { direct: 1, partner: 0, allianceA: 0, allianceB: 0 }, targetAccounts: 4, hitRate: 0.25, avgDealSize: 150,
+        growth: { year2: 0, year3: 0 }, successFactors: null, arrPotential: [100, 200, 300], servicesPotential: [10, 20, 30], servicesRatio: 0.1 });
+    }
+
+    T.test('X-d160-tier3', 'nb.<t>.tier3 is the new business in the region’s Tier 3 industries: the row’s potential, also counted in the total', function (a) {
+      load();
+      tier3Row();
+      expectCell(a, TAP.measures.get('nb.arr.tier3')('alpha', {}), 600, 'alpha nb.arr.tier3');
+      expectCell(a, TAP.measures.get('nb.services.tier3')('alpha', {}), 60, 'alpha nb.services.tier3');
+      expectCell(a, TAP.measures.get('nb.oi.tier3')('alpha', {}), 660, 'alpha nb.oi.tier3');
+      expectCell(a, TAP.measures.get('nb.arr.tier3')('alpha', { year: 2 }), 200, 'alpha nb.arr.tier3, year 2');
+      a.deepEqual(TAP.measures.get('nb.arr.tier3')('alpha', {}).src.rows, [22], 'names its row');
+      a.ok(!TAP.measures.get('nb.arr.tier3')('alpha', {}).partial, 'the one Tier 3 industry has its row: not partly provided');
+      // Tiers 1 and 2 as before (the hand figures in mini-p2-expected.js), and the region total counts the row
+      expectCell(a, TAP.measures.get('nb.arr.tier1')('alpha', {}), 1655, 'alpha nb.arr.tier1 unchanged');
+      expectCell(a, TAP.measures.get('nb.arr.tier2')('alpha', {}), 600, 'alpha nb.arr.tier2 unchanged');
+      expectCell(a, TAP.measures.get('nb.arr')('alpha', {}), 2855, 'alpha nb.arr: 1655 + 600 + 600');
+      expectCell(a, TAP.measures.get('nb.arr')('alpha', { industryId: 'ind3' }), 600, 'the industry figure, no longer not applicable');
+      // The other regions have a Tier 3 industry with no row: not applicable, never a gap (D48)
+      ['bravo', 'charlie', 'delta'].forEach(function (r) { expectCell(a, TAP.measures.get('nb.arr.tier3')(r, {}), 'na', r + ' nb.arr.tier3'); });
+      var c = TAP.measures.combined('nb.arr.tier3', org(), {});
+      expectCell(a, c, 600, 'organization nb.arr.tier3: A only');
+      a.ok(c.src.notApplicable.indexOf('bravo') >= 0, 'the others left out quietly');
+      a.deepEqual([TAP.measures.meta('nb.arr.tier3').short, TAP.measures.meta('nb.oi.tier3').label], ['Tier 3', 'New business order intake potential in Tier 3 industries'], 'named like the other tiers');
+    });
+
+    T.test('X-d160-tier3', 'Without such a row, tier 3 is not applicable in every region of miniP2 and of the sample', function (a) {
+      load();
+      ['alpha', 'bravo', 'charlie', 'delta'].forEach(function (r) {
+        ['nb.arr.tier3', 'nb.services.tier3', 'nb.oi.tier3'].forEach(function (id) { expectCell(a, TAP.measures.get(id)(r, {}), 'na', r + ' ' + id); });
+      });
+      expectCell(a, TAP.measures.get('nb.arr.tier1')('alpha', {}), 1655, 'alpha nb.arr.tier1');
+      TAP.data.load(JSON.parse(JSON.stringify(window.PLAN_DATA)));
+      TAP.data.regions().forEach(function (r) { expectCell(a, TAP.measures.get('nb.arr.tier3')(r.id, {}), 'na', r.id + ' nb.arr.tier3 (sample)'); });
     });
 
     T.test('X-measures-p2-channel-names', 'Channel measures are named from the channel lookup, read when asked', function (a) {
