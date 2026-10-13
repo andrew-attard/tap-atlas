@@ -60,7 +60,8 @@
 
   // The rows of one section. kinds: { fields, key, byYear, order, derived?, noteKey? } (TAP.importFields.SECTIONS[section]).
   // Fields are written in the table's order (a derived field as a null placeholder), then any mapped field the table does
-  // not know, read as text. A row whose key cell is blank is a spare row: skipped and counted.
+  // not know, read as text. A row whose key cell is blank, or shows a dropdown placeholder (D158), is a spare row:
+  // skipped and counted.
   function read(sheet, spec, kinds, ctx) {
     var V = ctx.V, cols = spec.columns || {}, headers = spec.headers || {}, scale = spec.scale || {};
     var hkeys = Object.keys(headers);
@@ -79,7 +80,8 @@
     var keyCol = firstCol(cols[spec.key || kinds.key]), last = spec.lastRow || sheet.lastRow;
     var items = [], skipped = 0;
     for (var row = spec.firstRow; row <= last; row++) {
-      if (keyCol && sheet.value(keyCol + row) === null) { skipped++; continue; }
+      var keyRaw = keyCol ? sheet.value(keyCol + row) : undefined;
+      if (keyCol && (keyRaw === null || V.placeholder(keyRaw))) { skipped++; continue; }
       var item = { sourceRow: row };
       fields.forEach(function (f) {
         var col = cols[f], kind = kinds.fields[f] || 'text', nk = kinds.noteKey && kinds.noteKey[f];

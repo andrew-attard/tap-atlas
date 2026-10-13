@@ -1,7 +1,8 @@
 /*
  * File: js/import/import-values.js
  * Purpose: Turns a stored cell value into a Data Contract value by kind: numbers, shares, ratings, tiers, lookup ids, risk
- *          levels, months and years; blanks stay null, anything unreadable is the BAD sentinel; docs/ARCHITECTURE.md section 20.2.
+ *          levels, months and years; blanks and the template's dropdown placeholders (D158) stay null, anything unreadable
+ *          is the BAD sentinel; docs/ARCHITECTURE.md section 20.2.
  * Provides: TAP.importValues (create)
  * Depends on: js/import/xlsx-book.js (serialToDate)
  * Used by: js/import/import-rows.js, js/import/import-grid.js
@@ -24,15 +25,19 @@
   function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
   // lookups: the data file's lookups; aliases: { <list>: { 'other spelling': id }, riskLevel: {...}, scales: { <scale>: {...} } };
-  // numberFormat: { decimal, thousands } for numbers written as text
-  function create(lookups, aliases, numberFormat) {
+  // numberFormat: { decimal, thousands } for numbers written as text; placeholders: the texts the template's dropdown
+  // cells show until a choice is made ("Select channel"), read as blanks for every kind (D158)
+  function create(lookups, aliases, numberFormat, placeholders) {
     lookups = lookups || {};
     aliases = aliases || {};
     var decimal = (numberFormat && numberFormat.decimal) || '.';
     var thousands = numberFormat && numberFormat.thousands != null ? numberFormat.thousands : (decimal === ',' ? '.' : ',');
+    var marks = (Array.isArray(placeholders) ? placeholders : []).filter(function (p) { return typeof p === 'string'; }).map(norm);
     var BAD = { bad: true };
 
     function isBad(x) { return !!x && typeof x === 'object' && x.bad === true; }
+    // True for a text that is one of the placeholders, in any case or spacing
+    function placeholder(raw) { return typeof raw === 'string' && marks.length > 0 && marks.indexOf(norm(raw)) >= 0; }
     // A bad value that carries what the cell shows, for the note
     function badWith(raw) { return isError(raw) ? { bad: true, found: raw.found, formula: !!raw.formula } : BAD; }
     // The entry of a map whose key matches a text loosely, else undefined
@@ -141,9 +146,9 @@
       return isFinite(n) && n % 1 === 0 ? n : BAD;
     }
 
-    // Dispatch by kind ('rating:<scale>' names its scale)
+    // Dispatch by kind ('rating:<scale>' names its scale). A blank or a dropdown placeholder is null before any reading.
     function read(kind, raw, scale) {
-      if (blank(raw)) return null;
+      if (blank(raw) || placeholder(raw)) return null;
       if (isError(raw)) return badWith(raw);
       var k = String(kind || 'text');
       if (k.indexOf('rating:') === 0) return rating(raw, k.slice(7));
@@ -161,8 +166,8 @@
       }
     }
 
-    return { BAD: BAD, isBad: isBad, norm: norm, text: text, number: number, share: number, count: number, rating: rating,
-      tier: tier, id: id, risk: risk, month: month, year: year, read: read };
+    return { BAD: BAD, isBad: isBad, norm: norm, placeholder: placeholder, text: text, number: number, share: number, count: number,
+      rating: rating, tier: tier, id: id, risk: risk, month: month, year: year, read: read };
   }
 
   TAP.importValues = { create: create };
