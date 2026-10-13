@@ -599,6 +599,7 @@ All return cells as in section 9; ids other streams may rely on:
 | `rc.share.<channel>` | Share of total order intake (both motions) through that channel; combined from summed parts | rate / APP | year |
 | `nb.oi` | New business ARR plus services potential | amount / APP | year, industry |
 | `nb.<t>.tier1`, `nb.<t>.tier2` (`t`: `arr`, `services`, `oi`) | New business in the region's Tier 1 or Tier 2 industries | amount / DER | year |
+| `nb.<t>.tier3` | New business in the region's Tier 3 industries (D160: a row the template does not expect; not applicable without one, so marked optional and offered in Build a chart only where a region has such a row) | amount / DER | year |
 | `ind.nb.services`, `ind.nb.oi` | New business services, and order intake, in one industry (`ctx.industryId`); `ind.nb.arr` exists | amount / DER | year |
 | `cg.accounts` | Accounts in the plan | count / PRE | segment, risk |
 | `cg.currentArr` | Current ARR of the accounts (same figure as `cg.baseArr`) | amount / PRE | segment, risk |

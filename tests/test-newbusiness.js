@@ -1136,7 +1136,7 @@
     function tierCols(res) { return res.table.columns.map(function (c) { return c.key; }).filter(function (k) { return /\.tier\d$/.test(k); }); }
     function part(res, r, key) { return res.table.rows.filter(function (x) { return x.entityId === r; })[0].cells[key]; }
 
-    T.test('X-d160-tier3', 'Grid: the cell shows the figure with a T3 chip, the legend adds Tier 3, and the other regions’ Tier 3 cells stay not applicable', function (a) {
+    T.test('TPV-TC-874', 'Grid: the cell shows the figure with a T3 chip, the legend adds Tier 3, and the other regions’ Tier 3 cells stay not applicable', function (a) {
       tier3Row();
       var res = grid({ mode: 'all' });
       a.equal(res.error, null, 'builds');
@@ -1150,7 +1150,7 @@
       a.near(gcell(res, 'delta', 'ind3').v, 2850, 1e-9, 'Region D: its Tier 2 figure as before');
     });
 
-    T.test('X-d160-tier3', 'Stacked bar by tier: a Tier 3 part appears and the three parts add up to the total; a scope without such a row keeps two', function (a) {
+    T.test('TPV-TC-874', 'Stacked bar by tier: a Tier 3 part appears and the three parts add up to the total; a scope without such a row keeps two', function (a) {
       tier3Row();
       var res = grid({ mode: 'all' }, { type: 'stackedBar' });
       a.equal(res.error, null, 'builds');
@@ -1171,7 +1171,7 @@
       a.near(part(oi, 'alpha', 'nb.oi.tier3').v, 660, 1e-9, 'A Tier 3 order intake: 600 + 60');
     });
 
-    T.test('X-d160-tier3', 'Unchanged mini and sample: two tier parts and two tier keys, as before', function (a) {
+    T.test('TPV-TC-874', 'Unchanged mini and sample: two tier parts and two tier keys, as before', function (a) {
       [function () {}, sample].forEach(function (prepare, i) {
         prepare();
         var what = i ? 'sample' : 'mini';
@@ -1183,7 +1183,7 @@
       });
     });
 
-    T.test('X-d160-tier3', 'The sub-industry list shows "Tier 3" for the row, and the grid’s explanation says what a T3 means', function (a) {
+    T.test('TPV-TC-874', 'The sub-industry list shows "Tier 3" for the row, and the grid’s explanation says what a T3 means', function (a) {
       tier3Row();
       var res = build(ROWS, { mode: 'all' }), row = res.table.rows.filter(function (r) { return r.id === 'alpha:22'; })[0];
       a.ok(row, 'the row is listed');
@@ -1195,7 +1195,7 @@
       a.ok(!/unrealistic|wrong|poor|inconsistent/i.test(read), 'neutral wording (D20)');
     });
 
-    T.test('X-d160-tier3', 'A file with such a row loads with a warning that names Tier 3, and the grid draws its T3 cell', function (a) {
+    T.test('TPV-TC-874', 'A file with such a row loads with a warning that names Tier 3, and the grid draws its T3 cell', function (a) {
       var loaded = tier3Row();
       a.ok(loaded.ok, 'loads');
       a.ok(loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the warning names Tier 3: ' + JSON.stringify(loaded.warnings));
