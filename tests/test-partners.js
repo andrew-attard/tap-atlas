@@ -456,11 +456,15 @@
     });
     /* D159: a partner without a channel (#600) */
 
-    // The mini fixture with Region A's partner A1 left without a channel. Until the CONTRACT PR lands, the check
-    // refuses such a file, so the loaded plan is changed in place; T_BEFORE_EACH loads a fresh copy before every test.
-    function nullChannel() { TAP.data.region('alpha').partners[0].channel = null; }
-    var CONTRACT_LANDED = false;   // flip once js/core/check.js warns, instead of refusing, on a null partner channel
-    var whenContract = CONTRACT_LANDED ? T.test : function (id, title) { T.skip(id, title, 'waits for the CONTRACT PR: the check refuses a null partner channel (#600)'); };
+    // The mini fixture with Region A's partner A1 left without a channel, installed through the check as any file is
+    // (the check warns, #602); T_BEFORE_EACH loads the plain fixture again before every test.
+    function nullChannel() {
+      var plan = window.T_FIXTURE('mini');
+      plan.regions[0].partners[0].channel = null;
+      var res = TAP.data.load(plan);
+      if (!res.ok) throw new Error('the fixture with a partner without a channel did not load: ' + JSON.stringify(res.errors));
+      return res;
+    }
 
     T.test('X-d159-partner-none', 'The Channels dropdown offers "Channel not provided" after the channels, with its count; the column stays not provided', function (a) {
       nullChannel();
@@ -532,12 +536,10 @@
       a.ok(!res.notes.some(function (n) { return /A1/.test(n); }), 'nothing left out: ' + res.notes.join(' | '));
     });
 
-    whenContract('X-d159-partner-none', 'A file with a partner without a channel loads with a warning, and the list offers the option', function (a) {
-      var plan = window.T_FIXTURE('mini');
-      plan.regions[0].partners[0].channel = null;
-      var res = TAP.data.load(plan);
-      a.ok(res.ok, 'loads: ' + JSON.stringify(res.errors));
-      a.ok(res.warnings.length > 0, 'with a warning');
+    T.test('X-d159-partner-none', 'A file with a partner without a channel loads with a warning in the same words, and the list offers the option', function (a) {
+      var res = nullChannel();
+      a.ok(res.ok, 'loads');
+      a.ok(res.warnings.some(function (w) { return /Channel not provided/.test(JSON.stringify(w)); }), 'the warning names where the partner shows: ' + JSON.stringify(res.warnings));
       var c = H.build('pt-list', { mode: 'all' }).controls[0];
       a.ok(c.options.some(function (o) { return o.value === 'none' && o.count === 1; }), 'the option, counted');
       TAP.data.load(window.T_FIXTURE('mini'));
