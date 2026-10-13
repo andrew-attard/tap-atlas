@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, READ stream (docs/ARCHITECTURE.md section 20): the workbook reader, the mapping,
  *          the value kinds, the field tables, the row sections and the grid blocks. Tiny workbooks are built here with
  *          SheetJS itself, so nothing depends on the workbook writer fixture.
- * Provides: test cases TPV-TC-798 to TPV-TC-826
+ * Provides: test cases TPV-TC-798 to TPV-TC-826, X-import-core-placeholders-* (D158) and X-import-core-tier3-derived (D160)
  * Depends on: tests/harness.js, the app scripts, vendor/xlsx.mini.min.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
  * Owner: READ stream (#585)
@@ -52,7 +52,7 @@
   // A reading context over a normalized mapping, collecting notes and errors
   function ctx(map, over) {
     var m = TAP.importMap.normalize(map || window.IMPORT_MAP);
-    var V = TAP.importValues.create(m.lookups, m.aliases, m.meta.numberFormat);
+    var V = TAP.importValues.create(m.lookups, m.aliases, m.meta.numberFormat, m.placeholders);
     var c = { regionId: 'na', years: m.meta.years, V: V, map: m, notes: [], errors: [] };
     c.note = function (message, sheet, cell) { c.notes.push({ message: message, sheet: sheet, cell: cell }); };
     c.error = function (message, sheet, cell) { c.errors.push({ message: message, sheet: sheet, cell: cell }); };
@@ -413,6 +413,100 @@
       a.equal(V.text('x'), 'x');
     });
 
+    /* ---------- placeholders: the template's dropdown texts (D158, #599) ---------- */
+
+    var PH = ['Select channel', 'Choose…', 'Select industry', '(select)'];
+
+    T.test('X-import-core-placeholders-read', 'A dropdown placeholder reads as null for every kind, matched in any case or spacing', function (a) {
+      var V = TAP.importValues.create(window.IMPORT_MAP.lookups, {}, window.IMPORT_MAP.meta.numberFormat, PH);
+      a.equal(V.read('number', 'Select channel'), null, 'a number');
+      a.equal(V.read('money', '  select  CHANNEL ', 1000), null, 'in any case or spacing, with a scale');
+      a.equal(V.read('text', 'Select industry'), null, 'a text');
+      a.equal(V.read('rating:growthPotential', '(select)'), null, 'a rating');
+      a.equal(V.read('partnerChannel', 'Select channel'), null, 'a partner channel');
+      a.equal(V.read('industry', 'Select industry'), null, 'a lookup name');
+      a.equal(V.read('tier', 'Choose…'), null, 'a tier');
+      a.equal(V.read('risk', '(select)'), null, 'a risk level');
+      a.equal(V.placeholder('Select channel'), true);
+      a.equal(V.placeholder(' SELECT channel '), true);
+      a.equal(V.placeholder('Partner'), false);
+      a.equal(V.placeholder(5), false, 'only text');
+      a.equal(V.placeholder(null), false);
+      a.equal(V.read('text', 'Select'), 'Select', 'a text that is not listed is read as written');
+      a.ok(V.isBad(V.read('number', 'Select')), 'and is still bad where a number belongs');
+      a.equal(V.read('partnerChannel', 'Partner'), 'partner', 'a real value still reads');
+      var none = TAP.importValues.create(window.IMPORT_MAP.lookups, {}, null);
+      a.equal(none.read('text', 'Select channel'), 'Select channel', 'without placeholders the text is read as written');
+      a.ok(none.isBad(none.read('partnerChannel', 'Select channel')), 'and is bad where a channel belongs');
+      a.equal(none.placeholder('Select channel'), false);
+    });
+
+    T.test('X-import-core-placeholders-rows', 'In a section a placeholder in a number, name, rating or channel cell is null with no note; in the key column it marks a spare row', function (a) {
+      var m = sampleMap();
+      m.placeholders = ['Select channel', 'Select level', 'Select partner', 'Enter a number', 'Select rating', 'Select industry'];
+      var pt = { B19: 'Partner',
+        B20: 'Fictional Partner 1', C20: 'Select channel', D20: 'Select level', E20: 'Home', G20: 'Enter a number', H20: 3, J20: 80, K20: 80, L20: 80,
+        B21: 'Select partner', C21: 'Partner', G21: 2,              // a spare row: its key cell shows the placeholder
+        B22: 'Fictional Partner 3', C22: 'Alliance A', G22: 1 };
+      var c = ctx(m), book = open({ '4. Partner': pt });
+      var raw = TAP.importRows.read(book.sheet('4. Partner'), c.map.sections.partners, TAP.importFields.SECTIONS.partners, c);
+      a.equal(raw.skipped, 1, 'the placeholder row is a spare row, counted');
+      a.deepEqual(raw.items.map(function (p) { return p.sourceRow; }), [20, 22], 'and left out');
+      a.equal(raw.items[0].channel, null, 'a channel placeholder');
+      a.equal(raw.items[0].maturity, null, 'a maturity placeholder');
+      a.equal(raw.items[0].fteSales, null, 'a number placeholder');
+      a.equal(raw.items[0].fteConsultants, 3, 'a value beside it');
+      a.equal(raw.items[1].channel, 'allianceA');
+      a.deepEqual(c.notes, [], 'no note for a placeholder');
+      a.deepEqual(c.errors, []);
+      // A rating cell and the key column on Market Coverage; a name (an industry) and a number on Customer Growth
+      var mc = copy(MC_SHEET);
+      mc.D10 = 'Select rating';
+      mc.B11 = 'Select industry';
+      var c2 = ctx(m), book2 = open({ '1. Market Coverage': mc, '3. Customer Growth': Object.assign(copy(CG_SHEET), { D10: 'Select industry', G10: 'Enter a number' }) });
+      var mcRead = TAP.importRows.read(book2.sheet('1. Market Coverage'), c2.map.sections.marketCoverage, TAP.importFields.SECTIONS.marketCoverage, c2);
+      a.equal(mcRead.skipped, 2, 'the blank spare row and the placeholder row');
+      a.deepEqual(mcRead.items.map(function (r) { return r.sourceRow; }), [10, 13, 14]);
+      a.equal(mcRead.items[0].growthPotential, null, 'a rating placeholder');
+      a.equal(mcRead.items[0].criticality, 3, 'the rating beside it');
+      var cg = TAP.importRows.customerGrowth(book2, c2.map, c2);
+      a.equal(cg.accounts[0].industryId, null, 'an industry placeholder');
+      a.equal(cg.accounts[0].currentArr, null, 'a number placeholder');
+      a.equal(cg.accounts[0].riskLevel, 'high');
+      a.deepEqual(at(c2.notes, 'D10'), [], 'no note on the rating');
+      a.deepEqual(c2.notes.filter(function (n) { return n.sheet === '3. Customer Growth'; }), [], 'no note on Customer Growth');
+      a.equal(at(c2.notes, 'B14').length, 1, 'an industry that is not listed is still noted');
+      // Without the placeholders in the mapping the same cells are unknown values: notes, and the row is read
+      var c3 = ctx();
+      var plain = TAP.importRows.read(book2.sheet('1. Market Coverage'), c3.map.sections.marketCoverage, TAP.importFields.SECTIONS.marketCoverage, c3);
+      a.equal(plain.skipped, 1);
+      a.equal(at(c3.notes, 'D10').length, 1, 'the rating placeholder is noted as an unknown value');
+      a.equal(at(c3.notes, 'B11').length, 1, 'and the key placeholder as an unknown industry');
+    });
+
+    T.test('X-import-core-placeholders-map', 'normalize() defaults placeholders to []; problems() refuses a list that is not of texts', function (a) {
+      var M = TAP.importMap;
+      a.deepEqual(M.normalize(sampleMap()).placeholders, []);
+      a.equal(Object.prototype.hasOwnProperty.call(window.IMPORT_MAP, 'placeholders'), false, 'the sample mapping lists none');
+      a.deepEqual(M.problems(window.IMPORT_MAP), []);
+      var given = sampleMap();
+      given.placeholders = ['Select channel', 'Choose…'];
+      a.deepEqual(M.normalize(given).placeholders, ['Select channel', 'Choose…'], 'a given list is kept');
+      a.deepEqual(M.problems(given), [], 'a list of texts is fine');
+      var empty = sampleMap();
+      empty.placeholders = [];
+      a.deepEqual(M.problems(empty), [], 'an empty list is fine');
+      ['x', ['a', 1], {}, [null], [''], 7].forEach(function (bad) {
+        var m = sampleMap();
+        m.placeholders = bad;
+        var list = M.problems(m);
+        a.equal(list.length, 1, JSON.stringify(bad) + ': ' + list.join(' | '));
+        a.match(list[0] || '', /\.$/, 'a sentence');
+        a.ok((list[0] || '[').indexOf('[') < 0, 'has its wording: ' + list[0]);
+        a.match(list[0] || '', /placeholders/, 'names the key');
+      });
+    });
+
     /* ---------- the field tables ---------- */
 
     T.test('TPV-TC-814', 'SECTIONS gives every row section its kinds, key, by-year fields and order', function (a) {
@@ -569,6 +663,30 @@
       a.deepEqual(plain.items[0], NB_ITEM);
       a.deepEqual(Object.keys(plain.items[0]), Object.keys(NB_ITEM));
       a.deepEqual(c2.notes, [], 'nothing to cross-check');
+    });
+
+    T.test('X-import-core-tier3-derived', 'A New Business row for a Tier 3 industry takes tier 3 from Market Coverage, with no note (D160)', function (a) {
+      var mc = copy(MC_SHEET);
+      mc.M11 = 'Opportunistic';                                   // Retail is Tier 3 in this region
+      var book = open({ '1. Market Coverage': mc, '2. New Business': NB_SHEET }), c = ctx();
+      c.marketCoverage = TAP.importRows.section(book, c.map, 'marketCoverage', c).items;
+      a.equal(c.marketCoverage[1].tier, 3);
+      var res = TAP.importRows.section(book, c.map, 'newBusiness', c);
+      a.equal(res.items[1].industryId, 'retail');
+      a.equal(res.items[1].tier, 3, 'the Market Coverage tier, whatever it is');
+      a.equal(res.items[0].tier, 1);
+      a.deepEqual(c.notes.filter(function (n) { return n.sheet === '2. New Business'; }), [], 'no note on the New Business sheet');
+      // With a mapped tier column that holds 3 too, nothing differs: still no note
+      var m = sampleMap();
+      m.sections.newBusiness.columns.tier = 'W';
+      var sheet = copy(NB_SHEET);
+      sheet.W16 = 3;
+      delete sheet.W15;
+      var c2 = ctx(m), book2 = open({ '1. Market Coverage': mc, '2. New Business': sheet });
+      c2.marketCoverage = TAP.importRows.section(book2, c2.map, 'marketCoverage', c2).items;
+      var mapped = TAP.importRows.section(book2, c2.map, 'newBusiness', c2);
+      a.equal(mapped.items[1].tier, 3);
+      a.deepEqual(c2.notes.filter(function (n) { return n.sheet === '2. New Business'; }), []);
     });
 
     var CG_SHEET = {

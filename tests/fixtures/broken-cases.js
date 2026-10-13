@@ -43,6 +43,12 @@ window.TEST_FIXTURES.broken = {
       change: function (p) { p.regions[0].newBusiness[1].tier = 1; },
       expect: { path: 'regions[0].newBusiness[1].tier', region: 'Region A', item: 'Utilities (row 21)',
         expected: 'the Market Coverage tier for this industry (2)', found: 1 } },
+    // A tier of 3 is allowed since v0.5.1 (D160), but it must still match Market Coverage
+    { id: 'nb-tier3-mismatch', level: 'errors',
+      change: function (p) { p.regions[0].newBusiness[1].tier = 3; },
+      expect: { path: 'regions[0].newBusiness[1].tier', region: 'Region A', item: 'Utilities (row 21)',
+        expected: 'the Market Coverage tier for this industry (2)', found: 3,
+        message: 'regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 3' } },
     { id: 'unknown-segment', level: 'errors',
       change: function (p) { p.regions[3].customerGrowth.accounts[0].segment = 'platinum'; },
       expect: { path: 'regions[3].customerGrowth.accounts[0].segment', region: 'Region D', item: 'Fictional Account D1 (row 10)',
@@ -141,7 +147,19 @@ window.TEST_FIXTURES.broken = {
     { id: 'empty-section', level: 'warnings',
       change: function (p) { p.regions[0].partners = []; },
       expect: { path: 'regions[0].partners', region: 'Region A', item: null,
-        expected: 'at least one item', found: 'an empty list' } }
+        expected: 'at least one item', found: 'an empty list' } },
+    // Real-data fixes (v0.5.1): a partner whose channel was never chosen loads (D159), and a New Business row for an
+    // industry whose Market Coverage tier is 3 (Retail in Region A) loads with its tier (D160)
+    { id: 'partner-no-channel', level: 'warnings',
+      change: function (p) { p.regions[0].partners[0].channel = null; },
+      expect: { path: 'regions[0].partners[0].channel', region: 'Region A', item: 'Fictional Partner A1 (row 10)',
+        expected: 'a channel for this partner (left blank, so it is shown under "Channel not provided")', found: null,
+        message: 'regions[0].partners[0].channel: expected a channel for this partner (left blank, so it is shown under "Channel not provided"), found null' } },
+    { id: 'nb-tier3-row', level: 'warnings',
+      change: function (p) { p.regions[0].newBusiness[1].industryId = 'ind3'; p.regions[0].newBusiness[1].tier = 3; },
+      expect: { path: 'regions[0].newBusiness[1].tier', region: 'Region A', item: 'Retail (row 21)',
+        expected: 'a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted)', found: 3,
+        message: 'regions[0].newBusiness[1].tier: expected a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted), found 3' } }
   ],
 
   // Not broken: fields and sections the contract doesn't name are ignored (D47), so an import can add
@@ -364,6 +382,7 @@ window.TEST_FIXTURES.broken = {
       'unknown-industry': { errors: ['regions[3].marketCoverage[1].industryId: expected an industry id from lookups.industries, found "ind9"'] },
       'rating-out-of-range': { errors: ['regions[0].marketCoverage[0].expertise: expected 1, 2 or 3, found 4'] },
       'nb-tier-mismatch': { errors: ['regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 1'] },
+      'nb-tier3-mismatch': { errors: ['regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 3'] },
       'unknown-segment': { errors: ['regions[3].customerGrowth.accounts[0].segment: expected "strategic", "growth", "core" or "scaled", found "platinum"'], last: ['regions[3].customerGrowth.accounts[0].segment: expected the segment the thresholds give ("strategic"), found "platinum"'] },
       'unknown-channel': { errors: ['regions[1].partners[0].channel: expected "partner", "allianceA" or "allianceB", found "reseller"'] },
       // The one case whose value and wording moved in Phase 4: "low" became a risk level (US-4.1.1)
@@ -389,7 +408,10 @@ window.TEST_FIXTURES.broken = {
       'arr-not-recalculated': { first: ['regions[0].newBusiness[0].arrPotential[0]: expected target accounts × hit rate × average deal size = 500, found 450'] },
       'segment-off-thresholds': { first: ['regions[0].customerGrowth.accounts[1].segment: expected the segment the thresholds give ("core"), found "strategic"'] },
       'no-source-row': { first: ['regions[1].newBusiness[1].sourceRow: expected the worksheet row number, found nothing'] },
-      'empty-section': { first: ['regions[0].partners: expected at least one item, found an empty list'] }
+      'empty-section': { first: ['regions[0].partners: expected at least one item, found an empty list'] },
+      // Added in v0.5.1 (D159, D160): both load with one warning
+      'partner-no-channel': { first: ['regions[0].partners[0].channel: expected a channel for this partner (left blank, so it is shown under "Channel not provided"), found null'] },
+      'nb-tier3-row': { first: ['regions[0].newBusiness[1].tier: expected a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted), found 3'] }
     }
   }
 };
