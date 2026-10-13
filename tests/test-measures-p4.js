@@ -245,7 +245,8 @@
       });
       IDS.forEach(function (id) { a.ok(seen[id], id + ' has a hand-worked figure for some region'); });
       TAP.measures.list().forEach(function (id) {
-        if (TAP.measures.meta(id).optional) a.ok(!!CAT[id], id + ' is in the catalogue this file checks');
+        // nb.<t>.tier3 (D160, v0.5.1) is optional too, but a Phase 2 measure checked in tests/test-measures-p2.js
+        if (TAP.measures.meta(id).optional && !/^nb\.\w+\.tier3$/.test(id)) a.ok(!!CAT[id], id + ' is in the catalogue this file checks');
       });
     });
 
