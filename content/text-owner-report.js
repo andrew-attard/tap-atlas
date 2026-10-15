@@ -23,13 +23,17 @@ Object.assign(window.TAP_CONTENT.text, {
     saved: 'Saved',
     imported: 'Imported',
     reportDate: 'Report date',
+    // A workbook the import could not use (a reading with errors): one plain sentence under the facts, nothing technical (D169)
+    leftOut: 'This workbook could not be imported; the RevOps owner has the details.',
     todo: 'Open the workbook and go to each cell listed below. Fix what needs fixing, let the workbook recalculate, save it and send the file back. A blank cell reads as "not provided" in the app, which is fine where that is what you mean.',
     summary: '{n} items in {k} groups',
     summaryOne: '1 item in 1 group',
     kind: '{title} ({n})',
     none: 'Nothing to review in this workbook.',
     closing: 'Once the workbook is updated, send it back so the plans can be imported again.',
-    // The text version: "where · sheet › cell: found X, expected Y" per item
+    // The text version: "where · sheet › cell: found X, expected Y" per item; with the cells behind the values (D169),
+    // "where: found X (sheet › cell), expected Y (sheet › cells)"
+    textCells: '{text} ({cells})',
     textSep: ' · ',
     textAt: ': ',
     textJoin: ', ',

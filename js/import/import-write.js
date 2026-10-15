@@ -1,8 +1,9 @@
 /*
  * File: js/import/import-write.js
  * Purpose: Writes the plan as the data file's text (window.PLAN_DATA = {...}), downloads it, and writes the report as plain
- *          text with each region's notes and the check's warnings grouped by kind (D163, D164); a warning the import already
- *          noted keeps its lines, marked "(also an import note above)", so the approved tool loses nothing (US-1.8.10, D165);
+ *          text with each region's notes and the check's warnings grouped by kind (D163, D164); a comparing note's cells
+ *          follow its plain row on one line, every address (US-1.8.12, D169); a warning the import already noted keeps its
+ *          lines, marked "(also an import note above)", so the approved tool loses nothing (US-1.8.10, D165);
  *          docs/ARCHITECTURE.md section 20.
  * Provides: TAP.importWrite (text, jsonPart, download, report)
  * Depends on: js/panel/panel-export.js (download), js/core/content.js (content/text-import.js wording),
@@ -119,14 +120,26 @@
     return say('whereNone');
   }
 
+  // The cells behind a comparing note's values, one line: "cells: found S › Z30; expected S › E30, F30" (D169); null without
+  function cellsLine(it) {
+    var parts = [];
+    if (it.foundCell) parts.push(say('cellsFound', { cells: it.foundCell }));
+    if (it.expectedCells && it.expectedCells.length) parts.push(say('cellsExpected', { cells: it.expectedCells.join(say('cellsJoin')) }));
+    return parts.length ? say('noteCells', { parts: parts.join(say('cellsSep')) }) : null;
+  }
+
   // A kind group as text: the title with its count, the intro once, then each plain row (where, found, expected, the
-  // address) over its technical message, which is what gets pasted into the approved tool (D163, D164). A warning the
-  // import already noted (its technical line in foldedTech) gets the marker line under it (D165).
+  // address), its cells line when it has one, then its technical message, which is what gets pasted into the approved
+  // tool (D163, D164, D169). A warning the import already noted (its technical line in foldedTech) gets the marker line
+  // under it (D165).
   function kindLines(k, prefix, foldedTech) {
     var W = TAP.warningGroups, out = [say(prefix + 'Kind', { title: k.title, n: k.items.length })];
     if (k.intro) out.push(say(prefix + 'Intro', { intro: k.intro }));
     k.items.forEach(function (it) {
-      out.push(say(prefix + 'Plain', { line: W.row(it) }), say(prefix + 'Tech', { message: it.tech }));
+      var cl = cellsLine(it);
+      out.push(say(prefix + 'Plain', { line: W.row(it) }));
+      if (cl) out.push(cl);
+      out.push(say(prefix + 'Tech', { message: it.tech }));
       if (foldedTech && foldedTech[it.tech]) out.push(say('checkFolded'));
     });
     return out;

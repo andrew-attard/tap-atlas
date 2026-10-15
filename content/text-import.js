@@ -1,8 +1,8 @@
 /*
  * File: content/text-import.js
- * Purpose: Wording for the Import panel, its report and the import's notes and errors (D147), and the plain words per note
- *          kind for the grouped notes (D163). Placeholders in {braces} are filled in by the code; the organization layer can
- *          replace any phrase by using the same key.
+ * Purpose: Wording for the Import panel, its report and the import's notes and errors (D147), the plain words per note
+ *          kind for the grouped notes (D163) and the cells behind a comparing note's values (D169). Placeholders in {braces}
+ *          are filled in by the code; the organization layer can replace any phrase by using the same key.
  * Provides: adds TAP_CONTENT.text.importPanel
  * Depends on: nothing
  * Used by: js/ui/import-panel.js, js/ui/import-report.js, js/ui/warning-groups.js, js/import/*.js
@@ -131,6 +131,8 @@ Object.assign(window.TAP_CONTENT.text, {
       looseSheet: 'The sheet {found} was read for {expected}: the names differ in case or spacing.'
     },
 
+    // The addresses behind a comparing note's values (D169, js/ui/warning-groups.js cellList): after the first six, how many more
+    cells: { more: '{n} more' },
     // Words for the ids a note's item names (D163): motions and recap types; channels take their lookup name, these stand in
     words: {
       motions: { newBusiness: 'new business', customerGrowth: 'existing customers' },
@@ -146,7 +148,7 @@ Object.assign(window.TAP_CONTENT.text, {
       arrFormula: { title: 'ARR potential not matching its formula', intro: 'ARR potential for year 1 is expected to equal target accounts × hit rate × average deal size. A difference usually means the workbook was saved before it recalculated.' },
       segmentRule: { title: 'Segments that differ from the thresholds rule', intro: 'The segment is expected to follow the thresholds: current ARR above the strategic threshold is Strategic, below the scaled threshold is Scaled, order intake and ARR above the growth thresholds is Growth, otherwise Core.' },
       variance: { title: 'Variances that differ from their parts', intro: 'The variance is expected to equal the books order intake minus the strategic plan for the same year and type.' },
-      revenueAbove: { title: 'Revenue above the order intake', intro: 'Revenue is expected to be no higher than the order intake for the same year, channel, motion and type.' },
+      revenueAbove: { title: 'Revenue above the order intake', intro: 'Revenue is expected to be no higher than the order intake for the same year, channel and motion, the types added up.' },
       booksAbove: { title: 'Books value above the customer value', intro: 'For Partner, Alliance A and Alliance B, the books value of ARR and services is expected to be no higher than the customer value for the same year.' },
       coverage: { title: 'Coverage ratios that differ from their parts', intro: 'The coverage ratio is expected to equal pipeline divided by forecast minus actuals.' },
       badValue: { title: 'Values not recognized', intro: 'The cell holds a value the field cannot take, such as text in a number column or a name that is not in its list. It is imported as blank.' },
@@ -199,6 +201,12 @@ window.TAP_CONTENT.text.importPanel.check = {
     noteIntro: '    {intro}',
     notePlain: '    {line}',
     noteTech: '      {message}',
+    // The cells behind a comparing note's values, one line under its plain row (D169): "cells: found S › Z30; expected S › E30, F30"
+    noteCells: '      cells: {parts}',
+    cellsFound: 'found {cells}',
+    cellsExpected: 'expected {cells}',
+    cellsSep: '; ',
+    cellsJoin: ', ',
     where: '{sheet} › {cell}',
     whereSheet: '{sheet}',
     whereNone: 'workbook',

@@ -2,7 +2,9 @@
  * File: js/ui/warning-table.js
  * Purpose: Draws the warning and note groups (US-1.8.8, US-1.8.9, D161, D164): one details per workbook, one per kind
  *          inside, the kind's one-sentence intro, then a table of where (the row or item, the sheet and cell under it),
- *          found and expected, with only the columns the group fills. The Import report and the data sources panel draw
+ *          found and expected, with only the columns the group fills. A comparing note's addresses sit under its values
+ *          instead (US-1.8.12, D169): its own cell under Found, the cells it was compared with under Expected (the sheet
+ *          once, six at most, then "N more"), and nothing under Where. The Import report and the data sources panel draw
  *          the contract warnings with render and a region's import notes with renderKinds. Every word comes from
  *          content/text-data.js (check.groups); the items from js/ui/warning-groups.js.
  * Provides: TAP.warningTable (render, renderKinds, table)
@@ -15,7 +17,7 @@
 
   var el = function () { return TAP.dom.el.apply(null, arguments); };
   function say(key, vars) { return TAP.content.text('check.' + key, vars); }
-  var HEAD = { where: 'colWhere', found: 'colFound', expected: 'colExpected' };
+  var HEAD = { where: 'colWhere', found: 'colFound', expected: 'colExpected' }, MAX_CELLS = 6;
 
   // The Where cell: the row or item in words, the sheet and cell on a muted line under it (a space between them keeps
   // the copied and read-aloud text apart)
@@ -28,13 +30,24 @@
     ]);
   }
 
+  // A Found or Expected cell: the value, and the address behind it on a muted line under it when the item has one (D169)
+  function valueCell(value, address) {
+    return el('td', null, [
+      value ? el('span', null, value) : null,
+      value && address ? ' ' : null,
+      address ? el('span', { class: 'tap-wg__cell tap-muted' }, address) : null
+    ]);
+  }
+  function cell(it, c, g) {
+    if (c === 'where') return whereCell(it, g.hasCell && !it.foundCell);
+    return valueCell(it[c] || '', c === 'found' ? it.foundCell : TAP.warningGroups.cellList(it.expectedCells, MAX_CELLS));
+  }
+
   // The items of one kind group as a table, with the columns the group fills (g.cols) and headed by the group's title
   function table(g) {
     return el('table', { class: 'tap-table tap-wg__table', 'aria-label': g.title }, [
       el('thead', null, el('tr', null, g.cols.map(function (c) { return el('th', { scope: 'col' }, say('groups.' + HEAD[c])); }))),
-      el('tbody', null, g.items.map(function (it) {
-        return el('tr', null, g.cols.map(function (c) { return c === 'where' ? whereCell(it, g.hasCell) : el('td', null, it[c] || ''); }));
-      }))
+      el('tbody', null, g.items.map(function (it) { return el('tr', null, g.cols.map(function (c) { return cell(it, c, g); })); }))
     ]);
   }
 
