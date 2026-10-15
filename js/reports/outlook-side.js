@@ -111,23 +111,23 @@
     }) };
   }
 
-  // Notes: a combined figure that left regions out, and partly provided figures, each said once per row.
+  // Notes: a combined figure that left regions out, and partly provided figures, each said once per row, then folded
+  // by measure and the regions left out (D162).
   function notes(k, cols, list) {
-    var out = [];
+    var items = [];
     list.forEach(function (r) {
       var said = {};
       cols.forEach(function (c) {
-        var cell = r.cells[c.key], s = (cell && cell.src) || {}, msg = null;
+        var cell = r.cells[c.key], s = (cell && cell.src) || {}, gap = false, msg = null;
         if (!cell || cell.state !== 'value') return;
-        if (s.combined && (s.excluded || []).length) msg = TAP.agg.describe(cell);
+        if (s.combined && (s.excluded || []).length) { msg = TAP.agg.describe(cell); gap = true; }
         else if (cell.partial && cell.note) msg = cell.note;
         if (!msg || said[msg]) return;
         said[msg] = true;
-        msg = k.t('chart.note', { label: r.label, measure: k.lower(c.label), text: msg });
-        if (out.indexOf(msg) < 0) out.push(msg);
+        items.push({ label: r.label, measure: k.lower(c.label), text: msg, c: gap ? cell : null });
       });
     });
-    return out;
+    return TAP.agg.foldNotes(items);
   }
 
   function build(ctx) {

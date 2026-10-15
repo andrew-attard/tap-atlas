@@ -159,6 +159,9 @@ Object.assign(window.TAP_CONTENT.text, {
     year: 'Year {n}',
     npFor: '{name}: not provided',
     note: '{label}, {measure}: {text}',
+    // D162: rows whose combined figure left the same regions out of the same measure share one note
+    noteFold: '{measure}: {names} not included (not provided) for {n} rows: {labels}',
+    noteMore: '{labels} and {m} more',
     notPlaced: '{name} is not shown: {measure} not provided',
     notOnRadar: '{name} is not shown on the radar: {measures} not provided',
     zeroTile: '{name} is not shown: {measure} is zero',

@@ -151,9 +151,10 @@
     }) };
   }
 
-  // Notes under the chart: how combined figures left regions out, and partly provided figures.
+  // Notes under the chart: how combined figures left regions out, and partly provided figures, folded by measure and
+  // the regions left out (D162).
   function notes(ds, keys) {
-    var out = [];
+    var items = [];
     ds.rows.forEach(function (r) {
       keys.forEach(function (k) {
         var c = r.cells[k], col = colOf(ds, k), msg = null;
@@ -162,11 +163,10 @@
         var gap = s.combined && ((s.excluded || []).length || (s.parts || []).some(function (p) { return (p.src.excluded || []).length; }));
         if (gap) msg = TAP.agg.describe(c);
         else if ((c.partial || c.declined) && c.note) msg = c.note;
-        if (msg) msg = t('chart.note', { label: r.label, measure: lower(col.label), text: msg });
-        if (msg && out.indexOf(msg) < 0) out.push(msg);
+        if (msg) items.push({ label: r.label, measure: lower(col.label), text: msg, c: gap ? c : null });
       });
     });
-    return out;
+    return TAP.agg.foldNotes(items);
   }
 
   /* ---------- parts coloured from a palette: channels (D124), segments and risk levels (D131), product categories,

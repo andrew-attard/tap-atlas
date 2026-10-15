@@ -230,18 +230,19 @@
       return { entityId: r.g.id, industryId: r.ind.id, cells: cells, src: r.y.src || null };
     }) };
   }
+  // The fixed lines, then the gaps folded by measure and the regions left out (D162), then the rows not placed.
   function notes(def, rows, perRegion, gs, paired) {
-    var K = k(), out = !perRegion && gs.some(function (g) { return g.kind === 'combined'; }) ? [t('quadrant.averageNote')] : [];
+    var K = k(), out = !perRegion && gs.some(function (g) { return g.kind === 'combined'; }) ? [t('quadrant.averageNote')] : [], items = [], tail = [];
     if (paired) out.push(t('quadrant.joinNote', { first: gs[0].label }));
-    function add(m) { if (m && out.indexOf(m) < 0) out.push(m); }
     rows.forEach(function (r) {
       [[def.y, r.y], [def.x, r.x]].forEach(function (p) {
         var c = p[1], label = K.lower(TAP.measures.meta(p[0]).label), s = c.src || {};
-        if (c.state === 'value' && s.combined && (s.excluded || []).length) add(K.t('chart.note', { label: r.ind.name, measure: label, text: TAP.agg.describe(c) }));
+        if (c.state === 'value' && s.combined && (s.excluded || []).length) items.push({ label: r.ind.name, measure: label, text: TAP.agg.describe(c), c: c });
       });
       var lost = r.y.state === 'notProvided' ? def.y : r.x.state === 'notProvided' ? def.x : null;
-      if (lost) add(K.t('chart.notPlaced', { name: r.ind.name + ' · ' + r.g.label, measure: K.lower(TAP.measures.meta(lost).label) }));
+      if (lost) tail.push(K.t('chart.notPlaced', { name: r.ind.name + ' · ' + r.g.label, measure: K.lower(TAP.measures.meta(lost).label) }));
     });
+    TAP.agg.foldNotes(items).concat(tail).forEach(function (m) { if (m && out.indexOf(m) < 0) out.push(m); });
     return out;
   }
   // Counts the points of the first group (the focus region, or the average) in the "not yet able" area.
