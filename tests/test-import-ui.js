@@ -488,7 +488,7 @@
         a.deepEqual(all.slice(0, 3), ['tap-imp__h', 'tap-imp__owners', 'tap-imp__region'], 'after the summary, before the first region');
         var rows = qsa('.tap-own__row', sec);
         a.deepEqual(rows.map(function (r) { return r.getAttribute('data-region'); }), ['Region A', 'Region B', 'Region C', null], 'a row per reading, then all workbooks');
-        a.deepEqual(rows.map(function (r) { return txt(qs('.tap-own__count', r)); }), [TAP.content.text('ownerReport.ui.none'), TAP.content.text('ownerReport.ui.countOne'), TAP.content.text('ownerReport.ui.count', { n: 3 }), ''], 'nothing, one (the note, its warning folded), three (a left-out region keeps its notes)');
+        a.deepEqual(rows.map(function (r) { return txt(qs('.tap-own__count', r)); }), [TAP.content.text('ownerReport.ui.none'), TAP.content.text('ownerReport.ui.count', { n: 2 }), TAP.content.text('ownerReport.ui.count', { n: 3 }), ''], 'nothing; two (the note and the unmatched warning, the folded one not counted twice); three (a left-out region keeps its notes)');
         a.deepEqual(rows.slice(0, 3).map(function (r) { return qsa('.tap-btn', r).map(txt); }), [[TAP.content.text('ownerReport.ui.download'), TAP.content.text('ownerReport.ui.copy')], [TAP.content.text('ownerReport.ui.download'), TAP.content.text('ownerReport.ui.copy')], [TAP.content.text('ownerReport.ui.download'), TAP.content.text('ownerReport.ui.copy')]], 'Download and Copy as text per workbook');
         a.equal(txt(qs('.tap-own__name', rows[3])), TAP.content.text('ownerReport.ui.all'));
         a.deepEqual(qsa('.tap-btn', rows[3]).map(txt), [TAP.content.text('ownerReport.ui.download')], 'All workbooks: Download alone');
