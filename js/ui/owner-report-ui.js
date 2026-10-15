@@ -67,7 +67,8 @@
       status: el('p', { class: 'tap-own__status', role: 'status', 'aria-live': 'polite' }),
       text: el('textarea', { class: 'tap-field tap-own__text', readonly: 'readonly', rows: '10', hidden: true, 'aria-label': t('textLabel') })
     };
-    return el('section', { class: 'tap-own' + (opts.className ? ' ' + opts.className : '') }, [
+    // The panel's own class first, as its neighbouring sections are classed
+    return el('section', { class: (opts.className ? opts.className + ' ' : '') + 'tap-own' }, [
       el(opts.level || 'h4', null, t('title')),
       el('p', { class: 'tap-own__intro' }, t('intro')),
       el('ul', { class: 'tap-own__list' }, list.map(function (r) { return row(r, ui); }).concat(list.length ? [allRow(list, ui)] : [])),
