@@ -123,6 +123,9 @@ Object.assign(window.TAP_CONTENT.text, {
     emptyTitle: 'No region has data for this report',
     emptyBody: 'None of the regions in this comparison provided the figures this chart needs.',
     emptyMissing: 'No data from {names}.',
-    missing: 'Not included (no data): {names}.'
+    missing: 'Not included (no data): {names}.',
+    // D162: the notes past the third sit behind this control
+    moreNotes: 'Show {n} more notes',
+    moreNotesOne: 'Show 1 more note'
   }
 });
