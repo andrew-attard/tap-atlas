@@ -40,6 +40,10 @@ window.TAP_SETTINGS = {
     overviewMinRegions: 3   // the Overview shows only insights naming this many regions, or from a broad rule (D119)
   },
 
+  // The contract check's plausibility limits (D168): a share held as a decimal above shareLimit, and a services ratio
+  // (services value over licence value) above ratioLimit, load with a warning. Numbers to tune with the leaders.
+  check: { shareLimit: 1.5, ratioLimit: 4 },
+
   // Region colours repeat after this many regions; the data sources panel then shows a warning.
   regionColours: 8,
 

@@ -252,6 +252,15 @@
       q.regions[0].newBusiness[1].targetAccounts = 0;
       var none = TAP.check.run(q).warnings.filter(function (w) { return /hitRate|growthPct|targetAccounts/.test(w.path); });
       a.deepEqual(none.map(function (w) { return w.path; }), [], 'up to 150% and a zero count are fine');
+      // D168: a services ratio has its own, higher limit (4 in config/settings.js), with its own kind and wording
+      var s = T_FIXTURE('mini');
+      s.regions[0].newBusiness[0].servicesRatio = 3.5;
+      s.regions[0].customerGrowth.accounts[0].servicesRatio = 4;
+      s.regions[0].newBusiness[1].servicesRatio = 4.5;
+      var ratios = TAP.check.run(s).warnings.filter(function (w) { return /servicesRatio/.test(w.path); });
+      a.deepEqual(ratios.map(function (w) { return w.path; }), ['regions[0].newBusiness[1].servicesRatio'], 'only the ratio above 4 is warned about');
+      a.equal(ratios[0].kind, 'ratio', 'with its own kind');
+      a.ok(/of 4 or less/.test(ratios[0].expected), 'the sentence names the limit: ' + ratios[0].expected);
       var sample = TAP.check.run(copy(window.PLAN_DATA)).warnings.map(function (w) { return w.path; });
       a.deepEqual(sample, ['regions[4].customerGrowth.accounts'], 'the sample warns only about its planted empty section');
     });

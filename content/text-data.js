@@ -66,6 +66,7 @@ Object.assign(window.TAP_CONTENT.text, {
       sourceRow: 'the worksheet row number',
       isoDate: 'a date written year first, such as "2026-10-02T09:00:00Z" or "2026-10-02"',
       share: 'a share written as a decimal, for example 0.25 for 25%',
+      ratio: 'a services ratio of {limit} or less (services value over licence value)',
       notNegative: 'a count of zero or more',
       uniqueRecap: 'one recap item per year, channel, motion and type',
       uniqueRow: 'a worksheet row number not already used in this section',
@@ -140,6 +141,7 @@ Object.assign(window.TAP_CONTENT.text, {
     plain: {
       fallback: { found: 'found {found}', blank: 'a blank' },
       share: { title: 'Shares above 150%', intro: 'A share is written as a decimal, 0.25 for 25%. A value this high may be a percentage written as a whole number.' },
+      ratio: { title: 'Services ratios above {limit}', intro: 'A services ratio is the services value over the licence value. Up to {limit} is normal; a value above that may be mistyped, so confirm it with the regional leader.' },
       partnerChannel: { title: 'Partners without a channel', intro: 'The partner is kept and shown under "Channel not provided".', where: '{item}', found: '' },
       items: { title: 'Empty sections', intro: 'The section is in the file but holds no rows.', where: '{field}', found: '' },
       revenueWithin: { title: 'Revenue above the order intake', intro: 'Revenue is expected to be no higher than the order intake for the same year, channel and motion.', where: '{item}', expected: '{value}' },

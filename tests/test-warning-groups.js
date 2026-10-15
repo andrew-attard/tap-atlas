@@ -55,7 +55,7 @@
   var COLS = { where: t('check.groups.colWhere'), found: t('check.groups.colFound'), expected: t('check.groups.colExpected') };
 
   // The kinds the check can raise, as issue #605 lists them, every one with plain wording
-  var KINDS = ['share', 'partnerChannel', 'items', 'revenueWithin', 'booksWithin', 'coverage', 'variance', 'splitSum',
+  var KINDS = ['share', 'ratio', 'partnerChannel', 'items', 'revenueWithin', 'booksWithin', 'coverage', 'variance', 'splitSum',
     'arrFormula', 'segmentRule', 'sourceRow', 'sourceCell', 'uniqueRow', 'uniqueRecap', 'oneItem', 'yearMonth', 'isoDate', 'sourceMap',
     'unrated', 'notNegative', 'mcTier'];
   var EXTRA_KINDS = ['list', 'section', 'id', 'title', 'intro', 'columns', 'column', 'key', 'label', 'unit', 'kind', 'letter', 'extra',
