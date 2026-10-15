@@ -139,12 +139,20 @@
     return box;
   }
 
-  // Notes under the chart: how combined figures left regions out, and the regions with no data at all.
+  // Notes under the chart: how combined figures left regions out, and the regions with no data at all. Three lines
+  // show; the rest sit behind "Show n more notes", closed until opened (D162).
+  var LIMIT = 3;
   function notes(res) {
     var list = (res.notes || []).slice();
     if (res.missing && res.missing.length) list.push(t('missing', { names: TAP.format.list(res.missing) }));
     if (!list.length) return null;
-    return el('ul', { class: 'tap-panel__notes' }, list.map(function (n) { return el('li', null, n); }));
+    var li = function (n) { return el('li', null, n); }, shown = el('ul', { class: 'tap-panel__notes' }, list.slice(0, LIMIT).map(li));
+    if (list.length <= LIMIT) return shown;
+    var rest = list.slice(LIMIT);
+    return el('div', { class: 'tap-panel__notebox' }, [shown, el('details', { class: 'tap-panel__more' }, [
+      el('summary', null, t(rest.length === 1 ? 'moreNotesOne' : 'moreNotes', { n: rest.length })),
+      el('ul', { class: 'tap-panel__notes' }, rest.map(li))
+    ])]);
   }
 
   // The source line: the kind glyph and word for each kind of data the report names, then the data date.
