@@ -17,11 +17,14 @@
   function say(key, vars) { return TAP.content.text('check.' + key, vars); }
   var HEAD = { where: 'colWhere', found: 'colFound', expected: 'colExpected' };
 
-  // The Where cell: the row or item in words, the sheet and cell on a muted line under it
+  // The Where cell: the row or item in words, the sheet and cell on a muted line under it (a space between them keeps
+  // the copied and read-aloud text apart)
   function whereCell(it, hasCell) {
+    var address = hasCell && it.cell;
     return el('td', { class: 'tap-wg__where' }, [
       it.where ? el('span', null, it.where) : null,
-      hasCell && it.cell ? el('span', { class: 'tap-wg__cell tap-muted' }, it.cell) : null
+      it.where && address ? ' ' : null,
+      address ? el('span', { class: 'tap-wg__cell tap-muted' }, it.cell) : null
     ]);
   }
 
