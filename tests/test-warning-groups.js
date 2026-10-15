@@ -29,7 +29,7 @@
       w('Region A', 'share', 'supportPct', 'Fictional Partner A1 (row 10)', SHARE, 2.33, 'regions[0].partners[0].supportPct[0]'),
       w('Region A', 'partnerChannel', 'channel', 'Fictional Partner A2 (row 11)', 'a channel for this partner (left blank, so it is shown under "Channel not provided")', null, 'regions[0].partners[1].channel'),
       w('Region A', 'share', 'hitRate', 'Healthcare (row 20)', SHARE, 25, 'regions[0].newBusiness[0].hitRate'),
-      w('Region A', 'tier3Row', 'tier', 'Retail (row 21)', 'a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted)', 3, 'regions[0].newBusiness[1].tier'),
+      w('Region A', 'unrated', 'growthPotential', 'Other (row 15)', 'no rating, as this industry is not rated', 2, 'regions[0].marketCoverage[2].growthPotential'),
       w('Region B', 'items', 'partners', null, 'at least one item', 'an empty list', 'regions[1].partners'),
       w(null, 'sourceMap', 'partners', null, 'the template map: a sheet and its columns for each section', 'nothing', 'meta.sourceMap.partners')
     ];
@@ -55,7 +55,7 @@
   var COLS = { where: t('check.groups.colWhere'), found: t('check.groups.colFound'), expected: t('check.groups.colExpected') };
 
   // The kinds the check can raise, as issue #605 lists them, every one with plain wording
-  var KINDS = ['share', 'partnerChannel', 'tier3Row', 'items', 'revenueWithin', 'booksWithin', 'coverage', 'variance', 'splitSum',
+  var KINDS = ['share', 'partnerChannel', 'items', 'revenueWithin', 'booksWithin', 'coverage', 'variance', 'splitSum',
     'arrFormula', 'segmentRule', 'sourceRow', 'sourceCell', 'uniqueRow', 'uniqueRecap', 'oneItem', 'yearMonth', 'isoDate', 'sourceMap',
     'unrated', 'notNegative', 'mcTier'];
   var EXTRA_KINDS = ['list', 'section', 'id', 'title', 'intro', 'columns', 'column', 'key', 'label', 'unit', 'kind', 'letter', 'extra',
@@ -84,8 +84,8 @@
       a.equal(summary(b[1]), 'Region B · Region B plan.xlsx: 1 warning', 'singular');
       a.equal(summary(b[2]), t('check.groups.wholeFile') + ': 1 warning', 'the warnings about the file as a whole');
       var k = kinds(b[0]);
-      a.deepEqual(k.map(function (d) { return d.getAttribute('data-kind'); }), ['share', 'partnerChannel', 'tier3Row'], 'kinds in first-seen order');
-      a.deepEqual(k.map(summary), [title('share', 2), title('partnerChannel', 1), title('tier3Row', 1)], 'plain titles with counts');
+      a.deepEqual(k.map(function (d) { return d.getAttribute('data-kind'); }), ['share', 'partnerChannel', 'unrated'], 'kinds in first-seen order');
+      a.deepEqual(k.map(summary), [title('share', 2), title('partnerChannel', 1), title('unrated', 1)], 'plain titles with counts');
       a.deepEqual(k.map(function (d) { return rows(d).length; }), [2, 1, 1], 'one table row per warning');
       a.equal(kinds(b[2])[0].getAttribute('data-kind'), 'sourceMap');
     });

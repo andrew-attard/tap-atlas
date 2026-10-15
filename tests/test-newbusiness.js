@@ -1195,10 +1195,10 @@
       a.ok(!/unrealistic|wrong|poor|inconsistent/i.test(read), 'neutral wording (D20)');
     });
 
-    T.test('TPV-TC-874', 'A file with such a row loads with a warning that names Tier 3, and the grid draws its T3 cell', function (a) {
+    T.test('TPV-TC-874', 'A file with such a row loads with no warning about it (D167), and the grid draws its T3 cell', function (a) {
       var loaded = tier3Row();
       a.ok(loaded.ok, 'loads');
-      a.ok(loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the warning names Tier 3: ' + JSON.stringify(loaded.warnings));
+      a.ok(!loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'no warning names Tier 3: ' + JSON.stringify(loaded.warnings));
       var res = grid({ mode: 'all' });
       a.near(gcell(res, 'alpha', 'ind3').v, 600, 1e-9, 'the cell');
       a.ok(/tap-nbg__tier--t3/.test(res.html), 'the T3 chip');

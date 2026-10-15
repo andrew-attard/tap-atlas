@@ -112,9 +112,8 @@
     if (!tiers) return arrFormula(o, c);
     if (has(tiers, o.industryId) || !has(env.industries, o.industryId)) {
       var mc = tiers[o.industryId], tierOk = TYPES().tier.ok;
+      // A row for a Tier 3 industry loads like any other: planning some new business there is a choice, not a data problem (D167)
       if (tierOk(o.tier) && tierOk(mc) && o.tier !== mc) err(c, 'tier', expect('mcTier', { tier: mc }), o.tier);
-      // The template plans new business for Tier 1 and 2 industries; a row for a Tier 3 one is kept and counted (D160)
-      else if (o.tier === 3 && mc === 3) warn(c, 'tier', expect('tier3Row'), 3);
     } else {
       err(c, 'industryId', expect('mcRow'), o.industryId);
     }

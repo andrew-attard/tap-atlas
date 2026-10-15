@@ -167,15 +167,17 @@
       a.deepEqual(res.errors, [], errorList(res));
     });
 
-    // Real-data fixes (v0.5.1): a partner without a channel and a New Business row for a Tier 3 industry load with a warning each
-    T.test('TPV-TC-872', 'A partner without a channel and a Tier 3 New Business row are warnings; the file loads; a tier that differs from Market Coverage is still an error', function (a) {
+    // Real-data fixes (v0.5.1): a partner without a channel loads with a warning; a New Business row for a Tier 3 industry loads with no warning at all (D167)
+    T.test('TPV-TC-872', 'A partner without a channel is a warning and a Tier 3 New Business row is no warning; the file loads; a tier that differs from Market Coverage is still an error', function (a) {
       var p = T_FIXTURE('mini');
       p.regions[0].partners[0].channel = null;
       p.regions[0].newBusiness[1].industryId = 'ind3';         // Retail: Tier 3 in Region A's Market Coverage
       p.regions[0].newBusiness[1].tier = 3;
       var res = TAP.check.run(p), paths = res.warnings.map(function (w) { return w.path; });
       a.deepEqual(res.errors, [], errorList(res));
-      ['regions[0].partners[0].channel', 'regions[0].newBusiness[1].tier'].forEach(function (path) { a.ok(paths.indexOf(path) >= 0, path + ' is warned about'); });
+      a.ok(paths.indexOf('regions[0].partners[0].channel') >= 0, 'the channel is warned about');
+      a.ok(paths.indexOf('regions[0].newBusiness[1].tier') < 0, 'the Tier 3 row is not warned about (D167)');
+      a.ok(!res.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'no warning names Tier 3');
       var r = TAP.data.load(p);
       a.equal(r.ok, true, 'the data loads');
       a.ok(r.warnings.some(function (w) { return w.path === 'regions[0].partners[0].channel'; }), 'and returns the warnings');
@@ -276,7 +278,7 @@
       'rating-on-unrated': ['unrated', 'growthPotential'], 'no-source-map': ['sourceMap', 'sourceMap'], 'source-map-section-missing': ['sourceMap', 'partners'],
       'no-source-cell': ['sourceCell', 'sourceCell'], 'split-not-100': ['splitSum', 'channelSplit'], 'arr-not-recalculated': ['arrFormula', 'arrPotential[0]'],
       'segment-off-thresholds': ['segmentRule', 'segment'], 'no-source-row': ['sourceRow', 'sourceRow'], 'empty-section': ['items', 'partners'],
-      'partner-no-channel': ['partnerChannel', 'channel'], 'nb-tier3-row': ['tier3Row', 'tier'],
+      'partner-no-channel': ['partnerChannel', 'channel'],
       'route-and-year-twice': ['oneItem', null], 'plan-year-and-type-twice': ['oneItem', null], 'books-item-twice': ['oneItem', null],
       'base-year-category-twice': ['oneItem', null], 'variance-off': ['variance', 'variance'], 'coverage-off': ['coverage', 'coverage'],
       'revenue-above-order-intake': ['revenueWithin', null], 'books-above-customer-value': ['booksWithin', null],
