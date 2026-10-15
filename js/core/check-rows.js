@@ -46,17 +46,24 @@
     return isNum(o.sourceRow) ? say('item.row', { name: name, row: o.sourceRow }) : name;
   }
 
-  // Fields held as decimals (0.25 for 25%), and counts, per section: a share above 1.5 is most likely a whole-number
-  // percentage, and a negative count a slip (review DE-12). Both only warn.
-  var SHARES = { newBusiness: ['hitRate', 'servicesRatio', 'growth.year2', 'growth.year3'], accounts: ['servicesRatio', 'growthPct'],
-    partners: ['centralSupportPct'] };
+  // Fields held as decimals (0.25 for 25%), ratios and counts, per section: a share above the share limit is most likely a
+  // whole-number percentage (review DE-12), a services ratio above the ratio limit may be mistyped (D168: up to 4 is
+  // normal), and a negative count is a slip. All only warn. The limits sit in config/settings.js (check).
+  var SHARES = { newBusiness: ['hitRate', 'growth.year2', 'growth.year3'], accounts: ['growthPct'], partners: ['centralSupportPct'] };
+  var RATIOS = { newBusiness: ['servicesRatio'], accounts: ['servicesRatio'] };
   var COUNTS = { newBusiness: ['targetAccounts'], partners: ['fteSales', 'fteConsultants'] };
-  function figures(key, o, c) {
-    (SHARES[key] || []).forEach(function (f) {
+  function limits() { var s = (window.TAP_SETTINGS && window.TAP_SETTINGS.check) || {}; return { share: s.shareLimit || 1.5, ratio: s.ratioLimit || 4 }; }
+  function above(fields, o, c, limit, kind, vars) {
+    (fields || []).forEach(function (f) {
       var path = f.split('.'), v = path.length > 1 ? (isObj(o[path[0]]) ? o[path[0]][path[1]] : null) : o[f];
-      if (Array.isArray(v)) v.forEach(function (x, i) { if (isNum(x) && Math.abs(x) > 1.5) warn(sub(c, f), i, expect('share'), x); });
-      else if (isNum(v) && Math.abs(v) > 1.5) warn(c, f, expect('share'), v);
+      if (Array.isArray(v)) v.forEach(function (x, i) { if (isNum(x) && Math.abs(x) > limit) warn(sub(c, f), i, expect(kind, vars), x); });
+      else if (isNum(v) && Math.abs(v) > limit) warn(c, f, expect(kind, vars), v);
     });
+  }
+  function figures(key, o, c) {
+    var lim = limits();
+    above(SHARES[key], o, c, lim.share, 'share');
+    above(RATIOS[key], o, c, lim.ratio, 'ratio', { limit: lim.ratio });
     (COUNTS[key] || []).forEach(function (f) { if (isNum(o[f]) && o[f] < 0) warn(c, f, expect('notNegative'), o[f]); });
   }
   // A recap item repeats when another has the same year, channel, motion and type: both would be added up.

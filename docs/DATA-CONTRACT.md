@@ -442,7 +442,7 @@ regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"
 - two items of one section with the same `sourceRow`. Lists still keep them apart: the first keeps its row number, and a later item with a repeated or missing number is told apart by its position in the file;
 - an empty section;
 - a date (`meta.generatedAt`, `source.fileModified`, `source.importedAt`) that is not an ISO date such as `"2026-10-02T09:00:00Z"` or `"2026-10-02"`. The app never guesses at other forms (`"02/10/2026"` could be day first or month first), so such a date shows as not provided;
-- a share held as a decimal (`hitRate`, `servicesRatio`, `growth.year2` and `year3`, `growthPct`, `centralSupportPct`) above 1.5, which is most likely a whole-number percentage (25 for 25%); a negative `targetAccounts`, `fteSales` or `fteConsultants`; two recap items with the same `year`, `channel`, `motion` and `type`, which would both be added up;
+- a share held as a decimal (`hitRate`, `growth.year2` and `year3`, `growthPct`, `centralSupportPct`) above the share limit (1.5 in `config/settings.js`, `check.shareLimit`), which is most likely a whole-number percentage (25 for 25%); a `servicesRatio` above the ratio limit (4, `check.ratioLimit`; D168: a services ratio up to 4 is normal); a negative `targetAccounts`, `fteSales` or `fteConsultants`; two recap items with the same `year`, `channel`, `motion` and `type`, which would both be added up;
 - a rating on an industry that is not rated;
 - a partner without a channel (`channel` is `null`): the partner loads and is shown under "Channel not provided" (D159);
 - in the full template's parts (Phase 4), values that are likely wrong:

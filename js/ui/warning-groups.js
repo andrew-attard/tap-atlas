@@ -82,8 +82,8 @@
       }
       return {
         region: w.region == null || w.region === '' ? null : String(w.region), kind: w.kind || null,
-        title: plain ? say('plain.' + w.kind + '.title') : (w.expected || w.message || ''),
-        intro: plain ? say('plain.' + w.kind + '.intro') : '',
+        title: plain ? say('plain.' + w.kind + '.title', vars) : (w.expected || w.message || ''),
+        intro: plain ? say('plain.' + w.kind + '.intro', vars) : '',
         where: part('where', '{where}'), cell: '',
         found: part('found', '{found}'), expected: part('expected', vars.value ? '{value}' : ''),
         tech: w.message || ''
