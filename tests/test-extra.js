@@ -98,12 +98,15 @@
       });
     });
 
-    T.test('X-extra-check', 'Every extra-section warning has path, region, item, expected, found and message', function (a) {
+    T.test('X-extra-check', 'Every extra-section warning has path, region, item, field, kind, expected, found and message; its kind is extra.<key> with plain wording', function (a) {
       BROKEN.forEach(function (c) {
         var p = sample();
         c.change(p);
         about(TAP.check.run(p).warnings).forEach(function (w) {
-          ['path', 'region', 'item', 'expected', 'found', 'message'].forEach(function (k) { a.ok(k in w, c.id + ': ' + k); });
+          ['path', 'region', 'item', 'field', 'kind', 'expected', 'found', 'message'].forEach(function (k) { a.ok(k in w, c.id + ': ' + k); });
+          a.ok(/^extra\.\w+$/.test(w.kind), c.id + ': kind extra.<key>, got ' + w.kind);
+          a.ok(TAP.content.text('check.plain.' + w.kind + '.title').charAt(0) !== '[', c.id + ': plain wording for ' + w.kind);
+          a.ok(w.field === null || typeof w.field === 'string', c.id + ': a field or null');
         });
       });
       var p = sample();

@@ -1197,6 +1197,31 @@
       });
     });
 
+    // US-1.8.8 (D161): the check's warnings grouped by workbook, then kind, in plain words; other notes keep their list
+    T.test('X-warn-sources-panel', 'The data sources panel groups the check warnings under the region and its file, one group per kind', function (a) {
+      run(function () {
+        var p = T_FIXTURE('mini');
+        p.regions[1].partners[0].channel = null;
+        p.regions[1].partners[0].supportPct = [2.33, 0.2, 0.2];
+        var root = startApp(p);
+        TAP.notes.add({ source: 'data', message: 'Channel split adds up to 95%.', regionId: 'bravo', sheet: '2. New Business', cell: 'E12' });
+        var panel = openSourcesByClick(root), notes = qs('.tap-src__notes', panel);
+        a.ok(notes, 'the other notes section');
+        var book = qs('details.tap-wg[data-region="Region B"]', notes);
+        a.ok(book, 'a group for Region B');
+        a.equal(txt(qs(':scope > summary', book)), 'Region B · Region B plan.xlsx: 2 warnings', 'the region, its file and the count');
+        a.ok(book.open, 'open: two warnings');
+        var kinds = qsa('details.tap-wg__kind', book).map(function (d) { return d.getAttribute('data-kind'); }).sort();
+        a.deepEqual(kinds, ['partnerChannel', 'share'], 'two kind groups');
+        var lines = qsa('li', book).map(txt).join(' | ');
+        a.ok(lines.indexOf('Fictional Partner B1 (row 10)') >= 0 && lines.indexOf('2.33') >= 0, 'the row in words and the value: ' + lines);
+        a.ok(txt(book).indexOf('regions[') < 0, 'no data path');
+        a.ok(qs('details.tap-wg[data-region="Region C"]', notes), 'the fixture\u2019s own planted empty sections under Region C');
+        a.ok(txt(qs('.tap-src__notes > ul', notes)).indexOf('Channel split adds up to 95%.') >= 0, 'a data note without a kind keeps its place in the list');
+        a.ok(parseFloat(getComputedStyle(qs('summary', book)).fontSize) >= 16, 'summary at body size (D24)');
+      });
+    });
+
     T.test('X-sources-summary', 'The panel opens with the data date and the number of import notes', function (a) {
       run(function () {
         var root = startApp();
