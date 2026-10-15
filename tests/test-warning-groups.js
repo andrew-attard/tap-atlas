@@ -112,7 +112,7 @@
       a.deepEqual(heads(partner), [COLS.where], 'a kind without found or expected has the Where column alone');
       a.equal(txt(qs('td', partner)), 'Fictional Partner A2 (row 11)');
       a.ok(txt(qs('.tap-wg__intro', partner)).indexOf('Channel not provided') >= 0, 'the intro says where the partner is shown');
-      a.ok(txt(qs('.tap-wg__intro', kinds(b[0])[2])).indexOf('kept and counted') >= 0, 'the Tier 3 intro says the row is kept');
+      a.equal(txt(qs('.tap-wg__intro', kinds(b[0])[2])), t('check.plain.unrated.intro'), 'the third kind shows its own intro');
       a.equal(txt(qs('td', b[1])), t('check.fields.partners'), 'an empty section names the section in words');
       var all = txt(r.host);
       a.ok(all.indexOf('regions[') < 0, 'no data path on screen');
