@@ -1312,6 +1312,20 @@
       } finally { URL.createObjectURL = savedUrl; TAP.panelExport.download = savedDl; TAP.panelTable.clipboard = savedClip; }
     });
 
+    // US-1.8.12 (D169): a saved note's cells show under the values in the data sources panel
+    T.test('X-cells-sources', 'The data sources panel shows a saved note\u2019s address under the value found and the cells it was compared with under the value expected', function (a) {
+      run(function () {
+        var p = T_FIXTURE('mini');
+        p.regions[0].source.notes = [{ message: 'Revenue 490 is above the order intake 480 for 2027, direct, newBusiness.', sheet: '5. Recap', cell: 'E30, E33', kind: 'revenueAbove',
+          item: '2027, Direct, new business', found: 490, expected: 480, ref: '2027|direct|newBusiness', cells: { found: '5. Recap › E30, E33', expected: ['4. Partner › E5', '4. Partner › E13'] } }];
+        var root = startApp(p), panel = openSourcesByClick(root), box = qs('.tap-src__box', qsa('.tap-src__region', panel)[0]), tds = qsa('td', box);
+        a.deepEqual(tds.map(txt), ['2027, Direct, new business', '490 5. Recap › E30, E33', '480 4. Partner › E5 and E13'], 'where, found with its cells, expected with its cells');
+        a.equal(qsa('.tap-wg__cell', tds[0]).length, 0, 'the address not repeated under Where');
+        a.equal(qsa('.tap-wg__cell', box).length, 2);
+        qsa('.tap-wg__cell', box).forEach(function (n) { a.ok(parseFloat(getComputedStyle(n).fontSize) >= 16, 'address at body size (D24)'); });
+      });
+    });
+
     T.test('X-sources-summary', 'The panel opens with the data date and the number of import notes', function (a) {
       run(function () {
         var root = startApp();

@@ -3,7 +3,8 @@
  * Purpose: Tests of the review report per workbook (US-1.8.11, D166): the self-contained HTML page (structure, sections,
  *          nothing technical, no request, D24 sizes, the label), the text version, the all-workbooks page, the file names
  *          and the download.
- * Provides: test cases X-owner-report-* (the lead assigns Test Plan ids)
+ * Provides: test cases X-owner-report-* and X-cells-owner-* (the cells behind both values, and a workbook left out, US-1.8.12,
+ *           D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.ownerReport, TAP.warningGroups, TAP.content, TAP.shell, TAP.format)
  * Used by: tests.html
  * Owner: REPORTS stream (#616)
@@ -187,6 +188,53 @@
       a.equal(TAP.ownerReport.build(region([], 'North/East: "A"?  <B>|C*'), { now: NOW }).fileName, 'North East A B C data review 2026-10-15.html');
       a.equal(TAP.ownerReport.build(region([], 'Région É'), { now: '2026-01-05T23:59:00Z' }).fileName, 'Région É data review 2026-01-05.html', 'letters with accents stay');
       a.match(TAP.ownerReport.build(full()).fileName, /^Region A data review \d{4}-\d{2}-\d{2}\.html$/, 'today when no date is given');
+    });
+
+    /* ---------- US-1.8.12 (D169): the cells behind both values, and a workbook left out ---------- */
+
+    var R = '5. Recap › ';
+    function cellNotes() {
+      return [
+        { message: 'Revenue 490 is above the order intake 480 for 2027, direct, newBusiness.', sheet: '5. Recap', cell: 'E30, E33', kind: 'revenueAbove', item: '2027, Direct, new business', found: 490, expected: 480, ref: '2027|direct|newBusiness',
+          cells: { found: R + 'E30, E33', expected: ['4. Partner › E5', '4. Partner › E13'] } },
+        { message: 'The variance is 25; books order intake minus the strategic plan gives 90.', sheet: '5. Recap', cell: 'I90', kind: 'variance', item: '2027, ARR', found: 25, expected: 90, ref: '2027|arr',
+          cells: { found: R + 'I90', expected: ['E60', 'F60', 'G60', 'H60', 'E72', 'F72', 'G72', 'H72', 'E90'].map(function (c) { return R + c; }) } },
+        { message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null, ref: 'partners' }
+      ];
+    }
+    function cellRegion(extra) { return Object.assign(region(TAP.warningGroups.fromImport(cellNotes(), 'Region A')), extra || {}); }
+
+    T.test('X-cells-owner-html', 'The page shows the address under the value found and every address under the value expected, not under Where; a note without cells keeps its address under Where', function (a) {
+      var doc = parse(TAP.ownerReport.build(cellRegion(), { now: NOW }).html), secs = qsa('section.kind', doc);
+      a.equal(secs.length, 3);
+      a.deepEqual(qsa('td', qs('tbody tr', secs[0])).map(txt), ['2027, Direct, new business', '490 ' + R + 'E30, E33', '480 4. Partner › E5 and E13'], 'where, found with its cells, expected with its cells');
+      a.equal(qsa('.cell', qs('tbody tr', secs[0])).length, 2, 'two address spans, under Found and Expected');
+      a.equal(qsa('.cell', qsa('td', qs('tbody tr', secs[0]))[0]).length, 0, 'none under Where');
+      a.equal(qsa('td', qs('tbody tr', secs[1])).map(txt)[2], '90 ' + R + 'E60, F60, G60, H60, E72, F72, G72, H72 and E90', 'every address, the sheet once: the owner goes to each one');
+      a.deepEqual(qsa('td', qs('tbody tr', secs[2])).map(txt), ['Partner 4. Partner › B10'], 'without cells: the address under Where');
+    });
+
+    T.test('X-cells-owner-text', 'The text version writes each address in brackets after its value, and the found address no longer after the item', function (a) {
+      var r = TAP.ownerReport.build(cellRegion(), { now: NOW }), trimmed = r.text.split('\n').map(function (l) { return l.trim(); });
+      var line = function (s) { a.ok(trimmed.indexOf(t('ownerReport.textItem', { line: s })) >= 0, 'line: ' + s); };
+      line('2027, Direct, new business: ' + t('check.groups.rowFound', { found: '490' }) + ' (' + R + 'E30, E33), ' + t('check.groups.rowExpected', { expected: '480' }) + ' (4. Partner › E5 and E13)');
+      line('2027, ARR: ' + t('check.groups.rowFound', { found: '25' }) + ' (' + R + 'I90), ' + t('check.groups.rowExpected', { expected: '90' }) + ' (' + R + 'E60, F60, G60, H60, E72, F72, G72, H72 and E90)');
+      line('Partner · 4. Partner › B10');
+      a.equal(r.text.split('E30').length, 2, 'the found address once');
+    });
+
+    T.test('X-cells-owner-left-out', 'A workbook left out of the import says so in one sentence under the facts, its notes still listed; an imported one does not', function (a) {
+      var r = TAP.ownerReport.build(cellRegion({ leftOut: true }), { now: NOW }), doc = parse(r.html), p = qs('.left-out', doc);
+      a.ok(p, 'the sentence');
+      a.equal(txt(p), t('ownerReport.leftOut'));
+      a.ok(p.previousElementSibling && p.previousElementSibling.tagName === 'DL' && p.nextElementSibling.classList.contains('todo'), 'under the facts, before what to do');
+      a.equal(qsa('section.kind', doc).length, 3, 'the notes still listed');
+      var lines = r.text.split('\n'), i = lines.indexOf(t('ownerReport.leftOut'));
+      a.ok(i > 0 && i < lines.indexOf(t('ownerReport.todo')), 'in the text, after the facts and before what to do');
+      var ok = TAP.ownerReport.build(cellRegion(), { now: NOW });
+      a.ok(!qs('.left-out', parse(ok.html)) && ok.text.indexOf(t('ownerReport.leftOut')) < 0, 'not otherwise');
+      a.equal(qsa('.left-out', parse(TAP.ownerReport.buildAll([cellRegion({ leftOut: true }), cellRegion()], { now: NOW }).html)).length, 1, 'once on the all-workbooks page');
+      a.ok(t('ownerReport.leftOut').indexOf('—') < 0, 'no em dash');
     });
 
     T.test('X-owner-report-download', 'download makes a text/html Blob of the page and hands its URL and file name to TAP.panelExport.download', function (a) {

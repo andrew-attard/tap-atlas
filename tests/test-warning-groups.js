@@ -4,7 +4,8 @@
  *          workbook, then by kind, and the import's notes grouped by kind, each group a table of where, found and expected
  *          in plain words, as both panels and the copied report show them.
  * Provides: test cases TPV-TC-877 to TPV-TC-885, TPV-TC-900, TPV-TC-901, TPV-TC-902, TPV-TC-903, TPV-TC-904, and X-owner-fold-* (the pair
- *           table and the fold, US-1.8.10, D165; the lead assigns Test Plan ids)
+ *           table and the fold, US-1.8.10, D165) and X-cells-* (the cells behind both values of a comparing note, US-1.8.12,
+ *           D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.warningGroups, TAP.warningTable, TAP.importWrite, TAP.content)
  * Used by: tests.html
  * Owner: WARN stream (#605), NOTES2 stream (#612), REPORTS stream (#615)
@@ -193,16 +194,16 @@
     /* ---------- US-1.8.9 (D163, D164): import notes by kind, tables inside every group ---------- */
 
     T.test('TPV-TC-900', 'fromImport and fromCheck normalize to the same shape: region, kind, title, intro, where, cell, found, expected, tech', function (a) {
-      var W = TAP.warningGroups, keys = ['region', 'kind', 'title', 'intro', 'where', 'cell', 'found', 'expected', 'tech', 'ref'];
+      var W = TAP.warningGroups, keys = ['region', 'kind', 'title', 'intro', 'where', 'cell', 'found', 'expected', 'tech', 'ref', 'foundCell', 'expectedCells'];
       var ni = W.fromImport(notes(), 'Region A'), ci = W.fromCheck(set(), { lookups: LOOKUPS });
       a.equal(ni.length, 4);
       a.equal(ci.length, 6);
       ni.concat(ci).forEach(function (it) { a.deepEqual(Object.keys(it).sort(), keys.slice().sort(), 'the keys of ' + it.tech); });
       a.deepEqual(ni[0], { region: 'Region A', kind: 'emptySection', title: t('importPanel.notePlain.emptySection.title'), intro: t('importPanel.notePlain.emptySection.intro'),
-        where: 'Customer Growth', cell: '3. Customer Growth › C10', found: '', expected: '', tech: 'The Customer Growth section is empty.', ref: null }, 'an import note: the item, the address, the message as tech');
+        where: 'Customer Growth', cell: '3. Customer Growth › C10', found: '', expected: '', tech: 'The Customer Growth section is empty.', ref: null, foundCell: '', expectedCells: [] }, 'an import note: the item, the address, the message as tech');
       a.deepEqual(ni[2].found + '|' + ni[2].expected + '|' + ni[2].where, '450|400|2027, Direct, existing customers, ARR', 'found and expected as text, the item as the site wrote it');
       a.deepEqual(ci[4], { region: 'Region B', kind: 'items', title: t('check.plain.items.title'), intro: t('check.plain.items.intro'),
-        where: t('check.fields.partners'), cell: '', found: '', expected: '', tech: set()[4].message, ref: null }, 'a check warning: no address, the field in words');
+        where: t('check.fields.partners'), cell: '', found: '', expected: '', tech: set()[4].message, ref: null, foundCell: '', expectedCells: [] }, 'a check warning: no address, the field in words');
       a.equal(ci[5].region, null, 'a warning about the whole file has no region');
       a.deepEqual(W.normalize(set(), { lookups: LOOKUPS }), ci, 'normalize takes raw warnings');
       a.deepEqual(W.normalize(ni), ni, 'and leaves normalized items alone');
@@ -274,6 +275,64 @@
         a.ok(tb.getBoundingClientRect().width <= r.host.getBoundingClientRect().width + 1, 'the table stays within its host: ' + tb.getBoundingClientRect().width + ' of ' + r.host.getBoundingClientRect().width);
       });
       qsa('td', r.host).forEach(function (td) { a.equal(getComputedStyle(td).overflowWrap, 'anywhere', 'cells wrap anywhere'); });
+    });
+
+    /* ---------- US-1.8.12 (D169): the cells behind both values of a comparing note ---------- */
+
+    var R = '5. Recap › ';
+    function cellNotes() {
+      return [
+        { message: 'Revenue 490 is above the order intake 480 for 2027, direct, newBusiness.', sheet: '5. Recap', cell: 'E30, E33', kind: 'revenueAbove', item: '2027, Direct, new business', found: 490, expected: 480, ref: '2027|direct|newBusiness',
+          cells: { found: R + 'E30, E33', expected: ['4. Partner › E5', '4. Partner › E13'] } },
+        { message: 'The variance is 25; books order intake minus the strategic plan gives 90.', sheet: '5. Recap', cell: 'I90', kind: 'variance', item: '2027, ARR', found: 25, expected: 90, ref: '2027|arr',
+          cells: { found: R + 'I90', expected: ['E60', 'F60', 'G60', 'H60', 'E72', 'F72', 'G72', 'H72', 'E90'].map(function (c) { return R + c; }) } },
+        { message: 'The channel split adds up to 95%, not 100%.', sheet: '2. New Business', cell: 'E20:H20', kind: 'splitSum', item: 'Healthcare', found: '95%', expected: '100%', ref: 'ind1',
+          cells: { found: '2. New Business › E20:H20', expected: [] } },
+        { message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null, ref: 'partners' }
+      ];
+    }
+    function more(n) { return t('importPanel.cells.more', { n: n }); }
+
+    T.test('X-cells-normalize', 'fromImport carries a note\u2019s cells as foundCell and expectedCells; a note without them and a check warning get empty ones', function (a) {
+      var W = TAP.warningGroups, items = W.fromImport(cellNotes(), 'Region A');
+      a.equal(items[0].foundCell, R + 'E30, E33');
+      a.deepEqual(items[0].expectedCells, ['4. Partner › E5', '4. Partner › E13']);
+      a.equal(items[0].cell, R + 'E30, E33', 'the note\u2019s own address stays');
+      a.equal(items[1].expectedCells.length, 9);
+      a.deepEqual([items[2].foundCell, items[2].expectedCells], ['2. New Business › E20:H20', []], 'the split: the found cells, nothing expected');
+      a.deepEqual([items[3].foundCell, items[3].expectedCells], ['', []], 'a note without cells');
+      var ci = W.fromCheck(set(), { lookups: LOOKUPS });
+      a.ok(ci.every(function (it) { return it.foundCell === '' && it.expectedCells.length === 0; }), 'a check warning has no cells');
+      a.deepEqual(W.fromImport([{ message: 'm', kind: 'variance', cells: { found: 'S › A1', expected: null } }], 'R')[0].expectedCells, [], 'a malformed list reads as none');
+      a.ok(txt(TAP.warningGroups.renderKinds(items)).indexOf('[importPanel') < 0, 'every phrase has wording');
+    });
+
+    T.test('X-cells-list', 'cellList writes the sheet once when every address shares it, else each address in full, at most max then "N more", nothing for none', function (a) {
+      var W = TAP.warningGroups;
+      a.equal(W.cellList([R + 'E12', R + 'F12', R + 'G12'], 6), R + 'E12, F12 and G12');
+      a.equal(W.cellList([R + 'E12'], 6), R + 'E12');
+      a.equal(W.cellList([R + 'F60', '4. Partner › E5'], 6), R + 'F60 and 4. Partner › E5', 'two sheets: each in full');
+      a.equal(W.cellList(cellNotes()[1].cells.expected, 6), R + 'E60, F60, G60, H60, E72, F72 and ' + more(3), 'nine addresses capped at six');
+      a.equal(W.cellList(cellNotes()[1].cells.expected, 0), R + 'E60, F60, G60, H60, E72, F72, G72, H72 and E90', 'no cap');
+      a.equal(W.cellList([], 6), '');
+      a.equal(W.cellList(null, 6), '');
+      a.equal(W.cellList(['E5', 'F5'], 6), 'E5 and F5', 'addresses without a sheet as they are');
+    });
+
+    T.test('X-cells-table', 'The table shows the address under Found and the addresses under Expected, not under Where; a note without cells keeps its address under Where', function (a) {
+      var r = renderKinds(TAP.warningGroups.fromImport(cellNotes(), 'Region A')), k = qsa('details.tap-wg__kind', r.host);
+      a.deepEqual(k.map(function (d) { return d.getAttribute('data-kind'); }), ['revenueAbove', 'variance', 'splitSum', 'emptySection']);
+      var tds = qsa('td', rows(k[0])[0]);
+      a.deepEqual(tds.map(txt), ['2027, Direct, new business', '490 ' + R + 'E30, E33', '480 4. Partner › E5 and E13'], 'where, found with its cells, expected with its cells');
+      a.equal(qsa('.tap-wg__cell', tds[0]).length, 0, 'no address under Where');
+      a.equal(txt(qs('.tap-wg__cell', tds[1])), R + 'E30, E33', 'the address in its own muted span under Found');
+      a.equal(txt(qs('.tap-wg__cell', tds[2])), '4. Partner › E5 and E13', 'the sheet once, then the cells');
+      a.equal(txt(qsa('td', rows(k[1])[0])[2]), '90 ' + R + 'E60, F60, G60, H60, E72, F72 and ' + more(3), 'the variance: the sheet once, six cells, then the rest counted');
+      a.deepEqual(qsa('td', rows(k[2])[0]).map(txt), ['Healthcare', '95% 2. New Business › E20:H20', '100%'], 'the split: the range under Found, nothing under Expected');
+      a.deepEqual(qsa('td', rows(k[3])[0]).map(txt), ['Partner 4. Partner › B10'], 'a note without cells: the address under Where as before');
+      a.equal(qsa('.tap-wg__cell', rows(k[3])[0]).length, 1);
+      qsa('.tap-wg__cell', r.host).forEach(function (n) { a.ok(px(n) >= 16, 'address at body size (D24)'); });
+      a.ok(txt(r.host).indexOf('2027|') < 0 && txt(r.host).indexOf('[importPanel') < 0, 'no ref, no missing wording');
     });
 
     /* ---------- US-1.8.10 (D165): one entry per problem, the pair table and the fold ---------- */

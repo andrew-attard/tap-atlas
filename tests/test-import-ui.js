@@ -4,7 +4,8 @@
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
  * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), TPV-TC-905,
- *           X-owner-ui-* (the folded warnings heading, US-1.8.10, and the reports for workbook owners, US-1.8.11; the lead assigns Test Plan ids)
+ *           X-owner-ui-* (the folded warnings heading, US-1.8.10, and the reports for workbook owners, US-1.8.11), X-cells-* (the cells line
+ *           in the copied report and the left-out sentence, US-1.8.12, D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
  * Owner: UI stream (#587); the X-owner-ui-* cases by REPORTS (#615, #616)
@@ -553,6 +554,38 @@
           });
         });
       });
+    });
+
+    /* ---------- US-1.8.12 (D169): the cells line in the copied report, the left-out sentence in an owner's report ---------- */
+
+    T.test('X-cells-report', 'The copied report writes the cells behind a comparing note on one line after its plain row, found then expected; a note without cells has none', function (a) {
+      var r = canned();
+      r.regions[1].notes = [
+        { message: 'Revenue 490 is above the order intake 480 for 2027, direct, newBusiness.', sheet: '5. Recap', cell: 'E30, E33', kind: 'revenueAbove', item: '2027, Direct, new business', found: 490, expected: 480, ref: '2027|direct|newBusiness',
+          cells: { found: '5. Recap › E30, E33', expected: ['4. Partner › E5', '4. Partner › E13'] } },
+        { message: 'The channel split adds up to 95%, not 100%.', sheet: '2. New Business', cell: 'E20:H20', kind: 'splitSum', item: 'Healthcare', found: '95%', expected: '100%', ref: 'ind1',
+          cells: { found: '2. New Business › E20:H20', expected: [] } }
+      ];
+      var text = TAP.importWrite.report(r), lines = text.split('\n'), trimmed = lines.map(function (l) { return l.trim(); });
+      var at = function (s) { var i = trimmed.indexOf(s); a.ok(i >= 0, 'line: ' + s); return i; };
+      var plain = at('2027, Direct, new business, found 490, expected 480, 5. Recap › E30, E33'), cells = at('cells: found 5. Recap › E30, E33; expected 4. Partner › E5, 4. Partner › E13'), tech = at(r.regions[1].notes[0].message);
+      a.ok(plain + 1 === cells && cells + 1 === tech, 'the cells line between the plain row and the technical line');
+      a.ok(lines[cells].search(/\S/) > lines[plain].search(/\S/), 'indented under the plain row');
+      var split = at('cells: found 2. New Business › E20:H20');
+      a.equal(trimmed[split - 1], 'Healthcare, found 95%, expected 100%, 2. New Business › E20:H20', 'the split: found only, nothing expected');
+      var none = at('Healthcare, found 95%, expected 100%, 2. New Business › E12:H12');   // Region C's note carries no cells
+      a.equal(trimmed[none + 1], 'The channel split adds up to 95%.', 'a note without cells: the technical line follows at once');
+      a.equal(trimmed.filter(function (l) { return l.indexOf('cells:') === 0; }).length, 2, 'two cells lines in all');
+    });
+
+    T.test('X-cells-ui-left-out', 'The Import report marks a reading with errors as left out for its owner\u2019s report, which says so in plain words and carries no error text', function (a) {
+      var regions = TAP.importReport.ownerRegions(canned());
+      a.deepEqual(regions.map(function (r) { return !!r.leftOut; }), [false, false, true], 'Region C alone');
+      var r = TAP.ownerReport.build(regions[2]), sentence = TAP.content.text('ownerReport.leftOut');
+      a.ok(r.html.indexOf(sentence) > 0 && r.text.indexOf(sentence) > 0, 'the sentence in the page and the text');
+      a.ok(r.html.indexOf('The sheet is missing.') < 0 && r.text.indexOf('The sheet is missing.') < 0, 'no error text');
+      a.ok(r.html.indexOf(t('notePlain.splitSum.title')) > 0, 'its notes still listed');
+      a.ok(TAP.ownerReport.build(regions[0]).html.indexOf(sentence) < 0, 'not for an imported workbook');
     });
 
     T.test('TPV-TC-866', 'Every word on the panel and its report is found in the wording file', function (a) {
