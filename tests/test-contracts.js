@@ -36,6 +36,7 @@
     shell: ['mount', 'viewEl'],
     compareBar: ['mount'],
     layers: ['open', 'close', 'openDetails', 'top'],
+    warningGroups: ['render', 'groups', 'title', 'line', 'label'],
     sourcesPanel: ['render'],
     screens: ['show'],
     glossary: ['popover', 'close'],
