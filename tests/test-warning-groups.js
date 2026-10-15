@@ -315,7 +315,7 @@
       var f = TAP.warningGroups.fold(notes, warns);
       a.equal(f.folded, 2, 'two folded');
       a.deepEqual(f.byRegion, { 'Region A': 2 }, 'counted per region');
-      a.deepEqual(f.warnings.map(function (x) { return x.region + ':' + x.kind + ':' + x.ref; }),
+      a.deepEqual(f.warnings.map(function (x) { return x.region + ':' + x.kind + ':' + (x.ref == null ? 'null' : x.ref); }),
         ['Region B:items:partners', 'Region A:revenueWithin:2027|partner|customerGrowth', 'Region A:segmentRule:a2', 'Region A:splitSum:ind1', 'Region A:share:null'], 'the rest, in order');
       a.ok(f.warnings.every(function (x) { return warns.indexOf(x) >= 0; }), 'the same objects, not copies');
       a.deepEqual(f.matched.map(function (x) { return x.path; }), ['regions[0].partners', 'regions[0].revenue.direct'], 'the folded ones are listed too');
