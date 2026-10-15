@@ -1,13 +1,14 @@
 /*
  * File: js/engine/aggregate.js
  * Purpose: Combines several regions' values into one figure (totals and averages), following the combining rules
- *          of US-1.2.5. This is the only place those rules are written down in code; insights reuse it.
- * Provides: TAP.agg (combine, ratio, weightBy, describe, declineNote)
+ *          of US-1.2.5. This is the only place those rules are written down in code; insights reuse it. Also folds
+ *          the notes under a chart by measure and the regions left out (D162).
+ * Provides: TAP.agg (combine, ratio, weightBy, describe, declineNote, leftOut, foldNotes)
  * Depends on: js/core/namespace.js, js/core/store.js (TAP.notes), config/settings.js, js/core/content.js,
  *             js/core/format.js, js/core/data.js,
  *             js/engine/measures.js (only to look up rate weights and their labels, at call time)
- * Used by: measures, insights, explanations, region cards, and the combined-figure labels in the drawing kit, the
- *          parts builder and the quadrant
+ * Used by: measures, insights, explanations, region cards, and the combined-figure labels and notes in the drawing
+ *          kit, the parts builder, the quadrant and the Outlook side chart
  */
 (function (TAP) {
   'use strict';
@@ -219,15 +220,55 @@
     return /^[A-Z][A-Z0-9]/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1);
   }
 
+  // The regions a combined source left out as not provided: for a derived sum, those left out of every part.
+  function lostOf(s) {
+    return s.parts ? s.regionIds.filter(function (r) {
+      return s.parts.every(function (p) { return p.src && (p.src.excluded || []).indexOf(r) >= 0; });
+    }) : (s.excluded || []);
+  }
+
+  // The regions a combined cell left out and names in its notes: not provided, then weight missing. Empty for a
+  // region's own figure.
+  function leftOut(c) {
+    var s = c && (c.src || c);
+    return !s || !s.combined ? [] : lostOf(s).concat(s.weightMissing || []);
+  }
+
+  /*
+   * The notes under a chart (D162). items: [{label, measure, text, c}], c being the combined cell behind a gap, or
+   * null for any other note (a partly provided figure). Rows whose cell left the same regions out of the same measure
+   * share one line that names the rows (four, then how many more); a single row, and a note without a cell, keep the
+   * plain line. Lines come in first-seen order, each once.
+   */
+  function foldNotes(items) {
+    var groups = [], byKey = {}, out = [];
+    (items || []).forEach(function (it) {
+      var ids = it.c ? leftOut(it.c) : [], key = ids.length ? it.measure + '|' + ids.slice().sort().join(',') : null;
+      var g = key && byKey[key];
+      if (g) { if (g.items.every(function (x) { return x.label !== it.label; })) g.items.push(it); return; }
+      g = { ids: ids, items: [it] };
+      if (key) byKey[key] = g;
+      groups.push(g);
+    });
+    groups.forEach(function (g) {
+      var first = g.items[0], line;
+      if (g.items.length === 1) line = TAP.content.text('chart.note', { label: first.label, measure: first.measure, text: first.text });
+      else {
+        var labels = g.items.map(function (x) { return x.label; }), shown = TAP.format.list(labels.slice(0, 4));
+        line = TAP.content.text('chart.noteFold', { measure: first.measure, names: TAP.format.list(names(g.ids)), n: labels.length,
+          labels: labels.length > 4 ? TAP.content.text('chart.noteMore', { labels: shown, m: labels.length - 4 }) : shown });
+      }
+      if (out.indexOf(line) < 0) out.push(line);
+    });
+    return out;
+  }
+
   // How a combined figure was made, e.g. "Weighted average of 3 regions, by target accounts; Region C not
   // included: not provided". A derived sum names, per part, the regions it left out. Empty for a region's own figure.
   function describe(c) {
     var s = c && (c.src || c);
     if (!s || !s.combined) return '';
-    var wm = s.weightMissing || [];
-    var lost = s.parts ? s.regionIds.filter(function (r) {
-      return s.parts.every(function (p) { return p.src && (p.src.excluded || []).indexOf(r) >= 0; });
-    }) : s.excluded;
+    var wm = s.weightMissing || [], lost = lostOf(s);
     var n = s.regionIds.length - lost.length - wm.length - (s.notApplicable || []).length;
     var key = s.how;
     if (key === 'wmean') key = !s.weighted || s.weightFallback ? 'mean' : s.weightBy ? 'wmean' : 'wmeanPlain';
@@ -249,5 +290,6 @@
     return out.join('; ');
   }
 
-  TAP.agg = { combine: combine, ratio: ratio, weightBy: weightBy, describe: describe, declineNote: declineNote };
+  TAP.agg = { combine: combine, ratio: ratio, weightBy: weightBy, describe: describe, declineNote: declineNote,
+    leftOut: leftOut, foldNotes: foldNotes };
 })(window.TAP);
