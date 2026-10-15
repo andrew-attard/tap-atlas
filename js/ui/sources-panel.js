@@ -1,13 +1,13 @@
 /*
  * File: js/ui/sources-panel.js
  * Purpose: The data sources panel body: per region the file, its saved date, the import date and the import notes;
- *          whether import dates differ; then other notes worth checking, insight rules that were skipped and running
- *          order steps that were left out (US-3.1.1).
+ *          whether import dates differ; then other notes worth checking (the contract check's warnings grouped by
+ *          workbook and kind, US-1.8.8), insight rules that were skipped and running order steps that were left out (US-3.1.1).
  *          Import notes appear here and nowhere else (US-1.1.5).
  * Provides: TAP.sourcesPanel (render)
  * Depends on: js/core/sources.js (imports, datesDiffer, dataDate), js/core/store.js (TAP.notes), js/core/data.js,
  *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/icons.js, js/engine/scope.js (colorOf),
- *             js/insights/engine.js (failures)
+ *             js/ui/warning-groups.js, js/insights/engine.js (failures)
  * Used by: js/ui/layers.js (the 'sources' side panel)
  */
 (function (TAP) {
@@ -52,18 +52,24 @@
     ]);
   }
 
-  // Notes from the app itself (data checks, colours, the organization file, insights), placed by region if given.
+  // Notes from the app itself: the contract check's warnings grouped by workbook and kind (US-1.8.8), then the rest
+  // (colours, the organization file, data notes without a kind), placed by region if given.
   function otherNotes(imports) {
     var list = TAP.notes.list().filter(function (n) { return n.source !== 'presentation'; });   // listed on their own
     if (!list.length) return null;
-    var files = {};
+    var checks = list.filter(function (n) { return n.source === 'data' && n.kind; });
+    var rest = list.filter(function (n) { return checks.indexOf(n) < 0; });
+    var files = {}, byName = {};
     imports.forEach(function (i) { files[i.regionId] = i.fileName; });
+    // The check names a region as the file writes it (region.name), which the organization layer may shorten elsewhere
+    TAP.data.regions().forEach(function (r) { if (r.name) byName[r.name] = r.source && r.source.fileName ? r.source.fileName : null; });
     return el('section', { class: 'tap-src__notes' }, [
       el('h3', null, t('sourcesPanel.other')),
-      el('ul', null, list.map(function (n) {
+      checks.length ? TAP.warningGroups.render(checks, { files: byName }) : null,
+      rest.length ? el('ul', null, rest.map(function (n) {
         var place = n.sheet || n.cell ? where(files[n.regionId], n.sheet, n.cell) : (n.regionId ? files[n.regionId] : '');
         return note(n.message, place);
-      }))
+      })) : null
     ]);
   }
 

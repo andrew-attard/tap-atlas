@@ -2,7 +2,8 @@
  * File: js/import/import-write.js
  * Purpose: Writes the plan as the data file's text (window.PLAN_DATA = {...}), downloads it, and writes the report as plain text; docs/ARCHITECTURE.md section 20.
  * Provides: TAP.importWrite (text, jsonPart, download, report)
- * Depends on: js/panel/panel-export.js (download), js/core/content.js (content/text-import.js wording)
+ * Depends on: js/panel/panel-export.js (download), js/core/content.js (content/text-import.js wording),
+ *             js/ui/warning-groups.js (the report's warning groups, at call time)
  * Used by: js/ui/import-panel.js
  * Owner: PLAN stream (#586)
  *
@@ -126,6 +127,22 @@
     return out;
   }
 
+  // The check's warnings by workbook, then kind (US-1.8.8): each plain line over its technical message, which is what
+  // gets pasted into the approved tool. Flat when the component is not loaded.
+  function warningLines(result) {
+    var W = TAP.warningGroups, out = [], files = {};
+    if (!W) return result.check.warnings.map(function (w) { return say('checkLine', { message: w.message }); });
+    (result.regions || []).forEach(function (r) { if (r.name) files[r.name] = r.fileName || null; });
+    W.groups(result.check.warnings, files).forEach(function (g) {
+      out.push(say('checkBook', { label: g.label, n: g.n }));
+      g.kinds.forEach(function (k) {
+        out.push(say('checkKind', { title: k.title, n: k.items.length }));
+        k.items.forEach(function (w) { out.push(say('checkPlain', { line: W.line(w) }), say('checkTech', { message: w.message })); });
+      });
+    });
+    return out;
+  }
+
   function report(result) {
     var out = [];
     (result.regions || []).forEach(function (r) { out = out.concat(regionLines(r)); });
@@ -136,7 +153,7 @@
       out.push(say('checkErrors', { n: result.check.errors.length }));
       result.check.errors.forEach(function (e) { out.push(say('checkLine', { message: e.message })); });
       out.push(say('checkWarnings', { n: result.check.warnings.length }));
-      result.check.warnings.forEach(function (w) { out.push(say('checkLine', { message: w.message })); });
+      out = out.concat(warningLines(result));
     }
     return out.join('\n') + '\n';
   }
