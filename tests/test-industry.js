@@ -314,7 +314,7 @@
       var res = quad('bubble', { mode: 'all' }), gaps = res.notes.filter(function (n) { return /not included/.test(n); });
       a.equal(res.error, null, 'draws');
       a.equal(res.notes[0], TAP.content.text('quadrant.averageNote'), 'the averaging note stays first');
-      a.deepEqual(gaps, ['ability to win: Region C and Region D not included (not provided) for 3 rows: Healthcare, Education and Retail'], 'one line for the three industries');
+      a.deepEqual(gaps, ['Ability to win: Region C and Region D not included (not provided) for 3 rows: Healthcare, Education and Retail'], 'one line for the three industries');
       a.equal(res.notes.filter(function (n) { return /^Healthcare|^Education|^Retail/.test(n); }).length, 0, 'no line per industry');
       a.near(pointOf(res, points(res)[0].entityId, 'ind1').raw[0], 3, TOL, 'ind1 ability: the average of A (3) and B (3)');
       a.equal(res.table.rows.filter(function (r) { return r.industryId === 'ind1'; })[0].cells['ind.ability'].src.excluded.length, 2, 'the table row keeps its own source');

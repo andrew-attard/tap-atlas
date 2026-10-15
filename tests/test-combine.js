@@ -444,7 +444,7 @@
     }
     function item(label, measure, blank, text) { return { label: label, measure: measure, text: text || 'how', c: gapCell(blank) }; }
 
-    T.test('X-notes-leftOut', 'leftOut names the regions a combined cell left out: not provided, out of every part, or weight missing', function (a) {
+    T.test('X-notes-leftOut', 'leftOut names the regions a combined cell left out: not provided, out of any part, or weight missing', function (a) {
       a.deepEqual(TAP.agg.leftOut(gapCell(['charlie'])), ['charlie'], 'a plain combined total');
       a.deepEqual(TAP.agg.leftOut(gapCell(['bravo', 'delta'])), ['bravo', 'delta'], 'two regions, in scope order');
       a.deepEqual(TAP.agg.leftOut(gapCell([])), [], 'nothing left out');
@@ -454,11 +454,12 @@
       var amb = TAP.measures.combined('amb.arr', { id: 'org', kind: 'combined', regionIds: ALL, how: 'total' }, {});
       a.equal(amb.state, 'value');
       a.deepEqual(amb.src.excluded, ['charlie'], 'the source names C as excluded from a part');
-      a.deepEqual(TAP.agg.leftOut(amb), [], 'but C is not left out of the whole: its new business counts');
+      a.deepEqual(TAP.agg.leftOut(amb), ['charlie'], 'and C is left out of the derived sum: a gap in one part is a gap');
+      a.match(TAP.agg.describe(amb), /customer growth ARR from 3 regions: Region C/, 'the single-row description still names the part');
       var parts = { v: 1, state: 'value', kind: 'APP', src: { combined: true, how: 'sum', regionIds: ALL, excluded: ['charlie', 'delta'],
-        parts: [{ measureId: 'nb.arr', src: { combined: true, regionIds: ALL, excluded: ['charlie', 'delta'] } },
-          { measureId: 'cg.arr', src: { combined: true, regionIds: ALL, excluded: ['delta'] } }] } };
-      a.deepEqual(TAP.agg.leftOut(parts), ['delta'], 'a derived sum: the region left out of every part');
+        parts: [{ measureId: 'nb.arr', src: { combined: true, regionIds: ALL, excluded: ['delta'] } },
+          { measureId: 'cg.arr', src: { combined: true, regionIds: ALL, excluded: ['charlie'] } }] } };
+      a.deepEqual(TAP.agg.leftOut(parts), ['charlie', 'delta'], 'a derived sum: the union of the regions left out of any part, in scope order');
       // A rate: Region C blank, Region B provided but with no weight
       var rate = TAP.agg.combine([{ regionId: 'alpha', cell: cell(0.5), weight: 10 }, { regionId: 'bravo', cell: cell(0.2), weight: null },
         { regionId: 'charlie', cell: cell(null), weight: 5 }], 'rate', 'average', { measureId: 'nb.hitRate' });
@@ -474,22 +475,38 @@
 
     T.test('X-notes-fold-rows', 'Rows with the same measure and the same regions left out share one line naming the rows', function (a) {
       var two = TAP.agg.foldNotes([item('Healthcare', 'ability to win', ['charlie', 'delta']), item('Education', 'ability to win', ['charlie', 'delta'])]);
-      a.deepEqual(two, ['ability to win: Region C and Region D not included (not provided) for 2 rows: Healthcare and Education']);
+      a.deepEqual(two, ['Ability to win: Region C and Region D not included (not provided) for 2 rows: Healthcare and Education'], 'the line starts with a capital');
+      var four = TAP.agg.foldNotes(['I1', 'I2', 'I3', 'I4'].map(function (l) { return item(l, 'tier', ['bravo']); }));
+      a.deepEqual(four, ['Tier: Region B not included (not provided) for 4 rows: I1, I2, I3 and I4'], 'four rows are all named');
       var six = TAP.agg.foldNotes(['I1', 'I2', 'I3', 'I4', 'I5', 'I6'].map(function (l) { return item(l, 'tier', ['bravo']); }));
-      a.deepEqual(six, ['tier: Region B not included (not provided) for 6 rows: I1, I2, I3 and I4 and 2 more'], 'four named, then how many more');
+      a.deepEqual(six, ['Tier: Region B not included (not provided) for 6 rows: I1, I2, I3, I4 and 2 more'], 'four named with commas, then how many more');
+    });
+
+    T.test('X-notes-fold-derived', 'Derived sums fold on the union of the regions left out of any part', function (a) {
+      function derived(label, blankNb, blankCg) {
+        var nb = gapCell(blankNb), cg = gapCell(blankCg);
+        var c = { v: 1, state: 'value', kind: 'APP', src: { combined: true, how: 'sum', regionIds: ALL, excluded: [],
+          parts: [{ measureId: 'nb.arr', src: nb.src }, { measureId: 'cg.arr', src: cg.src }] } };
+        return { label: label, measure: 'ARR ambition', text: TAP.agg.describe(c), c: c };
+      }
+      var out = TAP.agg.foldNotes([derived('Year 1', [], ['charlie']), derived('Year 2', ['charlie'], []), derived('Year 3', [], ['charlie', 'delta'])]);
+      // Year 3: a group of one keeps the plain line; nothing is left out of every part, so "Total of 4 regions", then the part
+      a.deepEqual(out, ['ARR ambition: Region C not included (not provided) for 2 rows: Year 1 and Year 2',
+        'Year 3, ARR ambition: Total of 4 regions; customer growth ARR from 2 regions: Region C and Region D not included (not provided)'],
+        'C missing from either part is the same gap; C and D is another');
     });
 
     T.test('X-notes-fold-groups', 'Another measure, or another set of regions, is another line, in first-seen order', function (a) {
       var out = TAP.agg.foldNotes([item('Healthcare', 'ability to win', ['charlie']), item('Education', 'attractiveness', ['charlie']),
         item('Retail', 'ability to win', ['charlie']), item('Utilities', 'ability to win', ['charlie', 'delta'])]);
-      a.deepEqual(out, ['ability to win: Region C not included (not provided) for 2 rows: Healthcare and Retail',
-        'Education, attractiveness: how', 'Utilities, ability to win: how'], 'a group of one keeps the plain line');
+      a.deepEqual(out, ['Ability to win: Region C not included (not provided) for 2 rows: Healthcare and Retail',
+        'Education, attractiveness: how', 'Utilities, ability to win: how'], 'a group of one keeps the plain line, lower-cased as today');
     });
 
     T.test('X-notes-fold-partial', 'A note without a cell keeps its line and its place; duplicate lines are dropped', function (a) {
       var partial = { label: 'Region A', measure: 'ARR ambition', text: 'Partly provided by Region A', c: null };
       var out = TAP.agg.foldNotes([item('Healthcare', 'tier', ['charlie']), partial, item('Education', 'tier', ['charlie']), partial]);
-      a.deepEqual(out, ['tier: Region C not included (not provided) for 2 rows: Healthcare and Education', 'Region A, ARR ambition: Partly provided by Region A']);
+      a.deepEqual(out, ['Tier: Region C not included (not provided) for 2 rows: Healthcare and Education', 'Region A, ARR ambition: Partly provided by Region A']);
       a.deepEqual(TAP.agg.foldNotes([item('Healthcare', 'tier', ['charlie']), item('Healthcare', 'tier', ['charlie'])]), ['Healthcare, tier: how'], 'the same row twice is one row');
       a.deepEqual(TAP.agg.foldNotes([]), []);
     });

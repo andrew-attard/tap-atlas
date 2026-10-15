@@ -388,7 +388,7 @@
       var res = TAP.builders.get('compare')(ctxFor(def, 'bar', cmp({ mode: 'org' })));
       a.equal(res.error, null, 'draws');
       a.equal(res.table.rows.length, 4, 'one row per rated industry');
-      a.deepEqual(res.notes, ['references: Region C and Region D not included (not provided) for 3 rows: Healthcare, Education and Retail'], 'one folded line; Utilities has no gap');
+      a.deepEqual(res.notes, ['References: Region C and Region D not included (not provided) for 3 rows: Healthcare, Education and Retail'], 'one folded line; Utilities has no gap');
       var ind1 = res.table.rows.filter(function (r) { return r.industryId === 'ind1'; })[0];
       a.deepEqual(ind1.cells['ind.references'].src.excluded, ['charlie', 'delta'], 'the table row keeps its own source');
     });
