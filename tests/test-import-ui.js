@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, UI stream (docs/ARCHITECTURE.md section 20): the Import panel as a layer and
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
- * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-856 also covers the grouped warnings, US-1.8.8)
+ * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), X-notes2-report-ui
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
  * Owner: UI stream (#587)
@@ -75,12 +75,14 @@
       mapProblems: [],
       regions: [
         reading('alpha', 'Region A'),
-        reading('bravo', 'Region B', { notes: [{ message: 'The recap block is empty.', sheet: '4. Partner', cell: null }], parts: { marketCoverage: 'read', newBusiness: 'read', customerGrowth: 'read', partners: 'read', recap: 'empty' } }),
+        reading('bravo', 'Region B', { notes: [{ message: 'The recap block is empty.', sheet: '4. Partner', cell: null, kind: 'emptySection', item: 'Recap', found: null, expected: null }], parts: { marketCoverage: 'read', newBusiness: 'read', customerGrowth: 'read', partners: 'read', recap: 'empty' } }),
         reading('charlie', 'Region C', {
           ok: false, region: null,
-          errors: [{ message: 'The sheet is missing.', sheet: '2. New Business', cell: null }],
-          notes: [{ message: 'The rating is not one of the allowed options.', sheet: '1. Market Coverage', cell: 'D12' },
-            { message: 'The channel split adds up to 95%.', sheet: '1. Market Coverage', cell: 'F12' }],
+          errors: [{ message: 'The sheet is missing.', sheet: '2. New Business', cell: null, kind: 'missingSheet', item: 'New Business', found: null, expected: '2. New Business' }],
+          // Two notes with kinds (D163) and one from an older file without
+          notes: [{ message: 'The rating is not one of the allowed options.', sheet: '1. Market Coverage', cell: 'D12', kind: 'badValue', item: 'Healthcare, growth potential', found: '"Great"', expected: null },
+            { message: 'The channel split adds up to 95%.', sheet: '2. New Business', cell: 'E12:H12', kind: 'splitSum', item: 'Healthcare', found: '95%', expected: '100%' },
+            { message: 'An older note without a kind.', sheet: '1. Market Coverage', cell: 'F12' }],
           parts: { marketCoverage: 'read', newBusiness: 'missing', customerGrowth: 'read', partners: 'empty', recap: 'read' }
         })
       ],
@@ -187,15 +189,22 @@
         a.equal(facts[1], TAP.format.date('2026-09-30T10:15:00Z', { time: true }), 'the saved date with time');
         a.equal(facts[2], ['marketCoverage', 'newBusiness', 'customerGrowth', 'partners', 'recap'].map(function (k) { return t('parts.' + k); }).join(', '), 'the parts read');
         a.equal(facts[3], '0', 'the notes count');
+        a.equal(qsa('dd', qs('.tap-imp__facts', secs[2]))[3].textContent, '3', 'the notes count of a region with notes');
         a.equal(qsa('dd', qs('.tap-imp__facts', secs[2]))[2].textContent.indexOf(t('parts.newBusiness')), -1, 'a missing part is not listed as read');
         var err = qsa('.tap-imp__errors li', secs[2]);
         a.equal(err.length, 1, 'one error');
         a.ok(qs('.tap-icon', err[0]), 'with the warning icon');
         a.equal(txt(err[0]), 'The sheet is missing. 2. New Business', 'message, then the sheet (no cell)');
-        var notes = qsa('.tap-imp__notes li', secs[2]);
-        a.equal(notes.length, 2, 'two notes');
-        a.equal(txt(qs('.tap-muted', notes[0])), '1. Market Coverage › D12', 'sheet › cell');
-        a.equal(qsa('.tap-imp__errors li', secs[0]).length + qsa('.tap-imp__notes li', secs[0]).length, 0, 'a clean region lists nothing');
+        // The notes grouped by kind, each group a table (US-1.8.9, D163, D164); a note without a kind groups by its message
+        var groups = qsa('.tap-imp__notes details.tap-wg__kind', secs[2]);
+        a.deepEqual(groups.map(function (d) { return d.getAttribute('data-kind'); }), ['badValue', 'splitSum', ''], 'one group per kind, the kindless note last');
+        a.equal(txt(qs(':scope > summary', groups[0])), t('notePlain.badValue.title') + ' (1)', 'the plain title with its count');
+        a.equal(txt(qs(':scope > summary', groups[2])), 'An older note without a kind. (1)', 'the message as the title when there is no kind');
+        a.equal(qsa('.tap-imp__notes tbody tr', secs[2]).length, 3, 'one table row per note');
+        a.deepEqual(qsa('td', groups[1]).map(txt), ['Healthcare 2. New Business › E12:H12', '95%', '100%'], 'where with sheet › cell, found, expected');
+        a.equal(txt(qs('.tap-wg__cell', groups[0])), '1. Market Coverage › D12', 'sheet › cell');
+        a.ok(txt(qs('.tap-imp__notes', secs[2])).indexOf(t('notePlain.badValue.intro')) >= 0, 'the intro under the heading');
+        a.equal(qsa('.tap-imp__errors li', secs[0]).length + qsa('.tap-imp__notes tr', secs[0]).length, 0, 'a clean region lists nothing');
         a.equal(txt(qs('.tap-imp__check-warnings h4', host)), t('report.checkWarnings'));
         // The warnings grouped by workbook, then kind, in plain words (US-1.8.8): no data path on screen
         var wg = qsa('.tap-imp__check-warnings details.tap-wg', host);
@@ -206,7 +215,8 @@
         var kind = qs('details.tap-wg__kind', wg[0]);
         a.equal(kind.getAttribute('data-kind'), 'items');
         a.equal(txt(qs(':scope > summary', kind)), TAP.content.text('check.plain.items.title') + ' (1)', 'the kind in plain words with its count');
-        a.deepEqual(qsa('.tap-imp__check-warnings li', host).map(txt), [TAP.content.text('check.plain.items.line', { field: TAP.content.text('check.fields.partners') })], 'the line in words');
+        a.deepEqual(qsa('.tap-imp__check-warnings td', host).map(txt), [TAP.content.text('check.fields.partners')], 'the row in words: the section, no found or expected column');
+        a.equal(txt(qs('.tap-imp__check-warnings .tap-wg__intro', host)), TAP.content.text('check.plain.items.intro'), 'the intro once');
         a.ok(txt(qs('.tap-imp__check-warnings', host)).indexOf('regions[') < 0, 'no data path');
         a.ok(!qs('.tap-imp__check-errors', host), 'no contract errors, no table');
         var b = buttons(host);
@@ -408,6 +418,22 @@
       });
     });
 
+    T.test('X-notes2-report-ui', 'The copied report groups each region\u2019s notes by kind with the plain row and the technical line under it', function (a) {
+      var text = TAP.importWrite.report(canned()), lines = text.split('\n').map(function (l) { return l.trim(); });
+      var at = function (s) { var i = lines.indexOf(s); a.ok(i >= 0, 'line: ' + s); return i; };
+      var region = at('Region C: left out'), err = at('Error 2. New Business: The sheet is missing.');
+      var kind = at(t('notePlain.badValue.title') + ' (1)'), intro = at(t('notePlain.badValue.intro'));
+      var plain = at('Healthcare, growth potential, found "Great", 1. Market Coverage › D12'), tech = at('The rating is not one of the allowed options.');
+      var split = at('Healthcare, found 95%, expected 100%, 2. New Business › E12:H12'), old = at('An older note without a kind. (1)');
+      a.ok(region < err && err < kind && kind < intro && intro < plain && plain < tech && tech < split && split < old, 'in order: region, error, kind, intro, plain row, technical line, next kind, the kindless group');
+      var raw = text.split('\n');
+      a.ok(raw[tech].search(/\S/) > raw[plain].search(/\S/) && raw[plain].search(/\S/) > raw[kind].search(/\S/), 'technical under plain, plain under kind');
+      var recap = at(t('notePlain.emptySection.title') + ' (1)');
+      a.ok(recap > at('Region B: imported') && recap < region, 'Region B\u2019s empty recap grouped too, under its region');
+      a.equal(lines[at('Recap, 4. Partner') + 1], 'The recap block is empty.', 'a note without a cell: the sheet alone, the technical line under it');
+      a.ok(text.indexOf('[importPanel') < 0 && text.indexOf('regions[') < 0, 'every phrase has wording, no data path');
+    });
+
     T.test('TPV-TC-866', 'Every word on the panel and its report is found in the wording file', function (a) {
       panel(function (host) {
         TAP.importPanel.show(unusable());
@@ -426,7 +452,7 @@
           TAP.importPanel.show(unusable());
           var l = layer();
           [qs('.tap-imp__status', l), qs('.tap-imp__why', l), qs('.tap-imp__pick', l), qs('.tap-imp__intro', l), qs('.tap-imp__facts dd', l),
-            qs('.tap-imp__notes li .tap-muted', l), qs('.tap-imp__check-errors td', l), qs('.tap-imp__check-warnings li', l)]
+            qs('.tap-imp__notes .tap-wg__cell', l), qs('.tap-imp__notes td', l), qs('.tap-imp__notes summary', l), qs('.tap-imp__check-errors td', l), qs('.tap-imp__check-warnings td', l)]
             .concat(qsa('.tap-imp__actions .tap-btn', l)).forEach(function (n) {
               a.ok(n && px(n) >= 16, (n ? n.className : 'missing node') + ': ' + (n ? px(n) : '') + ' px');
             });

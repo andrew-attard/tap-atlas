@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, PLAN stream (docs/ARCHITECTURE.md section 20): the section 5 checks, the region
  *          order and duplicates of the plan build, the contract check, the data file text and the plain-text report, on
  *          hand-built regions and readings; and the round trips through the workbook writer on mini, miniP4 and the sample.
- * Provides: test cases TPV-TC-827 to TPV-TC-851
+ * Provides: test cases TPV-TC-827 to TPV-TC-851, X-notes2-check-kinds (every section 5 note's kind, item, found and expected, D163)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, tests/fixtures/mini-p4.js,
  *             tests/fixtures/workbook-write.js, tests/fixtures/import-maps.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
@@ -43,11 +43,11 @@
       lookups: copy(fixture.lookups), aliases: {}, sections: sections, extra: [] };
   }
 
-  // A ctx that collects what the checks say
+  // A ctx that collects what the checks say, with each note's kind, item, found and expected (D163)
   function collect(map, regionId) {
     var c = { regionId: regionId, years: map.meta.years, V: null, map: map, notes: [], errors: [] };
-    c.note = function (m, s, cell) { c.notes.push({ message: m, sheet: s, cell: cell }); };
-    c.error = function (m, s, cell) { c.errors.push({ message: m, sheet: s, cell: cell }); };
+    c.note = function (m, s, cell, x) { c.notes.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };
+    c.error = function (m, s, cell, x) { c.errors.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };
     return c;
   }
   function checks(fixture, region, map) {
@@ -194,6 +194,47 @@
       a.equal(checks(f, r, map).notes.length, 0, 'within 5%');
     });
 
+    // US-1.8.9 (D163): every note the section 5 checks raise carries its kind, the item in words (lookup names, motions and
+    // types as words, never raw ids), found and expected as plain values; the message is unchanged
+    T.test('X-notes2-check-kinds', 'Every section 5 note carries kind, item, found and expected in words, and its message as before', function (a) {
+      var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha'), p4 = T_FIXTURE('miniP4'), map4 = testMap(p4), r4 = region(p4, 'alpha');
+      r.newBusiness[0].channelSplit = { direct: 0.5, partner: 0.45, allianceA: 0, allianceB: 0 };
+      r.newBusiness[1].arrPotential[0] = 250;
+      r.customerGrowth.accounts[1].segment = 'growth';
+      r.marketCoverage = r.marketCoverage.filter(function (o) { return o.industryId !== 'ind3'; });
+      r4.strategicPlan.filter(function (o) { return o.type === 'arr' && o.year === 2027; })[0].variance = 25;
+      r4.revenue.filter(function (o) { return o.sourceCell === 'E30'; })[0].value = 450;
+      r4.booksValue.filter(function (o) { return o.sourceCell === 'F60'; })[0].value = 250;
+      r4.baseYear.items[1].coverage = 2.2;
+      var c = checks(f, r, map), c3 = checks(f, region(f, 'charlie'), map), c4 = checks(p4, r4, map4);
+      function pick(list, kind) { return list.filter(function (n) { return n.kind === kind; }); }
+      function parts(n) { return [n.item, n.found, n.expected]; }
+      // [list, kind, count, [item, found, expected] of the first, a regex the message keeps]
+      var table = [
+        [c.notes, 'splitSum', 1, ['Healthcare', '95%', '100%'], /95%/],
+        [c.notes, 'arrFormula', 1, ['Education', 250, 200], /250/],
+        [c.notes, 'segmentRule', 1, [r.customerGrowth.accounts[1].name, 'Growth', 'Core'], /growth/],
+        [c.errors, 'missingIndustries', 1, [text('sections.marketCoverage'), null, 'Retail'], /Retail/],
+        [c3.notes, 'emptySection', 3, [text('sections.customerGrowth'), null, null], /is empty/],
+        [c4.notes, 'variance', 1, ['2027, ARR', 25, -10], /-10/],
+        [c4.notes, 'revenueAbove', 1, ['2027, Direct, new business, ARR', 450, 400], /450/],
+        [c4.notes, 'booksAbove', 1, ['2027, Partner', 315, 300], /315/],
+        [c4.notes, 'coverage', 1, [TAP.content.text('importPanel.words.types.recurring'), 2.2, 2], /2\.2/]
+      ];
+      table.forEach(function (row) {
+        var hits = pick(row[0], row[1]);
+        a.equal(hits.length, row[2], row[1] + ': ' + row[2] + ' note(s)');
+        a.deepEqual(parts(hits[0]), row[3], row[1] + ': item, found, expected');
+        a.match(hits[0].message, row[4], row[1] + ': the message as before');
+      });
+      a.deepEqual(pick(c3.notes, 'emptySection').map(function (n) { return n.item; }).sort(), [text('sections.customerGrowth'), text('sections.partners'), text('sections.recap')].sort(), 'each empty section named');
+      c.notes.concat(c3.notes, c4.notes, c.errors).forEach(function (n) {
+        a.ok(typeof n.kind === 'string' && n.kind, 'a kind on: ' + n.message);
+        a.ok(n.item == null || !/(^|, )(newBusiness|customerGrowth|arr|direct|partner|allianceA|allianceB|ind\d)($|, )/.test(n.item), 'no raw id in the item: ' + n.item);
+      });
+      a.equal(c.notes.length + c.errors.length, 4, 'no other notes or errors on Region A');
+    });
+
     T.test('TPV-TC-837', 'build puts regions in mapping order, then unmatched workbooks in file order; missing lists the rest', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f);
       var zulu = Object.assign(copy(region(f, 'alpha')), { id: 'zulu', name: 'Region Z' }), yankee = Object.assign(copy(region(f, 'alpha')), { id: 'yankee', name: 'Region Y' });
@@ -306,7 +347,7 @@
       var f = T_FIXTURE('mini'), map = testMap(f), readings = [reading(region(f, 'alpha')), reading(region(f, 'charlie'))];
       readings[1].ok = false; readings[1].region = null; readings[1].parts = { marketCoverage: 'read', recap: 'error' };
       readings[1].errors.push({ message: 'The filter is set to another region.', sheet: '4. Partner', cell: 'C2' });
-      readings[1].notes.push({ message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10' });
+      readings[1].notes.push({ message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null });
       readings[0].notes.push({ message: 'A whole-sheet note.', sheet: '1. Market Coverage', cell: null });
       var res = withMap(function () { return TAP.importPlan.finish(readings, map, NOW); });
       res.mapProblems = ['The mapping names no years.'];
@@ -314,8 +355,9 @@
       a.match(out, /^Region A: imported\n  file Region A plan\.xlsx, saved 2026-09-28T10:00:00Z, parts: Market Coverage read\n/);
       a.match(out, /\nRegion C: left out\n/);
       a.match(out, /\n  Error 4\. Partner › C2: The filter is set to another region\.\n/);
-      a.match(out, /\n  Note 4\. Partner › B10: The Partner section is empty\.\n/);
-      a.match(out, /\n  Note 1\. Market Coverage: A whole-sheet note\.\n/);
+      // The notes by kind (D163, D164): the title with its count, the intro, the plain row, the technical line under it
+      a.match(out, /\n  Empty sections \(1\)\n    [^\n]+\n    Partner, 4\. Partner › B10\n      The Partner section is empty\.\n/);
+      a.match(out, /\n  A whole-sheet note\. \(1\)\n    1\. Market Coverage\n      A whole-sheet note\.\n/, 'a note without a kind: its message as the title, the sheet alone');
       a.match(out, /\nMissing workbook: Region B \(bravo\)\n/);
       a.match(out, /\nMapping: The mapping names no years\.\n/);
       a.match(out, /\nContract check: 0 errors\n/);
