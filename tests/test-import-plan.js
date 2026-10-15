@@ -4,7 +4,7 @@
  *          order and duplicates of the plan build, the contract check, the data file text and the plain-text report, on
  *          hand-built regions and readings; and the round trips through the workbook writer on mini, miniP4 and the sample.
  * Provides: test cases TPV-TC-827 to TPV-TC-851, TPV-TC-899 (every section 5 note's kind, item, found and expected, D163),
- *           X-owner-pair-* (one case per paired rule: the same ref on both sides, US-1.8.10, D165), X-cells-* (the cells behind
+ *           TPV-TC-908 to 916 (one case per paired rule: the same ref on both sides, US-1.8.10, D165), TPV-TC-939 to 956 (the cells behind
  *           both values of a comparing note, per rule, US-1.8.12, D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, tests/fixtures/mini-p4.js,
  *             tests/fixtures/workbook-write.js, tests/fixtures/import-maps.js, config/import-map.js, data/sample-plan-data.js
@@ -270,20 +270,20 @@
       a.ok(f.warnings.every(function (x) { return x.kind !== checkKind || x.region !== got.name; }), 'none of them is left');
       a.equal(f.warnings.length, got.warnings.length - w.length, 'the other warnings stay');
     }
-    T.test('X-owner-pair-splitSum', 'A channel split off 100%: the note and the warning share the industry id', function (a) {
+    T.test('TPV-TC-908', 'A channel split off 100%: the note and the warning share the industry id', function (a) {
       var ind = T_FIXTURE('mini').regions[0].newBusiness[0].industryId;
       pair(a, both('mini', 'alpha', function (f) { f.regions[0].newBusiness[0].channelSplit = { direct: 0.5, partner: 0.45, allianceA: 0, allianceB: 0 }; }), 'splitSum', 'splitSum', ind);
     });
-    T.test('X-owner-pair-arrFormula', 'ARR potential off its formula: the industry id', function (a) {
+    T.test('TPV-TC-909', 'ARR potential off its formula: the industry id', function (a) {
       var ind = T_FIXTURE('mini').regions[0].newBusiness[1].industryId;
       pair(a, both('mini', 'alpha', function (f) { f.regions[0].newBusiness[1].arrPotential[0] = 250; }), 'arrFormula', 'arrFormula', ind);
     });
-    T.test('X-owner-pair-segmentRule', 'A segment off the thresholds rule: the account id, which the import assigns before its checks run', function (a) {
+    T.test('TPV-TC-910', 'A segment off the thresholds rule: the account id, which the import assigns before its checks run', function (a) {
       var acc = T_FIXTURE('mini').regions[0].customerGrowth.accounts[1].id;
       a.ok(acc, 'the fixture account has an id');
       pair(a, both('mini', 'alpha', function (f) { f.regions[0].customerGrowth.accounts[1].segment = 'growth'; }), 'segmentRule', 'segmentRule', acc);
     });
-    T.test('X-owner-pair-items', 'An empty section: the section key, for each of Region C\u2019s planted gaps', function (a) {
+    T.test('TPV-TC-911', 'An empty section: the section key, for each of Region C\u2019s planted gaps', function (a) {
       var got = both('mini', 'charlie', function () {});
       a.deepEqual(got.notes.filter(function (x) { return x.kind === 'emptySection'; }).map(function (x) { return x.ref; }).sort(), ['customerGrowth.accounts', 'partners', 'recap']);
       a.deepEqual(got.warnings.filter(function (x) { return x.kind === 'items' && x.region === 'Region C'; }).map(function (x) { return x.ref; }).sort(), ['customerGrowth.accounts', 'partners', 'recap']);
@@ -293,10 +293,10 @@
       a.equal(f.folded, 3, 'all three fold');
       a.ok(f.warnings.every(function (x) { return x.kind !== 'items'; }));
     });
-    T.test('X-owner-pair-variance', 'A variance off books minus plan: year|type', function (a) {
+    T.test('TPV-TC-912', 'A variance off books minus plan: year|type', function (a) {
       pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].strategicPlan.filter(function (o) { return o.type === 'arr' && o.year === 2027; })[0].variance = 25; }), 'variance', 'variance', '2027|arr');
     });
-    T.test('X-owner-pair-revenue', 'Revenue above the order intake: year|channel|motion on both sides, one note and one warning with the same found and expected (D170)', function (a) {
+    T.test('TPV-TC-913', 'Revenue above the order intake: year|channel|motion on both sides, one note and one warning with the same found and expected (D170)', function (a) {
       var o = T_FIXTURE('miniP4').regions[0].revenue[1], ref = [o.year, o.channel, o.motion].join('|');
       // 2027 partner new business: revenue ARR 100 (F30) raised to 300, plus services 20 = 320, against order intake 200 + 40 = 240
       var got = both('miniP4', 'alpha', function (f) { f.regions[0].revenue[1].value = 300; });
@@ -308,13 +308,13 @@
       a.deepEqual([w[0].found, w[0].vars.value], [n[0].found, n[0].expected], 'the warning shows the same two figures');
       a.equal(n[0].item, '2027, Partner, new business', 'the key in words, no type');
     });
-    T.test('X-owner-pair-books', 'Books value above the customer value: year|channel', function (a) {
+    T.test('TPV-TC-914', 'Books value above the customer value: year|channel', function (a) {
       pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].booksValue.filter(function (o) { return o.sourceCell === 'F60'; })[0].value = 250; }), 'booksWithin', 'booksAbove', '2027|partner');
     });
-    T.test('X-owner-pair-coverage', 'A coverage ratio off its parts: the category', function (a) {
+    T.test('TPV-TC-915', 'A coverage ratio off its parts: the category', function (a) {
       pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].baseYear.items[1].coverage = 2.2; }), 'coverage', 'coverage', 'recurring');
     });
-    T.test('X-owner-pair-unpaired', 'A note of an unpaired kind has no ref, and a note\u2019s ref is written to the reading and the data file', function (a) {
+    T.test('TPV-TC-916', 'A note of an unpaired kind has no ref, and a note\u2019s ref is written to the reading and the data file', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha');
       r.marketCoverage = r.marketCoverage.filter(function (o) { return o.industryId !== 'ind3'; });
       var c = checks(f, r, map);
@@ -337,41 +337,41 @@
       var n = noteOf(checks(f, r, map), kind);
       return n ? n.cells : null;
     }
-    T.test('X-cells-splitSum', 'The channel split: found the four cells of the row, expected nothing (the rule is 100%)', function (a) {
+    T.test('TPV-TC-939', 'The channel split: found the four cells of the row, expected nothing (the rule is 100%)', function (a) {
       a.deepEqual(cellsOf('mini', 'alpha', 'splitSum', function (r) { r.newBusiness[0].channelSplit = { direct: 0.5, partner: 0.45, allianceA: 0, allianceB: 0 }; }),
         { found: '2. New Business › E20:H20', expected: [] });
     });
-    T.test('X-cells-arrFormula', 'The ARR formula: found the year 1 cell, expected target accounts, hit rate and average deal size of the row', function (a) {
+    T.test('TPV-TC-940', 'The ARR formula: found the year 1 cell, expected target accounts, hit rate and average deal size of the row', function (a) {
       a.deepEqual(cellsOf('mini', 'alpha', 'arrFormula', function (r) { r.newBusiness[1].arrPotential[0] = 250; }),
         { found: '2. New Business › O21', expected: ['2. New Business › I21', '2. New Business › J21', '2. New Business › K21'] });
     });
-    T.test('X-cells-segmentRule', 'The segment rule: found the segment cell, expected current ARR, the cumulative order intake when the rule reached it, then the four threshold cells', function (a) {
+    T.test('TPV-TC-941', 'The segment rule: found the segment cell, expected current ARR, the cumulative order intake when the rule reached it, then the four threshold cells', function (a) {
       var S = '3. Customer Growth › ';
       a.deepEqual(cellsOf('mini', 'alpha', 'segmentRule', function (r) { r.customerGrowth.accounts[1].segment = 'growth'; }),
         { found: S + 'U11', expected: [S + 'G11', S + 'T11', S + 'N3', S + 'N4', S + 'N5', S + 'N6'] }, 'a2: ARR 200 between the scaled and strategic thresholds, so the order intake decided');
       a.deepEqual(cellsOf('mini', 'alpha', 'segmentRule', function (r) { r.customerGrowth.accounts[0].segment = 'core'; }),
         { found: S + 'U10', expected: [S + 'G10', S + 'N3', S + 'N4', S + 'N5', S + 'N6'] }, 'a1: ARR 500 above the strategic threshold, the order intake not needed');
     });
-    T.test('X-cells-variance', 'The variance: found the variance cell, expected the books cells of that year and type, then the strategic plan cell', function (a) {
+    T.test('TPV-TC-942', 'The variance: found the variance cell, expected the books cells of that year and type, then the strategic plan cell', function (a) {
       var S = '5. Recap › ';
       a.deepEqual(cellsOf('miniP4', 'alpha', 'variance', function (r) { r.strategicPlan.filter(function (o) { return o.type === 'arr' && o.year === 2027; })[0].variance = 25; }),
         { found: S + 'I90', expected: ['E60', 'F60', 'G60', 'H60', 'E72', 'F72', 'G72', 'H72', 'E90'].map(function (c) { return S + c; }) },
         '2027 ARR: the new business row 60 and the existing customers row 72 over the four channels, then the plan at E90');
     });
-    T.test('X-cells-revenueAbove', 'Revenue above the order intake: found the revenue cells of the year, channel and motion, expected the recap cells of the same key, the types added up (D170)', function (a) {
+    T.test('TPV-TC-943', 'Revenue above the order intake: found the revenue cells of the year, channel and motion, expected the recap cells of the same key, the types added up (D170)', function (a) {
       a.deepEqual(cellsOf('miniP4', 'alpha', 'revenueAbove', function (r) { r.revenue.filter(function (o) { return o.sourceCell === 'E30'; })[0].value = 450; }),
         { found: '5. Recap › E30, E33', expected: ['4. Partner › E5', '4. Partner › E13'] }, '2027, Direct, new business: ARR and services on both sides (D170)');
     });
-    T.test('X-cells-booksAbove', 'Books value above the customer value: found the ARR and services cells summed, expected the recap cells of that year and channel', function (a) {
+    T.test('TPV-TC-944', 'Books value above the customer value: found the ARR and services cells summed, expected the recap cells of that year and channel', function (a) {
       a.deepEqual(cellsOf('miniP4', 'alpha', 'booksAbove', function (r) { r.booksValue.filter(function (o) { return o.sourceCell === 'F60'; })[0].value = 250; }),
         { found: '5. Recap › F60, F63, F72, F75', expected: ['4. Partner › F5', '4. Partner › F13', '4. Partner › F21', '4. Partner › F29'] },
         '2027 Partner: books 250 + 20 + 40 + 5, customer value 200 + 40 + 50 + 10');
     });
-    T.test('X-cells-coverage', 'The coverage ratio: found the coverage cell, expected pipeline, forecast and actuals of the row', function (a) {
+    T.test('TPV-TC-945', 'The coverage ratio: found the coverage cell, expected pipeline, forecast and actuals of the row', function (a) {
       a.deepEqual(cellsOf('miniP4', 'alpha', 'coverage', function (r) { r.baseYear.items[1].coverage = 2.2; }),
         { found: '6. Order Intake › G8', expected: ['6. Order Intake › F8', '6. Order Intake › D8', '6. Order Intake › E8'] });
     });
-    T.test('X-cells-none', 'A note that compares nothing carries no cells, at the site and in the collected note; a comparing note carries found and expected only', function (a) {
+    T.test('TPV-TC-946', 'A note that compares nothing carries no cells, at the site and in the collected note; a comparing note carries found and expected only', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), c = checks(f, region(f, 'charlie'), map), extras = [];
       a.ok(c.notes.length >= 3, 'Region C\u2019s planted empty sections');
       c.notes.forEach(function (n) { a.ok(!Object.prototype.hasOwnProperty.call(n, 'cells'), 'no cells on: ' + n.message); });
@@ -621,7 +621,7 @@
       });
     });
 
-    rt('X-cells-roundtrip', 'A revenue cell raised above the order intake comes back as a note with the cells behind both values, in the reading and in the saved file', function (a) {
+    rt('TPV-TC-947', 'A revenue cell raised above the order intake comes back as a note with the cells behind both values, in the reading and in the saved file', function (a) {
       var plan = T_FIXTURE('miniP4'), books = W.workbooks(plan, MAPS.miniP4), spec = MAPS.miniP4.sections.revenue, recap = MAPS.miniP4.sections.recap;
       var files = books.map(function (b) {
         if (b.regionId === 'alpha') b.wb.Sheets[spec.sheet].E30 = { t: 'n', v: 450 };   // 2027, direct, new business, ARR: 200 of 400

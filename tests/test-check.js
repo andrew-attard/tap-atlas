@@ -1,7 +1,7 @@
 /*
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206) and for its Phase 4 parts (US-4.1.2).
- * Provides: X-owner-check-refs (US-1.8.10, D165) and test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
+ * Provides: TPV-TC-907 (US-1.8.10, D165) and test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
  *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*; for the real-data
  *           fixes (#599 to #601): TPV-TC-872 and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases; for the
  *           warning kinds (#605): TPV-TC-875, TPV-TC-876
@@ -335,7 +335,7 @@
 
     // US-1.8.10 (D165): the paired rules carry the rule's key in the data's own terms, so the import's note can be told to be
     // the same finding; every entry has the field, null where the rule is not paired
-    T.test('X-owner-check-refs', 'Every paired warning carries a ref in the data\u2019s own terms; an unpaired warning has none; every entry has the field', function (a) {
+    T.test('TPV-TC-907', 'Every paired warning carries a ref in the data\u2019s own terms; an unpaired warning has none; every entry has the field', function (a) {
       function caseOf(list, id) { return list.filter(function (c) { return c.id === id; })[0]; }
       function warnOf(res, c) { return res.warnings.filter(function (x) { return x.path === c.expect.path; })[0]; }
       var mini = T_FIXTURE('mini'), A = mini.regions[0];

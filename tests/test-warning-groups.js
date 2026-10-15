@@ -3,8 +3,8 @@
  * Purpose: Tests of the warning groups component (US-1.8.8, D161; US-1.8.9, D163, D164): the check's warnings grouped by
  *          workbook, then by kind, and the import's notes grouped by kind, each group a table of where, found and expected
  *          in plain words, as both panels and the copied report show them.
- * Provides: test cases TPV-TC-877 to TPV-TC-885, TPV-TC-900, TPV-TC-901, TPV-TC-902, TPV-TC-903, TPV-TC-904, and X-owner-fold-* (the pair
- *           table and the fold, US-1.8.10, D165) and X-cells-* (the cells behind both values of a comparing note, US-1.8.12,
+ * Provides: test cases TPV-TC-877 to TPV-TC-885, TPV-TC-900, TPV-TC-901, TPV-TC-902, TPV-TC-903, TPV-TC-904, and TPV-TC-917 to 921 (the pair
+ *           table and the fold, US-1.8.10, D165) and TPV-TC-939 to 956 (the cells behind both values of a comparing note, US-1.8.12,
  *           D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.warningGroups, TAP.warningTable, TAP.importWrite, TAP.content)
  * Used by: tests.html
@@ -293,7 +293,7 @@
     }
     function more(n) { return t('importPanel.cells.more', { n: n }); }
 
-    T.test('X-cells-normalize', 'fromImport carries a note\u2019s cells as foundCell and expectedCells; a note without them and a check warning get empty ones', function (a) {
+    T.test('TPV-TC-948', 'fromImport carries a note\u2019s cells as foundCell and expectedCells; a note without them and a check warning get empty ones', function (a) {
       var W = TAP.warningGroups, items = W.fromImport(cellNotes(), 'Region A');
       a.equal(items[0].foundCell, R + 'E30, E33');
       a.deepEqual(items[0].expectedCells, ['4. Partner › E5', '4. Partner › E13']);
@@ -307,7 +307,7 @@
       a.ok(txt(TAP.warningGroups.renderKinds(items)).indexOf('[importPanel') < 0, 'every phrase has wording');
     });
 
-    T.test('X-cells-list', 'cellList writes the sheet once when every address shares it, else each address in full, at most max then "N more", nothing for none', function (a) {
+    T.test('TPV-TC-949', 'cellList writes the sheet once when every address shares it, else each address in full, at most max then "N more", nothing for none', function (a) {
       var W = TAP.warningGroups;
       a.equal(W.cellList([R + 'E12', R + 'F12', R + 'G12'], 6), R + 'E12, F12 and G12');
       a.equal(W.cellList([R + 'E12'], 6), R + 'E12');
@@ -319,7 +319,7 @@
       a.equal(W.cellList(['E5', 'F5'], 6), 'E5 and F5', 'addresses without a sheet as they are');
     });
 
-    T.test('X-cells-table', 'The table shows the address under Found and the addresses under Expected, not under Where; a note without cells keeps its address under Where', function (a) {
+    T.test('TPV-TC-950', 'The table shows the address under Found and the addresses under Expected, not under Where; a note without cells keeps its address under Where', function (a) {
       var r = renderKinds(TAP.warningGroups.fromImport(cellNotes(), 'Region A')), k = qsa('details.tap-wg__kind', r.host);
       a.deepEqual(k.map(function (d) { return d.getAttribute('data-kind'); }), ['revenueAbove', 'variance', 'splitSum', 'emptySection']);
       var tds = qsa('td', rows(k[0])[0]);
@@ -361,7 +361,7 @@
       ];
     }
 
-    T.test('X-owner-fold-pairs', 'The pair table maps each check kind to its note kind, and every kind on both sides has plain wording', function (a) {
+    T.test('TPV-TC-917', 'The pair table maps each check kind to its note kind, and every kind on both sides has plain wording', function (a) {
       a.deepEqual(TAP.warningGroups.PAIRS, PAIRS, 'the eight pairs');
       Object.keys(PAIRS).forEach(function (k) {
         a.ok(t('check.plain.' + k + '.title').charAt(0) !== '[', k + ': the check kind has a title');
@@ -369,7 +369,7 @@
       });
     });
 
-    T.test('X-owner-fold-matches', 'fold removes exactly the warnings whose paired note has the same ref in the same region, counts them per region, keeps the rest in order and never touches a note', function (a) {
+    T.test('TPV-TC-918', 'fold removes exactly the warnings whose paired note has the same ref in the same region, counts them per region, keeps the rest in order and never touches a note', function (a) {
       var notes = { 'Region A': pairedNotes() }, before = JSON.stringify(notes), warns = pairedWarnings();
       var f = TAP.warningGroups.fold(notes, warns);
       a.equal(f.folded, 2, 'two folded');
@@ -382,7 +382,7 @@
       a.equal(JSON.stringify(warns), JSON.stringify(pairedWarnings()), 'the warnings are untouched');
     });
 
-    T.test('X-owner-fold-edges', 'A note without a ref, a warning without a ref or region, an unpaired kind and an empty input fold nothing', function (a) {
+    T.test('TPV-TC-919', 'A note without a ref, a warning without a ref or region, an unpaired kind and an empty input fold nothing', function (a) {
       var W = TAP.warningGroups;
       a.deepEqual(W.fold({}, pairedWarnings()).folded, 0, 'no notes, nothing folds');
       a.deepEqual(W.fold(null, null), { warnings: [], folded: 0, byRegion: {}, matched: [] }, 'empty input');
@@ -396,7 +396,7 @@
       a.equal(W.fold({ 'Region A': [{ kind: 'emptySection', ref: 'partners' }] }, [wr('Region A', 'items', 'partners')]).folded, 1, 'the same ref does');
     });
 
-    T.test('X-owner-fold-normalized', 'Normalized items carry the ref and fold the same way as raw warnings', function (a) {
+    T.test('TPV-TC-920', 'Normalized items carry the ref and fold the same way as raw warnings', function (a) {
       var W = TAP.warningGroups, items = W.fromCheck(pairedWarnings(), { lookups: LOOKUPS });
       a.deepEqual(items.map(function (it) { return it.ref; }), ['partners', 'partners', '2027|direct|customerGrowth', '2027|partner|customerGrowth', 'a2', 'ind1', null], 'the refs come through fromCheck');
       a.deepEqual(W.fromImport(pairedNotes(), 'Region A').map(function (it) { return it.ref; }), ['partners', '2027|direct|customerGrowth', null], 'and through fromImport');
@@ -409,7 +409,7 @@
       a.ok(txt(r.host).indexOf('2027|') < 0 && txt(r.host).indexOf('partners') < 0, 'the ref is never shown');
     });
 
-    T.test('X-owner-fold-report', 'The copied report keeps a folded warning under its region with the marker line after its technical line', function (a) {
+    T.test('TPV-TC-921', 'The copied report keeps a folded warning under its region with the marker line after its technical line', function (a) {
       var result = { mapProblems: [], missing: [], regions: [
         { ok: true, id: 'alpha', name: 'Region A', fileName: 'Region A plan.xlsx', region: { source: {} }, parts: {}, errors: [], notes: pairedNotes() },
         { ok: true, id: 'bravo', name: 'Region B', fileName: 'Region B plan.xlsx', region: { source: {} }, parts: {}, errors: [], notes: [] }
