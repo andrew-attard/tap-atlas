@@ -431,7 +431,8 @@
       var recap = at(t('notePlain.emptySection.title') + ' (1)');
       a.ok(recap > at('Region B: imported') && recap < region, 'Region B\u2019s empty recap grouped too, under its region');
       a.equal(lines[at('Recap, 4. Partner') + 1], 'The recap block is empty.', 'a note without a cell: the sheet alone, the technical line under it');
-      a.ok(text.indexOf('[importPanel') < 0 && text.indexOf('regions[') < 0, 'every phrase has wording, no data path');
+      var notesPart = text.slice(0, text.indexOf(t('check.report.checkErrors', { n: 0 })));
+      a.ok(text.indexOf('[importPanel') < 0 && notesPart.indexOf('regions[') < 0, 'every phrase has wording; no data path among the notes (the check\u2019s technical lines keep theirs)');
     });
 
     T.test('TPV-TC-866', 'Every word on the panel and its report is found in the wording file', function (a) {

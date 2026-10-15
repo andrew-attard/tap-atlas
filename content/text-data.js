@@ -175,7 +175,7 @@ Object.assign(window.TAP_CONTENT.text, {
         label: { title: 'Extra section columns without a heading', intro: 'Each column is expected to carry a heading.', expected: '{expected}' },
         unit: { title: 'Extra section columns with an unknown unit', intro: 'A column\'s unit is expected to be one the app knows.', expected: '{expected}' },
         kind: { title: 'Extra section columns with an unknown kind', intro: 'A column\'s kind is expected to be one the app knows.', expected: '{expected}' },
-        letter: { title: 'Extra section columns with an unusable column letter', intro: 'A column\'s letter is expected to be a worksheet column such as B or AC.', expected: '{expected}' },
+        letter: { title: 'Extra section columns with an unusable column letter', intro: 'A column\'s letter is expected to be a worksheet column such as B or H.', expected: '{expected}' },
         extra: { title: 'Extra sections of a region not written as an object', intro: 'A region\'s extra is expected to be an object keyed by section id.', expected: '{expected}' },
         known: { title: 'Rows for extra sections that are not listed', intro: 'A region\'s extra rows are expected to belong to a section meta.extraSections lists.', where: '{item}', found: '' },
         rows: { title: 'Extra section rows not written as a list', intro: 'A section\'s rows are expected to be a list.', expected: '{expected}' },

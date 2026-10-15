@@ -322,14 +322,14 @@
       a.equal(e.message, 'regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 3', 'the technical line as before');
     });
 
-    T.test('TPV-TC-876', 'Every warning kind the broken cases raise has plain wording (check.plain)', function (a) {
+    T.test('TPV-TC-876', 'Every warning kind the broken cases raise has plain wording (check.plain: a title and an intro, D164)', function (a) {
       var kinds = {}, all = [];
       window.TEST_FIXTURES.broken.cases.forEach(function (c) { all = all.concat(TAP.check.run(broken(c)).warnings); });
       window.TEST_FIXTURES.broken.p4Cases.forEach(function (c) { all = all.concat(TAP.check.run(p4(c.change)).warnings); });
       all.forEach(function (x) { kinds[x.kind] = true; });
       a.ok(Object.keys(kinds).length >= 12, 'many kinds raised: ' + Object.keys(kinds).join(', '));
       var without = Object.keys(kinds).filter(function (k) {
-        return k === 'null' || TAP.content.text('check.plain.' + k + '.title').charAt(0) === '[' || TAP.content.text('check.plain.' + k + '.line').charAt(0) === '[';
+        return k === 'null' || TAP.content.text('check.plain.' + k + '.title').charAt(0) === '[' || TAP.content.text('check.plain.' + k + '.intro').charAt(0) === '[';
       });
       a.deepEqual(without, [], 'kinds without plain wording: ' + without.join(', '));
     });

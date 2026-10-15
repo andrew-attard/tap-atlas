@@ -1213,8 +1213,8 @@
         a.ok(book.open, 'open: two warnings');
         var kinds = qsa('details.tap-wg__kind', book).map(function (d) { return d.getAttribute('data-kind'); }).sort();
         a.deepEqual(kinds, ['partnerChannel', 'share'], 'two kind groups');
-        var lines = qsa('li', book).map(txt).join(' | ');
-        a.ok(lines.indexOf('Fictional Partner B1 (row 10)') >= 0 && lines.indexOf('2.33') >= 0, 'the row in words and the value: ' + lines);
+        var lines = qsa('td', book).map(txt).join(' | ');
+        a.ok(lines.indexOf('Fictional Partner B1 (row 10)') >= 0 && lines.indexOf('2.33') >= 0, 'the row in words and the value, in table cells: ' + lines);
         a.ok(txt(book).indexOf('regions[') < 0, 'no data path');
         a.ok(qs('details.tap-wg[data-region="Region C"]', notes), 'the fixture\u2019s own planted empty sections under Region C');
         a.ok(txt(qs('.tap-src__notes > ul', notes)).indexOf('Channel split adds up to 95%.') >= 0, 'a data note without a kind keeps its place in the list');

@@ -212,14 +212,14 @@
       // [list, kind, count, [item, found, expected] of the first, a regex the message keeps]
       var table = [
         [c.notes, 'splitSum', 1, ['Healthcare', '95%', '100%'], /95%/],
-        [c.notes, 'arrFormula', 1, ['Education', 250, 200], /250/],
+        [c.notes, 'arrFormula', 1, ['Utilities', 250, 200], /250/],   // Region A's second New Business row is Utilities (ind4)
         [c.notes, 'segmentRule', 1, [r.customerGrowth.accounts[1].name, 'Growth', 'Core'], /growth/],
         [c.errors, 'missingIndustries', 1, [text('sections.marketCoverage'), null, 'Retail'], /Retail/],
         [c3.notes, 'emptySection', 3, [text('sections.customerGrowth'), null, null], /is empty/],
         [c4.notes, 'variance', 1, ['2027, ARR', 25, -10], /-10/],
         [c4.notes, 'revenueAbove', 1, ['2027, Direct, new business, ARR', 450, 400], /450/],
         [c4.notes, 'booksAbove', 1, ['2027, Partner', 315, 300], /315/],
-        [c4.notes, 'coverage', 1, [TAP.content.text('importPanel.words.types.recurring'), 2.2, 2], /2\.2/]
+        [c4.notes, 'coverage', 1, ['Recurring', 2.2, 2], /2\.2/]   // the category by its lookup name
       ];
       table.forEach(function (row) {
         var hits = pick(row[0], row[1]);
