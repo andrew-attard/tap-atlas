@@ -308,7 +308,7 @@
       a.equal(res.table.rows.filter(function (r) { return r.entityId === 'org'; }).length, 3, 'one total row per plan year');
       var gaps = res.notes.filter(function (n) { return /Region C/.test(n); });
       var rows = 'All 4 regions combined · 2027, All 4 regions combined · 2028 and All 4 regions combined · 2029';
-      a.equal(gaps[0], 'strategic plan: Region C and Region D not included (not provided) for 3 rows: ' + rows, 'the sums fold into one line under the first column');
+      a.equal(gaps[0], 'Strategic plan: Region C and Region D not included (not provided) for 3 rows: ' + rows, 'the sums fold into one line under the first column');
       a.ok(gaps.length >= 1 && gaps.every(function (n) { return /for 3 rows/.test(n); }), 'every gap line is folded: ' + gaps.join(' | '));
       a.equal(res.notes.filter(function (n) { return /^All 4 regions combined/.test(n); }).length, 0, 'no line per year');
     });
