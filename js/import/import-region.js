@@ -8,9 +8,10 @@
  * Owner: PLAN stream (#586)
  *
  * read(book, map, match, opts) gives {ok, id, name, fileName, region, errors, notes, parts}. The region is null unless
- * every required section was read without an error. A note or error is {message, sheet, cell, kind, item, found, expected}
+ * every required section was read without an error. A note or error is {message, sheet, cell, kind, item, found, expected, ref}
  * (D163): kind the wording key of its sentence, item the row or thing it is about in words, found and expected plain values,
- * each null when the note has none; ctx.note(message, sheet, cell, extra) and ctx.error take them as extra. Its keys follow data/sample-plan-data.js: id, name, source,
+ * ref the rule's key for a rule the app's check repeats (D165), each null when the note has none; ctx.note(message, sheet,
+ * cell, extra) and ctx.error take them as extra. Its keys follow data/sample-plan-data.js: id, name, source,
  * marketCoverage, newBusiness, partners, recap, customerGrowth, then extra, outsourcingPct, revenue, booksValue,
  * strategicPlan, baseYear and routes, each only when the workbook carries it.
  */
@@ -106,11 +107,13 @@
     parts.baseYear = res.value && Array.isArray(res.value.items) && res.value.items.length ? 'read' : 'empty';
   }
 
-  // One note or error (D163): the sentence, where it was found, its kind and the plain parts the kind groups show
+  // One note or error (D163): the sentence, where it was found, its kind, the plain parts the kind groups show and the
+  // rule's key the check's warning shares (D165)
   function entry(message, sheet, cell, extra) {
     var x = extra || {};
     return { message: message, sheet: sheet == null ? null : sheet, cell: cell == null ? null : cell, kind: x.kind || null,
-      item: x.item == null ? null : x.item, found: x.found == null ? null : x.found, expected: x.expected == null ? null : x.expected };
+      item: x.item == null ? null : x.item, found: x.found == null ? null : x.found, expected: x.expected == null ? null : x.expected,
+      ref: x.ref == null ? null : String(x.ref) };
   }
 
   function read(book, map, match, opts) {

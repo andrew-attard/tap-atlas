@@ -8,7 +8,9 @@
  * Owner: PLAN stream (#586); the note kinds by NOTES2 (#612)
  *
  * run(region, lookups, map, ctx): every finding goes through ctx.note or ctx.error as {message, sheet, cell} plus its kind,
- * item (the industry, account, section or recap key in words), found and expected (D163). Cells come from the mapping (a
+ * item (the industry, account, section or recap key in words), found and expected (D163), and for the rules the app's check
+ * repeats (js/core/check-rows.js, check-p4.js) a ref, the rule's key in the data's own terms (D165): the section key, the
+ * industry or account id, year|channel|motion, year|channel, year|type or the category, so one finding shows once. Cells come from the mapping (a
  * column plus the item's sourceRow) or from the item's own sourceCell. A missing rated industry is the only error here;
  * everything else is a note. A section the region does not carry is never reported.
  */
@@ -100,7 +102,7 @@
       var list = key === 'customerGrowth.accounts' ? region.customerGrowth && region.customerGrowth.accounts : region[key];
       if (!Array.isArray(list) || list.length) return;
       var sheetKey = key === 'customerGrowth.accounts' ? 'customerGrowth' : key;
-      ctx.note(say('emptySection', { section: sectionName(sheetKey) }), sheetOf(map, sheetKey), firstCell(map, key), { kind: 'emptySection', item: sectionName(sheetKey) });
+      ctx.note(say('emptySection', { section: sectionName(sheetKey) }), sheetOf(map, sheetKey), firstCell(map, key), { kind: 'emptySection', item: sectionName(sheetKey), ref: key });
     });
   }
 
@@ -114,13 +116,13 @@
         if (any && Math.abs(sum - 1) > 0.01) {
           var first = cellOf(map, 'newBusiness', 'channelSplit.' + CHANNELS[0], o.sourceRow), last = cellOf(map, 'newBusiness', 'channelSplit.' + CHANNELS[3], o.sourceRow);
           var pct = Math.round(sum * 1000) / 10;
-          ctx.note(say('splitSum', { sum: pct }), sheet, first && last ? first + ':' + last : first, { kind: 'splitSum', item: industry, found: pct + '%', expected: '100%' });
+          ctx.note(say('splitSum', { sum: pct }), sheet, first && last ? first + ':' + last : first, { kind: 'splitSum', item: industry, found: pct + '%', expected: '100%', ref: o.industryId });
         }
       }
       var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null, want = o.targetAccounts * o.hitRate * o.avgDealSize;
       if ([o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum) && !near(a, want, 0.01)) {
         ctx.note(say('arrFormula', { found: round2(a), value: round2(want) }), sheet, cellOf(map, 'newBusiness', 'arrPotential', o.sourceRow, 0),
-          { kind: 'arrFormula', item: industry, found: round2(a), expected: round2(want) });
+          { kind: 'arrFormula', item: industry, found: round2(a), expected: round2(want), ref: o.industryId });
       }
     });
   }
@@ -142,7 +144,7 @@
       var want = segmentFor(acc, cg.thresholds);
       if (want && acc.segment !== want) {
         ctx.note(say('segmentRule', { found: acc.segment == null ? 'blank' : String(acc.segment), segment: want }), sheetOf(map, 'customerGrowth'), cellOf(map, 'customerGrowth', 'segment', acc.sourceRow),
-          { kind: 'segmentRule', item: acc.name == null ? null : String(acc.name), expected: label(lookups.segments, null, want),
+          { kind: 'segmentRule', item: acc.name == null ? null : String(acc.name), expected: label(lookups.segments, null, want), ref: acc.id,
             found: acc.segment == null ? TAP.content.text('importPanel.read.blankCell') : label(lookups.segments, null, acc.segment) });
       }
     });
@@ -170,7 +172,7 @@
       var key = [o.year, o.channel, o.motion, o.type].join(', ');
       if (!isNum(intake[key]) || o.value <= intake[key] + 0.5) return;
       ctx.note(say('revenueAbove', { found: round2(o.value), value: round2(intake[key]), key: key }), sheet, o.sourceCell || null,
-        { kind: 'revenueAbove', item: keyWords(lookups, o), found: round2(o.value), expected: round2(intake[key]) });
+        { kind: 'revenueAbove', item: keyWords(lookups, o), found: round2(o.value), expected: round2(intake[key]), ref: [o.year, o.channel, o.motion].join('|') });
     });
   }
 
@@ -183,7 +185,7 @@
       var parts = key.split(', '), ch = parts[1];
       if (RESELLERS.indexOf(ch) === -1 || !isNum(customer[key]) || found.sum[key] <= customer[key] + 0.5) return;
       ctx.note(say('booksAbove', { found: round2(found.sum[key]), value: round2(customer[key]), key: key }), sheetOf(map, 'booksValue'), found.cells[key].join(', ') || null,
-        { kind: 'booksAbove', item: keyWords(lookups, { year: parts[0], channel: ch }), found: round2(found.sum[key]), expected: round2(customer[key]) });
+        { kind: 'booksAbove', item: keyWords(lookups, { year: parts[0], channel: ch }), found: round2(found.sum[key]), expected: round2(customer[key]), ref: parts[0] + '|' + ch });
     });
   }
 
@@ -198,7 +200,7 @@
       if (!isNum(booked[key]) || near(o.variance, booked[key] - o.value, 0)) return;
       var col = cols.filter(function (c) { return c.fields.year === o.year; })[0], row = rowOf(o.sourceCell);
       ctx.note(say('variance', { found: round2(o.variance), value: round2(booked[key] - o.value) }), s.sheet, col && row ? col.col + row : o.sourceCell || null,
-        { kind: 'variance', item: keyWords(lookups, { year: o.year, type: o.type }), found: round2(o.variance), expected: round2(booked[key] - o.value) });
+        { kind: 'variance', item: keyWords(lookups, { year: o.year, type: o.type }), found: round2(o.variance), expected: round2(booked[key] - o.value), ref: o.year + '|' + o.type });
     });
   }
 
@@ -212,7 +214,7 @@
       var want = o.pipeline / left;
       if (Math.abs(o.coverage - want) <= Math.abs(want) * 0.05) return;
       ctx.note(say('coverage', { found: round2(o.coverage), value: round2(want) }), sheetOf(map, 'baseYear'), cellOf(map, 'baseYear', 'coverage', o.sourceRow),
-        { kind: 'coverage', item: label(lookups.productCategories, 'types', o.category), found: round2(o.coverage), expected: round2(want) });
+        { kind: 'coverage', item: label(lookups.productCategories, 'types', o.category), found: round2(o.coverage), expected: round2(want), ref: o.category });
     });
   }
 

@@ -25,7 +25,7 @@
 
   function K() { return TAP.check.kit; }
   function say(key, vars) { return K().say(key, vars); }
-  function expect(kind, vars) { return K().expect(kind, vars); }
+  function expect(kind, vars, ref) { return K().expect(kind, vars, ref); }
   function categoryOf(type) { return K().has(CATEGORY_OF, type) ? CATEGORY_OF[type] : null; }
   function norm(text) { return String(text).trim().toLowerCase(); }
   function near(found, want) { return Math.abs(found - want) <= Math.max(0.5, Math.abs(want) * 0.005); }
@@ -167,7 +167,8 @@
       // The workbook's ratio against pipeline over the order intake still to win
       var left = o.forecast - o.actuals;
       if (![o.coverage, o.pipeline, o.forecast, o.actuals].every(k.isNum) || left <= 0) return;
-      if (Math.abs(o.coverage - o.pipeline / left) > Math.abs(o.pipeline / left) * 0.05) k.warn(ic, 'coverage', expect('coverage', { value: k.round2(o.pipeline / left) }), o.coverage);
+      // ref: the category, as the import's note writes it (D165)
+      if (Math.abs(o.coverage - o.pipeline / left) > Math.abs(o.pipeline / left) * 0.05) k.warn(ic, 'coverage', expect('coverage', { value: k.round2(o.pipeline / left) }, o.category), o.coverage);
     });
   }
 
@@ -182,12 +183,13 @@
     return out;
   }
 
-  // A total of one list that is above the recap's total for the same key (the order intake at customer value)
+  // A total of one list that is above the recap's total for the same key (the order intake at customer value); the
+  // ref is the key with | between its parts, as the import's note writes it (D165)
   function above(found, recap, keep, rctx, part, wording) {
     Object.keys(found).forEach(function (key) {
       if (!K().has(recap, key) || !keep(key) || found[key] <= recap[key] + 0.5) return;
       var c = K().sub(rctx, part, key);
-      K().warn(c, null, expect(wording, { key: key, value: K().round2(recap[key]) }), K().round2(found[key]));
+      K().warn(c, null, expect(wording, { key: key, value: K().round2(recap[key]) }, key.split(', ').join('|')), K().round2(found[key]));
     });
   }
 
@@ -213,7 +215,7 @@
       var key = o.year + ', ' + o.type;
       if (!k.isNum(o.variance) || !k.isNum(o.value) || !k.has(booked, key) || near(o.variance, booked[key] - o.value)) return;
       var c = k.sub(k.sub(rctx, 'strategicPlan'), r.strategicPlan.indexOf(o), k.isStr(o.sourceCell) ? say('item.cell', { cell: o.sourceCell }) : null);
-      k.warn(c, 'variance', expect('variance', { value: k.round2(booked[key] - o.value) }), o.variance);
+      k.warn(c, 'variance', expect('variance', { value: k.round2(booked[key] - o.value) }, o.year + '|' + o.type), o.variance);
     });
   }
 

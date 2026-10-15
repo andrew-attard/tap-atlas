@@ -73,7 +73,7 @@
     var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map(), rows = map();
     var list = key === 'accounts' ? r.customerGrowth.accounts : r[key];
     if (!Array.isArray(list)) return;
-    if (!list.length) warn(rctx, name, expect('items'), say('found.emptyList'), true);
+    if (!list.length) warn(rctx, name, expect('items', null, name), say('found.emptyList'), true);   // ref: the section key (D165)
     each(list, lctx, env, function (o, i) {
       var c = sub(lctx, i, itemName(key, o, env));
       fields(o, SPEC()[key], c, env);
@@ -113,7 +113,7 @@
         else if (v !== null && !isNum(v)) err(sctx, k, expectFor('num', true, env), v);
         else if (isNum(v)) { sum += v; any = true; }
       });
-      if (any && Math.abs(sum - 1) > 0.01) warn(c, 'channelSplit', expect('splitSum'), Math.round(sum * 1000) / 10 + '%', true);
+      if (any && Math.abs(sum - 1) > 0.01) warn(c, 'channelSplit', expect('splitSum', null, o.industryId), Math.round(sum * 1000) / 10 + '%', true);
     }
     if (isObj(o.growth)) fields(o.growth, SPEC().growth, sub(c, 'growth'), env);
     if (!tiers) return arrFormula(o, c);
@@ -130,7 +130,7 @@
   function arrFormula(o, c) {
     var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null, want = o.targetAccounts * o.hitRate * o.avgDealSize;
     if (![o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum) || Math.abs(a - want) <= Math.max(0.5, Math.abs(want) * 0.005)) return;
-    warn(c, 'arrPotential[0]', expect('arrFormula', { value: round2(want) }), a);
+    warn(c, 'arrPotential[0]', expect('arrFormula', { value: round2(want) }, o.industryId), a);
   }
 
   // The template's segment rule (Planning Template Structure, section 3), or null if it can't be decided.
@@ -171,7 +171,7 @@
       if (isObj(cg.thresholds)) fields(cg.thresholds, SPEC().thresholds, sub(rctx, 'customerGrowth.thresholds'), env);
       checkSection(r, 'accounts', rctx, env, function (acc, c) {
         var want = segmentFor(acc, cg.thresholds);
-        if (want && acc.segment !== want) warn(c, 'segment', expect('segmentRule', { segment: JSON.stringify(want) }), acc.segment);
+        if (want && acc.segment !== want) warn(c, 'segment', expect('segmentRule', { segment: JSON.stringify(want) }, acc.id), acc.segment);
       });
     }
     // Revenue, books value, strategic plan, base year, routes and outsourcing % (Phase 4): all optional
