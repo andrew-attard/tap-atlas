@@ -3,7 +3,7 @@
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
  * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-*,
  *           X-d101-ratings-grid (the ratings grid), X-d102-ratings-insights (the rating insights on it),
- *           X-d105-industry-layout (the view in two parts) (US-1.5.7 commentary checks are X-industry-comments-*)
+ *           X-d105-industry-layout (the view in two parts), X-notes-quadrant (D162) (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -301,6 +301,25 @@
   }
 
   T.suite('industry-quad', function () {
+    // D162: Regions C and D leave the three ability ratings blank on three industries
+    T.test('X-notes-quadrant', 'Two regions blank on several industries: one folded line for the measure, not one per industry', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions.forEach(function (r) {
+        if (r.id !== 'charlie' && r.id !== 'delta') return;
+        r.marketCoverage.forEach(function (row) {
+          if (['ind1', 'ind2', 'ind3'].indexOf(row.industryId) >= 0) { row.references = null; row.expertise = null; row.productFit = null; }
+        });
+      });
+      TAP.data.load(plan);
+      var res = quad('bubble', { mode: 'all' }), gaps = res.notes.filter(function (n) { return /not included/.test(n); });
+      a.equal(res.error, null, 'draws');
+      a.equal(res.notes[0], TAP.content.text('quadrant.averageNote'), 'the averaging note stays first');
+      a.deepEqual(gaps, ['ability to win: Region C and Region D not included (not provided) for 3 rows: Healthcare, Education and Retail'], 'one line for the three industries');
+      a.equal(res.notes.filter(function (n) { return /^Healthcare|^Education|^Retail/.test(n); }).length, 0, 'no line per industry');
+      a.near(pointOf(res, points(res)[0].entityId, 'ind1').raw[0], 3, TOL, 'ind1 ability: the average of A (3) and B (3)');
+      a.equal(res.table.rows.filter(function (r) { return r.industryId === 'ind1'; })[0].cells['ind.ability'].src.excluded.length, 2, 'the table row keeps its own source');
+    });
+
     T.test('X-industry-quad-default', 'Default: one bubble per industry, scores averaged over the regions in scope', function (a) {
       var res = quad('bubble', { mode: 'all' });
       a.equal(res.error, null, 'draws');

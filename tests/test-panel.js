@@ -3,7 +3,7 @@
  * Purpose: Tests for the report panel and its controls.
  * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
  *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), 767 to 769 (D142),
- *           X-d136-* (D136)
+ *           X-d136-* (D136), X-notes-panel-* (the notes limit, D162)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -237,6 +237,35 @@
       var notes = txt(qs('.tap-panel__notes', s.panel('x-fake').el));
       a.match(notes, /Region D/);
       a.match(notes, /A combined note\./);
+    }));
+
+    // D162: at most three notes in view, the rest behind "Show n more notes"
+    T.test('X-notes-panel-limit', 'Three notes show in full; a fourth sits behind "Show 1 more note", closed until opened', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { notes: ['Note one.', 'Note two.', 'Note three.', 'Note four.'] }; };
+      var p = s.panel('x-fake');
+      var shown = qsa('.tap-panel__notes > li', p.el).filter(function (li) { return !li.closest('details'); });
+      a.deepEqual(shown.map(txt), ['Note one.', 'Note two.', 'Note three.'], 'the first three are plain list items');
+      var more = qs('details.tap-panel__more', p.el);
+      a.ok(more, 'a details element holds the rest');
+      a.equal(more.open, false, 'closed by default');
+      a.equal(txt(qs('summary', more)), 'Show 1 more note');
+      a.deepEqual(qsa('li', more).map(txt), ['Note four.']);
+      qs('summary', more).click();
+      a.equal(more.open, true, 'opens on activation: a click, or Enter on the focused summary');
+    }));
+
+    T.test('X-notes-panel-count', 'The summary counts the hidden notes, the missing-regions line among them; three notes need no details', scene(function (a, s) {
+      s.report(fakeDef());
+      FAKE = function () { return { notes: ['N1', 'N2', 'N3', 'N4'], missing: ['Region D'] }; };
+      var p = s.panel('x-fake'), more = qs('details.tap-panel__more', p.el);
+      a.equal(txt(qs('summary', more)), 'Show 2 more notes');
+      a.match(txt(more), /Region D/, 'the missing line comes last, so it sits in the details');
+      a.equal(qsa('.tap-panel__notes > li', p.el).filter(function (li) { return !li.closest('details'); }).length, 3, 'three in view');
+      FAKE = function () { return { notes: ['N1', 'N2', 'N3'] }; };
+      p.refresh();
+      a.equal(qs('details', p.el), null, 'three notes: no details');
+      a.equal(qsa('.tap-panel__notes li', p.el).length, 3);
     }));
 
     T.test('X-panel-rerender', 'The panel redraws when the shared comparison changes', scene(function (a, s) {

@@ -3,7 +3,7 @@
  * Purpose: Tests for chart-type rules, prepared data and the generic builders: allowed types per shape, table
  *          values identical to chart values, the five modes on the reference report, highlights, escaping, colours.
  * Provides: test cases TPV-TC-056, TPV-TC-062, TPV-TC-074 (report weights), TPV-TC-075 (builders), TPV-TC-095,
- *           X-shapes-*, X-prepare-*, X-builders-*, X-review-DE-15
+ *           X-shapes-*, X-prepare-*, X-builders-*, X-review-DE-15, X-notes-shapes (D162)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -373,6 +373,24 @@
         });
         a.ok(seen >= 8, type + ': both regions, four industries');
       });
+    });
+
+    // D162: Regions C and D leave the references rating blank on three industries
+    T.test('X-notes-shapes', 'Two regions blank on several industries: the generic builders fold the notes into one line per measure', function (a) {
+      var plan = T_FIXTURE('mini');
+      plan.regions.forEach(function (r) {
+        if (r.id !== 'charlie' && r.id !== 'delta') return;
+        r.marketCoverage.forEach(function (row) { if (['ind1', 'ind2', 'ind3'].indexOf(row.industryId) >= 0) row.references = null; });
+      });
+      TAP.data.load(plan);
+      var def = { id: 'x-ind-ref', view: 'industry', title: 'x', shape: 'compare', dimension: 'industry', builder: null,
+        measures: [{ id: 'ind.references' }], types: ['bar', 'table'], defaultType: 'bar', options: {} };
+      var res = TAP.builders.get('compare')(ctxFor(def, 'bar', cmp({ mode: 'org' })));
+      a.equal(res.error, null, 'draws');
+      a.equal(res.table.rows.length, 4, 'one row per rated industry');
+      a.deepEqual(res.notes, ['references: Region C and Region D not included (not provided) for 3 rows: Healthcare, Education and Retail'], 'one folded line; Utilities has no gap');
+      var ind1 = res.table.rows.filter(function (r) { return r.industryId === 'ind1'; })[0];
+      a.deepEqual(ind1.cells['ind.references'].src.excluded, ['charlie', 'delta'], 'the table row keeps its own source');
     });
 
     T.test('X-builders-colours', 'Past 8 regions every mark still has a theme colour', function (a) {

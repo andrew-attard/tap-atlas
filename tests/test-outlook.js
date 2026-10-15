@@ -2,7 +2,7 @@
  * File: tests/test-outlook.js
  * Purpose: Tests for the Outlook view (US-4.2.1) and its reports, checked against the hand calculations in
  *          tests/fixtures/mini-p4-expected.js (never against the reports' own output).
- * Provides: test cases TPV-TC-679 to TPV-TC-713 and TPV-TC-720 to TPV-TC-723 (automated ones), X-p4-outlook-*;
+ * Provides: test cases TPV-TC-679 to TPV-TC-713 and TPV-TC-720 to TPV-TC-723 (automated ones), X-p4-outlook-*, X-notes-outlook (D162);
  *           window.OUTLOOK_T (helpers shared by the test cases of each report)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-p4.js and mini-p4-expected.js
  * Used by: tests.html
@@ -296,6 +296,21 @@
       cellIs(a, row(rest, 'rest').cells['sp.variance'], X.combined.restOfAlphaAverage['sp.variance'], 'the rest as an average, without C');
       cellIs(a, row(rest, 'rest').cells['sp.variancePct'], X.combined.restOfAlphaAverage['sp.variancePct'], 'the rest’s variance % over the summed strategic plans');
       a.ok(rest.notes.some(function (n) { return /Region C/.test(n); }), 'the rest’s note names Region C');
+    });
+
+    // D162: Regions C and D have no strategic plan; by plan year the organization total has three rows
+    when([SP], 'X-notes-outlook', 'Two regions without a strategic plan, by plan year: one folded line per measure, not one per year', function (a) {
+      var p = window.T_FIXTURE('miniP4');
+      p.regions.forEach(function (r) { if (r.id === 'delta') delete r.strategicPlan; });
+      TAP.data.load(p);
+      var res = build(SP, { mode: 'org' }, { type: 'table', breakdown: 'year' });
+      a.equal(res.error, null, 'builds');
+      a.equal(res.table.rows.filter(function (r) { return r.entityId === 'org'; }).length, 3, 'one total row per plan year');
+      var gaps = res.notes.filter(function (n) { return /Region C/.test(n); });
+      var rows = 'All 4 regions combined · 2027, All 4 regions combined · 2028 and All 4 regions combined · 2029';
+      a.equal(gaps[0], 'strategic plan: Region C and Region D not included (not provided) for 3 rows: ' + rows, 'the sums fold into one line under the first column');
+      a.ok(gaps.length >= 1 && gaps.every(function (n) { return /for 3 rows/.test(n); }), 'every gap line is folded: ' + gaps.join(' | '));
+      a.equal(res.notes.filter(function (n) { return /^All 4 regions combined/.test(n); }).length, 0, 'no line per year');
     });
 
     when([SP], 'TPV-TC-723', 'Product category is a breakdown of the strategic plan report; the category parts equal the hand-worked figures and add up', function (a) {
