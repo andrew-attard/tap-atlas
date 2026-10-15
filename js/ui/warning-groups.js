@@ -2,20 +2,23 @@
  * File: js/ui/warning-groups.js
  * Purpose: One shape for the contract check's warnings and the import's notes, grouped by workbook and by kind in plain
  *          words (US-1.8.8, US-1.8.9, D161, D163). fromCheck and fromImport normalize both inputs to
- *          {region, kind, title, intro, where, cell, found, expected, tech, ref}; groups and kindGroups arrange the items; row
- *          writes one item as text for the copied report; fold removes a warning the import already noted (US-1.8.10, D165:
- *          PAIRS maps a check kind to its note kind, and the two carry the same ref). js/ui/warning-table.js draws the groups.
+ *          {region, kind, title, intro, where, cell, found, expected, tech, ref, foundCell, expectedCells}; groups and kindGroups
+ *          arrange the items; row writes one item as text for the copied report; fold removes a warning the import already
+ *          noted (US-1.8.10, D165: PAIRS maps a check kind to its note kind, and the two carry the same ref); cellList writes
+ *          the addresses behind a value as one text (US-1.8.12, D169). js/ui/warning-table.js draws the groups.
  *          Every word comes from content/text-data.js (check.plain, check.fields, check.groups) and content/text-import.js
  *          (importPanel.notePlain, importPanel.words).
- * Provides: TAP.warningGroups (PAIRS, fold, fromCheck, fromImport, normalize, groups, kindGroups, row, line, title, label, fieldLabel, labelKey, render, renderKinds)
+ * Provides: TAP.warningGroups (PAIRS, fold, fromCheck, fromImport, normalize, groups, kindGroups, row, line, title, label, fieldLabel, labelKey, cellList, render, renderKinds)
  * Depends on: js/core/content.js, js/core/data.js (the loaded plan's lookups, at call time), js/ui/warning-table.js (at call time)
  * Used by: js/ui/import-report.js, js/ui/sources-panel.js, js/import/import-write.js (all at call time)
  * Owner: NOTES2 stream (#612), after WARN (#605)
  *
  * A check warning is {path, region, item, field, kind, expected, found, vars, ref, message}; an import note is
- * {message, sheet, cell, kind, item, found, expected, ref}. The data path never reaches the screen: a row names the item in
+ * {message, sheet, cell, kind, item, found, expected, ref, cells?}. The data path never reaches the screen: a row names the item in
  * words (ids become the lookups' names, motions and types words), the field in words and the value found. The ref is never
  * shown: it is the rule's key (an industry id, year|channel|motion, a section key) that tells the two sides apart or together.
+ * A comparing note's cells (D169) come through as foundCell (one address) and expectedCells (a list), empty on every
+ * other item, so the tables can put each address under its value instead of under Where.
  */
 (function (TAP) {
   'use strict';
@@ -90,25 +93,40 @@
         intro: plain ? say('plain.' + w.kind + '.intro', vars) : '',
         where: part('where', '{where}'), cell: '',
         found: part('found', '{found}'), expected: part('expected', vars.value ? '{value}' : ''),
-        tech: w.message || '', ref: refOf(w.ref)
+        tech: w.message || '', ref: refOf(w.ref), foundCell: '', expectedCells: []
       };
     });
   }
 
   // Import notes as normalized items: the kind's title and intro from importPanel.notePlain, the note's own item, found and
-  // expected as the columns, the sheet and cell as the address. A note without a kind (an older data file) takes its message
-  // as the title, with the address alone.
+  // expected as the columns, the sheet and cell as the address, the cells behind both values when the note has them (D169).
+  // A note without a kind (an older data file) takes its message as the title, with the address alone.
   function fromImport(notes, regionName) {
     return (notes || []).map(function (n) {
-      var plain = !!n.kind && known('importPanel.notePlain.' + n.kind + '.title');
+      var plain = !!n.kind && known('importPanel.notePlain.' + n.kind + '.title'), cells = n.cells && typeof n.cells === 'object' ? n.cells : {};
       return {
         region: regionName == null ? null : String(regionName), kind: n.kind || null,
         title: plain ? word('notePlain.' + n.kind + '.title') : (n.message || ''),
         intro: plain ? word('notePlain.' + n.kind + '.intro') : '',
         where: str(n.item), cell: [n.sheet, n.cell].filter(Boolean).join(TAP.content.text('sources.sep')),
-        found: str(n.found), expected: str(n.expected), tech: n.message || '', ref: refOf(n.ref)
+        found: str(n.found), expected: str(n.expected), tech: n.message || '', ref: refOf(n.ref),
+        foundCell: cells.found == null ? '' : String(cells.found),
+        expectedCells: (Array.isArray(cells.expected) ? cells.expected : []).filter(function (c) { return c != null && c !== ''; }).map(String)
       };
     });
+  }
+
+  // The addresses behind a value as one text (D169): the sheet once when every address shares it ("Recap › E12, F12 and
+  // G12"), else each address in full; at most max of them, then "N more" (max 0: every address); '' for none
+  function cellList(list, max) {
+    list = (list || []).filter(function (c) { return c != null && c !== ''; }).map(String);
+    if (!list.length) return '';
+    var sep = TAP.content.text('sources.sep'), sheetOf = function (s) { var i = s.indexOf(sep); return i < 0 ? '' : s.slice(0, i); };
+    var sheet = sheetOf(list[0]), same = !!sheet && list.every(function (s) { return sheetOf(s) === sheet; });
+    var shown = max > 0 && list.length > max ? list.slice(0, max) : list;
+    var parts = same ? shown.map(function (s) { return s.slice(sheet.length + sep.length); }) : shown;
+    if (shown.length < list.length) parts = parts.concat([word('cells.more', { n: list.length - shown.length })]);
+    return (same ? sheet + sep : '') + TAP.format.list(parts);
   }
 
   // A list of raw check warnings (no tech) is normalized on the way in, so callers may pass either shape
@@ -153,7 +171,8 @@
   }
 
   // Items by kind in first-seen order: [{kind, title, intro, items, cols, hasCell}]. Items without a kind group by title.
-  // cols lists the table's columns: Where always, then Found and Expected when at least one item fills them (D164).
+  // cols lists the table's columns: Where always, then Found and Expected when at least one item fills them (D164). hasCell
+  // says whether any item shows its address under Where (an item with a foundCell shows it under Found instead, D169).
   function kindGroups(items) {
     var out = [], index = Object.create(null);
     (items || []).forEach(function (it) {
@@ -163,7 +182,7 @@
     });
     out.forEach(function (g) {
       ['found', 'expected'].forEach(function (c) { if (g.items.some(function (it) { return it[c]; })) g.cols.push(c); });
-      g.hasCell = g.items.some(function (it) { return it.cell; });
+      g.hasCell = g.items.some(function (it) { return it.cell && !it.foundCell; });
     });
     return out;
   }
@@ -195,7 +214,7 @@
 
   TAP.warningGroups = {
     PAIRS: PAIRS, fold: fold, fromCheck: fromCheck, fromImport: fromImport, normalize: normalize, groups: groups, kindGroups: kindGroups,
-    row: row, line: line, title: title, label: label, fieldLabel: fieldLabel, labelKey: labelKey,
+    row: row, line: line, title: title, label: label, fieldLabel: fieldLabel, labelKey: labelKey, cellList: cellList,
     render: function (items, opts) { return TAP.warningTable.render(items, opts); },
     renderKinds: function (items, opts) { return TAP.warningTable.renderKinds(items, opts); }
   };

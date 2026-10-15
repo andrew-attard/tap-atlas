@@ -150,14 +150,15 @@
 
   /* ---------- the reports for workbook owners (US-1.8.11) ---------- */
 
-  // One entry per reading: its facts and the items its owner reviews, the notes and the unmatched warnings of that region
+  // One entry per reading: its facts and the items its owner reviews, the notes and the unmatched warnings of that region;
+  // leftOut when the reading had errors, so the owner's report says so (D169)
   function ownerRegions(result) {
     var W = TAP.warningGroups, lookups = result.plan ? result.plan.lookups : null, unmatched = folded(result).warnings;
     return (result.regions || []).map(function (r) {
       var src = (r.region && r.region.source) || {};
       var mine = unmatched.filter(function (w) { return w.region != null && String(w.region) === String(r.name); });
       return { name: r.name || r.fileName, fileName: r.fileName || src.fileName || null, fileModified: src.fileModified || null,
-        importedAt: src.importedAt || null, items: W.fromImport(r.notes || [], r.name).concat(W.fromCheck(mine, { lookups: lookups })) };
+        importedAt: src.importedAt || null, leftOut: !r.ok, items: W.fromImport(r.notes || [], r.name).concat(W.fromCheck(mine, { lookups: lookups })) };
     });
   }
   function owners(result) {

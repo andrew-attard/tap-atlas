@@ -12,7 +12,10 @@
  * repeats (js/core/check-rows.js, check-p4.js) a ref, the rule's key in the data's own terms (D165): the section key, the
  * industry or account id, year|channel|motion, year|channel, year|type or the category, so one finding shows once. Cells come from the mapping (a
  * column plus the item's sourceRow) or from the item's own sourceCell. A missing rated industry is the only error here;
- * everything else is a note. A section the region does not carry is never reported.
+ * everything else is a note. A section the region does not carry is never reported. A comparing note (the split, the ARR
+ * formula, the segment rule, the variance, revenue, books value, the coverage) also carries cells: { found, expected: [] },
+ * the sheet › cell addresses behind both values, as the panels write them (D169). Revenue is compared at year, channel and
+ * motion with the types added up, as the contract check does (D170).
  */
 (function (TAP) {
   'use strict';
@@ -41,6 +44,14 @@
     return c && isNum(row) ? c + row : null;
   }
   function rowOf(cell) { var m = /\d+$/.exec(String(cell || '')); return m ? +m[0] : null; }
+  // A fixed cell of a section from the mapping's cells ('thresholds.strategicArr': 'N3')
+  function fixedCell(map, key, path) { var s = spec(map, key), c = s && s.cells ? s.cells[path] : null; return typeof c === 'string' ? c : null; }
+
+  // An address as the panels write it (sheet › cell), null without both parts; a list of cells on one sheet as addresses;
+  // and the cells behind both values of a comparing note (D169)
+  function addr(sheet, cell) { return sheet && cell ? sheet + TAP.content.text('sources.sep') + cell : null; }
+  function addrs(sheet, cells) { return (cells || []).map(function (c) { return addr(sheet, c); }).filter(Boolean); }
+  function cellsOf(found, expected) { return { found: found, expected: expected.filter(Boolean) }; }
 
   // Column letters, as the workbook writes them
   function colIndex(letters) {
@@ -115,14 +126,16 @@
         CHANNELS.forEach(function (ch) { if (isNum(split[ch])) { sum += split[ch]; any = true; } });
         if (any && Math.abs(sum - 1) > 0.01) {
           var first = cellOf(map, 'newBusiness', 'channelSplit.' + CHANNELS[0], o.sourceRow), last = cellOf(map, 'newBusiness', 'channelSplit.' + CHANNELS[3], o.sourceRow);
-          var pct = Math.round(sum * 1000) / 10;
-          ctx.note(say('splitSum', { sum: pct }), sheet, first && last ? first + ':' + last : first, { kind: 'splitSum', item: industry, found: pct + '%', expected: '100%', ref: o.industryId });
+          var pct = Math.round(sum * 1000) / 10, range = first && last ? first + ':' + last : first;
+          ctx.note(say('splitSum', { sum: pct }), sheet, range, { kind: 'splitSum', item: industry, found: pct + '%', expected: '100%', ref: o.industryId, cells: cellsOf(addr(sheet, range), []) });
         }
       }
       var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null, want = o.targetAccounts * o.hitRate * o.avgDealSize;
       if ([o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum) && !near(a, want, 0.01)) {
-        ctx.note(say('arrFormula', { found: round2(a), value: round2(want) }), sheet, cellOf(map, 'newBusiness', 'arrPotential', o.sourceRow, 0),
-          { kind: 'arrFormula', item: industry, found: round2(a), expected: round2(want), ref: o.industryId });
+        var at = cellOf(map, 'newBusiness', 'arrPotential', o.sourceRow, 0);
+        var parts = ['targetAccounts', 'hitRate', 'avgDealSize'].map(function (f) { return addr(sheet, cellOf(map, 'newBusiness', f, o.sourceRow)); });
+        ctx.note(say('arrFormula', { found: round2(a), value: round2(want) }), sheet, at,
+          { kind: 'arrFormula', item: industry, found: round2(a), expected: round2(want), ref: o.industryId, cells: cellsOf(addr(sheet, at), parts) });
       }
     });
   }
@@ -136,16 +149,28 @@
     return acc.cumulativeOrderIntake > t.growthOrderIntake && acc.currentArr > t.growthArr ? 'growth' : 'core';
   }
 
+  var THRESHOLDS = ['strategicArr', 'scaledArr', 'growthArr', 'growthOrderIntake'];
+  // The cells the segment rule read for an account (D169): current ARR, the cumulative order intake when the rule reached
+  // it (an ARR between the scaled and strategic thresholds), then the four threshold cells
+  function segmentCells(map, acc, t) {
+    var sheet = sheetOf(map, 'customerGrowth'), fields = ['currentArr'];
+    if (acc.currentArr <= t.strategicArr && acc.currentArr >= t.scaledArr) fields.push('cumulativeOrderIntake');
+    return fields.map(function (f) { return addr(sheet, cellOf(map, 'customerGrowth', f, acc.sourceRow)); })
+      .concat(THRESHOLDS.map(function (k) { return addr(sheet, fixedCell(map, 'customerGrowth', 'thresholds.' + k)); }));
+  }
+
   function segments(region, lookups, map, ctx) {
-    var cg = region.customerGrowth;
+    var cg = region.customerGrowth, sheet = sheetOf(map, 'customerGrowth');
     if (!cg || !Array.isArray(cg.accounts)) return;
     cg.accounts.forEach(function (acc) {
       if (!acc) return;
       var want = segmentFor(acc, cg.thresholds);
       if (want && acc.segment !== want) {
-        ctx.note(say('segmentRule', { found: acc.segment == null ? 'blank' : String(acc.segment), segment: want }), sheetOf(map, 'customerGrowth'), cellOf(map, 'customerGrowth', 'segment', acc.sourceRow),
+        var at = cellOf(map, 'customerGrowth', 'segment', acc.sourceRow);
+        ctx.note(say('segmentRule', { found: acc.segment == null ? 'blank' : String(acc.segment), segment: want }), sheet, at,
           { kind: 'segmentRule', item: acc.name == null ? null : String(acc.name), expected: label(lookups.segments, null, want), ref: acc.id,
-            found: acc.segment == null ? TAP.content.text('importPanel.read.blankCell') : label(lookups.segments, null, acc.segment) });
+            found: acc.segment == null ? TAP.content.text('importPanel.read.blankCell') : label(lookups.segments, null, acc.segment),
+            cells: cellsOf(addr(sheet, at), segmentCells(map, acc, cg.thresholds)) });
       }
     });
   }
@@ -164,15 +189,18 @@
     return { sum: out, cells: cells };
   }
 
+  // Revenue against the order intake at the Data Contract's key, year, channel and motion, the types added up on both
+  // sides as the contract check does (D170), so the note and the check's warning carry the same two figures
   function revenue(region, lookups, map, ctx) {
     if (!Array.isArray(region.revenue)) return;
-    var intake = totals(region.recap, ['year', 'channel', 'motion', 'type']).sum, sheet = sheetOf(map, 'revenue');
-    region.revenue.forEach(function (o) {
-      if (!o || !isNum(o.value)) return;
-      var key = [o.year, o.channel, o.motion, o.type].join(', ');
-      if (!isNum(intake[key]) || o.value <= intake[key] + 0.5) return;
-      ctx.note(say('revenueAbove', { found: round2(o.value), value: round2(intake[key]), key: key }), sheet, o.sourceCell || null,
-        { kind: 'revenueAbove', item: keyWords(lookups, o), found: round2(o.value), expected: round2(intake[key]), ref: [o.year, o.channel, o.motion].join('|') });
+    var found = totals(region.revenue, ['year', 'channel', 'motion']), intake = totals(region.recap, ['year', 'channel', 'motion']);
+    var sheet = sheetOf(map, 'revenue'), recapSheet = sheetOf(map, 'recap');
+    Object.keys(found.sum).forEach(function (key) {
+      if (!isNum(intake.sum[key]) || found.sum[key] <= intake.sum[key] + 0.5) return;
+      var parts = key.split(', '), list = found.cells[key].join(', ') || null;
+      ctx.note(say('revenueAbove', { found: round2(found.sum[key]), value: round2(intake.sum[key]), key: key }), sheet, list,
+        { kind: 'revenueAbove', item: keyWords(lookups, { year: parts[0], channel: parts[1], motion: parts[2] }), found: round2(found.sum[key]), expected: round2(intake.sum[key]),
+          ref: parts.join('|'), cells: cellsOf(addr(sheet, list), addrs(recapSheet, intake.cells[key])) });
     });
   }
 
@@ -180,12 +208,13 @@
   function books(region, lookups, map, ctx) {
     if (!Array.isArray(region.booksValue)) return;
     var both = region.booksValue.filter(function (o) { return o && (o.type === 'arr' || o.type === 'services'); });
-    var found = totals(both, ['year', 'channel']), customer = totals(region.recap, ['year', 'channel']).sum;
+    var found = totals(both, ['year', 'channel']), customer = totals(region.recap, ['year', 'channel']), sheet = sheetOf(map, 'booksValue'), recapSheet = sheetOf(map, 'recap');
     Object.keys(found.sum).forEach(function (key) {
-      var parts = key.split(', '), ch = parts[1];
-      if (RESELLERS.indexOf(ch) === -1 || !isNum(customer[key]) || found.sum[key] <= customer[key] + 0.5) return;
-      ctx.note(say('booksAbove', { found: round2(found.sum[key]), value: round2(customer[key]), key: key }), sheetOf(map, 'booksValue'), found.cells[key].join(', ') || null,
-        { kind: 'booksAbove', item: keyWords(lookups, { year: parts[0], channel: ch }), found: round2(found.sum[key]), expected: round2(customer[key]), ref: parts[0] + '|' + ch });
+      var parts = key.split(', '), ch = parts[1], list = found.cells[key].join(', ') || null;
+      if (RESELLERS.indexOf(ch) === -1 || !isNum(customer.sum[key]) || found.sum[key] <= customer.sum[key] + 0.5) return;
+      ctx.note(say('booksAbove', { found: round2(found.sum[key]), value: round2(customer.sum[key]), key: key }), sheet, list,
+        { kind: 'booksAbove', item: keyWords(lookups, { year: parts[0], channel: ch }), found: round2(found.sum[key]), expected: round2(customer.sum[key]), ref: parts[0] + '|' + ch,
+          cells: cellsOf(addr(sheet, list), addrs(recapSheet, customer.cells[key])) });
     });
   }
 
@@ -193,14 +222,15 @@
   function variance(region, lookups, map, ctx) {
     var s = spec(map, 'strategicPlan');
     if (!Array.isArray(region.strategicPlan) || !s || !s.variance) return;
-    var booked = totals(region.booksValue, ['year', 'type']).sum, cols = expandCols(s.variance.cols);
+    var booked = totals(region.booksValue, ['year', 'type']), cols = expandCols(s.variance.cols), booksSheet = sheetOf(map, 'booksValue');
     region.strategicPlan.forEach(function (o) {
       if (!o || !isNum(o.variance) || !isNum(o.value)) return;
-      var key = o.year + ', ' + o.type;
-      if (!isNum(booked[key]) || near(o.variance, booked[key] - o.value, 0)) return;
-      var col = cols.filter(function (c) { return c.fields.year === o.year; })[0], row = rowOf(o.sourceCell);
-      ctx.note(say('variance', { found: round2(o.variance), value: round2(booked[key] - o.value) }), s.sheet, col && row ? col.col + row : o.sourceCell || null,
-        { kind: 'variance', item: keyWords(lookups, { year: o.year, type: o.type }), found: round2(o.variance), expected: round2(booked[key] - o.value), ref: o.year + '|' + o.type });
+      var key = o.year + ', ' + o.type, want = booked.sum[key] - o.value;
+      if (!isNum(booked.sum[key]) || near(o.variance, want, 0)) return;
+      var col = cols.filter(function (c) { return c.fields.year === o.year; })[0], row = rowOf(o.sourceCell), at = col && row ? col.col + row : o.sourceCell || null;
+      ctx.note(say('variance', { found: round2(o.variance), value: round2(want) }), s.sheet, at,
+        { kind: 'variance', item: keyWords(lookups, { year: o.year, type: o.type }), found: round2(o.variance), expected: round2(want), ref: o.year + '|' + o.type,
+          cells: cellsOf(addr(s.sheet, at), addrs(booksSheet, booked.cells[key]).concat([addr(s.sheet, o.sourceCell)])) });
     });
   }
 
@@ -213,8 +243,10 @@
       if (![o.coverage, o.pipeline, o.forecast, o.actuals].every(isNum) || left <= 0) return;
       var want = o.pipeline / left;
       if (Math.abs(o.coverage - want) <= Math.abs(want) * 0.05) return;
-      ctx.note(say('coverage', { found: round2(o.coverage), value: round2(want) }), sheetOf(map, 'baseYear'), cellOf(map, 'baseYear', 'coverage', o.sourceRow),
-        { kind: 'coverage', item: label(lookups.productCategories, 'types', o.category), found: round2(o.coverage), expected: round2(want), ref: o.category });
+      var sheet = sheetOf(map, 'baseYear'), at = cellOf(map, 'baseYear', 'coverage', o.sourceRow);
+      var parts = ['pipeline', 'forecast', 'actuals'].map(function (f) { return addr(sheet, cellOf(map, 'baseYear', f, o.sourceRow)); });
+      ctx.note(say('coverage', { found: round2(o.coverage), value: round2(want) }), sheet, at,
+        { kind: 'coverage', item: label(lookups.productCategories, 'types', o.category), found: round2(o.coverage), expected: round2(want), ref: o.category, cells: cellsOf(addr(sheet, at), parts) });
     });
   }
 

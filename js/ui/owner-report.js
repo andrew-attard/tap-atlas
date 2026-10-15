@@ -4,8 +4,10 @@
  *          workbook (inline styles from the theme, no script, no link, no image, no web request, prints to PDF) and the
  *          same content as plain text for an email, plus the all-workbooks page with a contents list. The items are the
  *          region's import notes and the check's unmatched warnings, already folded (D165) and normalized by
- *          js/ui/warning-groups.js; kindGroups arranges them. No data path and no technical message reaches the file.
- *          Every word comes from content/text-owner-report.js (ownerReport.*) and content/text-data.js (check.groups).
+ *          js/ui/warning-groups.js; kindGroups arranges them. A comparing note's addresses sit under its values, every
+ *          one (US-1.8.12, D169), and a workbook left out of the import says so in one sentence under the facts. No data
+ *          path and no technical message reaches the file. Every word comes from content/text-owner-report.js
+ *          (ownerReport.*) and content/text-data.js (check.groups).
  * Provides: TAP.ownerReport (build, buildAll, download, countText, fileName)
  * Depends on: js/theme.js (TAP_THEME: font, colours, sizes), js/core/content.js, js/core/format.js, js/ui/warning-groups.js
  *             (kindGroups), js/ui/shell.js (label, at call time), js/panel/panel-export.js (download, at call time)
@@ -13,8 +15,8 @@
  * Owner: REPORTS stream (#616)
  *
  * build(region, opts) and buildAll(regions, opts) give { html, text, fileName }. A region is
- * { name, fileName, fileModified, importedAt, items } with items in the warning groups' normalized shape. opts.now (ISO)
- * sets the report date; the default is now.
+ * { name, fileName, fileModified, importedAt, items, leftOut? } with items in the warning groups' normalized shape and
+ * leftOut true for a reading with errors. opts.now (ISO) sets the report date; the default is now.
  */
 (function (TAP) {
   'use strict';
@@ -99,16 +101,24 @@
     return '<dl>\n' + rows.map(function (row) { return '<dt>' + esc(row[0]) + '</dt><dd>' + esc(row[1]) + '</dd>'; }).join('\n') + '\n</dl>\n';
   }
 
-  // The Where cell: the row or item, the sheet and cell under it (a space between keeps the copied text apart)
+  // The Where cell: the row or item, the sheet and cell under it (a space between keeps the copied text apart); a Found or
+  // Expected cell: the value, the address behind it under it when the item has one (D169, every address: the owner goes
+  // to each)
   function whereCell(it, hasCell) {
     return '<td>' + (it.where ? '<span>' + esc(it.where) + '</span>' : '') + (hasCell && it.cell ? ' <span class="cell">' + esc(it.cell) + '</span>' : '') + '</td>';
+  }
+  function valueCell(value, address) {
+    return '<td>' + (value ? '<span>' + esc(value) + '</span>' : '') + (address ? ' <span class="cell">' + esc(address) + '</span>' : '') + '</td>';
+  }
+  function cells(it) { return TAP.warningGroups.cellList(it.expectedCells, 0); }
+  function cell(it, c, k) {
+    if (c === 'where') return whereCell(it, k.hasCell && !it.foundCell);
+    return valueCell(it[c] || '', c === 'found' ? it.foundCell : cells(it));
   }
   // One kind group as a table with the columns the group fills (D164)
   function table(k) {
     return '<table>\n<thead><tr>' + k.cols.map(function (c) { return '<th scope="col">' + esc(g(HEAD[c])) + '</th>'; }).join('') + '</tr></thead>\n<tbody>\n' +
-      k.items.map(function (it) {
-        return '<tr>' + k.cols.map(function (c) { return c === 'where' ? whereCell(it, k.hasCell) : '<td>' + esc(it[c] || '') + '</td>'; }).join('') + '</tr>';
-      }).join('\n') + '\n</tbody>\n</table>\n';
+      k.items.map(function (it) { return '<tr>' + k.cols.map(function (c) { return cell(it, c, k); }).join('') + '</tr>'; }).join('\n') + '\n</tbody>\n</table>\n';
   }
   // One kind: the title with its count, the rule sentence once, then the table
   function kindSection(k, tag) {
@@ -116,10 +126,11 @@
       (k.intro ? '<p>' + esc(k.intro) + '</p>\n' : '') + table(k) + '</section>\n';
   }
 
-  // One region's report body: the facts, what to do, the summary, a section per kind, the closing line
+  // One region's report body: the facts, the left-out sentence for a workbook the import could not use, what to do, the
+  // summary, a section per kind, the closing line
   function body(r, d, tag) {
     var list = items(r), kinds = TAP.warningGroups.kindGroups(list);
-    return facts(factRows(r, d)) + '<p class="todo">' + esc(t('todo')) + '</p>\n' +
+    return facts(factRows(r, d)) + (r.leftOut ? '<p class="left-out">' + esc(t('leftOut')) + '</p>\n' : '') + '<p class="todo">' + esc(t('todo')) + '</p>\n' +
       (list.length ? '<p class="summary">' + esc(summary(list.length, kinds.length)) + '</p>\n' : '') +
       kinds.map(function (k) { return kindSection(k, tag); }).join('') +
       '<p class="closing">' + esc(list.length ? t('closing') : t('none')) + '</p>\n';
@@ -128,15 +139,19 @@
 
   /* ---------- the text version ---------- */
 
-  // One item: "where · sheet › cell: found X, expected Y", whichever parts exist
+  // One item: "where · sheet › cell: found X, expected Y", whichever parts exist; with cells behind the values (D169),
+  // "where: found X (sheet › cell), expected Y (sheet › cells)"
+  function withCells(text, address) { return address ? t('textCells', { text: text, cells: address }) : text; }
   function line(it) {
-    var where = [it.where, it.cell].filter(Boolean).join(t('textSep'));
-    var vals = [it.found ? g('rowFound', { found: it.found }) : '', it.expected ? g('rowExpected', { expected: it.expected }) : ''].filter(Boolean).join(t('textJoin'));
+    var where = [it.where, it.foundCell ? '' : it.cell].filter(Boolean).join(t('textSep'));
+    var vals = [it.found ? withCells(g('rowFound', { found: it.found }), it.foundCell) : '', it.expected ? withCells(g('rowExpected', { expected: it.expected }), cells(it)) : '']
+      .filter(Boolean).join(t('textJoin'));
     return vals ? where + t('textAt') + vals : where;
   }
   function textBody(r, d) {
     var list = items(r), kinds = TAP.warningGroups.kindGroups(list), pad = t('textIndent'), out = [];
     factRows(r, d).forEach(function (row) { out.push(row[0] + t('textAt') + row[1]); });
+    if (r.leftOut) out.push(t('leftOut'));
     out.push('', t('todo'), '');
     if (list.length) out.push(summary(list.length, kinds.length), '');
     kinds.forEach(function (k) {
