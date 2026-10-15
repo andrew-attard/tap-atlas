@@ -148,7 +148,7 @@ Object.assign(window.TAP_CONTENT.text, {
       booksAbove: { title: 'Books value above the customer value', intro: 'For Partner, Alliance A and Alliance B, the books value of ARR and services is expected to be no higher than the customer value for the same year.' },
       coverage: { title: 'Coverage ratios that differ from their parts', intro: 'The coverage ratio is expected to equal pipeline divided by forecast minus actuals.' },
       badValue: { title: 'Values not recognized', intro: 'The cell holds a value the field cannot take, such as text in a number column or a name that is not in its list. It is imported as blank.' },
-      errorCell: { title: 'Error cells', intro: 'The cell shows an error such as #REF!. It is imported as blank.' },
+      errorCell: { title: 'Error cells', intro: 'The cell shows a spreadsheet error instead of a value. It is imported as blank.' },
       formulaNoValue: { title: 'Formulas without a saved result', intro: 'The cell holds a formula whose result was not saved. It is imported as blank; save the workbook after it has recalculated.' },
       unknownIndustry: { title: 'Rows naming an industry not in the list', intro: 'The industry is not in the mapping\'s industry list, so the row is left out.' },
       tierDiffers: { title: 'New Business tiers that differ from Market Coverage', intro: 'The tier column disagrees with Market Coverage for the same industry. The Market Coverage tier is used.' },
