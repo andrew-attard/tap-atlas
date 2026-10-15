@@ -1145,7 +1145,7 @@
         });
         var c = txt(blocks[2]);
         a.ok(c.indexOf('The Customer Growth section is empty.') >= 0, 'Region C’s import note');
-        a.ok(c.indexOf('Region C plan.xlsx › 3. Customer Growth › A10') >= 0, 'the note names file, sheet and cell');
+        a.ok(c.indexOf('3. Customer Growth › A10') >= 0, 'the note names sheet and cell (the file is in the facts above, US-1.8.9)');
         a.ok(txt(blocks[0]).indexOf(TAP.content.text('sourcesPanel.noNotes')) >= 0, 'a region with no notes says so');
         a.ok(txt(blocks[3]).indexOf('28 Sep 2026') >= 0 && txt(blocks[3]).indexOf('1 Oct 2026') >= 0, 'Region D: saved 28 Sep, imported 1 Oct');
       });
@@ -1219,6 +1219,37 @@
         a.ok(qs('details.tap-wg[data-region="Region C"]', notes), 'the fixture\u2019s own planted empty sections under Region C');
         a.ok(txt(qs('.tap-src__notes > ul', notes)).indexOf('Channel split adds up to 95%.') >= 0, 'a data note without a kind keeps its place in the list');
         a.ok(parseFloat(getComputedStyle(qs('summary', book)).fontSize) >= 16, 'summary at body size (D24)');
+      });
+    });
+
+    // US-1.8.9 (D163, D164): a region's import notes grouped by kind as tables; a note without a kind in a group of its own
+    T.test('X-notes2-sources', 'The data sources panel groups a region\u2019s import notes by kind with a table each; a note without a kind lands in the fallback group', function (a) {
+      run(function () {
+        var p = T_FIXTURE('mini');
+        p.regions[0].source.notes = [
+          { message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null },
+          { message: 'The Recap section is empty.', sheet: '4. Partner', cell: 'E5', kind: 'emptySection', item: 'Recap', found: null, expected: null },
+          { message: 'Revenue 450 is above the order intake 400 for 2027, direct, newBusiness, arr.', sheet: '5. Recap', cell: 'E30', kind: 'revenueAbove', item: '2027, Direct, new business, ARR', found: 450, expected: 400 }
+        ];
+        var root = startApp(p), panel = openSourcesByClick(root), blocks = qsa('.tap-src__region', panel);
+        var box = qs('.tap-src__box', blocks[0]);
+        a.ok(box, 'the notes box of Region A');
+        var groups = qsa('details.tap-wg__kind', box);
+        a.deepEqual(groups.map(function (d) { return d.getAttribute('data-kind'); }), ['emptySection', 'revenueAbove'], 'one group per kind');
+        a.equal(txt(qs(':scope > summary', groups[0])), TAP.content.text('importPanel.notePlain.emptySection.title') + ' (2)', 'the plain title with its count');
+        a.equal(qsa('.tap-wg__intro', groups[0]).length, 1, 'the intro once');
+        a.deepEqual(qsa('th', groups[0]).map(txt), [TAP.content.text('check.groups.colWhere')], 'empty sections: the Where column alone');
+        a.deepEqual(qsa('th', groups[1]).map(txt), ['colWhere', 'colFound', 'colExpected'].map(function (k) { return TAP.content.text('check.groups.' + k); }), 'revenue: where, found, expected');
+        a.deepEqual(qsa('td', groups[1]).map(txt), ['2027, Direct, new business, ARR 5. Recap › E30', '450', '400'], 'the row in words with its sheet › cell');
+        a.ok(txt(box).indexOf('newBusiness, arr') < 0 && txt(box).indexOf('regions[') < 0, 'no raw key or data path');
+        // Region C's fixture note has no kind: a group titled by its message, the address alone
+        var old = qs('.tap-src__box details.tap-wg__kind', blocks[2]);
+        a.equal(old.getAttribute('data-kind'), '', 'no kind');
+        a.equal(txt(qs(':scope > summary', old)), 'The Customer Growth section is empty. (1)', 'the message as the title');
+        a.deepEqual(qsa('th', old).map(txt), [TAP.content.text('check.groups.colWhere')]);
+        a.equal(txt(qs('.tap-wg__cell', old)), '3. Customer Growth › A10');
+        qsa('summary, td, th, .tap-wg__intro', box).forEach(function (n) { a.ok(parseFloat(getComputedStyle(n).fontSize) >= 16, n.tagName + ' at body size (D24)'); });
+        a.ok(qs('table', box).getBoundingClientRect().width <= qs('.tap-layer__body', panel).getBoundingClientRect().width, 'the table fits the panel');
       });
     });
 

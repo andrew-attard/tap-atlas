@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, READ stream (docs/ARCHITECTURE.md section 20): the workbook reader, the mapping,
  *          the value kinds, the field tables, the row sections and the grid blocks. Tiny workbooks are built here with
  *          SheetJS itself, so nothing depends on the workbook writer fixture.
- * Provides: test cases TPV-TC-798 to TPV-TC-826, TPV-TC-868 to 871 (D158, D160)
+ * Provides: test cases TPV-TC-798 to TPV-TC-826, X-notes2-read-kinds (the readers' note kinds, D163), TPV-TC-868 to 871 (D158, D160)
  * Depends on: tests/harness.js, the app scripts, vendor/xlsx.mini.min.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
  * Owner: READ stream (#585)
@@ -938,6 +938,45 @@
       a.deepEqual(Object.keys(routes.items[0]), ['route', 'year', 'sourceCell', 'type', 'value', 'solution']);
       a.deepEqual(c.notes, []);
       a.deepEqual(c2.notes, []);
+    });
+
+    // US-1.8.9 (D163): every note the readers raise carries its kind, the row and field in words, and what the cell held
+    T.test('X-notes2-read-kinds', 'Reading notes and errors carry kind, item (row and field in words), found and expected', function (a) {
+      function kept() {
+        var c = ctx(sampleMap());
+        c.note = function (m, s, cell, x) { c.notes.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };
+        c.error = function (m, s, cell, x) { c.errors.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };
+        return c;
+      }
+      function parts(n) { return [n.kind, n.item, n.found, n.expected]; }
+      var c = kept(), book = open({ '1. Market Coverage': MC_SHEET, '4. Partner': PT_SHEET });
+      TAP.importRows.section(book, c.map, 'marketCoverage', c);
+      a.deepEqual(parts(at(c.notes, 'D11')[0]), ['badValue', 'Retail, ' + TAP.content.text('check.fields.growthPotential'), '"Great"', undefined], 'a bad rating: the row and the field in words, the text found');
+      a.deepEqual(parts(at(c.notes, 'B14')[0]), ['unknownIndustry', 'Nowhere, ' + TAP.content.text('check.fields.industryId'), '"Nowhere"', undefined], 'an unknown industry');
+      TAP.importRows.section(book, c.map, 'partners', c);
+      a.deepEqual(parts(at(c.notes, 'C21')[0]).slice(0, 3), ['badValue', 'Fictional Partner 2, ' + TAP.content.text('check.fields.channel'), '"Direct"'], 'a channel that is not a partner channel');
+      a.deepEqual(parts(at(c.notes, 'H21')[0]).slice(0, 3), ['errorCell', 'Fictional Partner 2, ' + TAP.content.text('check.fields.fteConsultants'), '#REF!'], 'an error cell');
+      a.deepEqual(parts(at(c.notes, 'J21')[0]).slice(0, 3), ['formulaNoValue', 'Fictional Partner 2, ' + TAP.content.text('check.fields.arr'), TAP.content.text('importPanel.read.noResult')], 'a formula without a value');
+      // The tier cross-check names the industry; a heading in the wrong place names the heading expected and found
+      var m = sampleMap();
+      m.sections.newBusiness.columns.tier = 'W';
+      var c2 = kept(); c2.map = TAP.importMap.normalize(m);
+      var nb = open({ '1. Market Coverage': MC_SHEET, '2. New Business': NB_SHEET });
+      c2.marketCoverage = TAP.importRows.section(nb, c2.map, 'marketCoverage', c2).items;
+      TAP.importRows.section(nb, c2.map, 'newBusiness', c2);
+      a.deepEqual(parts(at(c2.notes, 'W15')[0]), ['tierDiffers', 'Healthcare', '2', '1'], 'the tier column against Market Coverage, the industry by name');
+      var bad = copy(MC_SHEET); bad.B9 = 'Sector';
+      var c3 = kept();
+      TAP.importRows.section(open({ '1. Market Coverage': bad }), c3.map, 'marketCoverage', c3);
+      a.deepEqual(parts(c3.errors[0]), ['headerMismatch', TAP.content.text('check.fields.industryId'), '"Sector"', 'Industry'], 'a heading not where the mapping says');
+      // A sheet matched loosely, and a grid cell that is not a number: the item names the axes in words
+      var c4 = kept(), loose = open({ '1. market coverage': MC_SHEET, '4. Partner': { E5: 'lots', F5: 10 } });
+      TAP.importRows.section(loose, c4.map, 'marketCoverage', c4);
+      a.deepEqual(parts(at(c4.notes, null).filter(function (n) { return n.kind === 'looseSheet'; })[0]), ['looseSheet', undefined, '1. market coverage', '1. Market Coverage'], 'the loose sheet: found and expected names');
+      TAP.importGrid.block(loose, c4.map, 'recap', c4, 'North America');
+      a.deepEqual(parts(at(c4.notes, 'E5')[0]).slice(0, 3), ['badValue', '2027, Direct, new business, ARR', '"lots"'], 'a grid cell: year, channel name, motion and type in words');
+      c.notes.concat(c2.notes, c3.errors, c4.notes).forEach(function (n) { a.ok(typeof n.kind === 'string' && n.kind, 'a kind on: ' + n.message); });
+      wordy(a, c.notes.concat(c2.notes, c4.notes));
     });
   });
 })(window.TAP);
