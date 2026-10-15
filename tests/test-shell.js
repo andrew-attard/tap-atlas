@@ -1255,7 +1255,7 @@
 
     // US-1.8.10 (D165): a warning the import already noted (same kind pair, same region, same ref) shows once, under the
     // region's notes; the heading of the other notes says how many were folded; unmatched warnings stay
-    T.test('X-owner-sources-fold', 'The data sources panel folds a check warning into the saved import note that already covers it and says so in the heading', function (a) {
+    T.test('TPV-TC-923', 'The data sources panel folds a check warning into the saved import note that already covers it and says so in the heading', function (a) {
       run(function () {
         var p = T_FIXTURE('mini');
         p.regions[0].partners = [];
@@ -1276,7 +1276,7 @@
     });
 
     // US-1.8.11 (D166): the reports for workbook owners after the regions, before the other notes
-    T.test('X-owner-sources-reports', 'The data sources panel lists a report per workbook, with its count, Download and Copy as text, then All workbooks, between the regions and the other notes', function (a) {
+    T.test('TPV-TC-938', 'The data sources panel lists a report per workbook, with its count, Download and Copy as text, then All workbooks, between the regions and the other notes', function (a) {
       var download = null, blobs = [], savedUrl = URL.createObjectURL, savedDl = TAP.panelExport.download, clipText = null, savedClip = TAP.panelTable.clipboard;
       URL.createObjectURL = function (b) { blobs.push(b); return 'blob:test-' + blobs.length; };
       TAP.panelExport.download = function (url, name) { download = { url: url, name: name }; };
@@ -1313,7 +1313,7 @@
     });
 
     // US-1.8.12 (D169): a saved note's cells show under the values in the data sources panel
-    T.test('X-cells-sources', 'The data sources panel shows a saved note\u2019s address under the value found and the cells it was compared with under the value expected', function (a) {
+    T.test('TPV-TC-956', 'The data sources panel shows a saved note\u2019s address under the value found and the cells it was compared with under the value expected', function (a) {
       run(function () {
         var p = T_FIXTURE('mini');
         p.regions[0].source.notes = [{ message: 'Revenue 490 is above the order intake 480 for 2027, direct, newBusiness.', sheet: '5. Recap', cell: 'E30, E33', kind: 'revenueAbove',

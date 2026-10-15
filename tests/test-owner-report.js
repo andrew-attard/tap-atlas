@@ -3,7 +3,7 @@
  * Purpose: Tests of the review report per workbook (US-1.8.11, D166): the self-contained HTML page (structure, sections,
  *          nothing technical, no request, D24 sizes, the label), the text version, the all-workbooks page, the file names
  *          and the download.
- * Provides: test cases X-owner-report-* and X-cells-owner-* (the cells behind both values, and a workbook left out, US-1.8.12,
+ * Provides: test cases TPV-TC-927 to 937 and TPV-TC-951 to 953 (the cells behind both values, and a workbook left out, US-1.8.12,
  *           D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.ownerReport, TAP.warningGroups, TAP.content, TAP.shell, TAP.format)
  * Used by: tests.html
@@ -50,7 +50,7 @@
   var COLS = { where: t('check.groups.colWhere'), found: t('check.groups.colFound'), expected: t('check.groups.colExpected') };
 
   T.suite('owner-report', function () {
-    T.test('X-owner-report-structure', 'The page parses: lang, charset, viewport, the title with the region, the app name, the facts, what to do, the summary and the closing line', function (a) {
+    T.test('TPV-TC-927', 'The page parses: lang, charset, viewport, the title with the region, the app name, the facts, what to do, the summary and the closing line', function (a) {
       var r = TAP.ownerReport.build(full(), { now: NOW }), doc = parse(r.html), want = t('ownerReport.title', { region: 'Region A' });
       a.ok(/^<!doctype html>\n<html lang="en">/i.test(r.html), 'doctype and lang first');
       a.equal(doc.documentElement.getAttribute('lang'), 'en');
@@ -69,7 +69,7 @@
       a.ok(r.html.indexOf('[ownerReport') < 0 && r.html.indexOf('[check.') < 0 && r.html.indexOf('—') < 0, 'every phrase has wording, no em dash');
     });
 
-    T.test('X-owner-report-sections', 'One section per kind in the groups’ order: the title with the count, the intro once, a table with only the filled columns, the sheet › cell under Where', function (a) {
+    T.test('TPV-TC-928', 'One section per kind in the groups’ order: the title with the count, the intro once, a table with only the filled columns, the sheet › cell under Where', function (a) {
       var doc = parse(TAP.ownerReport.build(full(), { now: NOW }).html), secs = qsa('section.kind', doc);
       a.equal(secs.length, 3, 'three kinds');
       a.deepEqual(secs.map(function (s) { return txt(qs('h2', s)); }), [title('emptySection', 2, true), title('revenueAbove', 1, true), title('share', 1)], 'titles with counts, notes first');
@@ -88,7 +88,7 @@
       a.ok(qsa('th[scope="col"]', doc).length >= 6, 'column headers carry their scope');
     });
 
-    T.test('X-owner-report-self-contained', 'No script, link, image or frame, no web address, no font file, no data path and no technical message', function (a) {
+    T.test('TPV-TC-929', 'No script, link, image or frame, no web address, no font file, no data path and no technical message', function (a) {
       var r = TAP.ownerReport.build(full(), { now: NOW }), doc = parse(r.html);
       a.equal(qsa('script, link, img, iframe, object, embed, video, audio', doc).length, 0, 'nothing that loads or runs');
       a.ok(!URL_RE.test(r.html), 'no web address in the page');
@@ -101,7 +101,7 @@
       a.ok(txt(doc.body).indexOf('<') < 0, 'text is escaped');
     });
 
-    T.test('X-owner-report-escaping', 'Text from the data is escaped, so a name with angle brackets or quotes cannot inject markup', function (a) {
+    T.test('TPV-TC-930', 'Text from the data is escaped, so a name with angle brackets or quotes cannot inject markup', function (a) {
       var W = TAP.warningGroups, item = W.fromImport([{ message: 'm', sheet: '<b>S</b>', cell: 'A1', kind: 'emptySection', item: 'Row "x" & <i>y</i>', found: null, expected: null }], 'Reg <ion> & "A"')[0];
       var r = TAP.ownerReport.build(region([item], 'Reg <ion> & "A"'), { now: NOW }), doc = parse(r.html);
       a.equal(qsa('b, i', doc).length, 0, 'no element made from the data');
@@ -110,7 +110,7 @@
       a.equal(doc.title, t('ownerReport.title', { region: 'Reg <ion> & "A"' }));
     });
 
-    T.test('X-owner-report-sizes', 'The style block sets body and table text at 16 px or more and headings larger, the theme’s font, and print rules that keep rows whole (D24)', function (a) {
+    T.test('TPV-TC-931', 'The style block sets body and table text at 16 px or more and headings larger, the theme’s font, and print rules that keep rows whole (D24)', function (a) {
       var css = qs('style', parse(TAP.ownerReport.build(full(), { now: NOW }).html)).textContent;
       function size(sel) { var m = new RegExp('(?:^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*font-size: (\\d+)px').exec(css); return m ? +m[1] : NaN; }
       a.ok(size('body') >= 16, 'body ' + size('body') + ' px');
@@ -122,7 +122,7 @@
       a.ok(/@media print \{[^]*break-after: avoid/.test(css), 'a heading stays with its table');
     });
 
-    T.test('X-owner-report-label', 'The confidentiality label shows in the page and the text when the shell gives one, and not otherwise', function (a) {
+    T.test('TPV-TC-932', 'The confidentiality label shows in the page and the text when the shell gives one, and not otherwise', function (a) {
       var on = withLabel({ kind: 'internal', text: 'Internal: for the planning team' }, function () { return TAP.ownerReport.build(full(), { now: NOW }); });
       var doc = parse(on.html);
       a.equal(txt(qs('.label', doc)), 'Internal: for the planning team', 'the label under the title');
@@ -134,7 +134,7 @@
       a.equal(qsa('.label', parse(all.html)).length, 1, 'once on the all-workbooks page');
     });
 
-    T.test('X-owner-report-empty', 'A workbook with nothing to review says so: no summary, no section, the count reads "Nothing to review"', function (a) {
+    T.test('TPV-TC-933', 'A workbook with nothing to review says so: no summary, no section, the count reads "Nothing to review"', function (a) {
       var r = TAP.ownerReport.build(region([]), { now: NOW }), doc = parse(r.html);
       a.equal(qsa('section.kind', doc).length, 0, 'no section');
       a.ok(!qs('.summary', doc), 'no summary line');
@@ -146,7 +146,7 @@
       a.equal(TAP.ownerReport.countText(full()), t('ownerReport.ui.count', { n: 4 }));
     });
 
-    T.test('X-owner-report-text', 'The text version has the app name, the title, the facts, what to do, the summary, then per kind the title, the intro and one line per item', function (a) {
+    T.test('TPV-TC-934', 'The text version has the app name, the title, the facts, what to do, the summary, then per kind the title, the intro and one line per item', function (a) {
       var r = TAP.ownerReport.build(full(), { now: NOW }), lines = r.text.split('\n'), trimmed = lines.map(function (l) { return l.trim(); });
       var at = function (s) { var i = trimmed.indexOf(s); a.ok(i >= 0, 'line: ' + s); return i; };
       var name = at(t('app.name')), head = at(t('ownerReport.title', { region: 'Region A' }));
@@ -163,7 +163,7 @@
       a.ok(r.text.indexOf('<') < 0 && r.text.indexOf('&amp;') < 0, 'plain text, nothing escaped');
     });
 
-    T.test('X-owner-report-all', 'buildAll has a contents list of anchors within the file and every region as a section with its own heading, the kinds a level down', function (a) {
+    T.test('TPV-TC-935', 'buildAll has a contents list of anchors within the file and every region as a section with its own heading, the kinds a level down', function (a) {
       var regions = [full(), region([], 'Region B')], r = TAP.ownerReport.buildAll(regions, { now: NOW }), doc = parse(r.html);
       a.equal(doc.title, t('ownerReport.allTitle'));
       a.equal(txt(qs('h1', doc)), t('ownerReport.allTitle'));
@@ -183,7 +183,7 @@
       a.equal(r.fileName, 'All workbooks data review 2026-10-15.html');
     });
 
-    T.test('X-owner-report-filenames', 'File names carry the region and the date, year first, with unsafe characters replaced by one space', function (a) {
+    T.test('TPV-TC-936', 'File names carry the region and the date, year first, with unsafe characters replaced by one space', function (a) {
       a.equal(TAP.ownerReport.build(full(), { now: NOW }).fileName, 'Region A data review 2026-10-15.html');
       a.equal(TAP.ownerReport.build(region([], 'North/East: "A"?  <B>|C*'), { now: NOW }).fileName, 'North East A B C data review 2026-10-15.html');
       a.equal(TAP.ownerReport.build(region([], 'Région É'), { now: '2026-01-05T23:59:00Z' }).fileName, 'Région É data review 2026-01-05.html', 'letters with accents stay');
@@ -204,7 +204,7 @@
     }
     function cellRegion(extra) { return Object.assign(region(TAP.warningGroups.fromImport(cellNotes(), 'Region A')), extra || {}); }
 
-    T.test('X-cells-owner-html', 'The page shows the address under the value found and every address under the value expected, not under Where; a note without cells keeps its address under Where', function (a) {
+    T.test('TPV-TC-951', 'The page shows the address under the value found and every address under the value expected, not under Where; a note without cells keeps its address under Where', function (a) {
       var doc = parse(TAP.ownerReport.build(cellRegion(), { now: NOW }).html), secs = qsa('section.kind', doc);
       a.equal(secs.length, 3);
       a.deepEqual(qsa('td', qs('tbody tr', secs[0])).map(txt), ['2027, Direct, new business', '490 ' + R + 'E30, E33', '480 4. Partner › E5 and E13'], 'where, found with its cells, expected with its cells');
@@ -214,7 +214,7 @@
       a.deepEqual(qsa('td', qs('tbody tr', secs[2])).map(txt), ['Partner 4. Partner › B10'], 'without cells: the address under Where');
     });
 
-    T.test('X-cells-owner-text', 'The text version writes each address in brackets after its value, and the found address no longer after the item', function (a) {
+    T.test('TPV-TC-952', 'The text version writes each address in brackets after its value, and the found address no longer after the item', function (a) {
       var r = TAP.ownerReport.build(cellRegion(), { now: NOW }), trimmed = r.text.split('\n').map(function (l) { return l.trim(); });
       var line = function (s) { a.ok(trimmed.indexOf(t('ownerReport.textItem', { line: s })) >= 0, 'line: ' + s); };
       line('2027, Direct, new business: ' + t('check.groups.rowFound', { found: '490' }) + ' (' + R + 'E30, E33), ' + t('check.groups.rowExpected', { expected: '480' }) + ' (4. Partner › E5 and E13)');
@@ -223,7 +223,7 @@
       a.equal(r.text.split('E30').length, 2, 'the found address once');
     });
 
-    T.test('X-cells-owner-left-out', 'A workbook left out of the import says so in one sentence under the facts, its notes still listed; an imported one does not', function (a) {
+    T.test('TPV-TC-953', 'A workbook left out of the import says so in one sentence under the facts, its notes still listed; an imported one does not', function (a) {
       var r = TAP.ownerReport.build(cellRegion({ leftOut: true }), { now: NOW }), doc = parse(r.html), p = qs('.left-out', doc);
       a.ok(p, 'the sentence');
       a.equal(txt(p), t('ownerReport.leftOut'));
@@ -237,7 +237,7 @@
       a.ok(t('ownerReport.leftOut').indexOf('—') < 0, 'no em dash');
     });
 
-    T.test('X-owner-report-download', 'download makes a text/html Blob of the page and hands its URL and file name to TAP.panelExport.download', function (a) {
+    T.test('TPV-TC-937', 'download makes a text/html Blob of the page and hands its URL and file name to TAP.panelExport.download', function (a) {
       var saved = TAP.panelExport.download, savedUrl = URL.createObjectURL, calls = [], blobs = [];
       TAP.panelExport.download = function (url, name) { calls.push({ url: url, name: name }); };
       URL.createObjectURL = function (b) { blobs.push(b); return 'blob:test-' + blobs.length; };

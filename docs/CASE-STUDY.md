@@ -66,7 +66,9 @@ The job: one place that plays each region's plan back, compares regions on the s
 
 | Readable notes, `v0.5.3` | The import's own notes carry a kind, the row, the value found and the value expected, and show grouped by kind under each workbook; inside every group, notes and warnings alike, the items are a short table in plain words with ids shown as labels | 1 (US-1.8.9) | 9 (TPV-TC-898 to 906) | CI's Chrome run on every pull request (1,746 automated checks); `verify.sh --release --browser none`; the owner's own look in Edge (D106) |
 
-In total: 137 stories, 906 test cases and 164 decisions, built over twelve days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2, about 25 in Phase 3, about 50 in the review pass, about 25 in Phase 4, about 40 in the polish release, about 10 for the import, 3 for the real-data fixes, 3 for the readable warnings and 2 for the readable notes.
+| Owner reports, `v0.5.4` | A self-contained review report per workbook for its owner, with a plain-text copy for an email; a problem the importer noted and the contract check repeated shown once; the cells behind both values of a comparing note; the Tier 3 warning dropped and the services ratio limit raised to 4, both at the leaders' word | 3 (US-1.8.10 to US-1.8.12) | 50 (TPV-TC-907 to 956) | CI's Chrome run on every pull request (1,795 automated checks); `verify.sh --release --browser none`; the owner's own look in Edge (D106) |
+
+In total: 140 stories, 956 test cases and 170 decisions, built over twelve days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2, about 25 in Phase 3, about 50 in the review pass, about 25 in Phase 4, about 40 in the polish release, about 10 for the import, 3 for the real-data fixes, 3 for the readable warnings, 2 for the readable notes and 5 for the owner reports.
 
 ![New business on the sample data: the question the view answers, the observation worth discussing first, and the industry chart](screenshots/new-business.png)
 

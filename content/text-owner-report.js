@@ -24,7 +24,7 @@ Object.assign(window.TAP_CONTENT.text, {
     imported: 'Imported',
     reportDate: 'Report date',
     // A workbook the import could not use (a reading with errors): one plain sentence under the facts, nothing technical (D169)
-    leftOut: 'This workbook could not be imported; the RevOps owner has the details.',
+    leftOut: 'This workbook could not be imported; the person who runs the import has the details.',
     todo: 'Open the workbook and go to each cell listed below. Fix what needs fixing, let the workbook recalculate, save it and send the file back. A blank cell reads as "not provided" in the app, which is fine where that is what you mean.',
     summary: '{n} items in {k} groups',
     summaryOne: '1 item in 1 group',

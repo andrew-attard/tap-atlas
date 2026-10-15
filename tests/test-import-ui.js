@@ -4,11 +4,11 @@
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
  * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), TPV-TC-905,
- *           X-owner-ui-* (the folded warnings heading, US-1.8.10, and the reports for workbook owners, US-1.8.11), X-cells-* (the cells line
+ *           TPV-TC-922 to 926 (the folded warnings heading, US-1.8.10, and the reports for workbook owners, US-1.8.11), TPV-TC-939 to 956 (the cells line
  *           in the copied report and the left-out sentence, US-1.8.12, D169; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
- * Owner: UI stream (#587); the X-owner-ui-* cases by REPORTS (#615, #616)
+ * Owner: UI stream (#587); the TPV-TC-922 to 926 cases by REPORTS (#615, #616)
  */
 (function (TAP) {
   'use strict';
@@ -454,7 +454,7 @@
     }
     function today() { return new Date().toISOString().slice(0, 10); }
 
-    T.test('X-owner-ui-folded', 'A warning the import already noted shows once, under the notes; the warnings heading says how many were folded; an unmatched warning still shows', function (a) {
+    T.test('TPV-TC-922', 'A warning the import already noted shows once, under the notes; the warnings heading says how many were folded; an unmatched warning still shows', function (a) {
       panel(function (host) {
         TAP.importPanel.show(paired());
         var sec = qs('.tap-imp__check-warnings', host), h = qs('h4', sec);
@@ -478,7 +478,7 @@
       });
     });
 
-    T.test('X-owner-ui-list', 'The reports for workbook owners: the section after the summary and before the regions, a row per workbook with its count, Download and Copy as text, then All workbooks', function (a) {
+    T.test('TPV-TC-924', 'The reports for workbook owners: the section after the summary and before the regions, a row per workbook with its count, Download and Copy as text, then All workbooks', function (a) {
       panel(function (host) {
         TAP.importPanel.show(paired());
         var sec = qs('.tap-imp__owners', host);
@@ -505,7 +505,7 @@
       });
     });
 
-    T.test('X-owner-ui-download', 'Download hands a text/html Blob with the workbook\u2019s file name to TAP.panelExport.download, and All workbooks the combined one', function (a) {
+    T.test('TPV-TC-925', 'Download hands a text/html Blob with the workbook\u2019s file name to TAP.panelExport.download, and All workbooks the combined one', function (a) {
       var download = spy(), blobs = [], savedUrl = URL.createObjectURL;
       URL.createObjectURL = function (b) { blobs.push(b); return 'blob:test-' + blobs.length; };
       try {
@@ -527,7 +527,7 @@
       } finally { URL.createObjectURL = savedUrl; }
     });
 
-    T.test('X-owner-ui-copy', 'Copy as text puts the workbook\u2019s report as text on the clipboard; when the clipboard refuses, the text is shown to copy by hand', function (a) {
+    T.test('TPV-TC-926', 'Copy as text puts the workbook\u2019s report as text on the clipboard; when the clipboard refuses, the text is shown to copy by hand', function (a) {
       var clip = spy(function () { return Promise.resolve(true); });
       return withFakes([[TAP.panelTable, 'clipboard', clip]], function () {
         return panel(function (host) {
@@ -558,7 +558,7 @@
 
     /* ---------- US-1.8.12 (D169): the cells line in the copied report, the left-out sentence in an owner's report ---------- */
 
-    T.test('X-cells-report', 'The copied report writes the cells behind a comparing note on one line after its plain row, found then expected; a note without cells has none', function (a) {
+    T.test('TPV-TC-954', 'The copied report writes the cells behind a comparing note on one line after its plain row, found then expected; a note without cells has none', function (a) {
       var r = canned();
       r.regions[1].notes = [
         { message: 'Revenue 490 is above the order intake 480 for 2027, direct, newBusiness.', sheet: '5. Recap', cell: 'E30, E33', kind: 'revenueAbove', item: '2027, Direct, new business', found: 490, expected: 480, ref: '2027|direct|newBusiness',
@@ -578,7 +578,7 @@
       a.equal(trimmed.filter(function (l) { return l.indexOf('cells:') === 0; }).length, 2, 'two cells lines in all');
     });
 
-    T.test('X-cells-ui-left-out', 'The Import report marks a reading with errors as left out for its owner\u2019s report, which says so in plain words and carries no error text', function (a) {
+    T.test('TPV-TC-955', 'The Import report marks a reading with errors as left out for its owner\u2019s report, which says so in plain words and carries no error text', function (a) {
       var regions = TAP.importReport.ownerRegions(canned());
       a.deepEqual(regions.map(function (r) { return !!r.leftOut; }), [false, false, true], 'Region C alone');
       var r = TAP.ownerReport.build(regions[2]), sentence = TAP.content.text('ownerReport.leftOut');
