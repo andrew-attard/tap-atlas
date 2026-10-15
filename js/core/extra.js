@@ -152,65 +152,68 @@
   }
   function orList(list) { return list.slice(0, -1).join(', ') + TAP.content.text('check.or') + list[list.length - 1]; }
 
-  // [{path, region, item, expected, found, message}], in the shape TAP.check.run gives its warnings.
+  // [{path, region, item, field, kind, expected, found, message}], in the shape TAP.check.run gives its warnings. The kind
+  // is "extra.<key>" (the key of the sentence below); the field is the path's last name, or opts.field.
   function check(plan) {
     var out = [], known = Object.create(null);   // section id -> {name, keys, broken}; ids from the file, so no prototype
-    function warn(path, sec, expected, v, opts) {
+    function warn(path, sec, key, v, opts) {
       opts = opts || {};
+      var expected = key === 'sourceRow' ? TAP.content.text('check.expect.sourceRow') : t('check.' + key, opts.vars);
       var plain = opts.plain || isObj(v) || Array.isArray(v) || v === undefined, text = opts.plain ? String(v) : described(v);
-      var vars = { path: path, section: sec, expected: expected, found: text };
-      out.push({ path: path, region: opts.region || null, item: opts.item || sec || null, expected: expected, found: plain ? text : v,
+      var vars = { path: path, section: sec, expected: expected, found: text }, name = /\.([A-Za-z_]\w*)$/.exec(path);
+      out.push({ path: path, region: opts.region || null, item: opts.item || sec || null, field: opts.field || (name ? name[1] : null),
+        kind: 'extra.' + key, expected: expected, found: plain ? text : v,
         message: sec ? t('check.message', vars) : TAP.content.text('check.message', vars) });
     }
     if (!isObj(plan) || !isObj(plan.meta)) return out;
     var list = plan.meta.extraSections;
-    if (list !== undefined && !Array.isArray(list)) warn('meta.extraSections', null, t('check.list'), list);
+    if (list !== undefined && !Array.isArray(list)) warn('meta.extraSections', null, 'list', list);
     (Array.isArray(list) ? list : []).forEach(function (s, i) {
       var p = 'meta.extraSections[' + i + ']';
-      if (!isObj(s)) return warn(p, null, t('check.section'), s);
+      if (!isObj(s)) return warn(p, null, 'section', s);
       var name = filled(s.title) ? s.title : filled(s.id) ? s.id : '#' + (i + 1), keys = Object.create(null), entry = null;
-      if (!filled(s.id) || known[s.id]) warn(p + '.id', name, t('check.id'), s.id); else entry = known[s.id] = { name: name, keys: keys };
+      if (!filled(s.id) || known[s.id]) warn(p + '.id', name, 'id', s.id); else entry = known[s.id] = { name: name, keys: keys };
       // A section left out of the view (an id with a colon, no usable column) gets one warning; its rows none
-      if (entry && !goodId(s.id)) { entry.broken = true; return warn(p + '.id', name, t('check.id'), s.id); }
-      if (!filled(s.title)) warn(p + '.title', name, t('check.title'), s.title);
-      if (s.intro != null && !isStr(s.intro)) warn(p + '.intro', name, t('check.intro'), s.intro);
+      if (entry && !goodId(s.id)) { entry.broken = true; return warn(p + '.id', name, 'id', s.id); }
+      if (!filled(s.title)) warn(p + '.title', name, 'title', s.title);
+      if (s.intro != null && !isStr(s.intro)) warn(p + '.intro', name, 'intro', s.intro);
       if (!usable(s.columns).length) {
         if (entry) entry.broken = true;
-        return warn(p + '.columns', name, t('check.columns'), s.columns);
+        return warn(p + '.columns', name, 'columns', s.columns);
       }
       s.columns.forEach(function (c, k) {
         var cp = p + '.columns[' + k + ']';
-        if (!isObj(c)) return warn(cp, name, t('check.column'), c);
-        if (!filled(c.key) || keys[c.key] || RESERVED.indexOf(c.key) >= 0) warn(cp + '.key', name, t('check.key'), c.key); else keys[c.key] = c;
-        if (!filled(c.label)) warn(cp + '.label', name, t('check.label'), c.label);
-        if (UNITS.indexOf(c.unit) < 0) warn(cp + '.unit', name, t('check.unit', { list: orList(UNITS) }), c.unit);
-        if (KINDS.indexOf(c.kind) < 0) warn(cp + '.kind', name, t('check.kind', { list: orList(KINDS) }), c.kind);
-        if (c.column != null && !(isStr(c.column) && /^[A-Z]{1,3}$/.test(c.column))) warn(cp + '.column', name, t('check.letter'), c.column);
+        if (!isObj(c)) return warn(cp, name, 'column', c);
+        if (!filled(c.key) || keys[c.key] || RESERVED.indexOf(c.key) >= 0) warn(cp + '.key', name, 'key', c.key); else keys[c.key] = c;
+        if (!filled(c.label)) warn(cp + '.label', name, 'label', c.label);
+        if (UNITS.indexOf(c.unit) < 0) warn(cp + '.unit', name, 'unit', c.unit, { vars: { list: orList(UNITS) } });
+        if (KINDS.indexOf(c.kind) < 0) warn(cp + '.kind', name, 'kind', c.kind, { vars: { list: orList(KINDS) } });
+        if (c.column != null && !(isStr(c.column) && /^[A-Z]{1,3}$/.test(c.column))) warn(cp + '.column', name, 'letter', c.column);
       });
     });
     (Array.isArray(plan.regions) ? plan.regions : []).forEach(function (r, i) {
       if (!isObj(r) || r.extra === undefined) return;
       var rp = 'regions[' + i + '].extra', region = isStr(r.name) ? r.name : isStr(r.id) ? r.id : null;
-      if (!isObj(r.extra)) return warn(rp, null, t('check.extra'), r.extra, { region: region });
+      if (!isObj(r.extra)) return warn(rp, null, 'extra', r.extra, { region: region });
       Object.keys(r.extra).forEach(function (id) {
         var sp = rp + '.' + id, s = known[id], rows = r.extra[id];
-        if (!s) return warn(sp, id, t('check.known'), id, { region: region, plain: true });
+        if (!s) return warn(sp, id, 'known', id, { region: region, plain: true });
         var name = s.name, keys = s.keys, rowsSeen = {};
         if (s.broken) return;
-        if (!Array.isArray(rows)) return warn(sp, name, t('check.rows'), rows, { region: region });
+        if (!Array.isArray(rows)) return warn(sp, name, 'rows', rows, { region: region });
         rows.forEach(function (o, k) {
           var op = sp + '[' + k + ']', item = isObj(o) && isRow(o.sourceRow) ? t('sourceRow', { row: o.sourceRow }) : null;
           var at = { region: region, item: item };
-          if (!isObj(o)) return warn(op, name, t('check.row'), o, at);
-          if (!isRow(o.sourceRow)) warn(op + '.sourceRow', name, TAP.content.text('check.expect.sourceRow'), o.sourceRow, at);
-          else if (rowsSeen[o.sourceRow]) warn(op + '.sourceRow', name, t('check.uniqueRow'), o.sourceRow, at);
+          if (!isObj(o)) return warn(op, name, 'row', o, at);
+          if (!isRow(o.sourceRow)) warn(op + '.sourceRow', name, 'sourceRow', o.sourceRow, at);
+          else if (rowsSeen[o.sourceRow]) warn(op + '.sourceRow', name, 'uniqueRow', o.sourceRow, at);
           rowsSeen[o.sourceRow] = true;
           Object.keys(o).forEach(function (key) {
             if (key === 'sourceRow') return;
             var c = keys[key], v = o[key];
-            if (!c) return warn(op, name, t('check.rowKey'), key, { region: region, item: item, plain: true });
+            if (!c) return warn(op, name, 'rowKey', key, { region: region, item: item, plain: true, field: key });
             if (v === null || UNITS.indexOf(c.unit) < 0) return;
-            if (NUMERIC[c.unit] ? !isNum(v) : !isStr(v)) warn(op + '.' + key, name, t(NUMERIC[c.unit] ? 'check.number' : 'check.text'), v, at);
+            if (NUMERIC[c.unit] ? !isNum(v) : !isStr(v)) warn(op + '.' + key, name, NUMERIC[c.unit] ? 'number' : 'text', v, at);
           });
         });
       });
