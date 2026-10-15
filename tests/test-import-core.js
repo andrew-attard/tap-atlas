@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, READ stream (docs/ARCHITECTURE.md section 20): the workbook reader, the mapping,
  *          the value kinds, the field tables, the row sections and the grid blocks. Tiny workbooks are built here with
  *          SheetJS itself, so nothing depends on the workbook writer fixture.
- * Provides: test cases TPV-TC-798 to TPV-TC-826, X-notes2-read-kinds (the readers' note kinds, D163), TPV-TC-868 to 871 (D158, D160)
+ * Provides: test cases TPV-TC-798 to TPV-TC-826, TPV-TC-898 (the readers' note kinds, D163), TPV-TC-868 to 871 (D158, D160)
  * Depends on: tests/harness.js, the app scripts, vendor/xlsx.mini.min.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
  * Owner: READ stream (#585)
@@ -941,7 +941,7 @@
     });
 
     // US-1.8.9 (D163): every note the readers raise carries its kind, the row and field in words, and what the cell held
-    T.test('X-notes2-read-kinds', 'Reading notes and errors carry kind, item (row and field in words), found and expected', function (a) {
+    T.test('TPV-TC-898', 'Reading notes and errors carry kind, item (row and field in words), found and expected', function (a) {
       function kept() {
         var c = ctx(sampleMap());
         c.note = function (m, s, cell, x) { c.notes.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };

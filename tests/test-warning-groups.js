@@ -3,7 +3,7 @@
  * Purpose: Tests of the warning groups component (US-1.8.8, D161; US-1.8.9, D163, D164): the check's warnings grouped by
  *          workbook, then by kind, and the import's notes grouped by kind, each group a table of where, found and expected
  *          in plain words, as both panels and the copied report show them.
- * Provides: test cases TPV-TC-877 to TPV-TC-885, X-notes2-shape, X-notes2-kinds-render, X-notes2-labels, X-notes2-fallback, X-notes2-size
+ * Provides: test cases TPV-TC-877 to TPV-TC-885, TPV-TC-900, TPV-TC-901, TPV-TC-902, TPV-TC-903, TPV-TC-904
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.warningGroups, TAP.warningTable, TAP.importWrite, TAP.content)
  * Used by: tests.html
  * Owner: WARN stream (#605), NOTES2 stream (#612)
@@ -191,7 +191,7 @@
 
     /* ---------- US-1.8.9 (D163, D164): import notes by kind, tables inside every group ---------- */
 
-    T.test('X-notes2-shape', 'fromImport and fromCheck normalize to the same shape: region, kind, title, intro, where, cell, found, expected, tech', function (a) {
+    T.test('TPV-TC-900', 'fromImport and fromCheck normalize to the same shape: region, kind, title, intro, where, cell, found, expected, tech', function (a) {
       var W = TAP.warningGroups, keys = ['region', 'kind', 'title', 'intro', 'where', 'cell', 'found', 'expected', 'tech'];
       var ni = W.fromImport(notes(), 'Region A'), ci = W.fromCheck(set(), { lookups: LOOKUPS });
       a.equal(ni.length, 4);
@@ -207,7 +207,7 @@
       a.deepEqual(W.normalize(ni), ni, 'and leaves normalized items alone');
     });
 
-    T.test('X-notes2-kinds-render', 'renderKinds makes one details per kind with the count, the intro once, a table with only the filled columns, closed above three', function (a) {
+    T.test('TPV-TC-901', 'renderKinds makes one details per kind with the count, the intro once, a table with only the filled columns, closed above three', function (a) {
       var r = renderKinds(TAP.warningGroups.fromImport(notes(), 'Region A')), k = qsa('details.tap-wg__kind', r.host);
       a.equal(qsa('details.tap-wg', r.host).length, 0, 'no workbook level');
       a.deepEqual(k.map(function (d) { return d.getAttribute('data-kind'); }), ['emptySection', 'revenueAbove', 'badValue'], 'kinds in first-seen order');
@@ -230,7 +230,7 @@
       a.equal(qsa('details.tap-wg__kind[data-kind="emptySection"]', renderKinds(TAP.warningGroups.fromImport(notes().concat(notes()), 'Region A'), { openUpTo: 4 }).host)[0].open, true, 'the limit can be set');
     });
 
-    T.test('X-notes2-labels', 'Ids inside a warning’s item or figures read as labels: channels by lookup name, motions and types in words, segments by name, nothing quoted', function (a) {
+    T.test('TPV-TC-902', 'Ids inside a warning’s item or figures read as labels: channels by lookup name, motions and types in words, segments by name, nothing quoted', function (a) {
       var list = [
         w('Region A', 'revenueWithin', null, '2027, direct, customerGrowth', 'revenue no higher than the order intake for 2027, direct, customerGrowth (400)', 450, 'regions[0].revenue.x', { key: '2027, direct, customerGrowth', value: 400 }),
         w('Region A', 'segmentRule', 'segment', 'Fictional Account 2 (row 11)', 'the segment the thresholds give ("core")', 'growth', 'regions[0].customerGrowth.accounts[1].segment', { segment: '"core"' }),
@@ -247,7 +247,7 @@
       a.equal(bare.where, '2027, ' + t('importPanel.words.channels.direct') + ', ' + t('importPanel.words.motions.customerGrowth'));
     });
 
-    T.test('X-notes2-fallback', 'A note without a kind (an older data file) groups by its message, with the address alone and no found or expected column', function (a) {
+    T.test('TPV-TC-903', 'A note without a kind (an older data file) groups by its message, with the address alone and no found or expected column', function (a) {
       var old = [{ message: 'The Customer Growth section is empty.', sheet: '3. Customer Growth', cell: 'A10' }, { message: 'The Customer Growth section is empty.', sheet: '4. Partner', cell: null }];
       var r = renderKinds(TAP.warningGroups.fromImport(old, 'Region C')), k = qsa('details.tap-wg__kind', r.host);
       a.equal(k.length, 1, 'one group for the two notes of one message');
@@ -262,7 +262,7 @@
       a.deepEqual([fresh.kind, fresh.title, fresh.intro, fresh.where, fresh.found, fresh.expected], ['brandNew', 'Something new.', '', 'Row 1', '1', '2']);
     });
 
-    T.test('X-notes2-size', 'In a kind group every summary, intro, heading, cell and address is body text, 16 px and up, and the table has no fixed width (D24)', function (a) {
+    T.test('TPV-TC-904', 'In a kind group every summary, intro, heading, cell and address is body text, 16 px and up, and the table has no fixed width (D24)', function (a) {
       var r = renderKinds(TAP.warningGroups.fromImport(notes(), 'Region A'));
       var nodes = qsa('summary, .tap-wg__intro, th, td, .tap-wg__cell', r.host);
       a.ok(nodes.length >= 12, 'nodes measured: ' + nodes.length);

@@ -64,7 +64,9 @@ The job: one place that plays each region's plan back, compares regions on the s
 
 | Readable warnings, `v0.5.2` | What the first passing real import taught: the contract check's warnings carry a kind and show grouped by workbook then kind, collapsible and in plain words, in the Import report and the data sources panel; notes under a chart fold by measure and by the regions left out, three lines at most with the rest behind "Show N more notes" | 2 (US-1.8.8, US-1.6.7) | 23 (TPV-TC-875 to 897) | CI's Chrome run on every pull request (1,737 automated checks); `verify.sh --release --browser none`; the owner's own look in Edge (D106) |
 
-In total: 136 stories, 897 test cases and 162 decisions, built over twelve days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2, about 25 in Phase 3, about 50 in the review pass, about 25 in Phase 4, about 40 in the polish release, about 10 for the import, 3 for the real-data fixes and 3 for the readable warnings.
+| Readable notes, `v0.5.3` | The import's own notes carry a kind, the row, the value found and the value expected, and show grouped by kind under each workbook; inside every group, notes and warnings alike, the items are a short table in plain words with ids shown as labels | 1 (US-1.8.9) | 9 (TPV-TC-898 to 906) | CI's Chrome run on every pull request (1,746 automated checks); `verify.sh --release --browser none`; the owner's own look in Edge (D106) |
+
+In total: 137 stories, 906 test cases and 164 decisions, built over twelve days. About 110 pull requests were merged in Phase 1, about 60 in Phase 2, about 25 in Phase 3, about 50 in the review pass, about 25 in Phase 4, about 40 in the polish release, about 10 for the import, 3 for the real-data fixes, 3 for the readable warnings and 2 for the readable notes.
 
 ![New business on the sample data: the question the view answers, the observation worth discussing first, and the industry chart](screenshots/new-business.png)
 

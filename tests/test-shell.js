@@ -1223,7 +1223,7 @@
     });
 
     // US-1.8.9 (D163, D164): a region's import notes grouped by kind as tables; a note without a kind in a group of its own
-    T.test('X-notes2-sources', 'The data sources panel groups a region\u2019s import notes by kind with a table each; a note without a kind lands in the fallback group', function (a) {
+    T.test('TPV-TC-906', 'The data sources panel groups a region\u2019s import notes by kind with a table each; a note without a kind lands in the fallback group', function (a) {
       run(function () {
         var p = T_FIXTURE('mini');
         p.regions[0].source.notes = [
