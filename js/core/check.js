@@ -6,7 +6,9 @@
  *             js/core/check-rows.js (the regions, at call time), js/core/check-p4.js (the Phase 4 parts, at call time)
  * Used by: js/core/data.js (on load)
  *
- * run(plan) returns {errors, warnings}. Each item is {path, region, item, expected, found, message}.
+ * run(plan) returns {errors, warnings}. Each item is {path, region, item, field, kind, expected, found, message}: field is
+ * the key checked (null for an item as a whole), kind the key of the expected sentence (check.expect.<kind>, or the type
+ * name for a type error), so the panels can group the warnings and word them plainly (US-1.8.8, js/ui/warning-groups.js).
  * Errors would break views, so loading stops. Warnings load anyway and go to the data sources panel.
  * null (a blank, "not provided") is allowed for every leader input and system figure.
  * Fields and sections the contract doesn't name are ignored (D47). Extra sections are checked by js/core/extra.js, warnings only.
@@ -90,21 +92,32 @@
     recap: { year: 'year', channel: 'channel', motion: 'motion', type: 'recapType', value: 'num?' }
   };
 
+  // The expected sentence with its kind: {kind, text}. entry() keeps the kind and writes the text.
+  function expect(kind, vars) { return { kind: kind, text: say('expect.' + kind, vars) }; }
   function expectFor(name, nullable, env) {
-    return nullable && TYPES[name].plain ? say('orBlank', { what: TYPES[name].expect(env) }) : TYPES[name].expect(env);
+    return { kind: name, text: nullable && TYPES[name].plain ? say('orBlank', { what: TYPES[name].expect(env) }) : TYPES[name].expect(env) };
   }
 
   function at(ctx, key) { return key == null ? ctx.path : ctx.path + (typeof key === 'number' ? '[' + key + ']' : (ctx.path ? '.' : '') + key); }
 
+  // The field an entry is about: the key, or for a list index the list's name (supportPct for supportPct[0])
+  function fieldOf(ctx, key) {
+    if (typeof key === 'string') return key;
+    if (typeof key !== 'number') return null;
+    var last = ctx.path.replace(/\[\d+\]$/, '').split('.').pop();
+    return last || null;
+  }
+
   function entry(ctx, key, expected, v, described) {
-    var found, text;
+    var found, text, kind = null;
+    if (expected && typeof expected === 'object') { kind = expected.kind; expected = expected.text; }
     if (described) { found = v; text = String(v); }
     else if (v === undefined) { found = text = say('found.nothing'); }
     else if (Array.isArray(v)) { found = text = v.length ? say('found.list', { n: v.length }) : say('found.emptyList'); }
     else if (isObj(v)) { found = text = say('found.object'); }
     else { found = v; text = typeof v === 'number' && !isFinite(v) ? String(v) : JSON.stringify(v); }
     var path = at(ctx, key);
-    return { path: path, region: ctx.region, item: ctx.item, expected: expected, found: found,
+    return { path: path, region: ctx.region, item: ctx.item, field: fieldOf(ctx, key), kind: kind, expected: expected, found: found,
       message: say('message', { path: path, expected: expected, found: text }) };
   }
 
@@ -128,32 +141,32 @@
   // Runs fn(item, ctx, i) over a list, reporting items that aren't objects.
   function each(list, ctx, env, fn) {
     if (!Array.isArray(list)) return;
-    list.forEach(function (o, i) { if (isObj(o)) fn(o, i); else err(sub(ctx, i), null, say('expect.object'), o); });
+    list.forEach(function (o, i) { if (isObj(o)) fn(o, i); else err(sub(ctx, i), null, expect('object'), o); });
   }
 
   // Meta and lookups
   function checkMeta(meta, out, env) {
     var ctx = sub(rootCtx(out), 'meta');
-    if (!isObj(meta)) { err(rootCtx(out), 'meta', say('expect.object'), meta); return; }
+    if (!isObj(meta)) { err(rootCtx(out), 'meta', expect('object'), meta); return; }
     fields(meta, SPEC.meta, ctx, env);
     dateField(meta, 'generatedAt', ctx);
     var y = meta.years;
-    if (!Array.isArray(y) || y.length !== 3 || !y.every(function (x, i) { return isNum(x) && y.indexOf(x) === i; })) err(ctx, 'years', say('expect.planYears'), y);
+    if (!Array.isArray(y) || y.length !== 3 || !y.every(function (x, i) { return isNum(x) && y.indexOf(x) === i; })) err(ctx, 'years', expect('planYears'), y);
     else env.years = y;
-    if (!isObj(meta.sourceMap)) { warn(ctx, 'sourceMap', say('expect.sourceMap'), meta.sourceMap); return; }
+    if (!isObj(meta.sourceMap)) { warn(ctx, 'sourceMap', expect('sourceMap'), meta.sourceMap); return; }
     MAP_SECTIONS.forEach(function (s) {
       var m = meta.sourceMap[s];
-      if (!isObj(m) || !isStr(m.sheet)) warn(sub(ctx, 'sourceMap'), s, say('expect.sourceMap'), m);
+      if (!isObj(m) || !isStr(m.sheet)) warn(sub(ctx, 'sourceMap'), s, expect('sourceMap'), m);
     });
   }
 
   function lookupList(lookups, key, spec, ctx, env, keep) {
     var list = lookups[key], lctx = sub(ctx, key), seen = map();
-    if (!Array.isArray(list)) { err(ctx, key, say('expect.list'), list); return; }
+    if (!Array.isArray(list)) { err(ctx, key, expect('list'), list); return; }
     each(list, lctx, env, function (o, i) {
       var c = sub(lctx, i);
       fields(o, spec, c, env);
-      if (o.id != null && seen[o.id]) err(c, 'id', say('expect.uniqueId'), o.id);
+      if (o.id != null && seen[o.id]) err(c, 'id', expect('uniqueId'), o.id);
       seen[o.id] = true;
       if (keep && (isStr(o.id) || isNum(o.id))) keep[o.id] = o;
     });
@@ -161,16 +174,16 @@
 
   function checkLookups(lookups, out, env) {
     var ctx = sub(rootCtx(out), 'lookups');
-    if (!isObj(lookups)) { err(rootCtx(out), 'lookups', say('expect.object'), lookups); return; }
+    if (!isObj(lookups)) { err(rootCtx(out), 'lookups', expect('object'), lookups); return; }
     lookupList(lookups, 'productLines', SPEC.named, ctx, env, env.productLines);
     lookupList(lookups, 'industries', SPEC.industryLookup, ctx, env, env.industries);
     lookupList(lookups, 'channels', SPEC.channelLookup, ctx, env, env.channels);
     lookupList(lookups, 'tiers', SPEC.tierLookup, ctx, env, null);
     lookupList(lookups, 'segments', SPEC.segmentLookup, ctx, env, null);
-    if (!isObj(lookups.scales)) { err(ctx, 'scales', say('expect.object'), lookups.scales); return; }
+    if (!isObj(lookups.scales)) { err(ctx, 'scales', expect('object'), lookups.scales); return; }
     RATINGS.forEach(function (r) {
       var s = lookups.scales[r], lctx = sub(ctx, 'scales.' + r + '.levels');
-      if (!isObj(s) || !Array.isArray(s.levels)) err(sub(ctx, 'scales'), r, say('expect.object'), s);
+      if (!isObj(s) || !Array.isArray(s.levels)) err(sub(ctx, 'scales'), r, expect('object'), s);
       else each(s.levels, lctx, env, function (lv, i) { fields(lv, SPEC.level, sub(lctx, i), env); });
     });
   }
@@ -179,28 +192,28 @@
     var out = { errors: [], warnings: [], dropped: 0 };
     var env = { industries: map(), productLines: map(), channels: map(), years: [] };
     var top = rootCtx(out), ids = map();
-    if (!isObj(plan)) err(top, '(whole file)', say('expect.object'), plan);
+    if (!isObj(plan)) err(top, '(whole file)', expect('object'), plan);
     else {
       checkMeta(plan.meta, out, env);
       checkLookups(plan.lookups, out, env);
       if (TAP.checkP4) TAP.checkP4.run(plan, out, env);   // the Phase 4 lookups, before the regions that name them
-      if (!Array.isArray(plan.regions)) err(top, 'regions', say('expect.regions'), plan.regions);
-      else if (!plan.regions.length) err(top, 'regions', say('expect.someRegions'), plan.regions);
+      if (!Array.isArray(plan.regions)) err(top, 'regions', expect('regions'), plan.regions);
+      else if (!plan.regions.length) err(top, 'regions', expect('someRegions'), plan.regions);
       else plan.regions.forEach(function (r, i) { TAP.checkRows.region(r, i, out, env, ids); });
     }
     if (isObj(plan) && TAP.extra) out.warnings = out.warnings.concat(TAP.extra.check(plan));
-    if (out.dropped) out.errors.push({ path: '', region: null, item: null, expected: '', found: out.dropped, message: say('more', { n: out.dropped }) });
+    if (out.dropped) out.errors.push({ path: '', region: null, item: null, field: null, kind: null, expected: '', found: out.dropped, message: say('more', { n: out.dropped }) });
     return { errors: out.errors, warnings: out.warnings };
   }
 
   // The helpers js/core/check-rows.js checks the regions' sections with
   // A date the app shows must be an ISO date; any other text loads with a warning and reads "not provided" (review DE-10)
   function dateField(obj, key, ctx) {
-    if (TAP.sources && isStr(obj[key]) && !TAP.sources.isoDate(obj[key])) warn(ctx, key, say('expect.isoDate'), obj[key]);
+    if (TAP.sources && isStr(obj[key]) && !TAP.sources.isoDate(obj[key])) warn(ctx, key, expect('isoDate'), obj[key]);
   }
 
   var kit = { dateField: dateField, say: say, has: has, map: map, isObj: isObj, isNum: isNum, isStr: isStr, round2: round2, at: at, sub: sub,
-    rootCtx: rootCtx, err: err, warn: warn, fields: fields, each: each, expectFor: expectFor, TYPES: TYPES, SPEC: SPEC,
+    rootCtx: rootCtx, err: err, warn: warn, fields: fields, each: each, expect: expect, expectFor: expectFor, TYPES: TYPES, SPEC: SPEC,
     RATINGS: RATINGS, CHANNELS: CHANNELS };
   TAP.check = { run: run, kit: kit };
 })(window.TAP);

@@ -25,11 +25,12 @@
 
   function K() { return TAP.check.kit; }
   function say(key, vars) { return K().say(key, vars); }
+  function expect(kind, vars) { return K().expect(kind, vars); }
   function categoryOf(type) { return K().has(CATEGORY_OF, type) ? CATEGORY_OF[type] : null; }
   function norm(text) { return String(text).trim().toLowerCase(); }
   function near(found, want) { return Math.abs(found - want) <= Math.max(0.5, Math.abs(want) * 0.005); }
   // A share above 1.5 is most likely a whole-number percentage (30 for 30%), as in the existing sections
-  function share(v, c, key) { if (K().isNum(v) && Math.abs(v) > 1.5) K().warn(c, key, say('expect.share'), v); }
+  function share(v, c, key) { if (K().isNum(v) && Math.abs(v) > 1.5) K().warn(c, key, expect('share'), v); }
 
   function oneOf(list, quote) {
     return { ok: function (v) { return list.indexOf(v) !== -1; }, expect: function () {
@@ -78,11 +79,11 @@
   function lookup(lookups, key, spec, ctx, env, keep) {
     var k = K(), list = lookups[key], lctx = k.sub(ctx, key), seen = k.map();
     if (list == null) return false;
-    if (!Array.isArray(list)) { k.err(ctx, key, say('expect.list'), list); return false; }
+    if (!Array.isArray(list)) { k.err(ctx, key, expect('list'), list); return false; }
     k.each(list, lctx, env, function (o, i) {
       var c = k.sub(lctx, i);
       k.fields(o, spec, c, env);
-      if (o.id != null && seen[o.id]) k.err(c, 'id', say('expect.uniqueId'), o.id);
+      if (o.id != null && seen[o.id]) k.err(c, 'id', expect('uniqueId'), o.id);
       seen[o.id] = true;
       if (keep && k.isStr(o.id)) keep(o);
     });
@@ -109,7 +110,7 @@
     if (!k.isObj(maps)) return;
     LIST_PARTS.concat(['baseYear']).forEach(function (part) {
       var used = regions.some(function (r) { return Array.isArray(r[part]) ? r[part].length : k.isObj(r[part]); });
-      if (used && !(k.isObj(maps[part]) && k.isStr(maps[part].sheet))) k.warn(k.sub(k.rootCtx(out), 'meta.sourceMap'), part, say('expect.sourceMap'), maps[part]);
+      if (used && !(k.isObj(maps[part]) && k.isStr(maps[part].sheet))) k.warn(k.sub(k.rootCtx(out), 'meta.sourceMap'), part, expect('sourceMap'), maps[part]);
     });
   }
 
@@ -122,7 +123,7 @@
     optional(o, { type: 'partnerType?', supportPct: 'years3?', distribution: 'years3?', servicesFromPartners: 'years3?' }, c, env);
     if (Array.isArray(o.supportPct)) o.supportPct.forEach(function (v, i) { share(v, K().sub(c, 'supportPct'), i); });
     var known = env.p4 && env.p4.maturity;
-    if (known && K().isStr(o.maturity) && !known[norm(o.maturity)]) K().err(c, 'maturity', say('expect.maturity'), o.maturity);
+    if (known && K().isStr(o.maturity) && !known[norm(o.maturity)]) K().err(c, 'maturity', expect('maturity'), o.maturity);
   }
 
   /* ---------- the new parts of a region ---------- */
@@ -131,13 +132,13 @@
   function items(r, part, rctx, env, spec, keys) {
     var k = K(), list = r[part], lctx = k.sub(rctx, part), seen = k.map();
     if (list == null) return [];
-    if (!Array.isArray(list)) { k.err(rctx, part, say('expect.list'), list); return []; }
+    if (!Array.isArray(list)) { k.err(rctx, part, expect('list'), list); return []; }
     k.each(list, lctx, env, function (o, i) {
       var c = k.sub(lctx, i, k.isStr(o.sourceCell) ? say('item.cell', { cell: o.sourceCell }) : null);
       k.fields(o, spec, c, env);
       if (part === 'strategicPlan') optional(o, { variance: 'num?' }, c, env);
       if (part === 'routes') optional(o, { solution: 'solution?' }, c, env);
-      if (!k.isStr(o.sourceCell)) k.warn(c, 'sourceCell', say('expect.sourceCell'), o.sourceCell);
+      if (!k.isStr(o.sourceCell)) k.warn(c, 'sourceCell', expect('sourceCell'), o.sourceCell);
       again(seen, keys.map(function (f) { return o[f]; }), c, part);
     });
     return list.filter(k.isObj);
@@ -145,28 +146,28 @@
 
   function again(seen, values, c, part) {
     var key = values.filter(function (v) { return v != null; }).join(', ');
-    if (seen[key]) K().warn(c, null, say('expect.oneItem', { what: say('expect.itemKeys.' + part) }), say('found.second', { key: key }), true);
+    if (seen[key]) K().warn(c, null, expect('oneItem', { what: say('expect.itemKeys.' + part) }), say('found.second', { key: key }), true);
     seen[key] = true;
   }
 
   function baseYear(r, rctx, env) {
     var k = K(), by = r.baseYear, c = k.sub(rctx, 'baseYear'), seen = k.map();
     if (by == null) return;
-    if (!k.isObj(by)) { k.err(rctx, 'baseYear', say('expect.object'), by); return; }
+    if (!k.isObj(by)) { k.err(rctx, 'baseYear', expect('object'), by); return; }
     k.fields(by, SPEC.baseYear, c, env);
     optional(by, { actualsThrough: 'str?' }, c, env);
-    if (k.isStr(by.actualsThrough) && !/^\d{4}-(0[1-9]|1[0-2])$/.test(by.actualsThrough)) k.warn(c, 'actualsThrough', say('expect.yearMonth'), by.actualsThrough);
+    if (k.isStr(by.actualsThrough) && !/^\d{4}-(0[1-9]|1[0-2])$/.test(by.actualsThrough)) k.warn(c, 'actualsThrough', expect('yearMonth'), by.actualsThrough);
     var lctx = k.sub(c, 'items');
     k.each(by.items, lctx, env, function (o, i) {
       var ic = k.sub(lctx, i, k.isNum(o.sourceRow) ? say('item.row', { name: String(o.category), row: o.sourceRow }) : String(o.category));
       k.fields(o, SPEC.baseItem, ic, env);
       optional(o, { coverage: 'num?' }, ic, env);
-      if (!(k.isNum(o.sourceRow) && o.sourceRow % 1 === 0)) k.warn(ic, 'sourceRow', say('expect.sourceRow'), o.sourceRow);
+      if (!(k.isNum(o.sourceRow) && o.sourceRow % 1 === 0)) k.warn(ic, 'sourceRow', expect('sourceRow'), o.sourceRow);
       again(seen, [o.category], ic, 'baseYear');
       // The workbook's ratio against pipeline over the order intake still to win
       var left = o.forecast - o.actuals;
       if (![o.coverage, o.pipeline, o.forecast, o.actuals].every(k.isNum) || left <= 0) return;
-      if (Math.abs(o.coverage - o.pipeline / left) > Math.abs(o.pipeline / left) * 0.05) k.warn(ic, 'coverage', say('expect.coverage', { value: k.round2(o.pipeline / left) }), o.coverage);
+      if (Math.abs(o.coverage - o.pipeline / left) > Math.abs(o.pipeline / left) * 0.05) k.warn(ic, 'coverage', expect('coverage', { value: k.round2(o.pipeline / left) }), o.coverage);
     });
   }
 
@@ -186,7 +187,7 @@
     Object.keys(found).forEach(function (key) {
       if (!K().has(recap, key) || !keep(key) || found[key] <= recap[key] + 0.5) return;
       var c = K().sub(rctx, part, key);
-      K().warn(c, null, say('expect.' + wording, { key: key, value: K().round2(recap[key]) }), K().round2(found[key]));
+      K().warn(c, null, expect(wording, { key: key, value: K().round2(recap[key]) }), K().round2(found[key]));
     });
   }
 
@@ -212,7 +213,7 @@
       var key = o.year + ', ' + o.type;
       if (!k.isNum(o.variance) || !k.isNum(o.value) || !k.has(booked, key) || near(o.variance, booked[key] - o.value)) return;
       var c = k.sub(k.sub(rctx, 'strategicPlan'), r.strategicPlan.indexOf(o), k.isStr(o.sourceCell) ? say('item.cell', { cell: o.sourceCell }) : null);
-      k.warn(c, 'variance', say('expect.variance', { value: k.round2(booked[key] - o.value) }), o.variance);
+      k.warn(c, 'variance', expect('variance', { value: k.round2(booked[key] - o.value) }), o.variance);
     });
   }
 

@@ -26,6 +26,7 @@
   function warn() { return K().warn.apply(null, arguments); }
   function fields() { return K().fields.apply(null, arguments); }
   function each() { return K().each.apply(null, arguments); }
+  function expect() { return K().expect.apply(null, arguments); }
   function expectFor() { return K().expectFor.apply(null, arguments); }
   function TYPES() { return K().TYPES; }
   function SPEC() { return K().SPEC; }
@@ -53,10 +54,10 @@
   function figures(key, o, c) {
     (SHARES[key] || []).forEach(function (f) {
       var path = f.split('.'), v = path.length > 1 ? (isObj(o[path[0]]) ? o[path[0]][path[1]] : null) : o[f];
-      if (Array.isArray(v)) v.forEach(function (x, i) { if (isNum(x) && Math.abs(x) > 1.5) warn(sub(c, f), i, say('expect.share'), x); });
-      else if (isNum(v) && Math.abs(v) > 1.5) warn(c, f, say('expect.share'), v);
+      if (Array.isArray(v)) v.forEach(function (x, i) { if (isNum(x) && Math.abs(x) > 1.5) warn(sub(c, f), i, expect('share'), x); });
+      else if (isNum(v) && Math.abs(v) > 1.5) warn(c, f, expect('share'), v);
     });
-    (COUNTS[key] || []).forEach(function (f) { if (isNum(o[f]) && o[f] < 0) warn(c, f, say('expect.notNegative'), o[f]); });
+    (COUNTS[key] || []).forEach(function (f) { if (isNum(o[f]) && o[f] < 0) warn(c, f, expect('notNegative'), o[f]); });
   }
   // A recap item repeats when another has the same year, channel, motion and type: both would be added up.
   function recapKey(o) { return [o.year, o.channel, o.motion, o.type].join('|'); }
@@ -65,23 +66,23 @@
     var name = key === 'accounts' ? 'customerGrowth.accounts' : key, lctx = sub(rctx, name), seen = map(), rows = map();
     var list = key === 'accounts' ? r.customerGrowth.accounts : r[key];
     if (!Array.isArray(list)) return;
-    if (!list.length) warn(rctx, name, say('expect.items'), say('found.emptyList'), true);
+    if (!list.length) warn(rctx, name, expect('items'), say('found.emptyList'), true);
     each(list, lctx, env, function (o, i) {
       var c = sub(lctx, i, itemName(key, o, env));
       fields(o, SPEC()[key], c, env);
       figures(key, o, c);
       if (key === 'recap') {
-        if (!isStr(o.sourceCell)) warn(c, 'sourceCell', say('expect.sourceCell'), o.sourceCell);
-        if (seen[recapKey(o)]) warn(c, null, say('expect.uniqueRecap'), say('found.repeatRecap'), true);
+        if (!isStr(o.sourceCell)) warn(c, 'sourceCell', expect('sourceCell'), o.sourceCell);
+        if (seen[recapKey(o)]) warn(c, null, expect('uniqueRecap'), say('found.repeatRecap'), true);
         seen[recapKey(o)] = true;
       } else if (o.sourceRow === undefined || !(isNum(o.sourceRow) && o.sourceRow % 1 === 0)) {
-        warn(c, 'sourceRow', say('expect.sourceRow'), o.sourceRow);
+        warn(c, 'sourceRow', expect('sourceRow'), o.sourceRow);
       } else if (rows[o.sourceRow]) {
-        warn(c, 'sourceRow', say('expect.uniqueRow'), o.sourceRow);   // lists tell rows apart by their number
+        warn(c, 'sourceRow', expect('uniqueRow'), o.sourceRow);   // lists tell rows apart by their number
       }
       if (key !== 'recap' && isNum(o.sourceRow)) rows[o.sourceRow] = true;
       var id = key === 'accounts' ? o.id : key === 'marketCoverage' ? o.industryId : null;
-      if (id != null && seen[id]) err(c, key === 'accounts' ? 'id' : 'industryId', say(key === 'accounts' ? 'expect.uniqueId' : 'expect.uniqueIndustry'), id);
+      if (id != null && seen[id]) err(c, key === 'accounts' ? 'id' : 'industryId', expect(key === 'accounts' ? 'uniqueId' : 'uniqueIndustry'), id);
       seen[id] = true;
       if (extra) extra(o, c);
     });
@@ -91,7 +92,7 @@
     if (!has(env.industries, o.industryId)) return;
     tiers[o.industryId] = o.tier;
     if (env.industries[o.industryId].rated !== false) return;
-    RATINGS().forEach(function (k) { if (o[k] != null) warn(c, k, say('expect.unrated'), o[k]); });
+    RATINGS().forEach(function (k) { if (o[k] != null) warn(c, k, expect('unrated'), o[k]); });
   }
 
   function checkNewBusinessRow(o, c, env, tiers) {
@@ -101,21 +102,21 @@
       CHANNELS().forEach(function (k) { if (!has(o.channelSplit, k)) err(sctx, k, expectFor('num', true, env), undefined); });
       Object.keys(o.channelSplit).forEach(function (k) {
         var v = o.channelSplit[k];
-        if (!has(env.channels, k)) err(sctx, k, say('expect.channelKey'), k, true);
+        if (!has(env.channels, k)) err(sctx, k, expect('channelKey'), k, true);
         else if (v !== null && !isNum(v)) err(sctx, k, expectFor('num', true, env), v);
         else if (isNum(v)) { sum += v; any = true; }
       });
-      if (any && Math.abs(sum - 1) > 0.01) warn(c, 'channelSplit', say('expect.splitSum'), Math.round(sum * 1000) / 10 + '%', true);
+      if (any && Math.abs(sum - 1) > 0.01) warn(c, 'channelSplit', expect('splitSum'), Math.round(sum * 1000) / 10 + '%', true);
     }
     if (isObj(o.growth)) fields(o.growth, SPEC().growth, sub(c, 'growth'), env);
     if (!tiers) return arrFormula(o, c);
     if (has(tiers, o.industryId) || !has(env.industries, o.industryId)) {
       var mc = tiers[o.industryId], tierOk = TYPES().tier.ok;
-      if (tierOk(o.tier) && tierOk(mc) && o.tier !== mc) err(c, 'tier', say('expect.mcTier', { tier: mc }), o.tier);
+      if (tierOk(o.tier) && tierOk(mc) && o.tier !== mc) err(c, 'tier', expect('mcTier', { tier: mc }), o.tier);
       // The template plans new business for Tier 1 and 2 industries; a row for a Tier 3 one is kept and counted (D160)
-      else if (o.tier === 3 && mc === 3) warn(c, 'tier', say('expect.tier3Row'), 3);
+      else if (o.tier === 3 && mc === 3) warn(c, 'tier', expect('tier3Row'), 3);
     } else {
-      err(c, 'industryId', say('expect.mcRow'), o.industryId);
+      err(c, 'industryId', expect('mcRow'), o.industryId);
     }
     arrFormula(o, c);
   }
@@ -123,7 +124,7 @@
   function arrFormula(o, c) {
     var a = Array.isArray(o.arrPotential) ? o.arrPotential[0] : null, want = o.targetAccounts * o.hitRate * o.avgDealSize;
     if (![o.targetAccounts, o.hitRate, o.avgDealSize, a].every(isNum) || Math.abs(a - want) <= Math.max(0.5, Math.abs(want) * 0.005)) return;
-    warn(c, 'arrPotential[0]', say('expect.arrFormula', { value: round2(want) }), a);
+    warn(c, 'arrPotential[0]', expect('arrFormula', { value: round2(want) }), a);
   }
 
   // The template's segment rule (Planning Template Structure, section 3), or null if it can't be decided.
@@ -137,12 +138,12 @@
 
   function checkRegion(r, i, out, env, ids) {
     var root = sub(rootCtx(out), 'regions');
-    if (!isObj(r)) { err(root, i, say('expect.region'), r); return; }
+    if (!isObj(r)) { err(root, i, expect('region'), r); return; }
     var rctx = { path: at(root, i), region: isStr(r.name) ? r.name : isStr(r.id) ? r.id : null, item: null, out: out };
     fields(r, SPEC().region, rctx, env);
-    if (isStr(r.id) && ids[r.id]) err(rctx, 'id', say('expect.uniqueRegion'), r.id);
+    if (isStr(r.id) && ids[r.id]) err(rctx, 'id', expect('uniqueRegion'), r.id);
     // The combined figures use these ids (js/engine/scope.js), so a region with one would share it
-    if (r.id === 'rest' || r.id === 'org') err(rctx, 'id', say('expect.keptRegionId'), r.id);
+    if (r.id === 'rest' || r.id === 'org') err(rctx, 'id', expect('keptRegionId'), r.id);
     ids[r.id] = true;
     var nctx = sub(rctx, 'source.notes');
     if (isObj(r.source)) fields(r.source, SPEC().source, sub(rctx, 'source'), env);
@@ -154,7 +155,7 @@
     // A partner whose channel was never chosen loads, shown under "Channel not provided" (D159); then the optional
     // partner type, maturity lookup and by-year fields (Phase 4)
     checkSection(r, 'partners', rctx, env, function (o, c) {
-      if (o.channel === null) warn(c, 'channel', say('expect.partnerChannel'), null);
+      if (o.channel === null) warn(c, 'channel', expect('partnerChannel'), null);
       if (TAP.checkP4) TAP.checkP4.partner(o, c, env);
     });
     checkSection(r, 'recap', rctx, env);
@@ -164,7 +165,7 @@
       if (isObj(cg.thresholds)) fields(cg.thresholds, SPEC().thresholds, sub(rctx, 'customerGrowth.thresholds'), env);
       checkSection(r, 'accounts', rctx, env, function (acc, c) {
         var want = segmentFor(acc, cg.thresholds);
-        if (want && acc.segment !== want) warn(c, 'segment', say('expect.segmentRule', { segment: JSON.stringify(want) }), acc.segment);
+        if (want && acc.segment !== want) warn(c, 'segment', expect('segmentRule', { segment: JSON.stringify(want) }), acc.segment);
       });
     }
     // Revenue, books value, strategic plan, base year, routes and outsourcing % (Phase 4): all optional
