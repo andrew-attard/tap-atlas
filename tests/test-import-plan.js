@@ -3,7 +3,8 @@
  * Purpose: Tests of the in-app import, PLAN stream (docs/ARCHITECTURE.md section 20): the section 5 checks, the region
  *          order and duplicates of the plan build, the contract check, the data file text and the plain-text report, on
  *          hand-built regions and readings; and the round trips through the workbook writer on mini, miniP4 and the sample.
- * Provides: test cases TPV-TC-827 to TPV-TC-851, TPV-TC-899 (every section 5 note's kind, item, found and expected, D163)
+ * Provides: test cases TPV-TC-827 to TPV-TC-851, TPV-TC-899 (every section 5 note's kind, item, found and expected, D163),
+ *           X-owner-pair-* (one case per paired rule: the same ref on both sides, US-1.8.10, D165)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, tests/fixtures/mini-p4.js,
  *             tests/fixtures/workbook-write.js, tests/fixtures/import-maps.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
@@ -50,7 +51,7 @@
     function entry(m, s, cell, x) {
       x = x || {};
       return { message: m, sheet: s, cell: cell, kind: x.kind || null, item: x.item == null ? null : x.item,
-        found: x.found == null ? null : x.found, expected: x.expected == null ? null : x.expected };
+        found: x.found == null ? null : x.found, expected: x.expected == null ? null : x.expected, ref: x.ref == null ? null : String(x.ref) };
     }
     c.note = function (m, s, cell, x) { c.notes.push(entry(m, s, cell, x)); };
     c.error = function (m, s, cell, x) { c.errors.push(entry(m, s, cell, x)); };
@@ -240,6 +241,76 @@
         a.ok(n.item == null || !/(^|, )(newBusiness|customerGrowth|arr|direct|partner|allianceA|allianceB|ind\d)($|, )/.test(n.item), 'no raw id in the item: ' + n.item);
       });
       a.equal(c.notes.length + c.errors.length, 4, 'no other notes or errors on Region A');
+    });
+
+    // US-1.8.10 (D165): for every paired rule the import's note and the check's warning carry the same ref in the same region,
+    // so the fold shows the finding once. One case per pair, each planted on the fixture and run through both checkers.
+    function both(name, id, plant) {
+      var f = T_FIXTURE(name);
+      plant(f);
+      var map = testMap(f), r = region(f, id);
+      return { name: r.name, notes: checks(f, r, map).notes, warnings: TAP.check.run(f).warnings };
+    }
+    function pair(a, got, checkKind, noteKind, ref) {
+      var n = got.notes.filter(function (x) { return x.kind === noteKind; }), w = got.warnings.filter(function (x) { return x.kind === checkKind && x.region === got.name; });
+      a.ok(n.length >= 1, 'a note of kind ' + noteKind + ' (' + n.length + ')');
+      a.ok(w.length >= 1, 'a warning of kind ' + checkKind + ' (' + w.length + ')');
+      a.equal(n[0] && n[0].ref, ref, 'the note\u2019s ref');
+      a.equal(w[0] && w[0].ref, ref, 'the warning\u2019s ref');
+      var notes = {}, f;
+      notes[got.name] = got.notes;
+      f = TAP.warningGroups.fold(notes, got.warnings);
+      a.equal(f.folded, w.length, 'every warning of the pair folds (' + w.length + ')');
+      a.ok(f.warnings.every(function (x) { return x.kind !== checkKind || x.region !== got.name; }), 'none of them is left');
+      a.equal(f.warnings.length, got.warnings.length - w.length, 'the other warnings stay');
+    }
+    T.test('X-owner-pair-splitSum', 'A channel split off 100%: the note and the warning share the industry id', function (a) {
+      var ind = T_FIXTURE('mini').regions[0].newBusiness[0].industryId;
+      pair(a, both('mini', 'alpha', function (f) { f.regions[0].newBusiness[0].channelSplit = { direct: 0.5, partner: 0.45, allianceA: 0, allianceB: 0 }; }), 'splitSum', 'splitSum', ind);
+    });
+    T.test('X-owner-pair-arrFormula', 'ARR potential off its formula: the industry id', function (a) {
+      var ind = T_FIXTURE('mini').regions[0].newBusiness[1].industryId;
+      pair(a, both('mini', 'alpha', function (f) { f.regions[0].newBusiness[1].arrPotential[0] = 250; }), 'arrFormula', 'arrFormula', ind);
+    });
+    T.test('X-owner-pair-segmentRule', 'A segment off the thresholds rule: the account id, which the import assigns before its checks run', function (a) {
+      var acc = T_FIXTURE('mini').regions[0].customerGrowth.accounts[1].id;
+      a.ok(acc, 'the fixture account has an id');
+      pair(a, both('mini', 'alpha', function (f) { f.regions[0].customerGrowth.accounts[1].segment = 'growth'; }), 'segmentRule', 'segmentRule', acc);
+    });
+    T.test('X-owner-pair-items', 'An empty section: the section key, for each of Region C\u2019s planted gaps', function (a) {
+      var got = both('mini', 'charlie', function () {});
+      a.deepEqual(got.notes.filter(function (x) { return x.kind === 'emptySection'; }).map(function (x) { return x.ref; }).sort(), ['customerGrowth.accounts', 'partners', 'recap']);
+      a.deepEqual(got.warnings.filter(function (x) { return x.kind === 'items' && x.region === 'Region C'; }).map(function (x) { return x.ref; }).sort(), ['customerGrowth.accounts', 'partners', 'recap']);
+      var notes = {};
+      notes['Region C'] = got.notes;
+      var f = TAP.warningGroups.fold(notes, got.warnings);
+      a.equal(f.folded, 3, 'all three fold');
+      a.ok(f.warnings.every(function (x) { return x.kind !== 'items'; }));
+    });
+    T.test('X-owner-pair-variance', 'A variance off books minus plan: year|type', function (a) {
+      pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].strategicPlan.filter(function (o) { return o.type === 'arr' && o.year === 2027; })[0].variance = 25; }), 'variance', 'variance', '2027|arr');
+    });
+    T.test('X-owner-pair-revenue', 'Revenue above the order intake: year|channel|motion on both sides (the note names the type too, the warning the total)', function (a) {
+      var o = T_FIXTURE('miniP4').regions[0].revenue[1], ref = [o.year, o.channel, o.motion].join('|');
+      pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].revenue[1].value = 300; }), 'revenueWithin', 'revenueAbove', ref);
+    });
+    T.test('X-owner-pair-books', 'Books value above the customer value: year|channel', function (a) {
+      pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].booksValue.filter(function (o) { return o.sourceCell === 'F60'; })[0].value = 250; }), 'booksWithin', 'booksAbove', '2027|partner');
+    });
+    T.test('X-owner-pair-coverage', 'A coverage ratio off its parts: the category', function (a) {
+      pair(a, both('miniP4', 'alpha', function (f) { f.regions[0].baseYear.items[1].coverage = 2.2; }), 'coverage', 'coverage', 'recurring');
+    });
+    T.test('X-owner-pair-unpaired', 'A note of an unpaired kind has no ref, and a note\u2019s ref is written to the reading and the data file', function (a) {
+      var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha');
+      r.marketCoverage = r.marketCoverage.filter(function (o) { return o.industryId !== 'ind3'; });
+      var c = checks(f, r, map);
+      a.equal(c.errors[0].kind, 'missingIndustries');
+      a.equal(c.errors[0].ref, null, 'an unpaired finding: no ref');
+      c.notes.concat(c.errors).forEach(function (n) { a.ok(Object.prototype.hasOwnProperty.call(n, 'ref'), 'ref on: ' + n.message); });
+      // The site passes the ref as extra, which the reading's entry (TAP.importRegion) keeps as text
+      var extras = [];
+      TAP.importChecks.run(Object.assign(copy(region(f, 'alpha')), { partners: [] }), f.lookups, map, { note: function (m, s, cell, x) { extras.push(x); }, error: function () {} });
+      a.deepEqual(extras.filter(function (x) { return x.kind === 'emptySection'; }).map(function (x) { return x.ref; }), ['partners'], 'the section key as the ref');
     });
 
     T.test('TPV-TC-837', 'build puts regions in mapping order, then unmatched workbooks in file order; missing lists the rest', function (a) {

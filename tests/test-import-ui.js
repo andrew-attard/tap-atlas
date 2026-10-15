@@ -3,10 +3,11 @@
  * Purpose: Tests of the in-app import, UI stream (docs/ARCHITECTURE.md section 20): the Import panel as a layer and
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
- * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), TPV-TC-905
+ * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), TPV-TC-905,
+ *           X-owner-ui-* (the folded warnings heading, US-1.8.10, and the reports for workbook owners, US-1.8.11; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
- * Owner: UI stream (#587)
+ * Owner: UI stream (#587); the X-owner-ui-* cases by REPORTS (#615, #616)
  */
 (function (TAP) {
   'use strict';
@@ -433,6 +434,125 @@
       a.equal(lines[at('Recap, 4. Partner') + 1], 'The recap block is empty.', 'a note without a cell: the sheet alone, the technical line under it');
       var notesPart = text.slice(0, text.indexOf(t('check.report.checkErrors', { n: 0 })));
       a.ok(text.indexOf('[importPanel') < 0 && notesPart.indexOf('regions[') < 0, 'every phrase has wording; no data path among the notes (the check\u2019s technical lines keep theirs)');
+    });
+
+    /* ---------- US-1.8.10 (D165) and US-1.8.11 (D166): one entry per problem, and the reports for workbook owners ---------- */
+
+    // The canned result with Region B's empty recap noted by the import (with its ref) and warned about by the check (same
+    // ref), plus a warning no note matches
+    function paired() {
+      var r = canned();
+      r.regions[1].notes = [{ message: 'The Recap section is empty.', sheet: '4. Partner', cell: 'E5', kind: 'emptySection', item: 'Recap', found: null, expected: null, ref: 'recap' }];
+      r.check.warnings = [
+        { path: 'regions[1].recap', region: 'Region B', item: null, field: 'recap', kind: 'items', expected: 'at least one item', found: 'an empty list', vars: null, ref: 'recap',
+          message: 'regions[1].recap: expected at least one item, found an empty list' },
+        { path: 'regions[1].partners[0].supportPct[0]', region: 'Region B', item: 'Fictional Partner B1 (row 10)', field: 'supportPct', kind: 'share',
+          expected: 'a share written as a decimal, for example 0.25 for 25%', found: 2.33, vars: null, ref: null, message: 'regions[1].partners[0].supportPct[0]: expected a share written as a decimal, for example 0.25 for 25%, found 2.33' }
+      ];
+      return r;
+    }
+    function today() { return new Date().toISOString().slice(0, 10); }
+
+    T.test('X-owner-ui-folded', 'A warning the import already noted shows once, under the notes; the warnings heading says how many were folded; an unmatched warning still shows', function (a) {
+      panel(function (host) {
+        TAP.importPanel.show(paired());
+        var sec = qs('.tap-imp__check-warnings', host), h = qs('h4', sec);
+        a.ok(sec, 'the warnings section');
+        a.ok(txt(h).indexOf(t('report.checkWarnings')) === 0, 'the heading');
+        a.equal(txt(qs('.tap-wg__folded', h)), t('report.checkFolded', { n: 1 }), 'one listed under the notes above');
+        a.ok(px(qs('.tap-wg__folded', h)) >= 16, 'at body size');
+        var kinds = qsa('details.tap-wg__kind', sec).map(function (d) { return d.getAttribute('data-kind'); });
+        a.deepEqual(kinds, ['share'], 'the unmatched warning alone');
+        a.equal(qsa('.tap-imp__region[data-region="bravo"] details.tap-wg__kind[data-kind="emptySection"]', host).length, 1, 'the note stays under its region');
+        // Nothing unmatched: the heading still says what was folded, with no groups under it
+        var r = paired();
+        r.check.warnings = r.check.warnings.slice(0, 1);
+        TAP.importPanel.show(r);
+        sec = qs('.tap-imp__check-warnings', host);
+        a.ok(sec && qs('.tap-wg__folded', sec), 'the heading with the count');
+        a.equal(qsa('details.tap-wg', sec).length, 0, 'no group');
+        // No fold: no count
+        TAP.importPanel.show(canned());
+        a.ok(!qs('.tap-wg__folded', host), 'no count when nothing folded');
+      });
+    });
+
+    T.test('X-owner-ui-list', 'The reports for workbook owners: the section after the summary and before the regions, a row per workbook with its count, Download and Copy as text, then All workbooks', function (a) {
+      panel(function (host) {
+        TAP.importPanel.show(paired());
+        var sec = qs('.tap-imp__owners', host);
+        a.ok(sec && sec.classList.contains('tap-own'), 'the section');
+        a.equal(txt(qs('h4', sec)), TAP.content.text('ownerReport.ui.title'));
+        a.equal(txt(qs('.tap-own__intro', sec)), TAP.content.text('ownerReport.ui.intro'));
+        var all = qsa('.tap-imp__h, .tap-imp__owners, .tap-imp__region, .tap-imp__check', host).map(function (n) { return n.className.split(' ')[0]; });
+        a.deepEqual(all.slice(0, 3), ['tap-imp__h', 'tap-imp__owners', 'tap-imp__region'], 'after the summary, before the first region');
+        var rows = qsa('.tap-own__row', sec);
+        a.deepEqual(rows.map(function (r) { return r.getAttribute('data-region'); }), ['Region A', 'Region B', 'Region C', null], 'a row per reading, then all workbooks');
+        a.deepEqual(rows.map(function (r) { return txt(qs('.tap-own__count', r)); }), [TAP.content.text('ownerReport.ui.none'), TAP.content.text('ownerReport.ui.countOne'), TAP.content.text('ownerReport.ui.count', { n: 3 }), ''], 'nothing, one (the note, its warning folded), three (a left-out region keeps its notes)');
+        a.deepEqual(rows.slice(0, 3).map(function (r) { return qsa('.tap-btn', r).map(txt); }), [[TAP.content.text('ownerReport.ui.download'), TAP.content.text('ownerReport.ui.copy')], [TAP.content.text('ownerReport.ui.download'), TAP.content.text('ownerReport.ui.copy')], [TAP.content.text('ownerReport.ui.download'), TAP.content.text('ownerReport.ui.copy')]], 'Download and Copy as text per workbook');
+        a.equal(txt(qs('.tap-own__name', rows[3])), TAP.content.text('ownerReport.ui.all'));
+        a.deepEqual(qsa('.tap-btn', rows[3]).map(txt), [TAP.content.text('ownerReport.ui.download')], 'All workbooks: Download alone');
+        a.equal(qs('.tap-btn', rows[1]).getAttribute('aria-label'), TAP.content.text('ownerReport.ui.downloadOne', { region: 'Region B' }), 'the button names its workbook');
+        qsa('.tap-btn, .tap-own__name, .tap-own__count, .tap-own__intro', sec).forEach(function (n) { a.ok(px(n) >= 16, n.className + ': ' + px(n) + ' px (D24)'); });
+        a.ok(txt(sec).indexOf('[ownerReport') < 0, 'every word has wording');
+        // The regions handed to the writer: notes plus the unmatched warnings, normalized
+        var regions = TAP.importReport.ownerRegions(paired());
+        a.deepEqual(regions.map(function (r) { return r.name + ':' + r.items.length; }), ['Region A:0', 'Region B:2', 'Region C:3']);
+        a.deepEqual(regions[1].items.map(function (it) { return it.kind; }), ['emptySection', 'share'], 'the note, then the unmatched warning');
+        a.equal(regions[1].fileModified, '2026-09-30T10:15:00Z', 'the facts from the reading');
+        a.equal(regions[1].importedAt, NOW);
+      });
+    });
+
+    T.test('X-owner-ui-download', 'Download hands a text/html Blob with the workbook\u2019s file name to TAP.panelExport.download, and All workbooks the combined one', function (a) {
+      var download = spy(), blobs = [], savedUrl = URL.createObjectURL;
+      URL.createObjectURL = function (b) { blobs.push(b); return 'blob:test-' + blobs.length; };
+      try {
+        withFakes([[TAP.panelExport, 'download', download]], function () {
+          panel(function (host) {
+            TAP.importPanel.show(paired());
+            var rows = qsa('.tap-imp__owners .tap-own__row', host);
+            click(qsa('.tap-btn', rows[2])[0]);
+            a.equal(download.calls.length, 1, 'one download');
+            a.deepEqual(download.calls[0], ['blob:test-1', 'Region C data review ' + today() + '.html'], 'the URL and the file name');
+            a.equal(blobs[0].type, 'text/html', 'an HTML page');
+            a.ok(blobs[0].size > 500, 'with content');
+            a.equal(txt(qs('.tap-own__status', host)), TAP.content.text('ownerReport.ui.saved', { name: 'Region C data review ' + today() + '.html' }), 'the status says where it went');
+            click(qs('.tap-btn', rows[3]));
+            a.equal(download.calls[1][1], 'All workbooks data review ' + today() + '.html', 'the all-workbooks file');
+            a.equal(blobs[1].type, 'text/html');
+          });
+        });
+      } finally { URL.createObjectURL = savedUrl; }
+    });
+
+    T.test('X-owner-ui-copy', 'Copy as text puts the workbook\u2019s report as text on the clipboard; when the clipboard refuses, the text is shown to copy by hand', function (a) {
+      var clip = spy(function () { return Promise.resolve(true); });
+      return withFakes([[TAP.panelTable, 'clipboard', clip]], function () {
+        return panel(function (host) {
+          TAP.importPanel.show(paired());
+          var rows = qsa('.tap-imp__owners .tap-own__row', host);
+          click(qsa('.tap-btn', rows[2])[1]);
+          a.equal(clip.calls.length, 1, 'the clipboard is asked once');
+          var text = clip.calls[0][0];
+          a.ok(text.indexOf(TAP.content.text('ownerReport.title', { region: 'Region C' })) > 0, 'the title');
+          a.ok(text.indexOf('Healthcare') > 0 && text.indexOf('2. New Business \u203a E12:H12') > 0, 'the items with sheet \u203a cell');
+          a.ok(text.indexOf('regions[') < 0 && text.indexOf('<') < 0, 'plain text, no data path');
+          return tick().then(function () {
+            a.equal(txt(qs('.tap-own__status', host)), TAP.content.text('ownerReport.ui.copied'));
+            a.ok(qs('.tap-own__text', host).hidden, 'no text box needed');
+            TAP.panelTable.clipboard = function () { return Promise.resolve(false); };
+            click(qsa('.tap-btn', rows[2])[1]);
+            return tick();
+          }).then(function () {
+            var box = qs('.tap-own__text', host);
+            a.ok(!box.hidden, 'the text box shows');
+            a.equal(box.value, text, 'with the report');
+            a.ok(box.readOnly, 'read only');
+            a.equal(txt(qs('.tap-own__status', host)), TAP.content.text('ownerReport.ui.copyManual'));
+          });
+        });
+      });
     });
 
     T.test('TPV-TC-866', 'Every word on the panel and its report is found in the wording file', function (a) {

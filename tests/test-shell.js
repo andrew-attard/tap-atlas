@@ -1253,6 +1253,65 @@
       });
     });
 
+    // US-1.8.10 (D165): a warning the import already noted (same kind pair, same region, same ref) shows once, under the
+    // region's notes; the heading of the other notes says how many were folded; unmatched warnings stay
+    T.test('X-owner-sources-fold', 'The data sources panel folds a check warning into the saved import note that already covers it and says so in the heading', function (a) {
+      run(function () {
+        var p = T_FIXTURE('mini');
+        p.regions[0].partners = [];
+        p.regions[0].source.notes = [{ message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null, ref: 'partners' }];
+        var root = startApp(p), panel = openSourcesByClick(root), notes = qs('.tap-src__notes', panel), h = qs('h3', notes);
+        a.ok(notes, 'the other notes section');
+        a.ok(txt(h).indexOf(TAP.content.text('sourcesPanel.other')) === 0, 'the heading');
+        a.equal(txt(qs('.tap-wg__folded', h)), TAP.content.text('importPanel.report.checkFolded', { n: 1 }), 'one folded');
+        a.ok(parseFloat(getComputedStyle(qs('.tap-wg__folded', h)).fontSize) >= 16, 'at body size (D24)');
+        a.ok(!qs('details.tap-wg[data-region="Region A"]', notes), 'Region A\u2019s warning is folded away');
+        a.ok(qs('details.tap-wg[data-region="Region C"]', notes), 'Region C\u2019s planted gaps stay: its fixture note has no kind or ref');
+        a.equal(qsa('.tap-src__region[data-region="alpha"] details.tap-wg__kind[data-kind="emptySection"]', panel).length, 1, 'the note shows under Region A');
+        TAP.layers.close();
+        root = startApp(T_FIXTURE('mini'));
+        panel = openSourcesByClick(root);
+        a.ok(!qs('.tap-wg__folded', panel), 'no count when nothing folds');
+      });
+    });
+
+    // US-1.8.11 (D166): the reports for workbook owners after the regions, before the other notes
+    T.test('X-owner-sources-reports', 'The data sources panel lists a report per workbook, with its count, Download and Copy as text, then All workbooks, between the regions and the other notes', function (a) {
+      var download = null, blobs = [], savedUrl = URL.createObjectURL, savedDl = TAP.panelExport.download, clipText = null, savedClip = TAP.panelTable.clipboard;
+      URL.createObjectURL = function (b) { blobs.push(b); return 'blob:test-' + blobs.length; };
+      TAP.panelExport.download = function (url, name) { download = { url: url, name: name }; };
+      TAP.panelTable.clipboard = function (text) { clipText = text; return Promise.resolve(true); };
+      try {
+        run(function () {
+          var p = T_FIXTURE('mini');
+          p.regions[0].partners = [];
+          p.regions[0].source.notes = [{ message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null, ref: 'partners' }];
+          var root = startApp(p), panel = openSourcesByClick(root), sec = qs('.tap-src__owners', panel);
+          a.ok(sec && sec.classList.contains('tap-own'), 'the section');
+          a.equal(txt(qs('h3', sec)), TAP.content.text('ownerReport.ui.title'));
+          var order = qsa('.tap-src__region, .tap-src__owners, .tap-src__notes', panel).map(function (n) { return n.className.split(' ')[0]; });
+          a.deepEqual(order, ['tap-src__region', 'tap-src__region', 'tap-src__region', 'tap-src__region', 'tap-src__owners', 'tap-src__notes'], 'after the regions, before the other notes');
+          var rows = qsa('.tap-own__row', sec), imports = TAP.sources.imports();
+          a.deepEqual(rows.map(function (r) { return r.getAttribute('data-region'); }), imports.map(function (i) { return i.name; }).concat([null]), 'a row per region, then all workbooks');
+          a.equal(txt(qs('.tap-own__count', rows[0])), TAP.content.text('ownerReport.ui.countOne'), 'Region A: the note, its warning folded');
+          a.equal(txt(qs('.tap-own__count', rows[2])), TAP.content.text('ownerReport.ui.count', { n: 4 }), 'Region C: its fixture note and three unmatched warnings');
+          a.equal(txt(qs('.tap-own__count', rows[1])), TAP.content.text('ownerReport.ui.none'), 'Region B: nothing to review, still a row');
+          qsa('.tap-btn, .tap-own__name, .tap-own__count', sec).forEach(function (n) { a.ok(parseFloat(getComputedStyle(n).fontSize) >= 16, n.className + ' at body size (D24)'); });
+          var regions = TAP.sourcesPanel.ownerRegions(imports);
+          a.deepEqual(regions[2].items.map(function (it) { return it.kind; }), [null, 'items', 'items', 'items'], 'Region C: the kindless note, then the unmatched warnings');
+          a.equal(regions[0].fileName, 'Region A plan.xlsx');
+          qs('.tap-btn', rows[0]).click();
+          a.ok(download && /^Region A data review \d{4}-\d{2}-\d{2}\.html$/.test(download.name), 'Download: the file name: ' + (download && download.name));
+          a.equal(blobs[0].type, 'text/html', 'an HTML page');
+          qsa('.tap-btn', rows[0])[1].click();
+          a.ok(clipText && clipText.indexOf(TAP.content.text('ownerReport.title', { region: 'Region A' })) > 0 && clipText.indexOf('4. Partner \u203a B10') > 0, 'Copy as text: the report as text');
+          qs('.tap-btn', rows[rows.length - 1]).click();
+          a.ok(/^All workbooks data review /.test(download.name), 'All workbooks: one page');
+          a.ok(qs('.tap-own__row', sec).getBoundingClientRect().width <= qs('.tap-layer__body', panel).getBoundingClientRect().width, 'the rows fit the panel');
+        });
+      } finally { URL.createObjectURL = savedUrl; TAP.panelExport.download = savedDl; TAP.panelTable.clipboard = savedClip; }
+    });
+
     T.test('X-sources-summary', 'The panel opens with the data date and the number of import notes', function (a) {
       run(function () {
         var root = startApp();
