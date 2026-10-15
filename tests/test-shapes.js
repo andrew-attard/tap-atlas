@@ -3,7 +3,7 @@
  * Purpose: Tests for chart-type rules, prepared data and the generic builders: allowed types per shape, table
  *          values identical to chart values, the five modes on the reference report, highlights, escaping, colours.
  * Provides: test cases TPV-TC-056, TPV-TC-062, TPV-TC-074 (report weights), TPV-TC-075 (builders), TPV-TC-095,
- *           X-shapes-*, X-prepare-*, X-builders-*, X-review-DE-15, X-notes-shapes (D162)
+ *           X-shapes-*, X-prepare-*, X-builders-*, X-review-DE-15, TPV-TC-896 (D162)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -376,7 +376,7 @@
     });
 
     // D162: Regions C and D leave the references rating blank on three industries
-    T.test('X-notes-shapes', 'Two regions blank on several industries: the generic builders fold the notes into one line per measure', function (a) {
+    T.test('TPV-TC-896', 'Two regions blank on several industries: the generic builders fold the notes into one line per measure', function (a) {
       var plan = T_FIXTURE('mini');
       plan.regions.forEach(function (r) {
         if (r.id !== 'charlie' && r.id !== 'delta') return;

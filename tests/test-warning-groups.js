@@ -2,7 +2,7 @@
  * File: tests/test-warning-groups.js
  * Purpose: Tests of the warning groups component (US-1.8.8, D161): the check's warnings grouped by workbook, then by
  *          kind, in plain words, as both panels and the copied report show them.
- * Provides: test cases X-warn-groups-*
+ * Provides: test cases TPV-TC-877 to TPV-TC-885
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.warningGroups, TAP.importWrite, TAP.content)
  * Used by: tests.html
  * Owner: WARN stream (#605)
@@ -52,7 +52,7 @@
     'known', 'rows', 'row', 'rowKey', 'uniqueRow', 'number', 'text', 'sourceRow'].map(function (k) { return 'extra.' + k; });
 
   T.suite('warning-groups', function () {
-    T.test('X-warn-groups-structure', 'One group per workbook in the order the warnings come, the whole file last; one group per kind inside, first seen first; counts in every summary', function (a) {
+    T.test('TPV-TC-877', 'One group per workbook in the order the warnings come, the whole file last; one group per kind inside, first seen first; counts in every summary', function (a) {
       var r = render(set()), b = books(r.host);
       a.equal(b.length, 3, 'three workbook groups');
       a.deepEqual(b.map(function (d) { return d.getAttribute('data-region'); }), ['Region A', 'Region B', ''], 'the regions, the whole file last');
@@ -66,7 +66,7 @@
       a.equal(kinds(b[2])[0].getAttribute('data-kind'), 'sourceMap');
     });
 
-    T.test('X-warn-groups-open', 'A workbook group is open when it holds three warnings or fewer, else closed; the limit can be set', function (a) {
+    T.test('TPV-TC-878', 'A workbook group is open when it holds three warnings or fewer, else closed; the limit can be set', function (a) {
       var r = render(set()), b = books(r.host);
       a.deepEqual(b.map(function (d) { return d.open; }), [false, true, true], 'four closed, one open, one open');
       a.ok(kinds(b[0]).every(function (d) { return d.open; }), 'kind groups of three or fewer open too');
@@ -76,7 +76,7 @@
       a.deepEqual(books(r3.host).map(function (d) { return d.open; }), [false, false, false], 'with a limit of zero none opens');
     });
 
-    T.test('X-warn-groups-lines', 'Each line names the row or cell in words, the field and the value found, never the data path', function (a) {
+    T.test('TPV-TC-879', 'Each line names the row or cell in words, the field and the value found, never the data path', function (a) {
       var r = render(set()), b = books(r.host), lines = qsa('li', b[0]).map(txt);
       a.ok(lines[0].indexOf('Fictional Partner A1 (row 10)') >= 0, 'the row in words: ' + lines[0]);
       a.ok(lines[0].indexOf(t('check.fields.supportPct')) >= 0, 'the field in words: ' + lines[0]);
@@ -90,7 +90,7 @@
       a.ok(all.indexOf('[check.') < 0 && all.indexOf('{') < 0, 'no missing wording and no unfilled placeholder');
     });
 
-    T.test('X-warn-groups-expand', 'Expand all and Collapse all show with more than one workbook group and toggle every group', function (a) {
+    T.test('TPV-TC-880', 'Expand all and Collapse all show with more than one workbook group and toggle every group', function (a) {
       var r = render(set()), btns = qsa('.tap-wg__tools .tap-btn', r.host);
       a.equal(btns.length, 2, 'two buttons');
       a.deepEqual(btns.map(txt), [t('check.groups.expand'), t('check.groups.collapse')]);
@@ -102,7 +102,7 @@
       a.equal(qsa('.tap-wg__tools', one.host).length, 0, 'no buttons for a single workbook');
     });
 
-    T.test('X-warn-groups-fallback', 'A kind without wording falls back to the expected sentence as its title and the value found as its line', function (a) {
+    T.test('TPV-TC-881', 'A kind without wording falls back to the expected sentence as its title and the value found as its line', function (a) {
       var r = render([w('Region A', 'mystery', null, 'Row X', 'something else', 7, 'regions[0].x')]);
       a.equal(summary(kinds(books(r.host)[0])[0]), 'something else (1)');
       a.equal(txt(qs('li', r.host)), 'Row X: ' + t('check.plain.fallback.found', { found: '7' }));
@@ -111,12 +111,12 @@
       a.equal(summary(kinds(books(r2.host)[0])[0]), 'No partners are listed. (1)');
     });
 
-    T.test('X-warn-groups-empty', 'No warnings, no element', function (a) {
+    T.test('TPV-TC-882', 'No warnings, no element', function (a) {
       a.equal(TAP.warningGroups.render([], {}), null);
       a.equal(TAP.warningGroups.render(null), null);
     });
 
-    T.test('X-warn-groups-wording', 'Every kind the check raises has a plain title and line, with no em dash', function (a) {
+    T.test('TPV-TC-883', 'Every kind the check raises has a plain title and line, with no em dash', function (a) {
       KINDS.concat(EXTRA_KINDS).forEach(function (k) {
         var title = t('check.plain.' + k + '.title'), line = t('check.plain.' + k + '.line');
         a.ok(title.charAt(0) !== '[' && title.length > 3, k + ': a title (' + title + ')');
@@ -126,14 +126,14 @@
       a.ok(t('check.plain.fallback.found', { found: 'x' }).indexOf('x') >= 0, 'the fallback line carries the value');
     });
 
-    T.test('X-warn-groups-size', 'Summaries and lines are body text, 16 px and up, and the disclosure marker shows (D24)', function (a) {
+    T.test('TPV-TC-884', 'Summaries and lines are body text, 16 px and up, and the disclosure marker shows (D24)', function (a) {
       var r = render(set());
       click(qsa('.tap-wg__tools .tap-btn', r.host)[0]);
       qsa('summary, li', r.host).forEach(function (n) { a.ok(px(n) >= 16, n.tagName + ': ' + px(n) + ' px'); });
       qsa('summary', r.host).forEach(function (n) { a.ok(getComputedStyle(n).display !== 'none', 'the summary shows'); });
     });
 
-    T.test('X-warn-groups-report', 'The copied report groups the warnings by workbook then kind, each plain line followed by its technical message', function (a) {
+    T.test('TPV-TC-885', 'The copied report groups the warnings by workbook then kind, each plain line followed by its technical message', function (a) {
       var result = { mapProblems: [], missing: [], regions: [
         { ok: true, id: 'alpha', name: 'Region A', fileName: 'Region A plan.xlsx', region: { source: {} }, parts: {}, errors: [], notes: [] },
         { ok: true, id: 'bravo', name: 'Region B', fileName: 'Region B plan.xlsx', region: { source: {} }, parts: {}, errors: [], notes: [] }
