@@ -89,6 +89,7 @@ The data file's shape is fixed by `docs/DATA-CONTRACT.md`, the only interface be
 |---|---|---|
 | The template's layout (a renamed sheet, a moved column, a new region's workbook) | `config/import-map.js` (internal copy only) | 2, 16, 6 |
 | Organization terms, region short names, the confidentiality label, the logo and app name | `content/organization.example.js` | 3 |
+| Branding it for another organization (name, logo, words, colours, font, in one walk-through) | the "Make it your own" section of `README.md` | 3, 4 |
 | Colours and font | `js/theme.js` (internal copy only) | 4 |
 | Insight thresholds and weights | `config/settings.js`, `config/insight-rules.js` | 5 |
 | A new report on an existing view | `config/reports.js` and the view's `config/reports-*.js` file | 7 |
