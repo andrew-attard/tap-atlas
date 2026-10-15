@@ -62,7 +62,6 @@ Object.assign(window.TAP_CONTENT.text, {
       mcTier: 'the Market Coverage tier for this industry ({tier})',
       mcRow: 'an industry with a row in Market Coverage',
       // Real-data fixes (v0.5.1): both load with a warning
-      tier3Row: 'a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted)',
       partnerChannel: 'a channel for this partner (left blank, so it is shown under "Channel not provided")',
       sourceRow: 'the worksheet row number',
       isoDate: 'a date written year first, such as "2026-10-02T09:00:00Z" or "2026-10-02"',
@@ -142,7 +141,6 @@ Object.assign(window.TAP_CONTENT.text, {
       fallback: { found: 'found {found}', blank: 'a blank' },
       share: { title: 'Shares above 150%', intro: 'A share is written as a decimal, 0.25 for 25%. A value this high may be a percentage written as a whole number.' },
       partnerChannel: { title: 'Partners without a channel', intro: 'The partner is kept and shown under "Channel not provided".', where: '{item}', found: '' },
-      tier3Row: { title: 'New Business rows for Tier 3 industries', intro: 'The template plans new business for Tier 1 and Tier 2 industries. The row is kept and counted.', where: '{item}', found: '' },
       items: { title: 'Empty sections', intro: 'The section is in the file but holds no rows.', where: '{field}', found: '' },
       revenueWithin: { title: 'Revenue above the order intake', intro: 'Revenue is expected to be no higher than the order intake for the same year, channel and motion.', where: '{item}', expected: '{value}' },
       booksWithin: { title: 'Books value above the customer value', intro: 'For Partner, Alliance A and Alliance B, the books value of ARR and services is expected to be no higher than the customer value for the same year.', where: '{item}', expected: '{value}' },

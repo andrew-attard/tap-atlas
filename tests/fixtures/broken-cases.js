@@ -154,12 +154,8 @@ window.TEST_FIXTURES.broken = {
       change: function (p) { p.regions[0].partners[0].channel = null; },
       expect: { path: 'regions[0].partners[0].channel', region: 'Region A', item: 'Fictional Partner A1 (row 10)',
         expected: 'a channel for this partner (left blank, so it is shown under "Channel not provided")', found: null,
-        message: 'regions[0].partners[0].channel: expected a channel for this partner (left blank, so it is shown under "Channel not provided"), found null' } },
-    { id: 'nb-tier3-row', level: 'warnings',
-      change: function (p) { p.regions[0].newBusiness[1].industryId = 'ind3'; p.regions[0].newBusiness[1].tier = 3; },
-      expect: { path: 'regions[0].newBusiness[1].tier', region: 'Region A', item: 'Retail (row 21)',
-        expected: 'a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted)', found: 3,
-        message: 'regions[0].newBusiness[1].tier: expected a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted), found 3' } }
+        message: 'regions[0].partners[0].channel: expected a channel for this partner (left blank, so it is shown under "Channel not provided"), found null' } }
+    // A New Business row for a Tier 3 industry raises nothing since D167 (it was a warning in v0.5.1 to v0.5.3)
   ],
 
   // Not broken: fields and sections the contract doesn't name are ignored (D47), so an import can add
@@ -409,9 +405,8 @@ window.TEST_FIXTURES.broken = {
       'segment-off-thresholds': { first: ['regions[0].customerGrowth.accounts[1].segment: expected the segment the thresholds give ("core"), found "strategic"'] },
       'no-source-row': { first: ['regions[1].newBusiness[1].sourceRow: expected the worksheet row number, found nothing'] },
       'empty-section': { first: ['regions[0].partners: expected at least one item, found an empty list'] },
-      // Added in v0.5.1 (D159, D160): both load with one warning
-      'partner-no-channel': { first: ['regions[0].partners[0].channel: expected a channel for this partner (left blank, so it is shown under "Channel not provided"), found null'] },
-      'nb-tier3-row': { first: ['regions[0].newBusiness[1].tier: expected a Tier 1 or Tier 2 industry (the template has no New Business rows for Tier 3; this row is kept and counted), found 3'] }
+      // Added in v0.5.1 (D159): loads with one warning
+      'partner-no-channel': { first: ['regions[0].partners[0].channel: expected a channel for this partner (left blank, so it is shown under "Channel not provided"), found null'] }
     }
   }
 };

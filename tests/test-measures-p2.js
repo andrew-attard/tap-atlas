@@ -238,7 +238,7 @@
 
     T.test('TPV-TC-874', 'nb.<t>.tier3 is the new business in the region’s Tier 3 industries: the row’s potential, also counted in the total', function (a) {
       var loaded = tier3Row();
-      a.ok(loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the file loads with a warning that names Tier 3');
+      a.ok(loaded.ok && !loaded.warnings.some(function (w) { return /Tier 3/.test(JSON.stringify(w)); }), 'the file loads with no warning about Tier 3 (D167)');
       expectCell(a, TAP.measures.get('nb.arr.tier3')('alpha', {}), 600, 'alpha nb.arr.tier3');
       expectCell(a, TAP.measures.get('nb.services.tier3')('alpha', {}), 60, 'alpha nb.services.tier3');
       expectCell(a, TAP.measures.get('nb.oi.tier3')('alpha', {}), 660, 'alpha nb.oi.tier3');

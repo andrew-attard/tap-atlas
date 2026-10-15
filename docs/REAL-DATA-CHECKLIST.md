@@ -22,7 +22,7 @@ Generic on purpose: this copy names no organization, region, file or person. The
 
 - [ ] **4. Review the data sources panel and import notes.**
   Click the "Data:" date on the comparison bar.
-  *Good:* every region is listed with its source file name, file date and import date. Every import note has been read, and each one is either accepted (written in the run log) or fixed in the workbook and re-imported. Partners without a channel are listed as warnings (they show under "Channel not provided"): decide with the regional leader whether to fill the channel in; a New Business row for a Tier 3 industry is listed the same way and is kept and counted. If import dates differ, the panel says so and you know why. No note about a broken organization file.
+  *Good:* every region is listed with its source file name, file date and import date. Every import note has been read, and each one is either accepted (written in the run log) or fixed in the workbook and re-imported. Partners without a channel are listed as warnings (they show under "Channel not provided"): decide with the regional leader whether to fill the channel in. A New Business row for a Tier 3 industry is kept and counted with nothing to accept (D167). If import dates differ, the panel says so and you know why. No note about a broken organization file.
 
 - [ ] **5. Spot-check sources against the workbooks.**
   For each region, pick at least one figure per section (Market Coverage, New Business, Customer Growth, Partner and Recap). Read its file › sheet › cell behind the data icon beside it (in its details panel or the table view's source column), open that workbook at that cell, and compare.
