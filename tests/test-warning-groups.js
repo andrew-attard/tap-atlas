@@ -3,10 +3,11 @@
  * Purpose: Tests of the warning groups component (US-1.8.8, D161; US-1.8.9, D163, D164): the check's warnings grouped by
  *          workbook, then by kind, and the import's notes grouped by kind, each group a table of where, found and expected
  *          in plain words, as both panels and the copied report show them.
- * Provides: test cases TPV-TC-877 to TPV-TC-885, TPV-TC-900, TPV-TC-901, TPV-TC-902, TPV-TC-903, TPV-TC-904
+ * Provides: test cases TPV-TC-877 to TPV-TC-885, TPV-TC-900, TPV-TC-901, TPV-TC-902, TPV-TC-903, TPV-TC-904, and X-owner-fold-* (the pair
+ *           table and the fold, US-1.8.10, D165; the lead assigns Test Plan ids)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts (TAP.warningGroups, TAP.warningTable, TAP.importWrite, TAP.content)
  * Used by: tests.html
- * Owner: WARN stream (#605), NOTES2 stream (#612)
+ * Owner: WARN stream (#605), NOTES2 stream (#612), REPORTS stream (#615)
  */
 (function (TAP) {
   'use strict';
@@ -192,16 +193,16 @@
     /* ---------- US-1.8.9 (D163, D164): import notes by kind, tables inside every group ---------- */
 
     T.test('TPV-TC-900', 'fromImport and fromCheck normalize to the same shape: region, kind, title, intro, where, cell, found, expected, tech', function (a) {
-      var W = TAP.warningGroups, keys = ['region', 'kind', 'title', 'intro', 'where', 'cell', 'found', 'expected', 'tech'];
+      var W = TAP.warningGroups, keys = ['region', 'kind', 'title', 'intro', 'where', 'cell', 'found', 'expected', 'tech', 'ref'];
       var ni = W.fromImport(notes(), 'Region A'), ci = W.fromCheck(set(), { lookups: LOOKUPS });
       a.equal(ni.length, 4);
       a.equal(ci.length, 6);
       ni.concat(ci).forEach(function (it) { a.deepEqual(Object.keys(it).sort(), keys.slice().sort(), 'the keys of ' + it.tech); });
       a.deepEqual(ni[0], { region: 'Region A', kind: 'emptySection', title: t('importPanel.notePlain.emptySection.title'), intro: t('importPanel.notePlain.emptySection.intro'),
-        where: 'Customer Growth', cell: '3. Customer Growth › C10', found: '', expected: '', tech: 'The Customer Growth section is empty.' }, 'an import note: the item, the address, the message as tech');
+        where: 'Customer Growth', cell: '3. Customer Growth › C10', found: '', expected: '', tech: 'The Customer Growth section is empty.', ref: null }, 'an import note: the item, the address, the message as tech');
       a.deepEqual(ni[2].found + '|' + ni[2].expected + '|' + ni[2].where, '450|400|2027, Direct, existing customers, ARR', 'found and expected as text, the item as the site wrote it');
       a.deepEqual(ci[4], { region: 'Region B', kind: 'items', title: t('check.plain.items.title'), intro: t('check.plain.items.intro'),
-        where: t('check.fields.partners'), cell: '', found: '', expected: '', tech: set()[4].message }, 'a check warning: no address, the field in words');
+        where: t('check.fields.partners'), cell: '', found: '', expected: '', tech: set()[4].message, ref: null }, 'a check warning: no address, the field in words');
       a.equal(ci[5].region, null, 'a warning about the whole file has no region');
       a.deepEqual(W.normalize(set(), { lookups: LOOKUPS }), ci, 'normalize takes raw warnings');
       a.deepEqual(W.normalize(ni), ni, 'and leaves normalized items alone');
@@ -273,6 +274,97 @@
         a.ok(tb.getBoundingClientRect().width <= r.host.getBoundingClientRect().width + 1, 'the table stays within its host: ' + tb.getBoundingClientRect().width + ' of ' + r.host.getBoundingClientRect().width);
       });
       qsa('td', r.host).forEach(function (td) { a.equal(getComputedStyle(td).overflowWrap, 'anywhere', 'cells wrap anywhere'); });
+    });
+
+    /* ---------- US-1.8.10 (D165): one entry per problem, the pair table and the fold ---------- */
+
+    // The rules both sides check, check kind to note kind
+    var PAIRS = { revenueWithin: 'revenueAbove', booksWithin: 'booksAbove', splitSum: 'splitSum', arrFormula: 'arrFormula',
+      segmentRule: 'segmentRule', variance: 'variance', coverage: 'coverage', items: 'emptySection' };
+    // A warning with a ref, as the check writes one for a paired rule
+    function wr(region, kind, ref, path) { var x = w(region, kind, null, 'Item', 'something', 1, path || 'regions[0].' + kind); x.ref = ref; return x; }
+    function pairedNotes() {
+      return [
+        { message: 'The Partner section is empty.', sheet: '4. Partner', cell: 'B10', kind: 'emptySection', item: 'Partner', found: null, expected: null, ref: 'partners' },
+        { message: 'Revenue 450 is above the order intake 400.', sheet: '5. Recap', cell: 'E30', kind: 'revenueAbove', item: '2027, Direct, existing customers, ARR', found: 450, expected: 400, ref: '2027|direct|customerGrowth' },
+        { message: 'The segment is growth; the thresholds give core.', sheet: '3. Customer Growth', cell: 'U11', kind: 'segmentRule', item: 'Fictional Account A2', found: 'Growth', expected: 'Core', ref: null }
+      ];
+    }
+    function pairedWarnings() {
+      return [
+        wr('Region A', 'items', 'partners', 'regions[0].partners'),                                // folds: the note above
+        wr('Region B', 'items', 'partners', 'regions[1].partners'),                                // stays: Region B has no notes
+        wr('Region A', 'revenueWithin', '2027|direct|customerGrowth', 'regions[0].revenue.direct'),      // folds
+        wr('Region A', 'revenueWithin', '2027|partner|customerGrowth', 'regions[0].revenue.partner'),    // stays: another key
+        wr('Region A', 'segmentRule', 'a2', 'regions[0].customerGrowth.accounts[1].segment'),      // stays: the note has no ref
+        wr('Region A', 'splitSum', 'ind1', 'regions[0].newBusiness[0].channelSplit'),             // stays: no note of that kind
+        w('Region A', 'share', 'hitRate', 'Healthcare (row 20)', SHARE, 25, 'regions[0].newBusiness[0].hitRate')   // stays: not a paired kind
+      ];
+    }
+
+    T.test('X-owner-fold-pairs', 'The pair table maps each check kind to its note kind, and every kind on both sides has plain wording', function (a) {
+      a.deepEqual(TAP.warningGroups.PAIRS, PAIRS, 'the eight pairs');
+      Object.keys(PAIRS).forEach(function (k) {
+        a.ok(t('check.plain.' + k + '.title').charAt(0) !== '[', k + ': the check kind has a title');
+        a.ok(t('importPanel.notePlain.' + PAIRS[k] + '.title').charAt(0) !== '[', PAIRS[k] + ': the note kind has a title');
+      });
+    });
+
+    T.test('X-owner-fold-matches', 'fold removes exactly the warnings whose paired note has the same ref in the same region, counts them per region, keeps the rest in order and never touches a note', function (a) {
+      var notes = { 'Region A': pairedNotes() }, before = JSON.stringify(notes), warns = pairedWarnings();
+      var f = TAP.warningGroups.fold(notes, warns);
+      a.equal(f.folded, 2, 'two folded');
+      a.deepEqual(f.byRegion, { 'Region A': 2 }, 'counted per region');
+      a.deepEqual(f.warnings.map(function (x) { return x.region + ':' + x.kind + ':' + x.ref; }),
+        ['Region B:items:partners', 'Region A:revenueWithin:2027|partner|customerGrowth', 'Region A:segmentRule:a2', 'Region A:splitSum:ind1', 'Region A:share:null'], 'the rest, in order');
+      a.ok(f.warnings.every(function (x) { return warns.indexOf(x) >= 0; }), 'the same objects, not copies');
+      a.deepEqual(f.matched.map(function (x) { return x.path; }), ['regions[0].partners', 'regions[0].revenue.direct'], 'the folded ones are listed too');
+      a.equal(JSON.stringify(notes), before, 'the notes are untouched');
+      a.equal(JSON.stringify(warns), JSON.stringify(pairedWarnings()), 'the warnings are untouched');
+    });
+
+    T.test('X-owner-fold-edges', 'A note without a ref, a warning without a ref or region, an unpaired kind and an empty input fold nothing', function (a) {
+      var W = TAP.warningGroups;
+      a.deepEqual(W.fold({}, pairedWarnings()).folded, 0, 'no notes, nothing folds');
+      a.deepEqual(W.fold(null, null), { warnings: [], folded: 0, byRegion: {}, matched: [] }, 'empty input');
+      var noRef = W.fold({ 'Region A': [{ kind: 'emptySection', item: 'Partner', ref: null }] }, [wr('Region A', 'items', 'partners')]);
+      a.equal(noRef.folded, 0, 'a note without a ref folds nothing');
+      a.equal(W.fold({ 'Region A': pairedNotes() }, [wr('Region A', 'items', null)]).folded, 0, 'a warning without a ref stays');
+      a.equal(W.fold({ 'Region A': pairedNotes() }, [wr(null, 'items', 'partners')]).folded, 0, 'a warning about the whole file stays');
+      a.equal(W.fold({ 'Region A': pairedNotes() }, [wr('Region A', 'emptySection', 'partners')]).folded, 0, 'a note kind on the warning side is not a pair');
+      a.equal(W.fold({ 'Region A': pairedNotes() }, [wr('Region A', 'constructor', 'partners')]).folded, 0, 'a built-in name is not a pair');
+      a.equal(W.fold({ 'Region A': [{ kind: 'emptySection', ref: 'recap' }] }, [wr('Region A', 'items', 'partners')]).folded, 0, 'another ref of the same kind does not match');
+      a.equal(W.fold({ 'Region A': [{ kind: 'emptySection', ref: 'partners' }] }, [wr('Region A', 'items', 'partners')]).folded, 1, 'the same ref does');
+    });
+
+    T.test('X-owner-fold-normalized', 'Normalized items carry the ref and fold the same way as raw warnings', function (a) {
+      var W = TAP.warningGroups, items = W.fromCheck(pairedWarnings(), { lookups: LOOKUPS });
+      a.deepEqual(items.map(function (it) { return it.ref; }), ['partners', 'partners', '2027|direct|customerGrowth', '2027|partner|customerGrowth', 'a2', 'ind1', null], 'the refs come through fromCheck');
+      a.deepEqual(W.fromImport(pairedNotes(), 'Region A').map(function (it) { return it.ref; }), ['partners', '2027|direct|customerGrowth', null], 'and through fromImport');
+      var f = W.fold({ 'Region A': pairedNotes() }, items);
+      a.equal(f.folded, 2);
+      a.equal(f.warnings.length, 5);
+      a.ok(f.warnings.every(function (it) { return it.tech !== undefined; }), 'normalized items come back as they went in');
+      var r = render(f.warnings);
+      a.equal(qsa('tbody tr', r.host).length, 5, 'the panels draw the unmatched ones');
+      a.ok(txt(r.host).indexOf('2027|') < 0 && txt(r.host).indexOf('partners') < 0, 'the ref is never shown');
+    });
+
+    T.test('X-owner-fold-report', 'The copied report keeps a folded warning under its region with the marker line after its technical line', function (a) {
+      var result = { mapProblems: [], missing: [], regions: [
+        { ok: true, id: 'alpha', name: 'Region A', fileName: 'Region A plan.xlsx', region: { source: {} }, parts: {}, errors: [], notes: pairedNotes() },
+        { ok: true, id: 'bravo', name: 'Region B', fileName: 'Region B plan.xlsx', region: { source: {} }, parts: {}, errors: [], notes: [] }
+      ], check: { errors: [], warnings: pairedWarnings() }, usable: true };
+      var text = TAP.importWrite.report(result), lines = text.split('\n'), marker = t('importPanel.check.report.checkFolded').trim();
+      var at = function (s, from) { var i = lines.map(function (l) { return l.trim(); }).indexOf(s, from || 0); a.ok(i >= 0, 'line: ' + s); return i; };
+      a.equal(at(t('importPanel.check.report.checkWarnings', { n: 7 })) >= 0, true, 'the full count: nothing is dropped');
+      a.equal(lines.filter(function (l) { return l.trim() === marker; }).length, 2, 'the marker twice, once per folded warning');
+      var folded = at(pairedWarnings()[0].message), mark = at(marker, folded);
+      a.equal(mark, folded + 1, 'the marker right under the technical line');
+      a.ok(lines[mark].search(/\S/) >= lines[folded].search(/\S/), 'indented as far as the technical line');
+      var kept = at(pairedWarnings()[1].message);
+      a.ok(lines[kept + 1].trim() !== marker, 'an unmatched warning has no marker');
+      a.ok(at('Region A · Region A plan.xlsx (6)') >= 0 && at('Region B · Region B plan.xlsx (1)') >= 0, 'the workbook counts keep every warning');
     });
   });
 })(window.TAP);

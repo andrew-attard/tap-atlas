@@ -1,7 +1,7 @@
 /*
  * File: tests/test-check.js
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206) and for its Phase 4 parts (US-4.1.2).
- * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
+ * Provides: X-owner-check-refs (US-1.8.10, D165) and test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
  *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*; for the real-data
  *           fixes (#599 to #601): TPV-TC-872 and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases; for the
  *           warning kinds (#605): TPV-TC-875, TPV-TC-876
@@ -331,6 +331,43 @@
       var e = TAP.check.run(q).errors[0];
       a.deepEqual([e.path, e.kind, e.field], ['regions[0].newBusiness[1].tier', 'mcTier', 'tier']);
       a.equal(e.message, 'regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 3', 'the technical line as before');
+    });
+
+    // US-1.8.10 (D165): the paired rules carry the rule's key in the data's own terms, so the import's note can be told to be
+    // the same finding; every entry has the field, null where the rule is not paired
+    T.test('X-owner-check-refs', 'Every paired warning carries a ref in the data\u2019s own terms; an unpaired warning has none; every entry has the field', function (a) {
+      function caseOf(list, id) { return list.filter(function (c) { return c.id === id; })[0]; }
+      function warnOf(res, c) { return res.warnings.filter(function (x) { return x.path === c.expect.path; })[0]; }
+      var mini = T_FIXTURE('mini'), A = mini.regions[0];
+      [['split-not-100', A.newBusiness[0].industryId], ['arr-not-recalculated', A.newBusiness[0].industryId],
+        ['segment-off-thresholds', A.customerGrowth.accounts[1].id], ['empty-section', 'partners']].forEach(function (row) {
+        var c = caseOf(window.TEST_FIXTURES.broken.cases, row[0]), hit = warnOf(TAP.check.run(broken(c)), c);
+        a.ok(hit, row[0] + ': the warning');
+        a.equal(hit && hit.ref, row[1], row[0] + ': ref ' + row[1]);
+      });
+      var full = p4(function () {}), B = full.regions[0];
+      [['variance-off', B.strategicPlan[0].year + '|' + B.strategicPlan[0].type], ['coverage-off', B.baseYear.items[0].category],
+        ['revenue-above-order-intake', [B.revenue[1].year, B.revenue[1].channel, B.revenue[1].motion].join('|')],
+        ['books-above-customer-value', B.booksValue[2].year + '|' + B.booksValue[2].channel]].forEach(function (row) {
+        var c = caseOf(window.TEST_FIXTURES.broken.p4Cases, row[0]), hit = warnOf(TAP.check.run(p4(c.change)), c);
+        a.ok(hit, row[0] + ': the warning');
+        a.equal(hit && hit.ref, row[1], row[0] + ': ref ' + row[1]);
+        a.ok(!hit || hit.ref.indexOf(', ') < 0, row[0] + ': one separator, never the sentence\u2019s comma');
+      });
+      // The mini fixture's own planted gaps (Region C): the section key is the ref
+      var gaps = TAP.check.run(mini).warnings.filter(function (x) { return x.kind === 'items'; });
+      a.deepEqual(gaps.map(function (x) { return x.region + ':' + x.ref; }).sort(), ['Region C:customerGrowth.accounts', 'Region C:partners', 'Region C:recap'], 'each empty section by its key');
+      // Unpaired kinds have no ref; every entry carries the field
+      var p = T_FIXTURE('mini');
+      p.regions[0].newBusiness[0].hitRate = 25;
+      p.regions[0].partners[0].channel = null;
+      var res = TAP.check.run(p), all = res.errors.concat(res.warnings);
+      a.ok(all.length >= 2, 'warnings raised');
+      all.forEach(function (x) { a.ok(Object.prototype.hasOwnProperty.call(x, 'ref'), 'ref on: ' + x.message); });
+      a.ok(res.warnings.filter(function (x) { return x.kind === 'share' || x.kind === 'partnerChannel'; }).every(function (x) { return x.ref === null; }), 'unpaired: null');
+      a.ok(res.warnings.filter(function (x) { return x.ref !== null; }).every(function (x) { return typeof x.ref === 'string' && x.ref; }), 'a ref is a non-empty string');
+      var e = TAP.check.run(window.TEST_FIXTURES.broken.cases.filter(function (c) { return c.id === 'missing-field'; }).map(broken)[0]).errors[0];
+      a.equal(e.ref, null, 'an error has no ref');
     });
 
     T.test('TPV-TC-876', 'Every warning kind the broken cases raise has plain wording (check.plain: a title and an intro, D164)', function (a) {
