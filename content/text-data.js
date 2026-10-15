@@ -1,7 +1,8 @@
 /*
  * File: content/text-data.js
  * Purpose: Wording for source addresses and the contract check: separators, "calculated" labels, combined-figure
- *          sources, the check's problem list (the Phase 4 parts included) and the plain words the warning groups use.
+ *          sources, the check's problem list (the Phase 4 parts included) and the plain words the warning groups and their
+ *          tables use (D161, D164).
  * Provides: adds to window.TAP_CONTENT.text
  * Depends on: content/ui-text.js
  * Used by: js/core/sources.js, js/core/check.js, js/core/check-rows.js, js/core/check-p4.js and js/ui/warning-groups.js
@@ -90,7 +91,8 @@ Object.assign(window.TAP_CONTENT.text, {
       variance: 'books order intake minus the strategic plan = {value}'
     },
 
-    // The warnings grouped by workbook and kind (US-1.8.8, D161, js/ui/warning-groups.js): the group headings
+    // The warnings grouped by workbook and kind (US-1.8.8, D161, js/ui/warning-groups.js): the group headings, the table's
+    // column headings (D164) and the words of a row in the copied report
     groups: {
       book: '{label}: {n} warnings',
       bookOne: '{label}: 1 warning',
@@ -98,72 +100,91 @@ Object.assign(window.TAP_CONTENT.text, {
       wholeFile: 'The whole file',
       kind: '{title} ({n})',
       expand: 'Expand all',
-      collapse: 'Collapse all'
+      collapse: 'Collapse all',
+      colWhere: 'Where',
+      colFound: 'Found',
+      colExpected: 'Expected',
+      colCell: 'Sheet and cell',
+      rowFound: 'found {found}',
+      rowExpected: 'expected {expected}',
+      rowSep: ', '
     },
-    // Field names in words, for the plain lines; a key not listed here reads as it is
+    // Field names in words, for the plain rows; a key not listed here reads as it is
     fields: {
       supportPct: 'support share', centralSupportPct: 'central support share', outsourcingPct: 'outsourcing share',
       hitRate: 'hit rate', servicesRatio: 'services ratio', growthPct: 'growth rate', growth: { year2: 'growth year 2', year3: 'growth year 3' },
-      channelSplit: 'channel split', 'arrPotential[0]': 'ARR potential, year 1', targetAccounts: 'target accounts',
+      channelSplit: 'channel split', 'arrPotential[0]': 'ARR potential, year 1', arrPotential: 'ARR potential', servicesPotential: 'services potential',
+      targetAccounts: 'target accounts', avgDealSize: 'average deal size',
       fteSales: 'sales staff', fteConsultants: 'consultants', segment: 'segment', channel: 'channel', tier: 'tier',
       growthPotential: 'growth potential', criticality: 'criticality', competitiveIntensity: 'competitive intensity',
       references: 'references', expertise: 'expertise', productFit: 'product fit',
+      industryId: 'industry', productLine: 'product line', currentArr: 'current ARR', pipelineTotal: 'pipeline', pipelineCreated12m: 'pipeline created, 12 months',
+      commentary: 'commentary', market: 'market', subVertical: 'sub-vertical', successFactors: 'success factors', solution: 'solution',
+      name: 'name', country: 'country', riskLevel: 'risk level', multiplier3y: '3-year multiplier', incrementalArr: 'incremental ARR',
+      servicesOrderIntake: 'services order intake', cumulativeOrderIntake: 'cumulative order intake',
+      thresholds: { strategicArr: 'strategic ARR threshold', scaledArr: 'scaled ARR threshold', growthArr: 'growth ARR threshold', growthOrderIntake: 'growth order intake threshold' },
+      maturity: 'maturity', type: 'type', expertiseGeo: 'geographic expertise', expertiseProduct: 'product expertise', arr: 'ARR', services: 'services',
+      distribution: 'distribution', servicesFromPartners: 'services from partners',
+      category: 'category', budget: 'budget', forecast: 'forecast', actuals: 'actuals', pipeline: 'pipeline', year: 'year', value: 'value',
       sourceRow: 'worksheet row', sourceCell: 'worksheet cell', sourceMap: 'template map', actualsThrough: 'actuals through',
       coverage: 'coverage', variance: 'variance', generatedAt: 'data date', fileModified: 'file saved date', importedAt: 'import date',
       marketCoverage: 'Market Coverage', newBusiness: 'New Business', customerGrowth: { accounts: 'Customer Growth accounts' },
       partners: 'Partners', recap: 'Recap', revenue: 'Revenue', booksValue: 'Books value', strategicPlan: 'Strategic plan',
       baseYear: 'Base year', routes: 'Routes to market'
     },
-    // Plain words per kind: the group title (plural) and one line per warning. Lines may use {item} (the row or cell in
-    // words), {field} (from fields above), {where} (item and field together, whichever exist), {found} and {expected}.
+    // Plain words per kind (D161, D164): the group title (plural), the intro (the one sentence that explains the kind, said
+    // once under the heading) and, where the defaults do not fit, templates for the table's columns: where (default
+    // {where}: the row or cell in words and the field), found (default {found}) and expected (default {value} when the check
+    // carried a figure, else nothing). Templates may use {item}, {field}, {where}, {found}, {expected} (the technical
+    // sentence) and the check's own figures ({value}, {segment}, {tier}, {key}). An empty template leaves the column out.
     // Observations, not judgements (D20): the figures speak for themselves.
     plain: {
       fallback: { found: 'found {found}', blank: 'a blank' },
-      share: { title: 'Shares above 150%', line: '{where}: {found} (a share is written as a decimal, 0.25 for 25%; a value this high may be a percentage written as a whole number)' },
-      partnerChannel: { title: 'Partners without a channel', line: '{item} (shown under "Channel not provided")' },
-      tier3Row: { title: 'New Business rows for Tier 3 industries', line: '{item} (kept and counted)' },
-      items: { title: 'Empty sections', line: '{field}: no rows' },
-      revenueWithin: { title: 'Revenue above the order intake', line: '{item}: {expected}, found {found}' },
-      booksWithin: { title: 'Books value above the customer value', line: '{item}: {expected}, found {found}' },
-      coverage: { title: 'Coverage ratios that differ from their parts', line: '{item}: {expected}, found {found}' },
-      variance: { title: 'Variances that differ from their parts', line: '{item}: {expected}, found {found}' },
-      splitSum: { title: 'Channel splits not adding up to 100%', line: '{item}: {expected}, found {found}' },
-      arrFormula: { title: 'ARR potential not matching its formula', line: '{item}: {expected}, found {found}' },
-      segmentRule: { title: 'Segments that differ from the thresholds rule', line: '{item}: {expected}, found {found}' },
-      mcTier: { title: 'New Business tiers that differ from Market Coverage', line: '{item}: {expected}, found {found}' },
-      sourceRow: { title: 'Rows without a worksheet row number', line: '{where}: found {found}' },
-      sourceCell: { title: 'Items without a worksheet cell', line: '{where}: found {found}' },
-      uniqueRow: { title: 'Worksheet row numbers used twice', line: '{item}: row {found} is already used in this section' },
-      uniqueRecap: { title: 'Recap items repeated', line: '{where}: {found}' },
-      oneItem: { title: 'Items repeated', line: '{where}: {found} ({expected})' },
-      yearMonth: { title: 'Months not written as year and month', line: '{where}: {expected}, found {found}' },
-      isoDate: { title: 'Dates not written year first', line: '{where}: {expected}, found {found}' },
-      sourceMap: { title: 'Template map entries missing', line: '{field}: found {found}' },
-      unrated: { title: 'Ratings on industries that are not rated', line: '{where}: found {found}' },
-      notNegative: { title: 'Counts below zero', line: '{where}: found {found}' },
+      share: { title: 'Shares above 150%', intro: 'A share is written as a decimal, 0.25 for 25%. A value this high may be a percentage written as a whole number.' },
+      partnerChannel: { title: 'Partners without a channel', intro: 'The partner is kept and shown under "Channel not provided".', where: '{item}', found: '' },
+      tier3Row: { title: 'New Business rows for Tier 3 industries', intro: 'The template plans new business for Tier 1 and Tier 2 industries. The row is kept and counted.', where: '{item}', found: '' },
+      items: { title: 'Empty sections', intro: 'The section is in the file but holds no rows.', where: '{field}', found: '' },
+      revenueWithin: { title: 'Revenue above the order intake', intro: 'Revenue is expected to be no higher than the order intake for the same year, channel and motion.', where: '{item}', expected: '{value}' },
+      booksWithin: { title: 'Books value above the customer value', intro: 'For Partner, Alliance A and Alliance B, the books value of ARR and services is expected to be no higher than the customer value for the same year.', where: '{item}', expected: '{value}' },
+      coverage: { title: 'Coverage ratios that differ from their parts', intro: 'The coverage ratio is expected to equal pipeline divided by forecast minus actuals.', where: '{item}', expected: '{value}' },
+      variance: { title: 'Variances that differ from their parts', intro: 'The variance is expected to equal the books order intake minus the strategic plan for the same year and type.', where: '{item}', expected: '{value}' },
+      splitSum: { title: 'Channel splits not adding up to 100%', intro: 'The four channel shares of a row are expected to add up to 100%.', where: '{item}', expected: '100%' },
+      arrFormula: { title: 'ARR potential not matching its formula', intro: 'ARR potential for year 1 is expected to equal target accounts × hit rate × average deal size.', where: '{item}', expected: '{value}' },
+      segmentRule: { title: 'Segments that differ from the thresholds rule', intro: 'The segment is expected to follow the thresholds: current ARR above the strategic threshold is Strategic, below the scaled threshold is Scaled, order intake and ARR above the growth thresholds is Growth, otherwise Core.', where: '{item}', expected: '{segment}' },
+      mcTier: { title: 'New Business tiers that differ from Market Coverage', intro: 'A New Business row is expected to carry the tier Market Coverage gives its industry.', where: '{item}', expected: '{tier}' },
+      sourceRow: { title: 'Rows without a worksheet row number', intro: 'Every row is expected to carry the worksheet row it was read from.' },
+      sourceCell: { title: 'Items without a worksheet cell', intro: 'Every grid item is expected to carry the worksheet cell it was read from.' },
+      uniqueRow: { title: 'Worksheet row numbers used twice', intro: 'A worksheet row number is expected to be used once per section.', where: '{item}' },
+      uniqueRecap: { title: 'Recap items repeated', intro: 'One recap item is expected per year, channel, motion and type.' },
+      oneItem: { title: 'Items repeated', intro: 'One item is expected for each combination of a list\'s keys.', expected: '{expected}' },
+      yearMonth: { title: 'Months not written as year and month', intro: 'A month is written as year and month, such as "2026-08".' },
+      isoDate: { title: 'Dates not written year first', intro: 'A date is written year first, such as "2026-10-02T09:00:00Z" or "2026-10-02".' },
+      sourceMap: { title: 'Template map entries missing', intro: 'The template map names a sheet and its columns for every section the file carries.', where: '{field}' },
+      unrated: { title: 'Ratings on industries that are not rated', intro: 'An industry the template does not rate carries no ratings.' },
+      notNegative: { title: 'Counts below zero', intro: 'A count is zero or more.' },
       // Extra sections (US-3.2.1): the item is the section (or its row), the field the key checked
       extra: {
-        list: { title: 'Extra sections not written as a list', line: '{where}: {expected}, found {found}' },
-        section: { title: 'Extra sections that are not objects', line: '{where}: {expected}, found {found}' },
-        id: { title: 'Extra section ids missing, repeated or with a colon', line: '{where}: {expected}, found {found}' },
-        title: { title: 'Extra sections without a title', line: '{where}: {expected}, found {found}' },
-        intro: { title: 'Extra section introductions that are not text', line: '{where}: {expected}, found {found}' },
-        columns: { title: 'Extra sections without a usable column', line: '{where}: {expected}, found {found}' },
-        column: { title: 'Extra section columns that are not objects', line: '{where}: {expected}, found {found}' },
-        key: { title: 'Extra section column keys missing, repeated or reserved', line: '{where}: {expected}, found {found}' },
-        label: { title: 'Extra section columns without a heading', line: '{where}: {expected}, found {found}' },
-        unit: { title: 'Extra section columns with an unknown unit', line: '{where}: {expected}, found {found}' },
-        kind: { title: 'Extra section columns with an unknown kind', line: '{where}: {expected}, found {found}' },
-        letter: { title: 'Extra section columns with an unusable column letter', line: '{where}: {expected}, found {found}' },
-        extra: { title: 'Extra sections of a region not written as an object', line: '{expected}, found {found}' },
-        known: { title: 'Rows for extra sections that are not listed', line: '{item}: {expected}' },
-        rows: { title: 'Extra section rows not written as a list', line: '{where}: {expected}, found {found}' },
-        row: { title: 'Extra section rows that are not objects', line: '{where}: {expected}, found {found}' },
-        rowKey: { title: 'Extra section rows naming a column the section does not have', line: '{where}: {expected}' },
-        uniqueRow: { title: 'Extra section rows from the same worksheet row', line: '{where}: row {found} is already used in this section' },
-        sourceRow: { title: 'Extra section rows without a worksheet row number', line: '{where}: found {found}' },
-        number: { title: 'Text in number columns of extra sections', line: '{where}: {expected}, found {found}' },
-        text: { title: 'Numbers in text columns of extra sections', line: '{where}: {expected}, found {found}' }
+        list: { title: 'Extra sections not written as a list', intro: 'meta.extraSections is expected to be a list of sections.', expected: '{expected}' },
+        section: { title: 'Extra sections that are not objects', intro: 'Each extra section is expected to be an object.', expected: '{expected}' },
+        id: { title: 'Extra section ids missing, repeated or with a colon', intro: 'Each extra section is expected to carry an id of its own, without a colon.', expected: '{expected}' },
+        title: { title: 'Extra sections without a title', intro: 'Each extra section is expected to carry a title.', expected: '{expected}' },
+        intro: { title: 'Extra section introductions that are not text', intro: 'An extra section\'s introduction is expected to be text.', expected: '{expected}' },
+        columns: { title: 'Extra sections without a usable column', intro: 'Each extra section is expected to list at least one usable column.', expected: '{expected}' },
+        column: { title: 'Extra section columns that are not objects', intro: 'Each column of an extra section is expected to be an object.', expected: '{expected}' },
+        key: { title: 'Extra section column keys missing, repeated or reserved', intro: 'Each column is expected to carry a key of its own that the app does not reserve.', expected: '{expected}' },
+        label: { title: 'Extra section columns without a heading', intro: 'Each column is expected to carry a heading.', expected: '{expected}' },
+        unit: { title: 'Extra section columns with an unknown unit', intro: 'A column\'s unit is expected to be one the app knows.', expected: '{expected}' },
+        kind: { title: 'Extra section columns with an unknown kind', intro: 'A column\'s kind is expected to be one the app knows.', expected: '{expected}' },
+        letter: { title: 'Extra section columns with an unusable column letter', intro: 'A column\'s letter is expected to be a worksheet column such as B or AC.', expected: '{expected}' },
+        extra: { title: 'Extra sections of a region not written as an object', intro: 'A region\'s extra is expected to be an object keyed by section id.', expected: '{expected}' },
+        known: { title: 'Rows for extra sections that are not listed', intro: 'A region\'s extra rows are expected to belong to a section meta.extraSections lists.', where: '{item}', found: '' },
+        rows: { title: 'Extra section rows not written as a list', intro: 'A section\'s rows are expected to be a list.', expected: '{expected}' },
+        row: { title: 'Extra section rows that are not objects', intro: 'Each row is expected to be an object.', expected: '{expected}' },
+        rowKey: { title: 'Extra section rows naming a column the section does not have', intro: 'A row is expected to name only the section\'s columns.', found: '' },
+        uniqueRow: { title: 'Extra section rows from the same worksheet row', intro: 'A worksheet row number is expected to be used once per section.' },
+        sourceRow: { title: 'Extra section rows without a worksheet row number', intro: 'Every row is expected to carry the worksheet row it was read from.' },
+        number: { title: 'Text in number columns of extra sections', intro: 'A number column is expected to hold numbers or blanks.', expected: '{expected}' },
+        text: { title: 'Numbers in text columns of extra sections', intro: 'A text column is expected to hold text or blanks.', expected: '{expected}' }
       }
     }
   }

@@ -1,6 +1,7 @@
 /*
  * File: js/import/import-write.js
- * Purpose: Writes the plan as the data file's text (window.PLAN_DATA = {...}), downloads it, and writes the report as plain text; docs/ARCHITECTURE.md section 20.
+ * Purpose: Writes the plan as the data file's text (window.PLAN_DATA = {...}), downloads it, and writes the report as plain
+ *          text with each region's notes and the check's warnings grouped by kind (D163, D164); docs/ARCHITECTURE.md section 20.
  * Provides: TAP.importWrite (text, jsonPart, download, report)
  * Depends on: js/panel/panel-export.js (download), js/core/content.js (content/text-import.js wording),
  *             js/ui/warning-groups.js (the report's warning groups, at call time)
@@ -116,36 +117,43 @@
     return say('whereNone');
   }
 
-  function regionLines(r) {
-    var out = [say('region', { name: r.name || r.fileName, status: say(r.ok ? 'imported' : 'leftOut') })];
+  // A kind group as text: the title with its count, the intro once, then each plain row (where, found, expected, the
+  // address) over its technical message, which is what gets pasted into the approved tool (D163, D164)
+  function kindLines(k, prefix) {
+    var W = TAP.warningGroups, out = [say(prefix + 'Kind', { title: k.title, n: k.items.length })];
+    if (k.intro) out.push(say(prefix + 'Intro', { intro: k.intro }));
+    k.items.forEach(function (it) { out.push(say(prefix + 'Plain', { line: W.row(it) }), say(prefix + 'Tech', { message: it.tech })); });
+    return out;
+  }
+
+  // One region: its state and facts, its errors, then its notes grouped by kind. Flat when the component is not loaded.
+  function regionLines(r, result) {
+    var W = TAP.warningGroups, out = [say('region', { name: r.name || r.fileName, status: say(r.ok ? 'imported' : 'leftOut') })];
     var src = r.region && r.region.source, parts = Object.keys(r.parts || {}).map(function (k) {
       return say('part', { section: TAP.content.text('importPanel.check.sections.' + k), state: say('parts.' + r.parts[k]) });
     });
     out.push(say('facts', { file: r.fileName, date: src && src.fileModified ? src.fileModified : say('noDate'), parts: parts.join(', ') }));
     (r.errors || []).forEach(function (e) { out.push(say('error', { where: where(e), message: e.message })); });
-    (r.notes || []).forEach(function (n) { out.push(say('note', { where: where(n), message: n.message })); });
+    if (!W) return out.concat((r.notes || []).map(function (n) { return say('note', { where: where(n), message: n.message }); }));
+    W.kindGroups(W.fromImport(r.notes || [], r.name)).forEach(function (k) { out = out.concat(kindLines(k, 'note')); });
     return out;
   }
 
-  // The check's warnings by workbook, then kind (US-1.8.8): each plain line over its technical message, which is what
-  // gets pasted into the approved tool. Flat when the component is not loaded.
+  // The check's warnings by workbook, then kind (US-1.8.8), the ids labelled with the plan's lookups
   function warningLines(result) {
     var W = TAP.warningGroups, out = [], files = {};
     if (!W) return result.check.warnings.map(function (w) { return say('checkLine', { message: w.message }); });
     (result.regions || []).forEach(function (r) { if (r.name) files[r.name] = r.fileName || null; });
-    W.groups(result.check.warnings, files).forEach(function (g) {
+    W.groups(result.check.warnings, files, { lookups: result.plan ? result.plan.lookups : null }).forEach(function (g) {
       out.push(say('checkBook', { label: g.label, n: g.n }));
-      g.kinds.forEach(function (k) {
-        out.push(say('checkKind', { title: k.title, n: k.items.length }));
-        k.items.forEach(function (w) { out.push(say('checkPlain', { line: W.line(w) }), say('checkTech', { message: w.message })); });
-      });
+      g.kinds.forEach(function (k) { out = out.concat(kindLines(k, 'check')); });
     });
     return out;
   }
 
   function report(result) {
     var out = [];
-    (result.regions || []).forEach(function (r) { out = out.concat(regionLines(r)); });
+    (result.regions || []).forEach(function (r) { out = out.concat(regionLines(r, result)); });
     if (!(result.regions || []).length) out.push(say('none'));
     (result.missing || []).forEach(function (m) { out.push(say('missing', { name: m.name, id: m.id })); });
     (result.mapProblems || []).forEach(function (p) { out.push(say('mapProblem', { message: p })); });

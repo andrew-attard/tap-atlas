@@ -1,11 +1,11 @@
 /*
  * File: js/ui/import-report.js
- * Purpose: Draws the import report: the summary, each region's file, parts, errors and notes with sheet and cell, the
- *          contract check (its errors as the invalid screen's table, its warnings grouped by workbook and kind, US-1.8.8);
- *          docs/ARCHITECTURE.md section 20. Modelled on the data sources panel (js/ui/sources-panel.js). Every word comes
- *          from content/text-import.js and, for the warning groups, content/text-data.js.
+ * Purpose: Draws the import report: the summary, each region's file, parts, errors, and its notes grouped by kind as tables
+ *          (US-1.8.9, D163, D164), then the contract check (its errors as the invalid screen's table, its warnings grouped by
+ *          workbook and kind, US-1.8.8); docs/ARCHITECTURE.md section 20. Modelled on the data sources panel
+ *          (js/ui/sources-panel.js). Every word comes from content/text-import.js and, for the groups, content/text-data.js.
  * Provides: TAP.importReport (render)
- * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/icons.js, js/ui/warning-groups.js
+ * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/icons.js, js/ui/warning-groups.js, js/ui/warning-table.js
  * Used by: js/ui/import-panel.js
  * Owner: UI stream (#587)
  */
@@ -72,11 +72,12 @@
     ]);
   }
 
-  // One region's reading: the name (and "left out" when it failed), the facts, its errors, then its notes.
-  function region(r) {
-    var src = (r.region && r.region.source) || {}, parts = r.parts || {};
+  // One region's reading: the name (and "left out" when it failed), the facts, its errors as a short list (they say why
+  // the region was left out), then its notes grouped by kind, each group a table (D163, D164).
+  function region(r, result) {
+    var src = (r.region && r.region.source) || {}, parts = r.parts || {}, W = TAP.warningGroups;
     var read = Object.keys(parts).filter(function (k) { return parts[k] === 'read'; }).map(partLabel);
-    var errors = r.errors || [], notes = r.notes || [];
+    var errors = r.errors || [], notes = r.notes || [], lookups = result.plan ? result.plan.lookups : null;
     return el('section', { class: 'tap-imp__region', 'data-region': r.id }, [
       el('h4', null, [r.name || r.fileName, r.ok ? null : el('span', { class: 'tap-badge' }, t('leftOut'))]),
       facts([
@@ -86,7 +87,7 @@
         [t('notes'), String(notes.length)]
       ]),
       errors.length ? el('ul', { class: 'tap-imp__errors', 'aria-label': t('errorsTitle') }, errors.map(function (e) { return line('warning', e); })) : null,
-      notes.length ? el('ul', { class: 'tap-imp__notes', 'aria-label': t('notesTitle') }, notes.map(function (n) { return line('info', n); })) : null
+      notes.length ? el('div', { class: 'tap-imp__notes', role: 'group', 'aria-label': t('notesTitle') }, W.renderKinds(W.fromImport(notes, r.name), { lookups: lookups })) : null
     ]);
   }
 
@@ -111,11 +112,12 @@
     ]);
   }
 
-  // The warnings grouped by workbook, then kind, in plain words (US-1.8.8); the files by the regions' names
+  // The warnings grouped by workbook, then kind, in plain words (US-1.8.8); the files by the regions' names, the ids
+  // labelled with the imported plan's lookups
   function warnings(list, result) {
     var files = {};
     (result.regions || []).forEach(function (r) { if (r.name) files[r.name] = r.fileName || null; });
-    return TAP.warningGroups.render(list, { files: files });
+    return TAP.warningGroups.render(list, { files: files, lookups: result.plan ? result.plan.lookups : null });
   }
 
   function check(c, result) {
@@ -131,7 +133,7 @@
     result = result || {};
     TAP.dom.clear(host);
     TAP.dom.append(host, [summary(result), missing(result.missing), mapProblems(result.mapProblems)]);
-    (result.regions || []).forEach(function (r) { host.appendChild(region(r)); });
+    (result.regions || []).forEach(function (r) { host.appendChild(region(r, result)); });
     TAP.dom.append(host, check(result.check, result));
     return host;
   }

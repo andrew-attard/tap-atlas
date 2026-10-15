@@ -1,13 +1,13 @@
 /*
  * File: js/ui/sources-panel.js
- * Purpose: The data sources panel body: per region the file, its saved date, the import date and the import notes;
- *          whether import dates differ; then other notes worth checking (the contract check's warnings grouped by
- *          workbook and kind, US-1.8.8), insight rules that were skipped and running order steps that were left out (US-3.1.1).
- *          Import notes appear here and nowhere else (US-1.1.5).
+ * Purpose: The data sources panel body: per region the file, its saved date, the import date and the import notes grouped
+ *          by kind as tables (US-1.8.9, D163, D164); whether import dates differ; then other notes worth checking (the
+ *          contract check's warnings grouped by workbook and kind, US-1.8.8), insight rules that were skipped and running
+ *          order steps that were left out (US-3.1.1). Import notes appear here and nowhere else (US-1.1.5).
  * Provides: TAP.sourcesPanel (render)
  * Depends on: js/core/sources.js (imports, datesDiffer, dataDate), js/core/store.js (TAP.notes), js/core/data.js,
  *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/icons.js, js/engine/scope.js (colorOf),
- *             js/ui/warning-groups.js, js/insights/engine.js (failures)
+ *             js/ui/warning-groups.js, js/ui/warning-table.js, js/insights/engine.js (failures)
  * Used by: js/ui/layers.js (the 'sources' side panel)
  */
 (function (TAP) {
@@ -34,8 +34,9 @@
     return dl;
   }
 
+  // One region: its facts, then its import notes by kind (a note without a kind, from an older file, groups by its message)
   function region(imp) {
-    var notes = imp.notes || [];
+    var notes = imp.notes || [], W = TAP.warningGroups;
     return el('section', { class: 'tap-src__region', 'data-region': imp.regionId }, [
       el('h3', { class: 'tap-src__name' }, [el('span', { class: 'tap-swatch', style: 'background:' + TAP.scope.colorOf(imp.regionId) }), imp.name]),
       facts([
@@ -44,10 +45,7 @@
         [t('sourcesPanel.imported'), TAP.format.date(imp.importedAt, { time: true })]
       ]),
       notes.length
-        ? el('div', { class: 'tap-src__box' }, [
-          el('h4', null, t('sourcesPanel.notes')),
-          el('ul', null, notes.map(function (n) { return note(n.message, where(imp.fileName, n.sheet, n.cell)); }))
-        ])
+        ? el('div', { class: 'tap-src__box' }, [el('h4', null, t('sourcesPanel.notes')), W.renderKinds(W.fromImport(notes, imp.name))])
         : el('p', { class: 'tap-src__none' }, t('sourcesPanel.noNotes'))
     ]);
   }

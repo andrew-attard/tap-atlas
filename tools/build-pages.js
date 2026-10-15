@@ -43,7 +43,7 @@ const APP = [
   'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel-build.js', 'js/panel/panel.js',
   'js/import/xlsx-book.js', 'js/import/import-map.js', 'js/import/import-values.js', 'js/import/import-fields.js', 'js/import/import-rows.js', 'js/import/import-grid.js',
   'js/import/import-checks.js', 'js/import/import-region.js', 'js/import/import-plan.js', 'js/import/import-write.js',
-  'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/warning-groups.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
+  'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/warning-groups.js', 'js/ui/warning-table.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/source-tip.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/multi-select.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present-screen.js', 'js/ui/present.js', 'js/ui/import-report.js', 'js/ui/import-panel.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',

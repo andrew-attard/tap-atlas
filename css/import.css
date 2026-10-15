@@ -51,14 +51,16 @@
 .tap-imp__facts dt { color: var(--tap-muted); }
 .tap-imp__facts dd { margin: 0; font-weight: 600; word-break: break-word; }
 
-/* Errors and notes: an icon, the message, and the sheet and cell on their own line under it */
-.tap-imp__errors, .tap-imp__notes, .tap-imp__check ul, .tap-imp__mapsection ul {
+/* Errors: an icon, the message, and the sheet and cell on their own line under it. Notes: the kind groups and their
+   tables (css/layers.css .tap-wg*), in a box */
+.tap-imp__errors, .tap-imp__check ul, .tap-imp__mapsection ul {
   display: flex; flex-direction: column; gap: var(--tap-sp-2); margin: 0; padding: 0; list-style: none;
 }
-.tap-imp__errors li, .tap-imp__notes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--tap-sp-2); align-items: start; }
-.tap-imp__errors li .tap-icon, .tap-imp__notes li .tap-icon { margin-top: 3px; }
-.tap-imp__errors li .tap-muted, .tap-imp__notes li .tap-muted, .tap-imp__check li .tap-muted { grid-column: 2; display: block; }
+.tap-imp__errors li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--tap-sp-2); align-items: start; }
+.tap-imp__errors li .tap-icon { margin-top: 3px; }
+.tap-imp__errors li .tap-muted, .tap-imp__check li .tap-muted { grid-column: 2; display: block; }
 .tap-imp__errors { padding: var(--tap-sp-3); background: var(--tap-surface); border-left: var(--tap-highlight-w) solid var(--tap-ink); }
+.tap-imp__notes { padding: var(--tap-sp-3); background: var(--tap-surface); }
 
 /* The contract check's table: the layer scrolls as a whole, so the header need not stick */
 .tap-imp .tap-table th { position: static; }
