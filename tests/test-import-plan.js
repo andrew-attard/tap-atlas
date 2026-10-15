@@ -222,7 +222,8 @@
         [c.notes, 'segmentRule', 1, [r.customerGrowth.accounts[1].name, 'Growth', 'Core'], /growth/],
         [c.errors, 'missingIndustries', 1, [text('sections.marketCoverage'), null, 'Retail'], /Retail/],
         [c3.notes, 'emptySection', 3, [text('sections.customerGrowth'), null, null], /is empty/],
-        [c4.notes, 'variance', 1, ['2027, ARR', 25, -10], /-10/],
+        // 2027 ARR books: 400 + 150 + 100 + 40 = 690, plus the 100 planted on F60 below = 790; minus the plan 700 = 90
+        [c4.notes, 'variance', 1, ['2027, ARR', 25, 90], /90/],
         [c4.notes, 'revenueAbove', 1, ['2027, Direct, new business, ARR', 450, 400], /450/],
         [c4.notes, 'booksAbove', 1, ['2027, Partner', 315, 300], /315/],
         [c4.notes, 'coverage', 1, ['Recurring', 2.2, 2], /2\.2/]   // the category by its lookup name
