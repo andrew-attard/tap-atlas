@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, UI stream (docs/ARCHITECTURE.md section 20): the Import panel as a layer and
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
- * Provides: test cases TPV-TC-852 to TPV-TC-867
+ * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-856 also covers the grouped warnings, US-1.8.8)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
  * Owner: UI stream (#587)
@@ -86,7 +86,8 @@
       ],
       missing: [{ id: 'delta', name: 'Region D' }],
       plan: T_FIXTURE('mini'),
-      check: { errors: [], warnings: [{ path: 'regions[1].partners', region: 'Region B', item: null, expected: '', found: '', message: 'No partners are listed.' }] },
+      check: { errors: [], warnings: [{ path: 'regions[1].partners', region: 'Region B', item: null, field: 'partners', kind: 'items', expected: 'at least one item',
+        found: 'an empty list', message: 'regions[1].partners: expected at least one item, found an empty list' }] },
       usable: true
     };
   }
@@ -196,7 +197,17 @@
         a.equal(txt(qs('.tap-muted', notes[0])), '1. Market Coverage › D12', 'sheet › cell');
         a.equal(qsa('.tap-imp__errors li', secs[0]).length + qsa('.tap-imp__notes li', secs[0]).length, 0, 'a clean region lists nothing');
         a.equal(txt(qs('.tap-imp__check-warnings h4', host)), t('report.checkWarnings'));
-        a.deepEqual(qsa('.tap-imp__check-warnings li', host).map(txt), ['No partners are listed. regions[1].partners'], 'the warning with its path');
+        // The warnings grouped by workbook, then kind, in plain words (US-1.8.8): no data path on screen
+        var wg = qsa('.tap-imp__check-warnings details.tap-wg', host);
+        a.equal(wg.length, 1, 'one workbook group');
+        a.equal(wg[0].getAttribute('data-region'), 'Region B');
+        a.equal(txt(qs(':scope > summary', wg[0])), 'Region B · Region B plan.xlsx: 1 warning', 'region, its file and the count');
+        a.ok(wg[0].open, 'open: three warnings or fewer');
+        var kind = qs('details.tap-wg__kind', wg[0]);
+        a.equal(kind.getAttribute('data-kind'), 'items');
+        a.equal(txt(qs(':scope > summary', kind)), TAP.content.text('check.plain.items.title') + ' (1)', 'the kind in plain words with its count');
+        a.deepEqual(qsa('.tap-imp__check-warnings li', host).map(txt), [TAP.content.text('check.plain.items.line', { field: TAP.content.text('check.fields.partners') })], 'the line in words');
+        a.ok(txt(qs('.tap-imp__check-warnings', host)).indexOf('regions[') < 0, 'no data path');
         a.ok(!qs('.tap-imp__check-errors', host), 'no contract errors, no table');
         var b = buttons(host);
         a.ok(!b.use.disabled && !b.save.disabled && !b.copy.disabled, 'the three buttons are enabled');

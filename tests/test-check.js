@@ -3,7 +3,8 @@
  * Purpose: Tests for the contract check on load (TPV-TC-205, 206) and for its Phase 4 parts (US-4.1.2).
  * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
  *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*; for the real-data
- *           fixes (#599 to #601): TPV-TC-872 and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases
+ *           fixes (#599 to #601): TPV-TC-872 and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases; for the
+ *           warning kinds (#605): X-warn-kinds, X-warn-kinds-wording
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -11,7 +12,7 @@
 (function (TAP) {
   'use strict';
 
-  var KEYS = ['path', 'region', 'item', 'expected', 'found', 'message'];
+  var KEYS = ['path', 'region', 'item', 'field', 'kind', 'expected', 'found', 'message'];
 
   function copy(x) { return JSON.parse(JSON.stringify(x)); }
 
@@ -65,7 +66,7 @@
       });
     });
 
-    T.test('X-check-shape', 'Every reported item has path, region, item, expected, found and message', function (a) {
+    T.test('X-check-shape', 'Every reported item has path, region, item, field, kind, expected, found and message', function (a) {
       var all = [];
       window.TEST_FIXTURES.broken.cases.forEach(function (c) {
         var res = TAP.check.run(broken(c));
@@ -266,6 +267,71 @@
       var ok = T_FIXTURE('mini');
       ok.regions[1].id = 'rest-of-world';
       a.deepEqual(TAP.check.run(ok).errors, [], 'an id that only starts with "rest" is fine');
+    });
+
+    /* ---------- US-1.8.8: every entry carries the kind of its expected sentence and the field checked (D161) ---------- */
+
+    // Case id -> [kind, field] for the recorded broken cases (null field: the item as a whole)
+    var KIND_OF = { 'missing-field': ['tier', 'tier'], 'wrong-type': ['num', 'targetAccounts'],
+      'rating-on-unrated': ['unrated', 'growthPotential'], 'no-source-map': ['sourceMap', 'sourceMap'], 'source-map-section-missing': ['sourceMap', 'partners'],
+      'no-source-cell': ['sourceCell', 'sourceCell'], 'split-not-100': ['splitSum', 'channelSplit'], 'arr-not-recalculated': ['arrFormula', 'arrPotential[0]'],
+      'segment-off-thresholds': ['segmentRule', 'segment'], 'no-source-row': ['sourceRow', 'sourceRow'], 'empty-section': ['items', 'partners'],
+      'partner-no-channel': ['partnerChannel', 'channel'], 'nb-tier3-row': ['tier3Row', 'tier'],
+      'route-and-year-twice': ['oneItem', null], 'plan-year-and-type-twice': ['oneItem', null], 'books-item-twice': ['oneItem', null],
+      'base-year-category-twice': ['oneItem', null], 'variance-off': ['variance', 'variance'], 'coverage-off': ['coverage', 'coverage'],
+      'revenue-above-order-intake': ['revenueWithin', null], 'books-above-customer-value': ['booksWithin', null],
+      'support-as-whole-number': ['share', 'supportPct'], 'outsourcing-as-whole-number': ['share', 'outsourcingPct'] };
+    function hitOf(res, c) { return res[c.level].filter(function (x) { return x.path === c.expect.path; })[0]; }
+    function kindAt(res, path) { var x = res.warnings.filter(function (w) { return w.path === path; })[0]; return x ? [x.kind, x.field] : null; }
+
+    T.test('X-warn-kinds', 'Every error and warning names the kind of its expected sentence and the field checked; the message is unchanged', function (a) {
+      var rec = window.TEST_FIXTURES.broken.recorded;
+      window.TEST_FIXTURES.broken.cases.forEach(function (c) {
+        var res = TAP.check.run(broken(c)), hit = hitOf(res, c), want = KIND_OF[c.id];
+        a.ok(hit && typeof hit.kind === 'string' && hit.kind, c.id + ': a kind (' + (hit && hit.kind) + ')');
+        a.ok(hit && (hit.field === null || typeof hit.field === 'string'), c.id + ': a field or null');
+        if (want && hit) a.deepEqual([hit.kind, hit.field], want, c.id + ': kind and field');
+        if (c.level === 'warnings') a.deepEqual(messages(res.warnings), rec.cases[c.id].all || (rec.cases[c.id].first || []).concat(BASE, rec.cases[c.id].last || []), c.id + ': the messages as before');
+      });
+      window.TEST_FIXTURES.broken.p4Cases.forEach(function (c) {
+        var hit = hitOf(TAP.check.run(p4(c.change)), c), want = KIND_OF[c.id];
+        a.ok(hit && typeof hit.kind === 'string' && hit.kind, c.id + ': a kind (' + (hit && hit.kind) + ')');
+        if (want && hit) a.deepEqual([hit.kind, hit.field], want, c.id + ': kind and field');
+      });
+      // The review cases: shares, counts, repeated recap items, dates, repeated rows, a month, a tier that differs
+      var p = T_FIXTURE('mini'), r = p.regions[0];
+      r.newBusiness[0].hitRate = 25;
+      r.newBusiness[1].targetAccounts = -5;
+      r.customerGrowth.accounts[0].growthPct = [10, 0, 0];
+      r.recap.push(copy(r.recap[0]));
+      r.customerGrowth.accounts[1].sourceRow = 10;
+      p.meta.generatedAt = '2026/10/03';
+      var res = TAP.check.run(p);
+      a.deepEqual(kindAt(res, 'regions[0].newBusiness[0].hitRate'), ['share', 'hitRate']);
+      a.deepEqual(kindAt(res, 'regions[0].newBusiness[1].targetAccounts'), ['notNegative', 'targetAccounts']);
+      a.deepEqual(kindAt(res, 'regions[0].customerGrowth.accounts[0].growthPct[0]'), ['share', 'growthPct'], 'a by-year share names its list, not the index');
+      a.deepEqual(kindAt(res, 'regions[0].recap[2]'), ['uniqueRecap', null]);
+      a.deepEqual(kindAt(res, 'regions[0].customerGrowth.accounts[1].sourceRow'), ['uniqueRow', 'sourceRow']);
+      a.deepEqual(kindAt(res, 'meta.generatedAt'), ['isoDate', 'generatedAt']);
+      var month = TAP.check.run(p4(function (q) { q.regions[0].baseYear.actualsThrough = 'August 2026'; }));
+      a.deepEqual(kindAt(month, 'regions[0].baseYear.actualsThrough'), ['yearMonth', 'actualsThrough']);
+      var q = T_FIXTURE('mini');
+      q.regions[0].newBusiness[1].tier = 3;
+      var e = TAP.check.run(q).errors[0];
+      a.deepEqual([e.path, e.kind, e.field], ['regions[0].newBusiness[1].tier', 'mcTier', 'tier']);
+      a.equal(e.message, 'regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 3', 'the technical line as before');
+    });
+
+    T.test('X-warn-kinds-wording', 'Every warning kind the broken cases raise has plain wording (check.plain)', function (a) {
+      var kinds = {}, all = [];
+      window.TEST_FIXTURES.broken.cases.forEach(function (c) { all = all.concat(TAP.check.run(broken(c)).warnings); });
+      window.TEST_FIXTURES.broken.p4Cases.forEach(function (c) { all = all.concat(TAP.check.run(p4(c.change)).warnings); });
+      all.forEach(function (x) { kinds[x.kind] = true; });
+      a.ok(Object.keys(kinds).length >= 12, 'many kinds raised: ' + Object.keys(kinds).join(', '));
+      var without = Object.keys(kinds).filter(function (k) {
+        return k === 'null' || TAP.content.text('check.plain.' + k + '.title').charAt(0) === '[' || TAP.content.text('check.plain.' + k + '.line').charAt(0) === '[';
+      });
+      a.deepEqual(without, [], 'kinds without plain wording: ' + without.join(', '));
     });
 
     /* ---------- Phase 4: the check covers the new parts (US-4.1.2) ---------- */
