@@ -1198,7 +1198,7 @@
     });
 
     // US-1.8.8 (D161): the check's warnings grouped by workbook, then kind, in plain words; other notes keep their list
-    T.test('X-warn-sources-panel', 'The data sources panel groups the check warnings under the region and its file, one group per kind', function (a) {
+    T.test('TPV-TC-886', 'The data sources panel groups the check warnings under the region and its file, one group per kind', function (a) {
       run(function () {
         var p = T_FIXTURE('mini');
         p.regions[1].partners[0].channel = null;

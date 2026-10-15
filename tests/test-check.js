@@ -4,7 +4,7 @@
  * Provides: test cases for DATA stories (#57): TPV-TC-205, TPV-TC-206, X-check-*, X-review-DE-4, X-review-DE-5, X-review-DE-10,
  *           X-review-DE-12; for DATA4 (#437): TPV-TC-649, 650, 651, 653, 654, 655, 656 and X-p4-check-*; for the real-data
  *           fixes (#599 to #601): TPV-TC-872 and the partner-no-channel, nb-tier3-row and nb-tier3-mismatch cases; for the
- *           warning kinds (#605): X-warn-kinds, X-warn-kinds-wording
+ *           warning kinds (#605): TPV-TC-875, TPV-TC-876
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js,
  *             tests/fixtures/broken-cases.js, data/sample-plan-data.js (window.PLAN_DATA)
  * Used by: tests.html
@@ -284,7 +284,7 @@
     function hitOf(res, c) { return res[c.level].filter(function (x) { return x.path === c.expect.path; })[0]; }
     function kindAt(res, path) { var x = res.warnings.filter(function (w) { return w.path === path; })[0]; return x ? [x.kind, x.field] : null; }
 
-    T.test('X-warn-kinds', 'Every error and warning names the kind of its expected sentence and the field checked; the message is unchanged', function (a) {
+    T.test('TPV-TC-875', 'Every error and warning names the kind of its expected sentence and the field checked; the message is unchanged', function (a) {
       var rec = window.TEST_FIXTURES.broken.recorded;
       window.TEST_FIXTURES.broken.cases.forEach(function (c) {
         var res = TAP.check.run(broken(c)), hit = hitOf(res, c), want = KIND_OF[c.id];
@@ -322,7 +322,7 @@
       a.equal(e.message, 'regions[0].newBusiness[1].tier: expected the Market Coverage tier for this industry (2), found 3', 'the technical line as before');
     });
 
-    T.test('X-warn-kinds-wording', 'Every warning kind the broken cases raise has plain wording (check.plain)', function (a) {
+    T.test('TPV-TC-876', 'Every warning kind the broken cases raise has plain wording (check.plain)', function (a) {
       var kinds = {}, all = [];
       window.TEST_FIXTURES.broken.cases.forEach(function (c) { all = all.concat(TAP.check.run(broken(c)).warnings); });
       window.TEST_FIXTURES.broken.p4Cases.forEach(function (c) { all = all.concat(TAP.check.run(p4(c.change)).warnings); });

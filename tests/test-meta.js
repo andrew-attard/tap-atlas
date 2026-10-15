@@ -27,6 +27,9 @@
     T.skip('TPV-TC-202', 'Every code file starts with a header', 'Checked by tools/lint.js (rule 1) in scripts/verify.sh');
     T.skip('TPV-TC-203', 'Files over about 300 lines are listed', 'Checked by tools/lint.js (rule 2) in scripts/verify.sh');
     T.skip('TPV-TC-204', 'Every path the "which files for which change" table names exists', 'Checked by tools/check-docs.js in scripts/verify.sh');
+    T.skip('TPV-TC-511', 'Every Phase 2 file is listed in the README and every path it names exists', 'Checked by tools/check-docs.js in scripts/verify.sh');
+    T.skip('TPV-TC-515', 'check-docs passes on the Phase 2 build', 'Checked by tools/check-docs.js in scripts/verify.sh');
+    T.skip('TPV-TC-592', 'Every path the extension guide and the prompts name exists, with no denylisted term', 'Checked by tools/check-docs.js and the denylist scan in scripts/verify.sh');
     T.skip('TPV-TC-042', 'No colour values or organization names outside the theme file', 'Checked by tools/lint.js (rule 4) and the denylist scan in scripts/verify.sh');
   });
 })(window.TAP);

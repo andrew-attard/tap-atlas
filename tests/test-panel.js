@@ -3,7 +3,7 @@
  * Purpose: Tests for the report panel and its controls.
  * Provides: test cases for PANEL stories (#14, #15, #16, #5, #19, #20, #22): TPV-TC-050 to 055, 057 to 061, 063 to
  *           067, 228 to 232, 241 to 250, 256 to 258, X-panel-*, X-table-*, X-export-*, X-d125-* (D125), 767 to 769 (D142),
- *           X-d136-* (D136), X-notes-panel-* (the notes limit, D162)
+ *           X-d136-* (D136), TPV-TC-893 and 894 (the notes limit, D162)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -240,7 +240,7 @@
     }));
 
     // D162: at most three notes in view, the rest behind "Show n more notes"
-    T.test('X-notes-panel-limit', 'Three notes show in full; a fourth sits behind "Show 1 more note", closed until opened', scene(function (a, s) {
+    T.test('TPV-TC-893', 'Three notes show in full; a fourth sits behind "Show 1 more note", closed until opened', scene(function (a, s) {
       s.report(fakeDef());
       FAKE = function () { return { notes: ['Note one.', 'Note two.', 'Note three.', 'Note four.'] }; };
       var p = s.panel('x-fake');
@@ -255,7 +255,7 @@
       a.equal(more.open, true, 'opens on activation: a click, or Enter on the focused summary');
     }));
 
-    T.test('X-notes-panel-count', 'The summary counts the hidden notes, the missing-regions line among them; three notes need no details', scene(function (a, s) {
+    T.test('TPV-TC-894', 'The summary counts the hidden notes, the missing-regions line among them; three notes need no details', scene(function (a, s) {
       s.report(fakeDef());
       FAKE = function () { return { notes: ['N1', 'N2', 'N3', 'N4'], missing: ['Region D'] }; };
       var p = s.panel('x-fake'), more = qs('details.tap-panel__more', p.el);

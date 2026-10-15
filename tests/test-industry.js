@@ -3,7 +3,7 @@
  * Purpose: Tests for the tier grid, the quadrant chart, ratings, commentary and details.
  * Provides: test cases TPV-TC-105, TPV-TC-107, TPV-TC-062 (tier grid and quadrant), TPV-TC-252 to 254, TPV-TC-262, 263, 265, 266, X-industry-*, X-details-*,
  *           X-d101-ratings-grid (the ratings grid), X-d102-ratings-insights (the rating insights on it),
- *           X-d105-industry-layout (the view in two parts), X-notes-quadrant (D162) (US-1.5.7 commentary checks are X-industry-comments-*)
+ *           X-d105-industry-layout (the view in two parts), TPV-TC-895 (D162) (US-1.5.7 commentary checks are X-industry-comments-*)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  * Owner: the INDUSTRY stream (#32, #33, #34, #35, #21).
@@ -302,7 +302,7 @@
 
   T.suite('industry-quad', function () {
     // D162: Regions C and D leave the three ability ratings blank on three industries
-    T.test('X-notes-quadrant', 'Two regions blank on several industries: one folded line for the measure, not one per industry', function (a) {
+    T.test('TPV-TC-895', 'Two regions blank on several industries: one folded line for the measure, not one per industry', function (a) {
       var plan = T_FIXTURE('mini');
       plan.regions.forEach(function (r) {
         if (r.id !== 'charlie' && r.id !== 'delta') return;

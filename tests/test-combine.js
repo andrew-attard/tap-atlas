@@ -2,7 +2,7 @@
  * File: tests/test-combine.js
  * Purpose: Tests for combining regions and the comparison scope (TPV-TC-068 to 075), checked against the
  *          hand calculations in tests/fixtures/mini-expected.js.
- * Provides: test cases TPV-TC-068 to TPV-TC-075, X-scope-*, X-agg-*, X-review-SV-16, X-review-DE-13, X-notes-* (the chart notes fold, D162)
+ * Provides: test cases TPV-TC-068 to TPV-TC-075, X-scope-*, X-agg-*, X-review-SV-16, X-review-DE-13, TPV-TC-887 to TPV-TC-892 (the chart notes fold, D162)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts and fixtures
  * Used by: tests.html
  */
@@ -444,7 +444,7 @@
     }
     function item(label, measure, blank, text) { return { label: label, measure: measure, text: text || 'how', c: gapCell(blank) }; }
 
-    T.test('X-notes-leftOut', 'leftOut names the regions a combined cell left out: not provided, out of any part, or weight missing', function (a) {
+    T.test('TPV-TC-887', 'leftOut names the regions a combined cell left out: not provided, out of any part, or weight missing', function (a) {
       a.deepEqual(TAP.agg.leftOut(gapCell(['charlie'])), ['charlie'], 'a plain combined total');
       a.deepEqual(TAP.agg.leftOut(gapCell(['bravo', 'delta'])), ['bravo', 'delta'], 'two regions, in scope order');
       a.deepEqual(TAP.agg.leftOut(gapCell([])), [], 'nothing left out');
@@ -468,12 +468,12 @@
       a.deepEqual(TAP.agg.leftOut(rate), ['charlie', 'bravo'], 'not provided first, then the weight missing');
     });
 
-    T.test('X-notes-fold-one', 'One row with a gap keeps today’s line', function (a) {
+    T.test('TPV-TC-888', 'One row with a gap keeps today’s line', function (a) {
       var text = 'Average of 3 regions; Region C not included: not provided';
       a.deepEqual(TAP.agg.foldNotes([item('Healthcare', 'ability to win', ['charlie'], text)]), ['Healthcare, ability to win: ' + text]);
     });
 
-    T.test('X-notes-fold-rows', 'Rows with the same measure and the same regions left out share one line naming the rows', function (a) {
+    T.test('TPV-TC-889', 'Rows with the same measure and the same regions left out share one line naming the rows', function (a) {
       var two = TAP.agg.foldNotes([item('Healthcare', 'ability to win', ['charlie', 'delta']), item('Education', 'ability to win', ['charlie', 'delta'])]);
       a.deepEqual(two, ['Ability to win: Region C and Region D not included (not provided) for 2 rows: Healthcare and Education'], 'the line starts with a capital');
       var four = TAP.agg.foldNotes(['I1', 'I2', 'I3', 'I4'].map(function (l) { return item(l, 'tier', ['bravo']); }));
@@ -482,7 +482,7 @@
       a.deepEqual(six, ['Tier: Region B not included (not provided) for 6 rows: I1, I2, I3, I4 and 2 more'], 'four named with commas, then how many more');
     });
 
-    T.test('X-notes-fold-derived', 'Derived sums fold on the union of the regions left out of any part', function (a) {
+    T.test('TPV-TC-890', 'Derived sums fold on the union of the regions left out of any part', function (a) {
       function derived(label, blankNb, blankCg) {
         var nb = gapCell(blankNb), cg = gapCell(blankCg);
         var c = { v: 1, state: 'value', kind: 'APP', src: { combined: true, how: 'sum', regionIds: ALL, excluded: [],
@@ -496,14 +496,14 @@
         'C missing from either part is the same gap; C and D is another');
     });
 
-    T.test('X-notes-fold-groups', 'Another measure, or another set of regions, is another line, in first-seen order', function (a) {
+    T.test('TPV-TC-891', 'Another measure, or another set of regions, is another line, in first-seen order', function (a) {
       var out = TAP.agg.foldNotes([item('Healthcare', 'ability to win', ['charlie']), item('Education', 'attractiveness', ['charlie']),
         item('Retail', 'ability to win', ['charlie']), item('Utilities', 'ability to win', ['charlie', 'delta'])]);
       a.deepEqual(out, ['Ability to win: Region C not included (not provided) for 2 rows: Healthcare and Retail',
         'Education, attractiveness: how', 'Utilities, ability to win: how'], 'a group of one keeps the plain line, lower-cased as today');
     });
 
-    T.test('X-notes-fold-partial', 'A note without a cell keeps its line and its place; duplicate lines are dropped', function (a) {
+    T.test('TPV-TC-892', 'A note without a cell keeps its line and its place; duplicate lines are dropped', function (a) {
       var partial = { label: 'Region A', measure: 'ARR ambition', text: 'Partly provided by Region A', c: null };
       var out = TAP.agg.foldNotes([item('Healthcare', 'tier', ['charlie']), partial, item('Education', 'tier', ['charlie']), partial]);
       a.deepEqual(out, ['Tier: Region C not included (not provided) for 2 rows: Healthcare and Education', 'Region A, ARR ambition: Partly provided by Region A']);

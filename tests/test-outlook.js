@@ -2,7 +2,7 @@
  * File: tests/test-outlook.js
  * Purpose: Tests for the Outlook view (US-4.2.1) and its reports, checked against the hand calculations in
  *          tests/fixtures/mini-p4-expected.js (never against the reports' own output).
- * Provides: test cases TPV-TC-679 to TPV-TC-713 and TPV-TC-720 to TPV-TC-723 (automated ones), X-p4-outlook-*, X-notes-outlook (D162);
+ * Provides: test cases TPV-TC-679 to TPV-TC-713 and TPV-TC-720 to TPV-TC-723 (automated ones), X-p4-outlook-*, TPV-TC-897 (D162);
  *           window.OUTLOOK_T (helpers shared by the test cases of each report)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-p4.js and mini-p4-expected.js
  * Used by: tests.html
@@ -299,7 +299,7 @@
     });
 
     // D162: Regions C and D have no strategic plan; by plan year the organization total has three rows
-    when([SP], 'X-notes-outlook', 'Two regions without a strategic plan, by plan year: one folded line per measure, not one per year', function (a) {
+    when([SP], 'TPV-TC-897', 'Two regions without a strategic plan, by plan year: one folded line per measure, not one per year', function (a) {
       var p = window.T_FIXTURE('miniP4');
       p.regions.forEach(function (r) { if (r.id === 'delta') delete r.strategicPlan; });
       TAP.data.load(p);
