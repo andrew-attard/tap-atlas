@@ -81,7 +81,7 @@
       a.ok(lines[0].indexOf('Fictional Partner A1 (row 10)') >= 0, 'the row in words: ' + lines[0]);
       a.ok(lines[0].indexOf(t('check.fields.supportPct')) >= 0, 'the field in words: ' + lines[0]);
       a.ok(lines[0].indexOf('2.33') >= 0, 'the value found: ' + lines[0]);
-      a.ok(lines[1].indexOf('Channel not provided') >= 0, 'the partner line says where it is shown: ' + lines[1]);
+      a.ok(lines[2].indexOf('Channel not provided') >= 0, 'the partner line says where it is shown: ' + lines[2]);
       a.ok(lines[3].indexOf('kept and counted') >= 0, 'the Tier 3 line says the row is kept: ' + lines[3]);
       a.equal(txt(qs('li', b[1])), t('check.plain.items.line', { field: t('check.fields.partners') }), 'an empty section names the section in words');
       var all = txt(r.host);
@@ -103,7 +103,7 @@
     });
 
     T.test('X-warn-groups-fallback', 'A kind without wording falls back to the expected sentence as its title and the value found as its line', function (a) {
-      var r = render([w('Region A', 'mystery', 'x', 'Row X', 'something else', 7, 'regions[0].x')]);
+      var r = render([w('Region A', 'mystery', null, 'Row X', 'something else', 7, 'regions[0].x')]);
       a.equal(summary(kinds(books(r.host)[0])[0]), 'something else (1)');
       a.equal(txt(qs('li', r.host)), 'Row X: ' + t('check.plain.fallback.found', { found: '7' }));
       // A note with no kind and no expected sentence (an older entry) still reads: its message is the title
