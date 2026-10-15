@@ -164,7 +164,8 @@ The in-app import (D147, `docs/ARCHITECTURE.md` section 20): the planning workbo
 | `js/ui/shell.js` | The page frame: banner, top bar and menu, view area |
 | `js/ui/compare-bar.js` | The comparison bar, one row: three modes (all regions, selected regions, one vs the rest) and their pickers, then the Data, Present and Tour buttons; the plain sentence for screen readers |
 | `js/ui/layers.js` | Side panels (details, data sources, explanations), one at a time |
-| `js/ui/sources-panel.js` | The data sources panel: files, dates, import notes, skipped rules |
+| `js/ui/warning-groups.js` | The contract check's warnings grouped by workbook, then by kind, in plain words (D161); the Import report and the data sources panel share it |
+| `js/ui/sources-panel.js` | The data sources panel: files, dates, import notes, the check's warnings in groups, skipped rules |
 | `js/ui/source-tip.js` | The data icon beside a figure: its popover shows the kind of value and file › sheet › cell (D100) |
 | `js/ui/system-screens.js` | Full-page messages when the app can't start, with a copyable problem list |
 | `js/ui/glossary.js` | Term popovers: a marked term's definition and why it matters, where the term appears |

@@ -418,7 +418,7 @@ src: { regionId, section, field, row, year, cell, kind }
 
 ## Validation on load
 
-The app checks the file when it opens. Each problem names the path, region, item, what was expected and what was found, for example:
+The app checks the file when it opens. Each problem names the path, region, item, the field checked (`field`), the kind of problem (`kind`, the key of its expected sentence, so the panels can group warnings and word them plainly), what was expected and what was found, for example:
 
 ```
 regions[2].marketCoverage[5].tier: expected 1, 2 or 3, found "Tier 2"

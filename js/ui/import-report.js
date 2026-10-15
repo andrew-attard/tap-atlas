@@ -1,10 +1,11 @@
 /*
  * File: js/ui/import-report.js
  * Purpose: Draws the import report: the summary, each region's file, parts, errors and notes with sheet and cell, the
- *          contract check (its errors as the invalid screen's table, its warnings as a list); docs/ARCHITECTURE.md section 20.
- *          Modelled on the data sources panel (js/ui/sources-panel.js). Every word comes from content/text-import.js.
+ *          contract check (its errors as the invalid screen's table, its warnings grouped by workbook and kind, US-1.8.8);
+ *          docs/ARCHITECTURE.md section 20. Modelled on the data sources panel (js/ui/sources-panel.js). Every word comes
+ *          from content/text-import.js and, for the warning groups, content/text-data.js.
  * Provides: TAP.importReport (render)
- * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/icons.js
+ * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/icons.js, js/ui/warning-groups.js
  * Used by: js/ui/import-panel.js
  * Owner: UI stream (#587)
  */
@@ -110,17 +111,19 @@
     ]);
   }
 
-  function warning(w) {
-    var place = str(w.path);
-    return el('li', null, [el('span', null, w.message), place ? ' ' : null, place ? el('span', { class: 'tap-muted' }, place) : null]);
+  // The warnings grouped by workbook, then kind, in plain words (US-1.8.8); the files by the regions' names
+  function warnings(list, result) {
+    var files = {};
+    (result.regions || []).forEach(function (r) { if (r.name) files[r.name] = r.fileName || null; });
+    return TAP.warningGroups.render(list, { files: files });
   }
 
-  function check(c) {
+  function check(c, result) {
     if (!c) return [];
-    var errors = c.errors || [], warnings = c.warnings || [];
+    var errors = c.errors || [], warns = c.warnings || [];
     return [
       errors.length ? el('section', { class: 'tap-imp__check tap-imp__check-errors' }, [el('h4', null, t('checkErrors')), table(errors)]) : null,
-      warnings.length ? el('section', { class: 'tap-imp__check tap-imp__check-warnings' }, [el('h4', null, t('checkWarnings')), el('ul', null, warnings.map(warning))]) : null
+      warns.length ? el('section', { class: 'tap-imp__check tap-imp__check-warnings' }, [el('h4', null, t('checkWarnings')), warnings(warns, result)]) : null
     ];
   }
 
@@ -129,7 +132,7 @@
     TAP.dom.clear(host);
     TAP.dom.append(host, [summary(result), missing(result.missing), mapProblems(result.mapProblems)]);
     (result.regions || []).forEach(function (r) { host.appendChild(region(r)); });
-    TAP.dom.append(host, check(result.check));
+    TAP.dom.append(host, check(result.check, result));
     return host;
   }
 

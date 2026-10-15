@@ -164,6 +164,11 @@ window.TAP_CONTENT.text.importPanel.check = {
     none: 'No workbook was read.',
     checkErrors: 'Contract check: {n} errors',
     checkWarnings: 'Contract check: {n} warnings',
-    checkLine: '  {message}'
+    checkLine: '  {message}',
+    // The warnings by workbook, then kind (US-1.8.8): the plain line, then the technical one under it
+    checkBook: '  {label} ({n})',
+    checkKind: '    {title} ({n})',
+    checkPlain: '      {line}',
+    checkTech: '        {message}'
   }
 };
