@@ -1,11 +1,14 @@
 /*
  * File: js/ui/import-report.js
- * Purpose: Draws the import report: the summary, each region's file, parts, errors, and its notes grouped by kind as tables
- *          (US-1.8.9, D163, D164), then the contract check (its errors as the invalid screen's table, its warnings grouped by
- *          workbook and kind, US-1.8.8); docs/ARCHITECTURE.md section 20. Modelled on the data sources panel
- *          (js/ui/sources-panel.js). Every word comes from content/text-import.js and, for the groups, content/text-data.js.
- * Provides: TAP.importReport (render)
- * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/icons.js, js/ui/warning-groups.js, js/ui/warning-table.js
+ * Purpose: Draws the import report: the summary, the reports for workbook owners (US-1.8.11), each region's file, parts,
+ *          errors, and its notes grouped by kind as tables (US-1.8.9, D163, D164), then the contract check (its errors as the
+ *          invalid screen's table, its warnings grouped by workbook and kind, US-1.8.8, a warning the import already noted
+ *          folded into the note and counted in the heading, US-1.8.10, D165); docs/ARCHITECTURE.md section 20. Modelled on
+ *          the data sources panel (js/ui/sources-panel.js). Every word comes from content/text-import.js and, for the
+ *          groups, content/text-data.js.
+ * Provides: TAP.importReport (render, ownerRegions)
+ * Depends on: js/core/dom.js, js/core/content.js, js/core/format.js, js/core/icons.js, js/ui/warning-groups.js, js/ui/warning-table.js,
+ *             js/ui/owner-report-ui.js (at call time)
  * Used by: js/ui/import-panel.js
  * Owner: UI stream (#587)
  */
@@ -120,23 +123,56 @@
     return TAP.warningGroups.render(list, { files: files, lookups: result.plan ? result.plan.lookups : null });
   }
 
+  // The readings' notes by region name, as the check names regions, for the fold (D165)
+  function notesByRegion(result) {
+    var out = {};
+    (result.regions || []).forEach(function (r) { if (r.name) out[r.name] = (out[r.name] || []).concat(r.notes || []); });
+    return out;
+  }
+
+  // The check's warnings with those the import already noted folded away (US-1.8.10): { warnings, folded, byRegion }
+  function folded(result) {
+    var c = result.check;
+    return TAP.warningGroups.fold(notesByRegion(result), c ? c.warnings || [] : []);
+  }
+
   function check(c, result) {
     if (!c) return [];
-    var errors = c.errors || [], warns = c.warnings || [];
+    var errors = c.errors || [], f = folded(result), warns = f.warnings;
     return [
       errors.length ? el('section', { class: 'tap-imp__check tap-imp__check-errors' }, [el('h4', null, t('checkErrors')), table(errors)]) : null,
-      warns.length ? el('section', { class: 'tap-imp__check tap-imp__check-warnings' }, [el('h4', null, t('checkWarnings')), warnings(warns, result)]) : null
+      warns.length || f.folded ? el('section', { class: 'tap-imp__check tap-imp__check-warnings' }, [
+        el('h4', null, [t('checkWarnings'), f.folded ? el('span', { class: 'tap-wg__folded' }, t('checkFolded', { n: f.folded })) : null]),
+        warns.length ? warnings(warns, result) : null
+      ]) : null
     ];
+  }
+
+  /* ---------- the reports for workbook owners (US-1.8.11) ---------- */
+
+  // One entry per reading: its facts and the items its owner reviews, the notes and the unmatched warnings of that region
+  function ownerRegions(result) {
+    var W = TAP.warningGroups, lookups = result.plan ? result.plan.lookups : null, unmatched = folded(result).warnings;
+    return (result.regions || []).map(function (r) {
+      var src = (r.region && r.region.source) || {};
+      var mine = unmatched.filter(function (w) { return w.region != null && String(w.region) === String(r.name); });
+      return { name: r.name || r.fileName, fileName: r.fileName || src.fileName || null, fileModified: src.fileModified || null,
+        importedAt: src.importedAt || null, items: W.fromImport(r.notes || [], r.name).concat(W.fromCheck(mine, { lookups: lookups })) };
+    });
+  }
+  function owners(result) {
+    var list = ownerRegions(result);
+    return list.length && TAP.ownerReportUi ? TAP.ownerReportUi.render(list, { level: 'h4', className: 'tap-imp__owners' }) : null;
   }
 
   function render(host, result) {
     result = result || {};
     TAP.dom.clear(host);
-    TAP.dom.append(host, [summary(result), missing(result.missing), mapProblems(result.mapProblems)]);
+    TAP.dom.append(host, [summary(result), missing(result.missing), mapProblems(result.mapProblems), owners(result)]);
     (result.regions || []).forEach(function (r) { host.appendChild(region(r, result)); });
     TAP.dom.append(host, check(result.check, result));
     return host;
   }
 
-  TAP.importReport = { render: render };
+  TAP.importReport = { render: render, ownerRegions: ownerRegions };
 })(window.TAP);

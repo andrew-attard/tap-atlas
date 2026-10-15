@@ -63,6 +63,8 @@ Object.assign(window.TAP_CONTENT.text, {
       notesTitle: 'Notes',
       checkErrors: 'What the app would refuse',
       checkWarnings: 'What the app will also warn about',
+      // Warnings the import already noted are shown once, under the notes (US-1.8.10, D165); both panels say how many
+      checkFolded: '{n} listed under the workbooks’ notes above',
       colNumber: '#',
       colRegion: 'Region',
       colWhere: 'Where in the data file',
@@ -211,6 +213,8 @@ window.TAP_CONTENT.text.importPanel.check = {
     checkKind: '    {title} ({n})',
     checkIntro: '      {intro}',
     checkPlain: '      {line}',
-    checkTech: '        {message}'
+    checkTech: '        {message}',
+    // Under a warning the import already noted (D165): kept, so the approved tool loses nothing
+    checkFolded: '        (also an import note above)'
   }
 };

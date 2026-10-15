@@ -1,7 +1,9 @@
 /*
  * File: js/import/import-write.js
  * Purpose: Writes the plan as the data file's text (window.PLAN_DATA = {...}), downloads it, and writes the report as plain
- *          text with each region's notes and the check's warnings grouped by kind (D163, D164); docs/ARCHITECTURE.md section 20.
+ *          text with each region's notes and the check's warnings grouped by kind (D163, D164); a warning the import already
+ *          noted keeps its lines, marked "(also an import note above)", so the approved tool loses nothing (US-1.8.10, D165);
+ *          docs/ARCHITECTURE.md section 20.
  * Provides: TAP.importWrite (text, jsonPart, download, report)
  * Depends on: js/panel/panel-export.js (download), js/core/content.js (content/text-import.js wording),
  *             js/ui/warning-groups.js (the report's warning groups, at call time)
@@ -118,11 +120,15 @@
   }
 
   // A kind group as text: the title with its count, the intro once, then each plain row (where, found, expected, the
-  // address) over its technical message, which is what gets pasted into the approved tool (D163, D164)
-  function kindLines(k, prefix) {
+  // address) over its technical message, which is what gets pasted into the approved tool (D163, D164). A warning the
+  // import already noted (its technical line in foldedTech) gets the marker line under it (D165).
+  function kindLines(k, prefix, foldedTech) {
     var W = TAP.warningGroups, out = [say(prefix + 'Kind', { title: k.title, n: k.items.length })];
     if (k.intro) out.push(say(prefix + 'Intro', { intro: k.intro }));
-    k.items.forEach(function (it) { out.push(say(prefix + 'Plain', { line: W.row(it) }), say(prefix + 'Tech', { message: it.tech })); });
+    k.items.forEach(function (it) {
+      out.push(say(prefix + 'Plain', { line: W.row(it) }), say(prefix + 'Tech', { message: it.tech }));
+      if (foldedTech && foldedTech[it.tech]) out.push(say('checkFolded'));
+    });
     return out;
   }
 
@@ -139,14 +145,16 @@
     return out;
   }
 
-  // The check's warnings by workbook, then kind (US-1.8.8), the ids labelled with the plan's lookups
+  // The check's warnings by workbook, then kind (US-1.8.8), the ids labelled with the plan's lookups; the ones the import
+  // already noted stay, each marked (D165)
   function warningLines(result) {
-    var W = TAP.warningGroups, out = [], files = {};
+    var W = TAP.warningGroups, out = [], files = {}, notes = {}, foldedTech = {};
     if (!W) return result.check.warnings.map(function (w) { return say('checkLine', { message: w.message }); });
-    (result.regions || []).forEach(function (r) { if (r.name) files[r.name] = r.fileName || null; });
+    (result.regions || []).forEach(function (r) { if (r.name) { files[r.name] = r.fileName || null; notes[r.name] = (notes[r.name] || []).concat(r.notes || []); } });
+    if (W.fold) W.fold(notes, result.check.warnings).matched.forEach(function (w) { foldedTech[w.message] = true; });
     W.groups(result.check.warnings, files, { lookups: result.plan ? result.plan.lookups : null }).forEach(function (g) {
       out.push(say('checkBook', { label: g.label, n: g.n }));
-      g.kinds.forEach(function (k) { out = out.concat(kindLines(k, 'check')); });
+      g.kinds.forEach(function (k) { out = out.concat(kindLines(k, 'check', foldedTech)); });
     });
     return out;
   }

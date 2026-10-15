@@ -21,7 +21,7 @@ const APP = [
   'config/settings.js',
   'content/ui-text.js', 'content/text-shell.js', 'content/text-engine.js', 'content/text-data.js', 'content/text-panel.js',
   'content/text-overview.js', 'content/text-industry.js', 'content/text-pages.js', 'content/text-engine2.js',
-  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/text-present.js', 'content/text-custom.js', 'content/text-extra.js', 'content/text-outlook.js', 'content/text-import.js', 'content/glossary.js', 'content/glossary-p4.js', 'content/guide.js',
+  'content/text-newbusiness.js', 'content/text-customers.js', 'content/text-profile.js', 'content/text-themes.js', 'content/text-present.js', 'content/text-custom.js', 'content/text-extra.js', 'content/text-outlook.js', 'content/text-import.js', 'content/text-owner-report.js', 'content/glossary.js', 'content/glossary-p4.js', 'content/guide.js',
   'ORG',
   'js/core/content.js',
   'DATA',
@@ -43,7 +43,7 @@ const APP = [
   'js/panel/panel-insights.js', 'js/panel/panel-expand.js', 'js/panel/panel-drill.js', 'js/panel/panel-build.js', 'js/panel/panel.js',
   'js/import/xlsx-book.js', 'js/import/import-map.js', 'js/import/import-values.js', 'js/import/import-fields.js', 'js/import/import-rows.js', 'js/import/import-grid.js',
   'js/import/import-checks.js', 'js/import/import-region.js', 'js/import/import-plan.js', 'js/import/import-write.js',
-  'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/warning-groups.js', 'js/ui/warning-table.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
+  'js/ui/shell.js', 'js/ui/compare-bar.js', 'js/ui/layers.js', 'js/ui/warning-groups.js', 'js/ui/warning-table.js', 'js/ui/owner-report.js', 'js/ui/owner-report-ui.js', 'js/ui/sources-panel.js', 'js/ui/system-screens.js',
   'js/ui/glossary.js', 'js/ui/source-tip.js', 'js/ui/explain.js', 'js/ui/tour.js',
   'js/ui/showme.js', 'js/ui/keys.js', 'js/ui/view-head.js', 'js/ui/multi-select.js', 'js/ui/present-steps.js', 'js/ui/present-record.js', 'js/ui/present-screen.js', 'js/ui/present.js', 'js/ui/import-report.js', 'js/ui/import-panel.js',
   'js/views/overview-cards.js', 'js/views/overview.js', 'js/views/industry.js', 'js/views/new-business.js',
@@ -65,7 +65,7 @@ const TESTS = [
   'tests/test-measures-p2.js', 'tests/test-rows.js', 'tests/test-list.js', 'tests/test-newbusiness.js', 'tests/test-customers.js',
   'tests/test-partners.js', 'tests/test-insights-p2.js', 'tests/test-profile.js', 'tests/test-pages-p2.js', 'tests/test-present.js', 'tests/test-present-screen.js', 'tests/test-custom.js', 'tests/test-custom-picker.js', 'tests/test-custom-ask.js', 'tests/test-extra.js', 'tests/test-extra-view.js', 'tests/test-docs3.js',
   'tests/test-p4-data.js', 'tests/test-measures-p4.js', 'tests/test-outlook.js', 'tests/test-p4-reports.js', 'tests/test-insights-p4.js', 'tests/test-pages-p4.js', 'tests/test-guide.js',
-  'tests/test-import-fixtures.js', 'tests/test-import-core.js', 'tests/test-import-plan.js', 'tests/test-import-ui.js', 'tests/test-warning-groups.js',
+  'tests/test-import-fixtures.js', 'tests/test-import-core.js', 'tests/test-import-plan.js', 'tests/test-import-ui.js', 'tests/test-warning-groups.js', 'tests/test-owner-report.js',
   'tests/test-meta.js'
 ];
 

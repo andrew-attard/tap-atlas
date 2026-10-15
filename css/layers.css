@@ -1,7 +1,8 @@
 /*
  * File: css/layers.css
  * Purpose: Side panels: details, data sources, explanations.
- * Provides: styles for this area only (.tap-layer, .tap-details__*, .tap-src__*, .tap-wg*: the warning and note groups and their tables)
+ * Provides: styles for this area only (.tap-layer, .tap-details__*, .tap-src__*, .tap-wg*: the warning and note groups and their tables,
+ *           .tap-own__*: the reports for workbook owners)
  * Depends on: css/base.css and the CSS variables written by js/theme.js
  * Used by: index.html, index-sample.html, tests.html
  * Owner: SHELL stream. Colours and font sizes come from theme variables only.
@@ -50,11 +51,11 @@
   padding: var(--tap-sp-3); font-size: var(--tap-fs-body); font-weight: 600;
   background: var(--tap-surface); border-left: var(--tap-highlight-w) solid var(--tap-ink);
 }
-.tap-src__region, .tap-src__notes, .tap-src__failures {
+.tap-src__region, .tap-src__notes, .tap-src__failures, .tap-src__owners {
   display: flex; flex-direction: column; gap: var(--tap-sp-2);
   padding: var(--tap-sp-4) 0; border-bottom: var(--tap-rule-w) solid var(--tap-ink);
 }
-.tap-src__region h3, .tap-src__notes h3, .tap-src__failures h3 { margin: 0; font-size: var(--tap-fs-lead); }
+.tap-src__region h3, .tap-src__notes h3, .tap-src__failures h3, .tap-src__owners h3 { margin: 0; font-size: var(--tap-fs-lead); }
 .tap-src__name { display: flex; align-items: center; gap: var(--tap-sp-2); }
 .tap-src__facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--tap-sp-4); margin: 0; font-size: var(--tap-fs-body); }
 .tap-src__facts dt { color: var(--tap-muted); }
@@ -83,3 +84,19 @@
 .tap-wg__table th, .tap-wg__table td { font-size: var(--tap-fs-body); word-break: normal; overflow-wrap: anywhere; vertical-align: top; }
 .tap-wg__table th { position: static; background: transparent; }
 .tap-wg__cell { display: block; font-size: var(--tap-fs-body); color: var(--tap-muted); }
+/* The count of warnings folded into the notes above (D165): its own line under the heading, body text, not bold */
+.tap-wg__folded { display: block; flex-basis: 100%; font-size: var(--tap-fs-body); font-weight: 400; color: var(--tap-muted); }
+
+/* Reports for workbook owners (US-1.8.11): one row per workbook with Download and Copy as text, then All workbooks */
+.tap-own { display: flex; flex-direction: column; gap: var(--tap-sp-2); }
+.tap-own__intro { margin: 0; font-size: var(--tap-fs-body); }
+.tap-own__list { display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0; list-style: none; }
+.tap-own__row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2) var(--tap-sp-3);
+  padding: var(--tap-sp-2) 0; border-bottom: 1px solid var(--tap-grid); font-size: var(--tap-fs-body);
+}
+.tap-own__name { flex: 1 1 10em; font-weight: 600; }
+.tap-own__row .tap-btn { font-size: var(--tap-fs-body); }
+.tap-own__status { margin: 0; font-size: var(--tap-fs-body); font-weight: 600; }
+.tap-own__status:empty { display: none; }
+.tap-own__text { width: 100%; font-size: var(--tap-fs-body); }

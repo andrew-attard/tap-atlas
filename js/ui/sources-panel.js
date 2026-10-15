@@ -1,13 +1,15 @@
 /*
  * File: js/ui/sources-panel.js
  * Purpose: The data sources panel body: per region the file, its saved date, the import date and the import notes grouped
- *          by kind as tables (US-1.8.9, D163, D164); whether import dates differ; then other notes worth checking (the
- *          contract check's warnings grouped by workbook and kind, US-1.8.8), insight rules that were skipped and running
- *          order steps that were left out (US-3.1.1). Import notes appear here and nowhere else (US-1.1.5).
- * Provides: TAP.sourcesPanel (render)
+ *          by kind as tables (US-1.8.9, D163, D164); whether import dates differ; the reports for workbook owners
+ *          (US-1.8.11); then other notes worth checking (the contract check's warnings grouped by workbook and kind,
+ *          US-1.8.8, a warning the import already noted folded into the note and counted in the heading, US-1.8.10, D165),
+ *          insight rules that were skipped and running order steps that were left out (US-3.1.1). Import notes appear here
+ *          and nowhere else (US-1.1.5).
+ * Provides: TAP.sourcesPanel (render, ownerRegions)
  * Depends on: js/core/sources.js (imports, datesDiffer, dataDate), js/core/store.js (TAP.notes), js/core/data.js,
  *             js/core/dom.js, js/core/format.js, js/core/content.js, js/core/icons.js, js/engine/scope.js (colorOf),
- *             js/ui/warning-groups.js, js/ui/warning-table.js, js/insights/engine.js (failures)
+ *             js/ui/warning-groups.js, js/ui/warning-table.js, js/ui/owner-report-ui.js, js/insights/engine.js (failures)
  * Used by: js/ui/layers.js (the 'sources' side panel)
  */
 (function (TAP) {
@@ -50,25 +52,50 @@
     ]);
   }
 
+  // The check's warnings (the data notes with a kind) with those the import already noted folded away (US-1.8.10, D165).
+  // The check names a region as the file writes it (region.name), which the organization layer may shorten elsewhere, so
+  // the saved notes are keyed by that name too.
+  function foldedChecks() {
+    var notes = {};
+    TAP.data.regions().forEach(function (r) { if (r.name) notes[r.name] = (r.source && r.source.notes) || []; });
+    return TAP.warningGroups.fold(notes, TAP.notes.list('data').filter(function (n) { return !!n.kind; }));
+  }
+
   // Notes from the app itself: the contract check's warnings grouped by workbook and kind (US-1.8.8), then the rest
   // (colours, the organization file, data notes without a kind), placed by region if given.
   function otherNotes(imports) {
     var list = TAP.notes.list().filter(function (n) { return n.source !== 'presentation'; });   // listed on their own
     if (!list.length) return null;
-    var checks = list.filter(function (n) { return n.source === 'data' && n.kind; });
-    var rest = list.filter(function (n) { return checks.indexOf(n) < 0; });
+    var f = foldedChecks(), checks = f.warnings;
+    var rest = list.filter(function (n) { return !(n.source === 'data' && n.kind); });
     var files = {}, byName = {};
     imports.forEach(function (i) { files[i.regionId] = i.fileName; });
-    // The check names a region as the file writes it (region.name), which the organization layer may shorten elsewhere
     TAP.data.regions().forEach(function (r) { if (r.name) byName[r.name] = r.source && r.source.fileName ? r.source.fileName : null; });
+    if (!checks.length && !rest.length && !f.folded) return null;
     return el('section', { class: 'tap-src__notes' }, [
-      el('h3', null, t('sourcesPanel.other')),
+      el('h3', null, [t('sourcesPanel.other'), f.folded ? el('span', { class: 'tap-wg__folded' }, t('importPanel.report.checkFolded', { n: f.folded })) : null]),
       checks.length ? TAP.warningGroups.render(checks, { files: byName }) : null,
       rest.length ? el('ul', null, rest.map(function (n) {
         var place = n.sheet || n.cell ? where(files[n.regionId], n.sheet, n.cell) : (n.regionId ? files[n.regionId] : '');
         return note(n.message, place);
       })) : null
     ]);
+  }
+
+  // One entry per region for the owners' reports (US-1.8.11): its facts and items, the saved import notes and the check's
+  // unmatched warnings about it
+  function ownerRegions(imports) {
+    var W = TAP.warningGroups, unmatched = foldedChecks().warnings, names = {};
+    TAP.data.regions().forEach(function (r) { names[r.id] = r.name; });
+    return imports.map(function (imp) {
+      var mine = unmatched.filter(function (w) { return w.region != null && String(w.region) === String(names[imp.regionId]); });
+      return { name: imp.name, fileName: imp.fileName, fileModified: imp.fileModified, importedAt: imp.importedAt,
+        items: W.fromImport(imp.notes || [], imp.name).concat(W.fromCheck(mine)) };
+    });
+  }
+  function owners(imports) {
+    var list = ownerRegions(imports);
+    return list.length && TAP.ownerReportUi ? TAP.ownerReportUi.render(list, { level: 'h3', className: 'tap-src__owners' }) : null;
   }
 
   // Insight rules that threw. Left out quietly while the insights engine isn't built.
@@ -110,9 +137,9 @@
         : null
     ]);
     imports.forEach(function (imp) { root.appendChild(region(imp)); });
-    TAP.dom.append(root, [otherNotes(imports), failures(), presentNotes()]);
+    TAP.dom.append(root, [owners(imports), otherNotes(imports), failures(), presentNotes()]);
     return root;
   }
 
-  TAP.sourcesPanel = { render: render };
+  TAP.sourcesPanel = { render: render, ownerRegions: ownerRegions };
 })(window.TAP);

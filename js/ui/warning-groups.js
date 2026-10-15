@@ -2,17 +2,20 @@
  * File: js/ui/warning-groups.js
  * Purpose: One shape for the contract check's warnings and the import's notes, grouped by workbook and by kind in plain
  *          words (US-1.8.8, US-1.8.9, D161, D163). fromCheck and fromImport normalize both inputs to
- *          {region, kind, title, intro, where, cell, found, expected, tech}; groups and kindGroups arrange the items; row
- *          writes one item as text for the copied report. js/ui/warning-table.js draws the groups. Every word comes from
- *          content/text-data.js (check.plain, check.fields, check.groups) and content/text-import.js (importPanel.notePlain, importPanel.words).
- * Provides: TAP.warningGroups (fromCheck, fromImport, normalize, groups, kindGroups, row, line, title, label, fieldLabel, labelKey, render, renderKinds)
+ *          {region, kind, title, intro, where, cell, found, expected, tech, ref}; groups and kindGroups arrange the items; row
+ *          writes one item as text for the copied report; fold removes a warning the import already noted (US-1.8.10, D165:
+ *          PAIRS maps a check kind to its note kind, and the two carry the same ref). js/ui/warning-table.js draws the groups.
+ *          Every word comes from content/text-data.js (check.plain, check.fields, check.groups) and content/text-import.js
+ *          (importPanel.notePlain, importPanel.words).
+ * Provides: TAP.warningGroups (PAIRS, fold, fromCheck, fromImport, normalize, groups, kindGroups, row, line, title, label, fieldLabel, labelKey, render, renderKinds)
  * Depends on: js/core/content.js, js/core/data.js (the loaded plan's lookups, at call time), js/ui/warning-table.js (at call time)
  * Used by: js/ui/import-report.js, js/ui/sources-panel.js, js/import/import-write.js (all at call time)
  * Owner: NOTES2 stream (#612), after WARN (#605)
  *
- * A check warning is {path, region, item, field, kind, expected, found, vars, message}; an import note is
- * {message, sheet, cell, kind, item, found, expected}. The data path never reaches the screen: a row names the item in
- * words (ids become the lookups' names, motions and types words), the field in words and the value found.
+ * A check warning is {path, region, item, field, kind, expected, found, vars, ref, message}; an import note is
+ * {message, sheet, cell, kind, item, found, expected, ref}. The data path never reaches the screen: a row names the item in
+ * words (ids become the lookups' names, motions and types words), the field in words and the value found. The ref is never
+ * shown: it is the rule's key (an industry id, year|channel|motion, a section key) that tells the two sides apart or together.
  */
 (function (TAP) {
   'use strict';
@@ -22,6 +25,7 @@
   // TAP.content.text gives "[key]" for a key with no wording
   function known(key) { return TAP.content.text(key).charAt(0) !== '['; }
   function str(v) { return v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); }
+  function refOf(v) { return v == null || v === '' ? null : String(v); }
   function tidy(s) { return s.replace(/^[\s,:]+/, '').replace(/\(\s*\)/g, '').replace(/\s{2,}/g, ' ').trim(); }
   // A template with {name} placeholders filled from vars; a placeholder without a value disappears
   function fill(tpl, vars) { return tidy(String(tpl).replace(/\{(\w+)\}/g, function (m, n) { return vars[n] == null ? '' : String(vars[n]); })); }
@@ -86,7 +90,7 @@
         intro: plain ? say('plain.' + w.kind + '.intro', vars) : '',
         where: part('where', '{where}'), cell: '',
         found: part('found', '{found}'), expected: part('expected', vars.value ? '{value}' : ''),
-        tech: w.message || ''
+        tech: w.message || '', ref: refOf(w.ref)
       };
     });
   }
@@ -102,7 +106,7 @@
         title: plain ? word('notePlain.' + n.kind + '.title') : (n.message || ''),
         intro: plain ? word('notePlain.' + n.kind + '.intro') : '',
         where: str(n.item), cell: [n.sheet, n.cell].filter(Boolean).join(TAP.content.text('sources.sep')),
-        found: str(n.found), expected: str(n.expected), tech: n.message || ''
+        found: str(n.found), expected: str(n.expected), tech: n.message || '', ref: refOf(n.ref)
       };
     });
   }
@@ -111,6 +115,34 @@
   function normalize(list, opts) {
     list = list || [];
     return list.length && list[0] && list[0].tech === undefined ? fromCheck(list, opts) : list;
+  }
+
+  // The rules the import and the contract check both apply, check kind to note kind (D165). Each pair is the same rule on
+  // the same item: revenue and books totals against the recap, the channel split, the ARR formula, the segment rule, the
+  // variance, the coverage ratio and an empty section. Both sides write the same ref for one item.
+  var PAIRS = { revenueWithin: 'revenueAbove', booksWithin: 'booksAbove', splitSum: 'splitSum', arrFormula: 'arrFormula',
+    segmentRule: 'segmentRule', variance: 'variance', coverage: 'coverage', items: 'emptySection' };
+  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+
+  // Folds the warnings the import already noted (US-1.8.10, D165): a warning of a paired kind whose region and ref match a
+  // note of the paired kind in that region is left out and counted; the rest stay, in order. notesByRegion maps a region's
+  // name (as the check writes it) to its import notes; warnings may be raw check warnings or normalized items. A note is
+  // never touched; a note without a ref folds nothing. Returns { warnings, folded, byRegion, matched }.
+  function fold(notesByRegion, warnings) {
+    var index = Object.create(null), keep = [], matched = [], byRegion = {};
+    Object.keys(notesByRegion || {}).forEach(function (region) {
+      (notesByRegion[region] || []).forEach(function (n) {
+        if (n && n.kind && n.ref != null && n.ref !== '') index[region + '\n' + n.kind + '\n' + String(n.ref)] = true;
+      });
+    });
+    (warnings || []).forEach(function (w) {
+      var pair = w && w.kind && has(PAIRS, w.kind) ? PAIRS[w.kind] : null;
+      if (pair && w.region != null && w.ref != null && w.ref !== '' && index[String(w.region) + '\n' + pair + '\n' + String(w.ref)]) {
+        matched.push(w);
+        byRegion[w.region] = (byRegion[w.region] || 0) + 1;
+      } else keep.push(w);
+    });
+    return { warnings: keep, folded: matched.length, byRegion: byRegion, matched: matched };
   }
 
   // A workbook group's label: "Region A · Region A plan.xlsx", the region alone when its file is unknown
@@ -162,7 +194,7 @@
   function title(w, opts) { return fromCheck([w], opts)[0].title; }
 
   TAP.warningGroups = {
-    fromCheck: fromCheck, fromImport: fromImport, normalize: normalize, groups: groups, kindGroups: kindGroups,
+    PAIRS: PAIRS, fold: fold, fromCheck: fromCheck, fromImport: fromImport, normalize: normalize, groups: groups, kindGroups: kindGroups,
     row: row, line: line, title: title, label: label, fieldLabel: fieldLabel, labelKey: labelKey,
     render: function (items, opts) { return TAP.warningTable.render(items, opts); },
     renderKinds: function (items, opts) { return TAP.warningTable.renderKinds(items, opts); }
