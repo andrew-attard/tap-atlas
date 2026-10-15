@@ -44,8 +44,11 @@ module.exports = {
   nullHitRate: { region: 'seu' },
   zeroArr: { region: 'na', industry: 'culture' },
   blankArr: { region: 'neu', industry: 'culture' },
+  // Each note carries its kind and the plain item, found and expected the grouped notes show (D163)
   notes: {
-    neu: [{ message: 'A rating cell held text that is not an allowed option; imported as not provided.', sheet: '1. Market Coverage', cell: 'E14' }],
-    ceu: [{ message: 'The Customer Growth section is empty.', sheet: '3. Customer Growth', cell: 'A10' }]
+    neu: [{ message: 'A rating cell held text that is not an allowed option; imported as not provided.', sheet: '1. Market Coverage', cell: 'E14',
+      kind: 'badValue', item: 'Financial Services, criticality', found: '"Medium to high"', expected: null }],
+    ceu: [{ message: 'The Customer Growth section is empty.', sheet: '3. Customer Growth', cell: 'A10',
+      kind: 'emptySection', item: 'Customer Growth', found: null, expected: null }]
   }
 };

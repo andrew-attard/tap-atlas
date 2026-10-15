@@ -8,7 +8,9 @@
  * Owner: PLAN stream (#586)
  *
  * read(book, map, match, opts) gives {ok, id, name, fileName, region, errors, notes, parts}. The region is null unless
- * every required section was read without an error. Its keys follow data/sample-plan-data.js: id, name, source,
+ * every required section was read without an error. A note or error is {message, sheet, cell, kind, item, found, expected}
+ * (D163): kind the wording key of its sentence, item the row or thing it is about in words, found and expected plain values,
+ * each null when the note has none; ctx.note(message, sheet, cell, extra) and ctx.error take them as extra. Its keys follow data/sample-plan-data.js: id, name, source,
  * marketCoverage, newBusiness, partners, recap, customerGrowth, then extra, outsourcingPct, revenue, booksValue,
  * strategicPlan, baseYear and routes, each only when the workbook carries it.
  */
@@ -41,7 +43,8 @@
     }
     if (!name) name = baseName(book.fileName);
     var id = slug(name);
-    ctx.note(say('unmatchedWorkbook', { file: book.fileName, name: name, id: id }), nc && nc.sheet ? nc.sheet : null, nc && nc.cell ? nc.cell : null);
+    ctx.note(say('unmatchedWorkbook', { file: book.fileName, name: name, id: id }), nc && nc.sheet ? nc.sheet : null, nc && nc.cell ? nc.cell : null,
+      { kind: 'unmatchedWorkbook', item: book.fileName, found: name });
     return { id: id, name: name, filterName: name };
   }
 
@@ -53,7 +56,8 @@
 
   function missing(ctx, map, key, parts) {
     parts[key] = 'missing';
-    ctx.error(say('missingSheet', { sheet: map.sections[key] ? map.sections[key].sheet : key, section: sectionName(key) }), map.sections[key] ? map.sections[key].sheet : null, null);
+    var sheet = map.sections[key] ? map.sections[key].sheet : null;
+    ctx.error(say('missingSheet', { sheet: sheet || key, section: sectionName(key) }), sheet, null, { kind: 'missingSheet', item: sectionName(key), expected: sheet || key });
   }
 
   // A required row section: a missing sheet is an error; an empty one is read as [] (the checks add the note)
@@ -102,13 +106,20 @@
     parts.baseYear = res.value && Array.isArray(res.value.items) && res.value.items.length ? 'read' : 'empty';
   }
 
+  // One note or error (D163): the sentence, where it was found, its kind and the plain parts the kind groups show
+  function entry(message, sheet, cell, extra) {
+    var x = extra || {};
+    return { message: message, sheet: sheet == null ? null : sheet, cell: cell == null ? null : cell, kind: x.kind || null,
+      item: x.item == null ? null : x.item, found: x.found == null ? null : x.found, expected: x.expected == null ? null : x.expected };
+  }
+
   function read(book, map, match, opts) {
     opts = opts || {};
     var errors = [], notes = [], parts = {};
     var ctx = {
       regionId: null, years: map.meta.years, V: null, map: map, marketCoverage: null,
-      note: function (message, sheet, cell) { notes.push({ message: message, sheet: sheet == null ? null : sheet, cell: cell == null ? null : cell }); },
-      error: function (message, sheet, cell) { errors.push({ message: message, sheet: sheet == null ? null : sheet, cell: cell == null ? null : cell }); }
+      note: function (message, sheet, cell, extra) { notes.push(entry(message, sheet, cell, extra)); },
+      error: function (message, sheet, cell, extra) { errors.push(entry(message, sheet, cell, extra)); }
     };
     var who = identify(book, map, match, ctx);
     ctx.regionId = who.id;

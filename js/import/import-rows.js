@@ -2,10 +2,12 @@
  * File: js/import/import-rows.js
  * Purpose: Reads the row sections of one workbook through the mapping: the header check, spare rows, by-year columns, dotted
  *          fields, fixed cells, the New Business tier from Market Coverage, account ids and extra sections; docs/ARCHITECTURE.md section 20.3.
- * Provides: TAP.importRows (read, section, customerGrowth, baseYear, cells, extra)
- * Depends on: js/import/xlsx-book.js, js/import/import-values.js, js/import/import-fields.js, js/core/content.js, content/text-import.js
- * Used by: js/import/import-region.js
- * Owner: READ stream (#585)
+ *          Also the words a note's item is written in (D163): lookup names, motions and types, field labels.
+ * Provides: TAP.importRows (read, section, customerGrowth, baseYear, cells, extra, label, keyWords, fieldLabel)
+ * Depends on: js/import/xlsx-book.js, js/import/import-values.js, js/import/import-fields.js, js/core/content.js, content/text-import.js,
+ *             content/text-data.js (check.fields)
+ * Used by: js/import/import-region.js, js/import/import-grid.js, js/import/import-checks.js (the words)
+ * Owner: READ stream (#585); the words and the note kinds by NOTES2 (#612)
  */
 (function (TAP) {
   'use strict';
@@ -22,6 +24,36 @@
     return typeof raw === 'string' ? JSON.stringify(raw) : String(raw);
   }
 
+  /* ---------- the words a note's item is written in (D163) ---------- */
+
+  function nameOf(list, id) {
+    var hit = (Array.isArray(list) ? list : []).filter(function (x) { return x && x.id === id; })[0];
+    return hit && hit.name ? String(hit.name) : null;
+  }
+  function wordOf(group, id) {
+    if (!group || typeof id !== 'string' || !/^[A-Za-z][A-Za-z0-9]*$/.test(id)) return null;
+    var w = TAP.content.text('importPanel.words.' + group + '.' + id);
+    return w.charAt(0) === '[' ? null : w;
+  }
+  // An id as a label: its lookup name, else the word for it (motions, types, channels), else the id itself; null for no id
+  function label(list, group, id) {
+    if (id == null) return null;
+    return nameOf(list, id) || wordOf(group, id) || String(id);
+  }
+  // A grid item's axis values in words, in the recap's order: "2027, Direct, new business, ARR"
+  function keyWords(lookups, f) {
+    var L = lookups || {};
+    return [f.year, label(L.channels, 'channels', f.channel), label(null, 'motions', f.motion), label(L.productCategories, 'types', f.type),
+      label(L.routes, null, f.route), label(L.solutions, null, f.solution), label(L.productCategories, 'types', f.category)]
+      .filter(function (x) { return x != null; }).join(', ');
+  }
+  // A field in words (check.fields), else the key as it is
+  function fieldLabel(field) {
+    var w = TAP.content.text('check.fields.' + field);
+    return w.charAt(0) === '[' ? String(field) : w;
+  }
+  function itemWords(rowName, field) { return [rowName, fieldLabel(field)].filter(Boolean).join(', '); }
+
   // 'channelSplit.direct' -> item.channelSplit.direct
   function setPath(obj, path, value) {
     var parts = String(path).split('.'), o = obj;
@@ -32,17 +64,17 @@
     o[parts[parts.length - 1]] = value;
   }
 
-  // A value that could not be read: a note saying what the cell held, then null
-  function noted(ctx, sheet, cell, field, raw, noteKey) {
+  // A value that could not be read: a note saying what the cell held (its kind, the row and field in words), then null
+  function noted(ctx, sheet, cell, field, raw, noteKey, rowName) {
     var key = raw && raw.error ? (raw.formula ? 'formulaNoValue' : 'errorCell') : (noteKey || 'badValue');
-    ctx.note(t(key, { field: field, found: show(raw) }), sheet.name, cell);
+    ctx.note(t(key, { field: field, found: show(raw) }), sheet.name, cell, { kind: key, item: itemWords(rowName, field), found: show(raw) });
     return null;
   }
 
   // One cell by kind; a bad value is noted and null
-  function readCell(ctx, sheet, cell, kind, field, scale, noteKey) {
+  function readCell(ctx, sheet, cell, kind, field, scale, noteKey, rowName) {
     var raw = sheet.value(cell), v = ctx.V.read(kind, raw, scale);
-    return ctx.V.isBad(v) ? noted(ctx, sheet, cell, field, raw, noteKey) : v;
+    return ctx.V.isBad(v) ? noted(ctx, sheet, cell, field, raw, noteKey, rowName) : v;
   }
 
   // A sheet matched in another case or spacing is noted once per reading
@@ -52,7 +84,7 @@
       ctx.looseNoted = ctx.looseNoted || {};
       if (!ctx.looseNoted[sh.name]) {
         ctx.looseNoted[sh.name] = true;
-        ctx.note(t('looseSheet', { expected: spec.sheet, found: sh.name }), sh.name, null);
+        ctx.note(t('looseSheet', { expected: spec.sheet, found: sh.name }), sh.name, null, { kind: 'looseSheet', found: sh.name, expected: spec.sheet });
       }
     }
     return sh;
@@ -70,7 +102,8 @@
       if (!hcol || spec.headerRow == null) continue;
       var hcell = hcol + spec.headerRow, hraw = sheet.value(hcell);
       if (V.norm(hraw && hraw.error ? '' : hraw) !== V.norm(headers[hkeys[h]])) {
-        ctx.error(t('headerMismatch', { expected: headers[hkeys[h]], found: show(hraw), cell: hcell }), sheet.name, hcell);
+        ctx.error(t('headerMismatch', { expected: headers[hkeys[h]], found: show(hraw), cell: hcell }), sheet.name, hcell,
+          { kind: 'headerMismatch', item: fieldLabel(hkeys[h]), found: show(hraw), expected: headers[hkeys[h]] });
         return { items: [], skipped: 0 };
       }
     }
@@ -82,15 +115,16 @@
     for (var row = spec.firstRow; row <= last; row++) {
       var keyRaw = keyCol ? sheet.value(keyCol + row) : undefined;
       if (keyCol && (keyRaw === null || V.placeholder(keyRaw))) { skipped++; continue; }
-      var item = { sourceRow: row };
+      // The row's name for its notes: the key cell's text, when it has one
+      var item = { sourceRow: row }, rowName = typeof keyRaw === 'string' && keyRaw.trim() ? keyRaw.trim() : null;
       fields.forEach(function (f) {
         var col = cols[f], kind = kinds.fields[f] || 'text', nk = kinds.noteKey && kinds.noteKey[f];
         if (col === undefined) return setPath(item, f, null);
         if (byYear.indexOf(f) >= 0) {
           var list = Array.isArray(col) ? col : [col];
-          return setPath(item, f, list.map(function (c) { return readCell(ctx, sheet, c + row, kind, f, scale[f], nk); }));
+          return setPath(item, f, list.map(function (c) { return readCell(ctx, sheet, c + row, kind, f, scale[f], nk, rowName); }));
         }
-        setPath(item, f, readCell(ctx, sheet, firstCol(col) + row, kind, f, scale[f], nk));
+        setPath(item, f, readCell(ctx, sheet, firstCol(col) + row, kind, f, scale[f], nk, rowName));
       });
       items.push(item);
     }
@@ -102,7 +136,8 @@
     var mc = (ctx.marketCoverage || []).filter(function (r) { return r.industryId === item.industryId; })[0];
     var derived = mc ? mc.tier : null, mapped = item.tier;
     if (spec.columns.tier && mapped !== null && mc && mapped !== derived) {
-      ctx.note(t('tierDiffers', { found: show(mapped), expected: show(derived) }), sheet.name, firstCol(spec.columns.tier) + item.sourceRow);
+      ctx.note(t('tierDiffers', { found: show(mapped), expected: show(derived) }), sheet.name, firstCol(spec.columns.tier) + item.sourceRow,
+        { kind: 'tierDiffers', item: label(ctx.map && ctx.map.lookups ? ctx.map.lookups.industries : null, null, item.industryId), found: show(mapped), expected: show(derived) });
     }
     item.tier = derived;
   }
@@ -175,5 +210,6 @@
     return out;
   }
 
-  TAP.importRows = { read: read, section: section, customerGrowth: customerGrowth, baseYear: baseYear, cells: cells, extra: extra };
+  TAP.importRows = { read: read, section: section, customerGrowth: customerGrowth, baseYear: baseYear, cells: cells, extra: extra,
+    label: label, keyWords: keyWords, fieldLabel: fieldLabel };
 })(window.TAP);
