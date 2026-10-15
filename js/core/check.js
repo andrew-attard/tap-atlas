@@ -6,10 +6,12 @@
  *             js/core/check-rows.js (the regions, at call time), js/core/check-p4.js (the Phase 4 parts, at call time)
  * Used by: js/core/data.js (on load)
  *
- * run(plan) returns {errors, warnings}. Each item is {path, region, item, field, kind, expected, found, vars, message}: field
- * is the key checked (null for an item as a whole), kind the key of the expected sentence (check.expect.<kind>, or the type
- * name for a type error), vars the figures that sentence was filled with (or null), so the panels can group the warnings
- * and word them plainly (US-1.8.8, js/ui/warning-groups.js).
+ * run(plan) returns {errors, warnings}. Each item is {path, region, item, field, kind, expected, found, vars, ref, message}:
+ * field is the key checked (null for an item as a whole), kind the key of the expected sentence (check.expect.<kind>, or the
+ * type name for a type error), vars the figures that sentence was filled with (or null), ref the rule's key in the data's
+ * own terms for the rules the import also checks (D165: the industry or account id, year|channel|motion, the section key;
+ * null otherwise), so the panels can group the warnings, word them plainly and fold one against the import's note
+ * (US-1.8.8, US-1.8.10, js/ui/warning-groups.js).
  * Errors would break views, so loading stops. Warnings load anyway and go to the data sources panel.
  * null (a blank, "not provided") is allowed for every leader input and system figure.
  * Fields and sections the contract doesn't name are ignored (D47). Extra sections are checked by js/core/extra.js, warnings only.
@@ -93,9 +95,10 @@
     recap: { year: 'year', channel: 'channel', motion: 'motion', type: 'recapType', value: 'num?' }
   };
 
-  // The expected sentence with its kind and figures: {kind, text, vars}. entry() keeps the kind and the vars and writes
-  // the text; the warning groups read vars.value and the like directly for their tables (D164).
-  function expect(kind, vars) { return { kind: kind, text: say('expect.' + kind, vars), vars: vars || null }; }
+  // The expected sentence with its kind and figures: {kind, text, vars, ref}. entry() keeps the kind, the vars and the ref
+  // and writes the text; the warning groups read vars.value and the like directly for their tables (D164). ref is the
+  // rule's key for a rule the import also checks (D165), so the two findings can be told to be the same one.
+  function expect(kind, vars, ref) { return { kind: kind, text: say('expect.' + kind, vars), vars: vars || null, ref: ref == null ? null : String(ref) }; }
   function expectFor(name, nullable, env) {
     return { kind: name, text: nullable && TYPES[name].plain ? say('orBlank', { what: TYPES[name].expect(env) }) : TYPES[name].expect(env) };
   }
@@ -111,8 +114,8 @@
   }
 
   function entry(ctx, key, expected, v, described) {
-    var found, text, kind = null, vars = null;
-    if (expected && typeof expected === 'object') { kind = expected.kind; vars = expected.vars || null; expected = expected.text; }
+    var found, text, kind = null, vars = null, ref = null;
+    if (expected && typeof expected === 'object') { kind = expected.kind; vars = expected.vars || null; ref = expected.ref || null; expected = expected.text; }
     if (described) { found = v; text = String(v); }
     else if (v === undefined) { found = text = say('found.nothing'); }
     else if (Array.isArray(v)) { found = text = v.length ? say('found.list', { n: v.length }) : say('found.emptyList'); }
@@ -120,7 +123,7 @@
     else { found = v; text = typeof v === 'number' && !isFinite(v) ? String(v) : JSON.stringify(v); }
     var path = at(ctx, key);
     return { path: path, region: ctx.region, item: ctx.item, field: fieldOf(ctx, key), kind: kind, expected: expected, found: found,
-      vars: vars, message: say('message', { path: path, expected: expected, found: text }) };
+      vars: vars, ref: ref, message: say('message', { path: path, expected: expected, found: text }) };
   }
 
   function err(ctx, key, expected, v, described) {
@@ -204,7 +207,7 @@
       else plan.regions.forEach(function (r, i) { TAP.checkRows.region(r, i, out, env, ids); });
     }
     if (isObj(plan) && TAP.extra) out.warnings = out.warnings.concat(TAP.extra.check(plan));
-    if (out.dropped) out.errors.push({ path: '', region: null, item: null, field: null, kind: null, expected: '', found: out.dropped, message: say('more', { n: out.dropped }) });
+    if (out.dropped) out.errors.push({ path: '', region: null, item: null, field: null, kind: null, expected: '', found: out.dropped, vars: null, ref: null, message: say('more', { n: out.dropped }) });
     return { errors: out.errors, warnings: out.warnings };
   }
 
