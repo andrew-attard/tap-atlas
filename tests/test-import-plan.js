@@ -43,11 +43,17 @@
       lookups: copy(fixture.lookups), aliases: {}, sections: sections, extra: [] };
   }
 
-  // A ctx that collects what the checks say, with each note's kind, item, found and expected (D163)
+  // A ctx that collects what the checks say, with each note's kind, item, found and expected as TAP.importRegion writes
+  // them: null when the site gives none (D163)
   function collect(map, regionId) {
     var c = { regionId: regionId, years: map.meta.years, V: null, map: map, notes: [], errors: [] };
-    c.note = function (m, s, cell, x) { c.notes.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };
-    c.error = function (m, s, cell, x) { c.errors.push(Object.assign({ message: m, sheet: s, cell: cell }, x || {})); };
+    function entry(m, s, cell, x) {
+      x = x || {};
+      return { message: m, sheet: s, cell: cell, kind: x.kind || null, item: x.item == null ? null : x.item,
+        found: x.found == null ? null : x.found, expected: x.expected == null ? null : x.expected };
+    }
+    c.note = function (m, s, cell, x) { c.notes.push(entry(m, s, cell, x)); };
+    c.error = function (m, s, cell, x) { c.errors.push(entry(m, s, cell, x)); };
     return c;
   }
   function checks(fixture, region, map) {
