@@ -6,9 +6,10 @@
  *             js/core/check-rows.js (the regions, at call time), js/core/check-p4.js (the Phase 4 parts, at call time)
  * Used by: js/core/data.js (on load)
  *
- * run(plan) returns {errors, warnings}. Each item is {path, region, item, field, kind, expected, found, message}: field is
- * the key checked (null for an item as a whole), kind the key of the expected sentence (check.expect.<kind>, or the type
- * name for a type error), so the panels can group the warnings and word them plainly (US-1.8.8, js/ui/warning-groups.js).
+ * run(plan) returns {errors, warnings}. Each item is {path, region, item, field, kind, expected, found, vars, message}: field
+ * is the key checked (null for an item as a whole), kind the key of the expected sentence (check.expect.<kind>, or the type
+ * name for a type error), vars the figures that sentence was filled with (or null), so the panels can group the warnings
+ * and word them plainly (US-1.8.8, js/ui/warning-groups.js).
  * Errors would break views, so loading stops. Warnings load anyway and go to the data sources panel.
  * null (a blank, "not provided") is allowed for every leader input and system figure.
  * Fields and sections the contract doesn't name are ignored (D47). Extra sections are checked by js/core/extra.js, warnings only.
@@ -92,8 +93,9 @@
     recap: { year: 'year', channel: 'channel', motion: 'motion', type: 'recapType', value: 'num?' }
   };
 
-  // The expected sentence with its kind: {kind, text}. entry() keeps the kind and writes the text.
-  function expect(kind, vars) { return { kind: kind, text: say('expect.' + kind, vars) }; }
+  // The expected sentence with its kind and figures: {kind, text, vars}. entry() keeps the kind and the vars and writes
+  // the text; the warning groups read vars.value and the like directly for their tables (D164).
+  function expect(kind, vars) { return { kind: kind, text: say('expect.' + kind, vars), vars: vars || null }; }
   function expectFor(name, nullable, env) {
     return { kind: name, text: nullable && TYPES[name].plain ? say('orBlank', { what: TYPES[name].expect(env) }) : TYPES[name].expect(env) };
   }
@@ -109,8 +111,8 @@
   }
 
   function entry(ctx, key, expected, v, described) {
-    var found, text, kind = null;
-    if (expected && typeof expected === 'object') { kind = expected.kind; expected = expected.text; }
+    var found, text, kind = null, vars = null;
+    if (expected && typeof expected === 'object') { kind = expected.kind; vars = expected.vars || null; expected = expected.text; }
     if (described) { found = v; text = String(v); }
     else if (v === undefined) { found = text = say('found.nothing'); }
     else if (Array.isArray(v)) { found = text = v.length ? say('found.list', { n: v.length }) : say('found.emptyList'); }
@@ -118,7 +120,7 @@
     else { found = v; text = typeof v === 'number' && !isFinite(v) ? String(v) : JSON.stringify(v); }
     var path = at(ctx, key);
     return { path: path, region: ctx.region, item: ctx.item, field: fieldOf(ctx, key), kind: kind, expected: expected, found: found,
-      message: say('message', { path: path, expected: expected, found: text }) };
+      vars: vars, message: say('message', { path: path, expected: expected, found: text }) };
   }
 
   function err(ctx, key, expected, v, described) {

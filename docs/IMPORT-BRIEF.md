@@ -151,7 +151,7 @@ From the contract. The import applies them to every workbook before the plans ar
 
 The **segment rule**, checked in this order: current ARR above the strategic threshold is Strategic; below the scaled threshold is Scaled; 3-year order intake above the growth threshold and ARR above the growth ARR threshold is Growth; otherwise Core.
 
-Errors stop the import **for that region only**. Everything worth a look goes into `source.notes` with its sheet and cell.
+Errors stop the import **for that region only**. Everything worth a look goes into `source.notes` with its sheet and cell. Every note also carries a `kind` (the key of its sentence, such as `emptySection` or `revenueAbove`) with the item it is about, the value found and the value expected as separate fields, so the app can group a region's notes by kind and show them as a table (D163).
 
 **The app's importer applies these rules** (`TAP.importChecks`, `js/import/import-checks.js`) and shows the result in the Import panel's report, region by region. The table in section 20.3 of `docs/ARCHITECTURE.md` is the exact list: the errors are a rated industry with no Market Coverage row, a required section missing, a header that is not where the mapping says, two workbooks for one region, and the recap filter set to another region; everything else in the table above is a note with its sheet and cell, as is a value of the wrong kind or an error cell (imported as `null`) and a required block with no values (the recap becomes an empty list). An optional part whose sheet is missing is left out of the region. The report then adds the app's contract check (`TAP.check.run`) on the plan as a whole.
 

@@ -950,7 +950,7 @@ window.PLAN_DATA = {
    {"route": "partnerExisting", "year": 2029, "sourceCell": "N95", "type": "services", "value": 23.9, "solution": null}
   ]
  },
- {"id": "neu", "name": "Northern Europe", "source": {"fileName": "Northern Europe plan.xlsx", "fileModified": "2026-09-28T09:15:00Z", "importedAt": "2026-10-02T08:09:00Z", "notes": [{"message": "A rating cell held text that is not an allowed option; imported as not provided.", "sheet": "1. Market Coverage", "cell": "E14"}]},
+ {"id": "neu", "name": "Northern Europe", "source": {"fileName": "Northern Europe plan.xlsx", "fileModified": "2026-09-28T09:15:00Z", "importedAt": "2026-10-02T08:09:00Z", "notes": [{"message": "A rating cell held text that is not an allowed option; imported as not provided.", "sheet": "1. Market Coverage", "cell": "E14", "kind": "badValue", "item": "Financial Services, criticality", "found": "\"Medium to high\"", "expected": null}]},
   "marketCoverage": [
    {"sourceRow": 10, "industryId": "busServices", "currentArr": 1445, "pipelineTotal": 1711, "pipelineCreated12m": 885, "tier": 3, "commentary": "Strong base and good references.", "growthPotential": 2, "criticality": 2, "competitiveIntensity": 2, "references": 2, "expertise": 2, "productFit": 2},
    {"sourceRow": 11, "industryId": "culture", "currentArr": null, "pipelineTotal": 492, "pipelineCreated12m": 216, "tier": 3, "commentary": null, "growthPotential": 2, "criticality": 2, "competitiveIntensity": 1, "references": 2, "expertise": 2, "productFit": 2},
@@ -1776,7 +1776,7 @@ window.PLAN_DATA = {
    {"route": "partnerExisting", "year": 2029, "sourceCell": "N95", "type": "services", "value": 48.6, "solution": null}
   ]
  },
- {"id": "ceu", "name": "Central Europe", "source": {"fileName": "Central Europe plan.xlsx", "fileModified": "2026-09-29T10:30:00Z", "importedAt": "2026-10-02T08:13:00Z", "notes": [{"message": "The Customer Growth section is empty.", "sheet": "3. Customer Growth", "cell": "A10"}]},
+ {"id": "ceu", "name": "Central Europe", "source": {"fileName": "Central Europe plan.xlsx", "fileModified": "2026-09-29T10:30:00Z", "importedAt": "2026-10-02T08:13:00Z", "notes": [{"message": "The Customer Growth section is empty.", "sheet": "3. Customer Growth", "cell": "A10", "kind": "emptySection", "item": "Customer Growth", "found": null, "expected": null}]},
   "marketCoverage": [
    {"sourceRow": 10, "industryId": "busServices", "currentArr": 1365, "pipelineTotal": 1068, "pipelineCreated12m": 499, "tier": 3, "commentary": null, "growthPotential": 3, "criticality": 2, "competitiveIntensity": 2, "references": 2, "expertise": 1, "productFit": 2},
    {"sourceRow": 11, "industryId": "culture", "currentArr": 1412, "pipelineTotal": 1663, "pipelineCreated12m": 859, "tier": 3, "commentary": "Strong base and good references.", "growthPotential": 1, "criticality": 3, "competitiveIntensity": 2, "references": 2, "expertise": 2, "productFit": 3},

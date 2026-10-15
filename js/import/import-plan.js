@@ -65,7 +65,8 @@
       if (group.length < 2) return;
       var files = group.map(function (r) { return r.fileName; }).join(', ');
       group.forEach(function (r) {
-        r.errors.push({ message: say('duplicateRegion', { name: r.name, files: files }), sheet: null, cell: null });
+        r.errors.push({ message: say('duplicateRegion', { name: r.name, files: files }), sheet: null, cell: null,
+          kind: 'duplicateRegion', item: r.name == null ? null : String(r.name), found: files, expected: null });
         r.ok = false;
         r.region = null;
       });
@@ -83,9 +84,9 @@
 
   // A workbook that could not be opened at all is a reading with one error
   function failed(file, reason) {
-    var name = file && file.name ? file.name : '';
+    var name = file && file.name ? file.name : '', why = reason && reason.message ? reason.message : String(reason);
     return { ok: false, id: null, name: name, fileName: name, region: null, notes: [], parts: {},
-      errors: [{ message: say('unreadable', { file: name, reason: reason && reason.message ? reason.message : String(reason) }), sheet: null, cell: null }] };
+      errors: [{ message: say('unreadable', { file: name, reason: why }), sheet: null, cell: null, kind: 'unreadable', item: name, found: why, expected: null }] };
   }
 
   function readOne(file, map, sheets, now) {

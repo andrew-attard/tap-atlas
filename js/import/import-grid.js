@@ -3,7 +3,7 @@
  * Purpose: Expands a grid block's row and column axes (regular with strides, or enumerated) and reads its cells into
  *          recap-shaped items with a sourceCell each; checks the recap sheet's region filter; docs/ARCHITECTURE.md section 20.1.
  * Provides: TAP.importGrid (expand, block)
- * Depends on: js/import/xlsx-book.js, js/import/import-values.js, js/core/content.js, content/text-import.js
+ * Depends on: js/import/xlsx-book.js, js/import/import-values.js, js/import/import-rows.js (the words of a note's item), js/core/content.js, content/text-import.js
  * Used by: js/import/import-region.js
  * Owner: READ stream (#585)
  */
@@ -53,12 +53,14 @@
     return out;
   }
 
-  // A cell's number; anything else is noted and null
-  function readNumber(ctx, sheet, cell, raw, field) {
+  // A cell's number; anything else is noted (its kind, the item's axes in words and the field when it is not the value) and null
+  function readNumber(ctx, sheet, cell, raw, field, fields) {
     var v = ctx.V.number(raw);
     if (!ctx.V.isBad(v)) return v;
-    var key = raw && raw.error ? (raw.formula ? 'formulaNoValue' : 'errorCell') : 'badValue';
-    ctx.note(t(key, { field: field, found: show(raw) }), sheet.name, cell);
+    var key = raw && raw.error ? (raw.formula ? 'formulaNoValue' : 'errorCell') : 'badValue', R = TAP.importRows;
+    var where = R.keyWords(ctx.map && ctx.map.lookups, fields || {});
+    ctx.note(t(key, { field: field, found: show(raw) }), sheet.name, cell,
+      { kind: key, item: field === 'value' ? where : [where, R.fieldLabel(field)].filter(Boolean).join(', '), found: show(raw) });
     return null;
   }
 
@@ -85,13 +87,14 @@
       ctx.looseNoted = ctx.looseNoted || {};
       if (!ctx.looseNoted[sheet.name]) {
         ctx.looseNoted[sheet.name] = true;
-        ctx.note(t('looseSheet', { expected: spec.sheet, found: sheet.name }), sheet.name, null);
+        ctx.note(t('looseSheet', { expected: spec.sheet, found: sheet.name }), sheet.name, null, { kind: 'looseSheet', found: sheet.name, expected: spec.sheet });
       }
     }
     if (spec.filterCell) {
       var fraw = sheet.value(spec.filterCell);
       if (V.norm(fraw && fraw.error ? '' : fraw) !== V.norm(filterName)) {
-        ctx.error(t('filterMismatch', { found: show(fraw), expected: String(filterName) }), sheet.name, spec.filterCell);
+        ctx.error(t('filterMismatch', { found: show(fraw), expected: String(filterName) }), sheet.name, spec.filterCell,
+          { kind: 'filterMismatch', found: show(fraw), expected: String(filterName) });
         return { present: true, items: [], failed: true };
       }
     }
@@ -101,16 +104,16 @@
     rows.forEach(function (r) {
       var found = [], any = false;
       cols.forEach(function (c, i) {
-        var cell = c.at + r.at, raw = sheet.value(cell), variance = null;
+        var cell = c.at + r.at, raw = sheet.value(cell), variance = null, fields = Object.assign({}, r.fields, c.fields);
         if (raw !== null) any = true;
         if (vcols && vcols[i]) {
           var vcell = vcols[i].at + r.at, vraw = sheet.value(vcell);
           if (vraw !== null) any = true;
-          variance = vraw === null ? null : readNumber(ctx, sheet, vcell, vraw, 'variance');
+          variance = vraw === null ? null : readNumber(ctx, sheet, vcell, vraw, 'variance', fields);
         }
         if (raw === null && skip) return;
-        var value = raw === null ? null : readNumber(ctx, sheet, cell, raw, 'value');
-        found.push(shape(key, Object.assign({}, r.fields, c.fields), cell, value, variance, !!vcols));
+        var value = raw === null ? null : readNumber(ctx, sheet, cell, raw, 'value', fields);
+        found.push(shape(key, fields, cell, value, variance, !!vcols));
       });
       if (any) items = items.concat(found);
     });

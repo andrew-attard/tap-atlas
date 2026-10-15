@@ -1,10 +1,13 @@
 /*
  * File: content/text-import.js
- * Purpose: Wording for the Import panel, its report and the import's notes and errors (D147). Placeholders in {braces} are filled in by the code; the organization layer can replace any phrase by using the same key.
+ * Purpose: Wording for the Import panel, its report and the import's notes and errors (D147), and the plain words per note
+ *          kind for the grouped notes (D163). Placeholders in {braces} are filled in by the code; the organization layer can
+ *          replace any phrase by using the same key.
  * Provides: adds TAP_CONTENT.text.importPanel
  * Depends on: nothing
- * Used by: js/ui/import-panel.js, js/ui/import-report.js, js/import/*.js
- * Owner: UI stream (#587); the READ and PLAN streams add their message keys here under importPanel.read and importPanel.check
+ * Used by: js/ui/import-panel.js, js/ui/import-report.js, js/ui/warning-groups.js, js/import/*.js
+ * Owner: UI stream (#587); the READ and PLAN streams add their message keys here under importPanel.read and importPanel.check;
+ *        NOTES2 (#612) adds importPanel.words and importPanel.notePlain
  */
 window.TAP_CONTENT = window.TAP_CONTENT || {};
 window.TAP_CONTENT.text = window.TAP_CONTENT.text || {};
@@ -124,6 +127,39 @@ Object.assign(window.TAP_CONTENT.text, {
       unknownIndustry: 'The industry {found} is not in the industry list; the row is left out.',
       tierDiffers: 'The tier column holds {found}; the Market Coverage tier for this industry is {expected}, which is used.',
       looseSheet: 'The sheet {found} was read for {expected}: the names differ in case or spacing.'
+    },
+
+    // Words for the ids a note's item names (D163): motions and recap types; channels take their lookup name, these stand in
+    words: {
+      motions: { newBusiness: 'new business', customerGrowth: 'existing customers' },
+      types: { arr: 'ARR', services: 'services', swPerpetual: 'software perpetual', hardware: 'hardware', recurring: 'recurring' },
+      channels: { direct: 'Direct', partner: 'Partner', allianceA: 'Alliance A', allianceB: 'Alliance B' }
+    },
+    // Plain words per note kind (D163, js/ui/warning-groups.js fromImport): the group title (plural) and the one sentence that
+    // explains the kind, said once under the heading; the table then shows each note's item, what was found and what was
+    // expected. Observations, not judgements (D20). A note whose kind has no entry here takes its message as the title.
+    notePlain: {
+      emptySection: { title: 'Empty sections', intro: 'The section is in the workbook but holds no rows.' },
+      splitSum: { title: 'Channel splits not adding up to 100%', intro: 'The four channel shares of a row are expected to add up to 100%.' },
+      arrFormula: { title: 'ARR potential not matching its formula', intro: 'ARR potential for year 1 is expected to equal target accounts × hit rate × average deal size. A difference usually means the workbook was saved before it recalculated.' },
+      segmentRule: { title: 'Segments that differ from the thresholds rule', intro: 'The segment is expected to follow the thresholds: current ARR above the strategic threshold is Strategic, below the scaled threshold is Scaled, order intake and ARR above the growth thresholds is Growth, otherwise Core.' },
+      variance: { title: 'Variances that differ from their parts', intro: 'The variance is expected to equal the books order intake minus the strategic plan for the same year and type.' },
+      revenueAbove: { title: 'Revenue above the order intake', intro: 'Revenue is expected to be no higher than the order intake for the same year, channel, motion and type.' },
+      booksAbove: { title: 'Books value above the customer value', intro: 'For Partner, Alliance A and Alliance B, the books value of ARR and services is expected to be no higher than the customer value for the same year.' },
+      coverage: { title: 'Coverage ratios that differ from their parts', intro: 'The coverage ratio is expected to equal pipeline divided by forecast minus actuals.' },
+      badValue: { title: 'Values not recognized', intro: 'The cell holds a value the field cannot take, such as text in a number column or a name that is not in its list. It is imported as blank.' },
+      errorCell: { title: 'Error cells', intro: 'The cell shows an error such as #REF!. It is imported as blank.' },
+      formulaNoValue: { title: 'Formulas without a saved result', intro: 'The cell holds a formula whose result was not saved. It is imported as blank; save the workbook after it has recalculated.' },
+      unknownIndustry: { title: 'Rows naming an industry not in the list', intro: 'The industry is not in the mapping\'s industry list, so the row is left out.' },
+      tierDiffers: { title: 'New Business tiers that differ from Market Coverage', intro: 'The tier column disagrees with Market Coverage for the same industry. The Market Coverage tier is used.' },
+      looseSheet: { title: 'Sheets matched by a looser name', intro: 'The sheet was read although its name differs from the mapping in case or spacing.' },
+      unmatchedWorkbook: { title: 'Workbooks matching no mapped region', intro: 'The file name matches no region of the mapping, so the region takes its name from the workbook or the file.' },
+      missingSheet: { title: 'Missing sheets', intro: 'A required sheet is not in the workbook, so the region is left out.' },
+      missingIndustries: { title: 'Rated industries without a Market Coverage row', intro: 'Every rated industry of the list is expected to have a Market Coverage row.' },
+      headerMismatch: { title: 'Headings not where the mapping says', intro: 'The heading was not found at the cell the mapping names, so the sheet is not read.' },
+      filterMismatch: { title: 'Recap filters set to another region', intro: 'The recap sheet\'s region filter is expected to show this region, so the block is not read.' },
+      duplicateRegion: { title: 'Two workbooks for one region', intro: 'Two files were read for the same region. Neither is used.' },
+      unreadable: { title: 'Workbooks that could not be read', intro: 'The file could not be opened as a workbook.' }
     }
   }
 });
@@ -156,6 +192,11 @@ window.TAP_CONTENT.text.importPanel.check = {
     parts: { read: 'read', empty: 'empty', missing: 'missing', error: 'error' },
     error: '  Error {where}: {message}',
     note: '  Note {where}: {message}',
+    // A region's notes by kind (D163, D164): the title with its count, the intro once, then each plain row over its technical line
+    noteKind: '  {title} ({n})',
+    noteIntro: '    {intro}',
+    notePlain: '    {line}',
+    noteTech: '      {message}',
     where: '{sheet} › {cell}',
     whereSheet: '{sheet}',
     whereNone: 'workbook',
@@ -168,6 +209,7 @@ window.TAP_CONTENT.text.importPanel.check = {
     // The warnings by workbook, then kind (US-1.8.8): the plain line, then the technical one under it
     checkBook: '  {label} ({n})',
     checkKind: '    {title} ({n})',
+    checkIntro: '      {intro}',
     checkPlain: '      {line}',
     checkTech: '        {message}'
   }
