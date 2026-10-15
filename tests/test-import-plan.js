@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, PLAN stream (docs/ARCHITECTURE.md section 20): the section 5 checks, the region
  *          order and duplicates of the plan build, the contract check, the data file text and the plain-text report, on
  *          hand-built regions and readings; and the round trips through the workbook writer on mini, miniP4 and the sample.
- * Provides: test cases TPV-TC-827 to TPV-TC-851, X-notes2-check-kinds (every section 5 note's kind, item, found and expected, D163)
+ * Provides: test cases TPV-TC-827 to TPV-TC-851, TPV-TC-899 (every section 5 note's kind, item, found and expected, D163)
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, tests/fixtures/mini-p4.js,
  *             tests/fixtures/workbook-write.js, tests/fixtures/import-maps.js, config/import-map.js, data/sample-plan-data.js
  * Used by: tests.html
@@ -202,7 +202,7 @@
 
     // US-1.8.9 (D163): every note the section 5 checks raise carries its kind, the item in words (lookup names, motions and
     // types as words, never raw ids), found and expected as plain values; the message is unchanged
-    T.test('X-notes2-check-kinds', 'Every section 5 note carries kind, item, found and expected in words, and its message as before', function (a) {
+    T.test('TPV-TC-899', 'Every section 5 note carries kind, item, found and expected in words, and its message as before', function (a) {
       var f = T_FIXTURE('mini'), map = testMap(f), r = region(f, 'alpha'), p4 = T_FIXTURE('miniP4'), map4 = testMap(p4), r4 = region(p4, 'alpha');
       r.newBusiness[0].channelSplit = { direct: 0.5, partner: 0.45, allianceA: 0, allianceB: 0 };
       r.newBusiness[1].arrPotential[0] = 250;

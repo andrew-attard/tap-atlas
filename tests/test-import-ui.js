@@ -3,7 +3,7 @@
  * Purpose: Tests of the in-app import, UI stream (docs/ARCHITECTURE.md section 20): the Import panel as a layer and
  *          under the start-up screens, the report drawn from a canned result, the three actions, the Import button.
  *          The engine (TAP.importPlan, TAP.importMap, TAP.importWrite) is swapped for stand-ins and restored after.
- * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), X-notes2-report-ui
+ * Provides: test cases TPV-TC-852 to TPV-TC-867 (TPV-TC-855 also covers the grouped warnings, US-1.8.8, and the notes by kind, US-1.8.9), TPV-TC-905
  * Depends on: tests/harness.js, tests/test-setup.js, the app scripts, tests/fixtures/mini-data.js, config/import-map.js
  * Used by: tests.html
  * Owner: UI stream (#587)
@@ -418,7 +418,7 @@
       });
     });
 
-    T.test('X-notes2-report-ui', 'The copied report groups each region\u2019s notes by kind with the plain row and the technical line under it', function (a) {
+    T.test('TPV-TC-905', 'The copied report groups each region\u2019s notes by kind with the plain row and the technical line under it', function (a) {
       var text = TAP.importWrite.report(canned()), lines = text.split('\n').map(function (l) { return l.trim(); });
       var at = function (s) { var i = lines.indexOf(s); a.ok(i >= 0, 'line: ' + s); return i; };
       var region = at('Region C: left out'), err = at('Error 2. New Business: The sheet is missing.');
