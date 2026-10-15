@@ -26,6 +26,7 @@
  *   in the top bar and the browser tab. Put the logo file in an assets folder next to this file's folder, in the
  *   internal copy only (assets/ is ignored by git). Colours and font stay in js/theme.js, changed only for a full
  *   palette change; the public repository keeps the neutral theme.
+ *   The README's "Make it your own" section walks through name, logo, words, colours and font in five steps.
  */
 window.TAP_ORG = {
 

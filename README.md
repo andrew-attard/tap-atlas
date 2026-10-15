@@ -300,6 +300,18 @@ The in-app import (D147, `docs/ARCHITECTURE.md` section 20): the planning workbo
 
 So: **data** says what the plans hold, **config** says what to show and how to weigh it, **content** says it in words, and **the theme** decides how it looks. Code reads all four but holds none of them.
 
+## Make it your own
+
+Another organization can brand the app without touching the stylesheets. No colour is written in `css/`: every colour, size and font comes from `js/theme.js`, which writes the `--tap-*` variables and the chart theme at load, and a lint rule fails any colour literal elsewhere. Every word, the app name and the logo come from the organization layer. Two files carry the whole personalization, and both stay out of the public repository (one is gitignored, the other is edited in the internal copy only).
+
+1. **Name and logo.** Copy `content/organization.example.js` to `content/organization.js` (gitignored). Set `text.app.name` for the top bar and the browser tab. Put the logo in `assets/` (gitignored) and name it in `settings.brand.logo`, with `logoAlt` for the alt text: a relative path inside the folder, no `..` and no spaces. `index.html` loads the layer; `index-sample.html` never does.
+2. **Words and terms.** In the same file, override any phrase by its key in `text` (the keys are those of `content/ui-text.js` and the `content/text-*.js` files; keep the `{placeholders}`), add or replace glossary entries in `glossary`, add Guide sections in `guide`, set short region names in `regions` and the confidentiality banner in `settings.internalLabel`. The Guide marks replaced sections with an "Organization wording" badge.
+3. **Brand colours.** Edit `js/theme.js` in the internal copy: the page colours (`accent`, `ink`, `ground`, `surface` and the rest), the region palette (keep eight colours a colour-blind viewer can tell apart; the theme suite checks the sample palette), and the part colours only if the brand needs them. The CSS variables and the chart theme follow with no other change.
+4. **Font.** Name the family in `js/theme.js` (`font`). To ship a brand font, add its `.woff2` files to `vendor/fonts/` and an `@font-face` rule in `css/base.css`, the one stylesheet edit there is. A font that is not in the folder falls back to the next name in the list.
+5. **Check.** Open `index.html` from the folder. The data sources panel (the Data button) reports any problem in the organization layer; a wrong key or a bad logo path makes the whole layer fall back to the defaults, by design, so the app never half-loads it. A copy kept under git runs `scripts/verify.sh --browser none`.
+
+Do not write colour literals in CSS or JavaScript (lint fails), do not edit `index-sample.html`, and never commit `content/organization.js`, `assets/` or a palette-changed `js/theme.js` to the public repository. For the full internal handover see `docs/INTERNAL-HANDOVER.md` (sections 3 and 5); to ask an AI tool to do the work, prompts 3 and 4 in `docs/COPILOT-PROMPTS.md`; the decision behind it is D143 in `docs/ARCHITECTURE.md`.
+
 ## Replace the data file
 
 The import runs inside the app (D147). It needs the mapping for the real template in `config/import-map.js`, filled once with prompts 2 and 16 in `docs/COPILOT-PROMPTS.md` (`docs/IMPORT-BRIEF.md` section 6.4 says what it holds).
