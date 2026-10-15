@@ -166,6 +166,8 @@ The in-app import (D147, `docs/ARCHITECTURE.md` section 20): the planning workbo
 | `js/ui/layers.js` | Side panels (details, data sources, explanations), one at a time |
 | `js/ui/warning-groups.js` | The contract check's warnings and the import's notes brought to one shape and grouped by workbook, then by kind, in plain words (D161, D163); the Import report, the data sources panel and the copied report share it |
 | `js/ui/warning-table.js` | Draws the groups: one collapsible block per kind with its one-sentence intro and a table of where, found and expected (D164) |
+| `js/ui/owner-report.js` | The review report per workbook for its owner (D166): one self-contained HTML page (or all workbooks in one), and the same as plain text for an email; what to review or fix with the sheet and cell of each item, nothing technical |
+| `js/ui/owner-report-ui.js` | The "Reports for workbook owners" list in the Import report and the data sources panel: a row per workbook with **Download** and **Copy as text**, then **All workbooks** |
 | `js/ui/sources-panel.js` | The data sources panel: files, dates, each region's import notes grouped by kind, the check's warnings in groups, skipped rules |
 | `js/ui/source-tip.js` | The data icon beside a figure: its popover shows the kind of value and file › sheet › cell (D100) |
 | `js/ui/system-screens.js` | Full-page messages when the app can't start, with a copyable problem list |
@@ -224,7 +226,7 @@ The in-app import (D147, `docs/ARCHITECTURE.md` section 20): the planning workbo
 | File | What it does |
 |---|---|
 | `content/ui-text.js` | General wording: app name, the term popover, organization file problems |
-| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections), outlook (the Outlook view) |
+| `content/text-*.js` | Wording per area: shell, engine and engine2 (measures, lists), data, panel, overview, industry, newbusiness, customers (and partners), profile, themes, pages (Guide, tour, tips), present (presentation mode), custom (Build a chart), extra (extra sections), outlook (the Outlook view), import (the Import panel and its notes), owner-report (the review reports for workbook owners) |
 | `content/glossary.js` | The general glossary: every term in plain English, shown in a popover when the term is selected |
 | `content/glossary-p4.js` | The glossary terms for the full template's parts: strategic plan, base year, revenue outlook, books value, solutions, partner maturity |
 | `content/guide.js` | The Guide page text |
@@ -318,7 +320,7 @@ Do not write colour literals in CSS or JavaScript (lint fails), do not edit `ind
 The import runs inside the app (D147). It needs the mapping for the real template in `config/import-map.js`, filled once with prompts 2 and 16 in `docs/COPILOT-PROMPTS.md` (`docs/IMPORT-BRIEF.md` section 6.4 says what it holds).
 
 1. Open `index.html` and press **Import** (on the comparison bar, or on the "No plan data found" screen when there is no data file yet). Pick every regional workbook.
-2. Read the report: per region its file, saved date, the parts read, its errors and its notes with sheet › cell, then the contract check on the whole plan. If a region has an error, press **Copy report** and use prompt 6 in `docs/COPILOT-PROMPTS.md`: fix the mapping, never the data file by hand, and import again.
+2. Read the report: per region its file, saved date, the parts read, its errors and its notes with sheet › cell, then the contract check on the whole plan (a warning the import already noted is shown once, under the note). If a region has an error, press **Copy report** and use prompt 6 in `docs/COPILOT-PROMPTS.md`: fix the mapping, never the data file by hand, and import again. Under **Reports for workbook owners**, download each workbook's review report (a self-contained page that prints to PDF) or copy it as text, and send it to the regional leader who owns the workbook: it lists what to review or fix in plain words, with the sheet and cell of each item.
 3. Press **Use these plans now** to show the imported plans at once. Click the "Data" button (with the data date) on the comparison bar to check every region's file, dates and import notes.
 4. Press **Save data/plan-data.js** and move the download into `data/` in the internal copy of the folder, replacing the old file. The next time `index.html` opens, it loads that file without the import.
 

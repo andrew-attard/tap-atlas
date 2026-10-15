@@ -16,6 +16,10 @@ Generic on purpose: this copy names no organization, region, file or person. The
   Open `index.html` (without a data file it shows the "No plan data found" screen, which has the button too), press **Import** and pick every regional workbook. Read the report: the summary, then per region its file, saved date, the parts read, its errors and its notes with sheet › cell, then the contract check on the whole plan. If any region has an error, press **Copy report**, paste it into Copilot with prompt 6, fix the mapping (never the data file by hand) and import again.
   *Good:* the report shows no error for any region (notes are fine, they are read in step 4), no region missing from the mapping's list, no mapping problem, and a clean contract check. One region per workbook. **Use these plans now** is enabled.
 
+- [ ] **2a. Download each workbook's review report and send it to its owner.**
+  Under "Reports for workbook owners" in the report (also in the data sources panel afterwards), press **Download** on each workbook's row and send the page to the regional leader who owns it, or **Copy as text** and paste it into an email. The page lists what to review or fix in plain words with the sheet and cell of each item, nothing technical, and prints to PDF. A workbook with nothing to review still has a row, so every leader can get one. When a leader sends the workbook back, import again.
+  *Good:* every owner has their report; what each one fixed, accepted or left as "not provided" is recorded in the run log beside their region.
+
 - [ ] **3. Use the plans, save the data file and reopen.**
   Press **Use these plans now**: the app shows the imported plans. Then press **Save data/plan-data.js**, move the download into `data/` in the internal copy of the folder, replacing the old file, and double-click `index.html` again.
   *Good:* the Overview opens within about 2 seconds with All regions and no focus region, on the new data without the import. No error screen. No "No plan data found" or version message. `meta.isSample` is `false` in the saved file, which is well under 1 MB. The browser console (F12) shows no errors.

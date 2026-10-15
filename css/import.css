@@ -40,11 +40,11 @@
 .tap-imp__h { margin: var(--tap-sp-4) 0 var(--tap-sp-2); font-size: var(--tap-fs-h3); }
 .tap-imp__h:focus { outline: none; }
 .tap-imp__missing { margin: 0 0 var(--tap-sp-3); }
-.tap-imp__region, .tap-imp__check, .tap-imp__mapsection {
+.tap-imp__region, .tap-imp__check, .tap-imp__mapsection, .tap-imp__owners {
   display: flex; flex-direction: column; gap: var(--tap-sp-2);
   padding: var(--tap-sp-4) 0; border-top: var(--tap-rule-w) solid var(--tap-ink);
 }
-.tap-imp__region h4, .tap-imp__check h4, .tap-imp__mapsection h4 {
+.tap-imp__region h4, .tap-imp__check h4, .tap-imp__mapsection h4, .tap-imp__owners h4 {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--tap-sp-2); margin: 0; font-size: var(--tap-fs-lead);
 }
 .tap-imp__facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--tap-sp-4); margin: 0; }
