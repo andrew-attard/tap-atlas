@@ -762,7 +762,17 @@
         var sum = parts.reduce(function (t, s) { return t + ((s.data[i] || {}).value || 0); }, 0);
         if (name !== 'Region C') a.near(sum, 100, 1e-6, name + ' adds up to 100%');
       });
-      a.ok(chart.legend.some(function (l) { return l.label === 'Hardware' && l.mark; }), 'the key numbers each category, so they are told apart without colour');
+      // D173: each category is named on its segments where it fits, else numbered with a key line; all four are keyed by name
+      a.ok(chart.legend.some(function (l) { return l.label === 'Hardware'; }), 'the key names each category, so they are told apart without colour');
+      var marks = {};
+      chart.legend.forEach(function (l) { if (l.mark != null) marks[l.mark] = l.label; });
+      parts.forEach(function (s, i) {
+        (s.data || []).forEach(function (d) {
+          if (!d || d.raw == null) return;
+          var text = s.label.formatter({ data: d, value: d.value }), num = /^\{n\|(\d+)\}/.exec(text);
+          a.ok(num ? marks[num[1]] === s.name && +num[1] === i + 1 : text === '' || text.indexOf(s.name) === 0, d.entityId + ' ' + s.name + ': named or numbered (' + text + ')');
+        });
+      });
     });
 
     when([OC], 'X-p4-outlook-sample-category', 'Sample: each region’s order intake by product category equals the planted figures', function (a) {
