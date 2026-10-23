@@ -1,7 +1,8 @@
 /*
  * File: js/reports/stack-draw.js
  * Purpose: Drawing shared by the reports that split a figure into named parts (solutions, routes, maturity levels):
- *          stacked bars with every part numbered and keyed, and a heatmap grid with the parts down and the regions
+ *          stacked bars with each part named on its segments where it fits, else numbered and keyed (D173), and a
+ *          heatmap grid with the parts down and the regions
  *          across. It draws the rows and parts it is handed and works out no figure itself.
  * Provides: TAP.stackDraw (bars, legend, grid, gridLegend, tone)
  * Depends on: js/engine/shapes.js (drawing kit), js/engine/aggregate.js (describe), js/core/dom.js, js/core/format.js,
@@ -16,7 +17,9 @@
  *                    bar. group is the breakdown value the row stands for, or null; after is text for the end of the
  *                    bar; keys, when a row's figures have their own, maps a part key to the figure key a click names
  *   entities, groups the scope entities, and the breakdown values [{value, label}] (empty without a breakdown): the grid
- *   numbered         true: segments and key carry each part's number, so many parts are told apart without colour
+ *   numbered         true: a segment names its part, or carries the part's number where the name has no room, so
+ *                    many parts are told apart without colour; the key numbers only the parts numbered (D173)
+ *   size, expanded   optional: the chart's size (ctx.size) and the expanded view, to judge the room on a segment
  *   highlight        a Target; by: the dimension the parts are values of
  *   right, tip       optional: room right of the bars (px) for long closing texts; tip(row, part) gives more tooltip lines
  *   paints           optional: [{bg, fg}] per part when the parts take a palette (TAP.shapes.kit.partPaints, D124): the
@@ -53,16 +56,26 @@
     return kit.tip(title, lines);
   }
 
-  // The label on a segment: its part's number, and the value where there is room for it.
-  function segmentLabel(d, pi, pct, maxT) {
-    return function (prm) {
-      var x = prm.data;
-      if (!x || x.raw == null) return '';
-      var share = pct ? prm.value / 100 : (maxT ? x.raw / maxT : 0), num = d.numbered ? '{n|' + (pi + 1) + '}' : '';
-      var text = pct ? TAP.format.pct(prm.value / 100) : chartValue(x.raw, d.unit);
-      if (share >= (num ? 0.12 : 0.09)) return num ? num + ' ' + text : text;
-      return share >= 0.03 ? num : '';
-    };
+  // The room on the value axis in pixels, from the panel's size (a half-width panel until it is known), and the width a
+  // text needs. The axis is taken a fifth longer than the largest bar, as its rounded end usually is, so a name that
+  // is judged to fit does.
+  function room(d, pct, maxT) {
+    var th = k().th(), cw = th.type.chart * (d.expanded ? 1.3 : 1) * 0.56, w = d.size && d.size.w > 200 ? d.size.w : 520;
+    var names = Math.max.apply(null, d.rows.map(function (r) { return String(r.label).length; }).concat([4])) * cw;
+    var plot = Math.max(80, w - th.space[4] - (d.right || th.space[12] * 2) - names - 8), span = pct ? 100 : (maxT * 1.2 || 1);
+    return { px: function (v) { return Math.abs(v) / span * plot; }, need: function (s) { return String(s).length * cw + 8; } };
+  }
+
+  // A segment's words: unnumbered parts show the value where there is room. Numbered parts show the part's name (and
+  // the value when both fit), else the number, with the value from 12% of the largest bar (D173). numbers: the parts used.
+  function segmentText(d, R, p, pi, v, share, numbers) {
+    var text = d.pct ? TAP.format.pct(v / 100) : chartValue(v, d.unit), w = R.px(v);
+    if (!d.numbered) return share >= 0.09 ? text : '';
+    if (w >= R.need(p.label + ' · ' + text)) return p.label + ' · ' + text;
+    if (w >= R.need(p.label)) return p.label;
+    if (share < 0.03) return '';
+    numbers[pi] = true;
+    return '{n|' + (pi + 1) + '}' + (share >= 0.12 ? ' ' + text : '');
   }
 
   // type: 'stackedBar' or 'stacked100'. Colour shows the region, shade and number the part.
@@ -70,6 +83,8 @@
     var kit = k(), th = kit.th(), pct = type === 'stacked100', n = d.parts.length;
     var totals = d.rows.map(function (r) { return r.total; }), np = [];
     var maxT = Math.max.apply(null, totals.map(function (c) { return c.state === 'value' ? c.v : 0; }).concat([0]));
+    var R = room(d, pct, maxT), numbers = d.numbers = {};
+    d.pct = pct;
     d.rows.forEach(function (r, i) {
       if (totals[i].state === 'notProvided') {
         np.push({ value: [0, i], entityId: r.entityId, text: kit.t('states.notProvided'), title: r.label, what: d.label });
@@ -83,12 +98,14 @@
           var c = r.cells[p.key], tot = totals[i].state === 'value' ? totals[i].v : 0;
           if (!c || c.state !== 'value') return { value: null };
           var on = kit.highlighted(r.entity, d.highlight), dark = tone(pi, n) < 0.4 && r.entity.role !== 'muted', paint = d.paints && d.paints[pi];
-          return { value: pct ? (tot ? c.v / tot * 100 : 0) : c.v, raw: c.v, key: (r.keys || {})[p.key] || p.key, part: p.value, entityId: r.entityId, rowId: r.id,
+          var v = pct ? (tot ? c.v / tot * 100 : 0) : c.v, share = pct ? v / 100 : (maxT ? c.v / maxT : 0);
+          return { value: v, raw: c.v, tapText: segmentText(d, R, p, pi, pct ? v : c.v, share, numbers), key: (r.keys || {})[p.key] || p.key, part: p.value, entityId: r.entityId, rowId: r.id,
             name: r.label, mark: 'bar',
             itemStyle: Object.assign({ color: paint ? paint.bg : shade(r.entity.color, pi, n) }, kit.partBorder(r.entity, on, d.paints)),
             label: { color: paint ? paint.fg : dark ? th.onColour : th.ink } };
         }),
-        label: { show: true, position: 'inside', fontSize: th.type.chart, formatter: segmentLabel(d, pi, pct, maxT), rich: { n: badge } },
+        label: { show: true, position: 'inside', fontSize: th.type.chart, formatter: function (prm) { return (prm.data && prm.data.tapText) || ''; },
+          rich: { n: badge } },
         tooltip: { formatter: function (prm) {
           var row = d.rows.filter(function (r) { return r.id === (prm.data || {}).rowId; })[0];
           return row ? tipFor(d, row, p) : '';
@@ -116,13 +133,15 @@
       } } };
   }
 
-  // The key: each region once, then the parts. Numbered parts get a numbered key in the same ink steps as the stack.
+  // The key: each region once, then the parts. A part numbered on the chart gets a numbered key in the stack's ink
+  // steps; one named on its segments keeps its shade and name (D173). Call after bars(), which notes the numbers used.
   function legend(d) {
     var kit = k(), th = kit.th(), seen = [], n = d.parts.length;
     if (d.paints) return kit.channelLegend(d.parts.map(function (p) { return p.label; }), d.paints, d.paintRole);
     d.rows.forEach(function (r) { if (seen.indexOf(r.entity) < 0) seen.push(r.entity); });
     return kit.legendOf({ entities: seen }).concat(d.parts.map(function (p, i) {
       if (!d.numbered) return { label: p.label, color: th.shade(th.ink, i), role: 'part' };
+      if (!(d.numbers || {})[i]) return { label: p.label, color: shade(th.ink, i, n), role: 'key' };
       return { label: p.label, color: shade(th.ink, i, n), mark: i + 1, role: tone(i, n) < 0.4 ? 'key' : 'muted' };
     }));
   }
