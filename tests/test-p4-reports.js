@@ -137,14 +137,44 @@
         });
         a.equal(ss[i].items.filter(function (x) { return x.entityId === 'charlie'; }).length, 0, 'nothing drawn for Region C');
       });
-      // Never colour alone (D24): every part has a numbered key with its name, and the same number on its segments
-      var keys = res.legend.filter(function (l) { return l.mark != null; });
-      a.deepEqual(keys.map(function (l) { return [l.mark, l.label]; }), [[1, 'Solution 1'], [2, 'Solution 2'], [3, 'Solution 3'], [4, 'No solution named']]);
-      var s0 = res.option.series[0];
-      a.match(s0.label.formatter({ data: s0.data[1], value: s0.data[1].value }), /^\{n\|1\} /, 'a segment carries its part’s number, as a badge');
+      // Never colour alone (D24): each part is in the key by name, and named or numbered on its segments (D173)
+      a.deepEqual(res.legend.slice(-4).map(function (l) { return l.label; }), ['Solution 1', 'Solution 2', 'Solution 3', 'No solution named'],
+        'every part in the key, after the regions');
       var np = res.option.series.filter(function (s) { return s.tapRole === 'notProvided'; })[0];
       a.ok(np && np.data.some(function (d) { return d.entityId === 'charlie'; }), 'Region C carries the not-provided mark');
       a.deepEqual(res.missing, ['Region C'], 'and is named under the chart');
+    });
+
+    // Each segment's words, and the key: a segment shows its part's name, or its number with a key line (D173)
+    function segments(res) {
+      var out = [];
+      res.option.series.filter(function (s) { return s.tapRole === 'value'; }).forEach(function (s, i) {
+        (s.data || []).forEach(function (d) { if (d && d.raw != null) out.push({ part: s.name, n: i + 1, entityId: d.entityId, text: s.label.formatter({ data: d, value: d.value }) }); });
+      });
+      return out;
+    }
+    function namedOrNumbered(a, res, tag) {
+      var marks = {}, used = {};
+      res.legend.forEach(function (l) { if (l.mark != null) marks[l.mark] = l.label; });
+      segments(res).forEach(function (g) {
+        var num = /^\{n\|(\d+)\}/.exec(g.text);
+        if (num) { used[num[1]] = true; a.equal(marks[num[1]], g.part, tag + g.entityId + ' ' + g.part + ': its number is keyed to its name'); }
+        else a.ok(g.text === '' || g.text.indexOf(g.part) === 0, tag + g.entityId + ' ' + g.part + ': named, or left blank when tiny ("' + g.text + '")');
+      });
+      a.deepEqual(Object.keys(marks).sort(), Object.keys(used).sort(), tag + 'the key numbers exactly the parts numbered on the chart');
+    }
+
+    T.test('X-p4-sol-segment-names', 'D173: a wide segment names its part, a narrow one falls back to its number, and the key follows', function (a) {
+      load();
+      var wide = build(SOL, { mode: 'all' }, { type: 'stackedBar', size: { w: 1400, h: 500 } });
+      var big = segments(wide).filter(function (g) { return g.entityId === 'bravo' && g.part === 'Solution 1'; })[0];
+      a.ok(big && big.text.indexOf('Solution 1') === 0, 'wide panel: Region B’s Solution 1 segment is named (' + (big && big.text) + ')');
+      a.ok(segments(wide).every(function (g) { return !/^\{n\|/.test(g.text) || g.part !== 'Solution 1'; }), 'wide panel: the largest part is never numbered');
+      var narrow = build(SOL, { mode: 'all' }, { type: 'stackedBar', size: { w: 300, h: 500 } });
+      var small = segments(narrow).filter(function (g) { return g.entityId === 'alpha' && g.part === 'Solution 2'; })[0];
+      a.ok(small && /^\{n\|2\}/.test(small.text), 'narrow panel: Region A’s Solution 2 segment falls back to its number (' + (small && small.text) + ')');
+      [[wide, 'wide: '], [narrow, 'narrow: ']].forEach(function (x) { namedOrNumbered(a, x[0], x[1]); });
+      a.ok(wide.sized && narrow.sized, 'drawn again once the panel’s size is known');
     });
 
     T.test('X-p4-sol-grid', 'Heatmap: solutions down, regions across, every value written out and equal to the table', function (a) {
