@@ -60,7 +60,7 @@
       return r.total.state !== 'notApplicable' || parts.some(function (p) { return r.cells[p.key].state !== 'notApplicable'; });
     });
     return { def: def, by: by, m: m, bd: bd, label: own.label || meta.label, unit: meta.unit, ds: split.ds, entities: entities,
-      groups: groups, parts: parts, rows: rows, numbered: true, highlight: ctx.highlight };
+      groups: groups, parts: parts, rows: rows, numbered: true, highlight: ctx.highlight, size: ctx.size, expanded: ctx.expanded };
   }
 
   // One table row per bar: the region, the breakdown value when there is one, each part, then the total.
@@ -118,6 +118,7 @@
     if (mo.paints) { mo.numbered = false; mo.paintRole = o.partColors; }
     res.option = D.bars(mo, type);
     res.legend = D.legend(mo);
+    res.sized = !!mo.numbered;   // segment names are judged for the panel's width (D173)
     // Many bars (a stack per region and breakdown value) need more room than the panel's usual chart
     var th = kit.th();
     if (mo.rows.length > 8) res.height = th.space[12] * 2 + mo.rows.length * th.space[8];
