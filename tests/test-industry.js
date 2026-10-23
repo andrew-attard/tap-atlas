@@ -460,18 +460,14 @@
       a.ok(found > 0, 'the mini fixture has combined ratings with a whole-number mean (' + found + ')');
     });
 
-    T.test('X-review-RI-19', 'With every region for one industry in focus, the table numbers each row as its bubble is numbered (the region)', function (a) {
+    // D172 replaces RI-19: the table view has no bubbles, so it names each row and carries no number
+    T.test('X-review-RI-19', 'The quadrant table names each row’s region and industry and has no number column', function (a) {
       var res = quad('bubble', { mode: 'all' }, { industryId: 'ind4', opts: { everyRegion: true } });
-      // Hand-worked: the regions' places in file order, alpha 1 to delta 4
-      var want = { 'Region A': '1', 'Region B': '2', 'Region C': '3', 'Region D': '4' };
       a.equal(res.table.rows.length, 4, 'one row per region');
-      res.table.rows.forEach(function (r) {
-        a.equal(r.cells.num.v, want[r.cells.entity.v], r.cells.entity.v + ': numbered as its bubble');
+      res.table.rows.forEach(function (r) { a.ok(r.cells.entity.v && r.cells.industry.v, r.cells.entity.v + ': named'); });
+      [res, quad('bubble', { mode: 'all' })].forEach(function (x, i) {
+        a.ok(!x.table.columns.some(function (c) { return c.key === 'num'; }), (i ? 'unfiltered' : 'one industry') + ': no number column');
       });
-      var plain = quad('bubble', { mode: 'all' });
-      var ind4 = plain.table.rows.filter(function (r) { return r.industryId === 'ind4'; })[0];
-      a.equal(ind4.cells.num.v, String(TAP.data.industries({ rated: true }).map(function (d) { return d.id; }).indexOf('ind4') + 1),
-        'unfiltered, the number stays the industry’s');
     });
 
     T.test('X-industry-quad-highlight', 'Highlights ring every matching point, in every group', function (a) {
@@ -718,47 +714,67 @@
       });
       return out;
     }
-    // A bubble is identifiable when its name is beside it, or it carries a number the key names.
+    // A bubble is identifiable when its name is beside it, a join line leads to its industry's named bubble (D172),
+    // or it carries a number the key names.
     function unnamed(res) {
-      var key = {};
+      var key = {}, named = function (d) { return d.label.show && String(d.label.formatter).replace(/\n/g, ' ') === d.name; };
+      var joined = series(res).some(function (s) { return s.tapRole === 'link'; });
       (res.legend || []).forEach(function (l) { if (l.mark != null && l.role === 'industry') key[l.mark] = l.label; });
       return points(res).filter(function (d) {
-        if (d.label.show && String(d.label.formatter).replace(/\n/g, ' ') === d.name) return false;
+        if (named(d)) return false;
+        if (joined && points(res).some(function (o) { return o !== d && o.industryId === d.industryId && named(o); })) return false;
         var m = markOf(res, d);
         return !(m && m.label.show && m.label.formatter === String(numberOf(d.industryId)) && key[m.label.formatter] === d.name);
       }).map(function (d) { return d.name + ' · ' + d.entityId; });
     }
 
-    T.test('X-industry-quad-identify', 'QA-3: in every comparison setting, every bubble is named or numbered, and nothing overlaps', function (a) {
+    T.test('X-industry-quad-identify', 'QA-3: in every comparison setting, every bubble is named, joined to its named partner, or numbered, and nothing overlaps', function (a) {
       sample();
       settingsOf(sampleIds()).forEach(function (s) {
         QUAD_SIZES.forEach(function (size) {
           var res = quad('bubble', s[1], { size: size }), tag = s[0] + ' ' + size.w + ' px: ';
           a.ok(points(res).length >= 18, tag + 'draws the bubbles (' + points(res).length + ')');
-          a.deepEqual(unnamed(res), [], tag + 'every bubble is named beside it or numbered with a key entry');
+          a.deepEqual(unnamed(res), [], tag + 'every bubble is named beside it, joined to its named partner, or numbered with a key entry');
           a.deepEqual(clashes(layoutOf(res, size)), [], tag + 'no label or number overlaps another, or another bubble');
         });
       });
     });
 
-    T.test('X-industry-quad-numbers', 'QA-3: each industry keeps one number, in lookup order, in its bubbles, the key and the table', function (a) {
+    T.test('X-industry-quad-numbers', 'QA-3, D172: only a bubble without its name beside it is numbered; the key lists exactly those, in lookup order', function (a) {
       sample();
       var R = sampleIds(), inds = TAP.data.industries({ rated: true });
       settingsOf(R).forEach(function (s) {
-        var res = quad('bubble', s[1], { size: { w: 540, h: 560 } }), tag = s[0] + ': ';
-        var key = res.legend.filter(function (l) { return l.role === 'industry'; });
-        a.deepEqual(key.map(function (l) { return [l.mark, l.label]; }), inds.map(function (d, i) { return [i + 1, d.name]; }), tag + 'the key lists 1 to n in lookup order');
-        key.forEach(function (l) { a.equal(l.color, null, tag + l.label + ': a number, no colour swatch'); });
-        a.ok(res.legend.some(function (l) { return l.role !== 'industry' && l.color; }), tag + 'the region or average swatches stay');
-        marks(res).forEach(function (m) { a.equal(m.raw, undefined, tag + 'a number is not a value'); });
-        var s0 = series(res).filter(function (x) { return x.tapRole === 'mark'; })[0];
-        a.ok(s0 && s0.silent && s0.z > 8, tag + 'numbers sit over the bubbles and leave hover and clicks to them');
-        a.ok(res.table.columns.some(function (c) { return c.key === 'num'; }), tag + 'the table has a number column');
-        res.table.rows.forEach(function (r) { a.equal(r.cells.num.v, String(numberOf(r.industryId)), tag + 'table number for ' + r.industryId); });
+        QUAD_SIZES.forEach(function (size) {
+          var res = quad('bubble', s[1], { size: size }), tag = s[0] + ' ' + size.w + ' px: ', withNo = {};
+          points(res).forEach(function (d) {
+            var m = markOf(res, d), shown = m && m.label.show;
+            if (d.label.show) a.ok(!shown, tag + d.name + ' · ' + d.entityId + ': named beside its bubble, so no number');
+            var partner = points(res).filter(function (o) { return o !== d && o.industryId === d.industryId && o.label.show; })[0];
+            if (!d.label.show && partner) a.ok(!shown, tag + d.name + ' · ' + d.entityId + ': joined to its named partner, so no number');
+            if (shown) { withNo[d.industryId] = true; a.equal(m.label.formatter, String(numberOf(d.industryId)), tag + d.name + ': its fixed number'); }
+          });
+          var key = res.legend.filter(function (l) { return l.role === 'industry'; });
+          var want = inds.filter(function (d) { return withNo[d.id]; }).map(function (d) { return [numberOf(d.id), d.name]; });
+          a.deepEqual(key.map(function (l) { return [l.mark, l.label]; }), want, tag + 'the key lists the numbered industries, in lookup order');
+          key.forEach(function (l) { a.equal(l.color, null, tag + l.label + ': a number, no colour swatch'); });
+          a.ok(res.legend.some(function (l) { return l.role !== 'industry' && l.color; }), tag + 'the region or average swatches stay');
+          marks(res).forEach(function (m) { a.equal(m.raw, undefined, tag + 'a number is not a value'); });
+          var s0 = series(res).filter(function (x) { return x.tapRole === 'mark'; })[0];
+          a.ok(s0 && s0.silent && s0.z > 8, tag + 'numbers sit over the bubbles and leave hover and clicks to them');
+          a.ok(marks(res).filter(function (m) { return !m.label.backgroundColor; }).every(function (m) { return m.label.color === TH.onColour; }),
+            tag + 'a number inside its bubble is in on-colour text');
+        });
       });
-      var big = quad('bubble', { mode: 'all' }, { size: { w: 700, h: 560 } });
-      a.ok(marks(big).some(function (m) { return !m.label.offset || (!m.label.offset[0] && !m.label.offset[1]); }), 'numbers sit inside the bubbles where they fit');
-      a.ok(marks(big).filter(function (m) { return !m.label.backgroundColor; }).every(function (m) { return m.label.color === TH.onColour; }), 'in on-colour text');
+    });
+
+    T.test('X-industry-quad-no-number-when-named', 'D172: with room for every name, the chart shows no numbers and the key no industries', function (a) {
+      // A few industries in a wide panel, as in the owner's screenshot: every one named beside its bubble
+      TAP.data.load(T_FIXTURE('mini'));
+      var res = quad('bubble', { mode: 'set', set: ['alpha', 'bravo'] }, { size: { w: 1400, h: 600 } });
+      var shown = points(res).filter(function (d) { return d.label.show; });
+      a.ok(shown.length > 0 && shown.length === points(res).length, 'every bubble is named (' + shown.length + ' of ' + points(res).length + ')');
+      a.deepEqual(marks(res).filter(function (m) { return m.label.show; }).map(function (m) { return m.label.formatter; }), [], 'no number on the chart');
+      a.deepEqual(res.legend.filter(function (l) { return l.role === 'industry'; }), [], 'no industry lines in the key');
     });
 
     T.test('X-industry-quad-no-web', 'QA-3: one against the rest and a pair use numbers instead of leader lines', function (a) {
