@@ -1,7 +1,8 @@
 /*
  * File: js/reports/quadrant-labels.js
  * Purpose: Places the quadrant chart's names and numbers so nothing overlaps, biggest bubbles first (the industry in
- *          focus before them), in the pixels the chart is drawn in. Every bubble ends up named or numbered (QA-3).
+ *          focus before them), in the pixels the chart is drawn in. Every bubble ends up named, joined to its named
+ *          partner, or numbered (QA-3); a number only where there is no name, so it is never read as a value (D172).
  *          Display only: values never move. Also draws the lines joining paired bubbles and the selection ring.
  * Provides: TAP.quadrantLabels (place, at, numbers, links, selection)
  * Depends on: js/theme.js (TAP_THEME, read at call time)
@@ -76,10 +77,13 @@
   }
   function numSize(F, p) { var w = String(p.num).length * F.nfs * 0.62 + 2; return { w: w, h: F.nfs }; }
 
+  // A bubble needs a number only when it has no name beside it and no named partner on the end of its join line (D172).
+  function needsNumber(p) { return p.num != null && !p.lab && !(p.partner && p.partner.lab); }
+
   // A number goes inside its bubble when it fits there and no bubble drawn over it, or other number, covers that spot.
   function numbersInside(order, F, B) {
     order.forEach(function (p) {
-      if (p.num == null) return;
+      if (!needsNumber(p)) return;
       var s = numSize(F, p), b = { x: p.c.x - s.w / 2, y: p.c.y - s.h / 2, w: s.w, h: s.h };
       if (s.w > p.d - 2 || s.h * 0.75 > p.d - 4 || !B.free(b, p.c, null, true)) return;
       B.take(b); p.at = { ox: 0, oy: 0, inside: true };
@@ -128,7 +132,7 @@
   });
   function numbersBeside(order, F, B) {
     order.forEach(function (p) {
-      if (p.num == null || p.at || p.lab) return;
+      if (!needsNumber(p) || p.at) return;
       var s = numSize(F, p), c = p.c, w = s.w + 4, h = s.h;
       SPOTS.some(function (spot) {
         var gap = spot[0];
@@ -163,8 +167,8 @@
     var F = frame(ctx || {}, (opts && opts.scale) || { min: 1, max: 3 }), B = board(pts, F);
     var order = pts.slice().sort(function (a, b) { return (b.sel ? 1 : 0) - (a.sel ? 1 : 0) || biggestFirst(a, b); });   // the industry in focus is named first
     pts.forEach(function (p) { p.at = null; p.lab = null; p.label = null; });
+    names(order, F, B, !!(opts && opts.near));   // names first: a named bubble needs no number
     numbersInside(order, F, B);
-    names(order, F, B, !!(opts && opts.near));
     numbersBeside(order, F, B);
     return F;
   }

@@ -4,8 +4,7 @@
  *          midpoint. By default one bubble per industry, its scores averaged over the regions in scope by the
  *          rating rule; "Every region" shows one point per region for the industry in focus (ctx.industryId, D105),
  *          or per region and industry when none is in focus, and the industry in focus is ringed with a bold name;
- *          nudged apart for display only. Each bubble carries its industry's number from the key (QA-3) and a name
- *          where one fits cleanly. Tooltips and the table always read the exact cells.
+ *          nudged apart for display only. A bubble is named where the name fits, else numbered from the key (QA-3, D172).
  * Provides: chart builder 'quadrant' (registered with TAP.builders)
  * Depends on: js/engine/registry.js, scope.js, measures.js, scores.js, aggregate.js, shapes.js (drawing kit),
  *             js/core/format.js, content.js, data.js, config/settings.js (midpoint)
@@ -22,7 +21,7 @@
   function midpoint() { var m = settings().midpoint; return typeof m === 'number' ? m : 2; }
   function regionsWord(n) { return t(n === 1 ? 'combined.region' : 'combined.regions'); }
   function areaLabel(q) { return q ? t('quadrant.areas.' + q) : t('states.notProvided'); }
-  // An industry's number on the bubbles, the key and the table: its place in the lookup list, so it never changes (QA-3).
+  // An industry's number on a bubble and in the key: its place in the lookup list, so it never changes (QA-3).
   function industryNo(id) { return TAP.data.industries({ rated: true }).map(function (d) { return d.id; }).indexOf(id) + 1; }
   function regionNo(g) { return TAP.data.regionIndex(g.regionIds[0]) + 1; }
 
@@ -148,6 +147,7 @@
       else if (perRegion) p.named = p.g.role !== 'muted';
       else p.named = !paired || !first[p.ind.id];
       if (paired && p.named) first[p.ind.id] = p;
+      else if (paired) p.partner = first[p.ind.id];   // the named bubble at the other end of its join line
     });
     return paired;
   }
@@ -168,7 +168,7 @@
     var size = sizeCol ? sizer(max) : function () { return th.space[4]; }, ring = [], sel = [];
     pts.forEach(function (p) { p.d = !sizeCol ? th.space[4] : p.s && p.s.state === 'value' ? size(p.s.v) : th.space[2]; });
     var paired = naming(pts, gs, perRegion, filtered);
-    // Every bubble carries a number (its region's, when one industry is filtered), so none is named by hover only.
+    // A number ready on each bubble (its region's with one industry filtered); place() shows it only without a name (D172).
     // Smaller bubbles are drawn over bigger ones, so none is buried; rank is the drawing order.
     pts.forEach(function (p) { p.num = filtered ? regionNo(p.g) : industryNo(p.ind.id); p.light = p.g.role === 'muted'; p.sel = !filtered && p.ind.id === ctx.industryId; });
     pts.forEach(function (p, i) { p.i = i; });
@@ -215,15 +215,15 @@
     return { label: t('quadrant.sizeLegend', { measure: k().lower(col.label) }), kind: TAP.format.kind(col.kind).text,
       items: [max, max / 4, max / 16].map(function (v) { return { d: Math.round(f(v)), text: TAP.format.cell({ v: v, state: 'value' }, { unit: col.unit }) }; }) };
   }
-  // With one industry filtered, the bubbles carry their region's number, so the table does too.
-  function table(def, rows, sizeCol, filtered) {
+  // The table names every row, so it carries no number: the table view has no bubbles to match (D172).
+  function table(def, rows, sizeCol) {
     var C = function (key, label, unit, align) { return { key: key, label: label, unit: unit, align: align }; };
-    var cols = [C('entity', t('chart.entityColumn'), 'text', 'left'), C('num', t('quadrant.numberColumn'), 'text', 'right'), C('industry', t('chart.industryColumn'), 'text', 'left'),
+    var cols = [C('entity', t('chart.entityColumn'), 'text', 'left'), C('industry', t('chart.industryColumn'), 'text', 'left'),
       C(def.y, TAP.measures.meta(def.y).label, 'score', 'right'), C(def.x, TAP.measures.meta(def.x).label, 'score', 'right')]
       .concat(sizeCol ? [C(sizeCol.key, sizeCol.label, sizeCol.unit, 'right')] : [], [C('quadrant', t('quadrant.area'), 'text', 'left')]);
     return { columns: cols, rows: rows.map(function (r) {
       var q = TAP.scores.quadrant(r.y, r.x), cells = { entity: { v: r.g.label, state: 'value', kind: null },
-        industry: { v: r.ind.name, state: 'value', kind: null }, num: { v: String(filtered ? regionNo(r.g) : industryNo(r.ind.id)), state: 'value', kind: null },
+        industry: { v: r.ind.name, state: 'value', kind: null },
         quadrant: q ? { v: areaLabel(q), state: 'value', kind: 'APP' } : { v: null, state: 'notProvided', kind: 'APP' } };
       cells[def.y] = r.y; cells[def.x] = r.x;
       if (sizeCol) cells[sizeCol.key] = r.s;
@@ -260,12 +260,13 @@
     return own ? [] : [{ key: 'everyRegion', label: t('quadrant.show'), kind: 'segmented', value: !!opts.everyRegion,
       options: [{ value: false, label: t('quadrant.showAverage') }, { value: true, label: t('quadrant.showEvery') }] }];
   }
-  // The region keys (numbered when one industry is filtered), then the numbered key of the industries drawn.
+  // The region keys, then the industries; a number in the key only for a number on the chart (D172).
   function legend(gs, all, pts, filtered) {
-    var shown = gs.filter(function (g) { return pts.some(function (p) { return p.g === g; }); });
-    return k().legendOf({ entities: shown }).map(function (l, i) { return filtered ? Object.assign(l, { mark: regionNo(shown[i]) }) : l; })
-      .concat(filtered ? [] : all.filter(function (d) { return pts.some(function (p) { return p.ind === d; }); })
-        .map(function (d) { return { label: d.name, color: null, mark: industryNo(d.id), role: 'industry' }; }));
+    var num = pts.filter(function (p) { return p.at && p.num != null; }), shown = gs.filter(function (g) { return pts.some(function (p) { return p.g === g; }); });
+    return k().legendOf({ entities: shown }).map(function (l, i) {
+      return filtered && num.some(function (p) { return p.g === shown[i]; }) ? Object.assign(l, { mark: regionNo(shown[i]) }) : l;
+    }).concat(filtered ? [] : all.filter(function (d) { return num.some(function (p) { return p.ind === d; }); })
+      .map(function (d) { return { label: d.name, color: null, mark: industryNo(d.id), role: 'industry' }; }));
   }
   function missing(ctx, def) {
     var ids = TAP.scope.regionIds(ctx.cmp), inds = TAP.data.industries({ rated: true }), any = false, gone = [];
@@ -284,7 +285,7 @@
     var sizeId = type === 'scatter' ? null : (ctx.sizeId || (def.size && def.size.default) || null);
     var sm = sizeId && TAP.measures.meta(sizeId), sizeCol = sm ? { key: sizeId, label: sm.label, unit: sm.unit, kind: sm.kind } : null;
     var rows = collect(def, gs, filter ? [filter] : all, sizeId), drawn = chart(ctx, rows, gs, sizeCol, perRegion, !!filter), gap = missing(ctx, def);
-    var res = K.result(def, null, { table: table(def, rows, sizeCol, !!filter), notes: notes(def, rows, perRegion, gs, drawn.paired), missing: gap.names, empty: gap.empty,
+    var res = K.result(def, null, { table: table(def, rows, sizeCol), notes: notes(def, rows, perRegion, gs, drawn.paired), missing: gap.names, empty: gap.empty,
       legend: legend(gs, all, drawn.pts, !!filter),
       sizeLegend: drawn.sizeLegend, controls: controls(opts, gs, perRegion), takeaway: takeaway(gs, drawn.pts, perRegion),
       target: function (prm) {
